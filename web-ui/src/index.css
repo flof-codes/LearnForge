@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #161b22;
+  --color-bg-secondary: #1c2128;
+  --color-bg-surface: #262c36;
+  --color-bg-hover: #2d333b;
+  --color-text-primary: #c9d1d9;
+  --color-text-muted: #8b949e;
+  --color-accent-green: #56d364;
+  --color-accent-blue: #58a6ff;
+  --color-accent-purple: #bc8cff;
+  --color-border: rgba(255,255,255,0.08);
+  --color-danger: #f85149;
+  --color-warning: #d29922;
+
+  --color-bloom-0-bg: #0d2818;
+  --color-bloom-0-text: #56d364;
+  --color-bloom-1-bg: #0c2d3e;
+  --color-bloom-1-text: #58c4dc;
+  --color-bloom-2-bg: #1c1e3a;
+  --color-bloom-2-text: #8b9cf0;
+  --color-bloom-3-bg: #272450;
+  --color-bloom-3-text: #b0a4e0;
+  --color-bloom-4-bg: #3b1a60;
+  --color-bloom-4-text: #c8b8f0;
+  --color-bloom-5-bg: #461860;
+  --color-bloom-5-text: #d4b8f0;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-surface);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-bg-hover);
+}

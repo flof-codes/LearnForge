@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# LearnForge pre-commit hook
+# Runs type checking and linting on all 3 packages.
+# Install: git config core.hooksPath .githooks
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+ERRORS=0
+
+echo "=== LearnForge Pre-Commit Checks ==="
+echo ""
+
+# --- TypeScript Type Checking ---
+
+echo -n "  tsc api/         ... "
+if (cd api && npx tsc --noEmit) > /dev/null 2>&1; then
+  echo -e "${GREEN}PASS${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "    Run: cd api && npx tsc --noEmit"
+  ERRORS=$((ERRORS + 1))
+fi
+
+echo -n "  tsc mcp/         ... "
+if (cd mcp && npx tsc --noEmit) > /dev/null 2>&1; then
+  echo -e "${GREEN}PASS${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "    Run: cd mcp && npx tsc --noEmit"
+  ERRORS=$((ERRORS + 1))
+fi
+
+echo -n "  tsc web-ui/      ... "
+if (cd web-ui && npx tsc -b) > /dev/null 2>&1; then
+  echo -e "${GREEN}PASS${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "    Run: cd web-ui && npx tsc -b"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# --- ESLint ---
+
+echo -n "  eslint api/      ... "
+if (cd api && npx eslint .) > /dev/null 2>&1; then
+  echo -e "${GREEN}PASS${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "    Run: cd api && npx eslint ."
+  ERRORS=$((ERRORS + 1))
+fi
+
+echo -n "  eslint mcp/      ... "
+if (cd mcp && npx eslint .) > /dev/null 2>&1; then
+  echo -e "${GREEN}PASS${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "    Run: cd mcp && npx eslint ."
+  ERRORS=$((ERRORS + 1))
+fi
+
+echo -n "  eslint web-ui/   ... "
+if (cd web-ui && npx eslint .) > /dev/null 2>&1; then
+  echo -e "${GREEN}PASS${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "    Run: cd web-ui && npx eslint ."
+  ERRORS=$((ERRORS + 1))
+fi
+
+echo ""
+
+if [ "$ERRORS" -gt 0 ]; then
+  echo -e "${RED}=== PRE-COMMIT BLOCKED: $ERRORS error(s) found ===${NC}"
+  echo ""
+  echo "Fix the errors above, then try again."
+  echo "To bypass (emergency only): git commit --no-verify"
+  exit 1
+fi
+
+echo -e "${GREEN}=== All checks passed ===${NC}"
+exit 0

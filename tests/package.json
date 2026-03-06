@@ -1,0 +1,19 @@
+{
+  "name": "learnforge-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "up": "docker compose -f docker-compose.test.yml up --build -d",
+    "down": "docker compose -f docker-compose.test.yml down --volumes --remove-orphans"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.0",
+    "vitest": "^3.0.0",
+    "axios": "^1.7.0",
+    "pg": "^8.13.0",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.7.0"
+  }
+}

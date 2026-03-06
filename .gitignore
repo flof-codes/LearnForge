@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+api/dist/
+mcp/dist/
+web-ui/dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data
+data/
+backup/
+*.sql
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Card preview scratch files
+*-preview.html
+*-preview-*.html
+preview-*.html
+
+# Test coverage
+tests/coverage/
+
+# Claude Code
+.claude/plans/
+.claude/todos/
+.claude/tasks/
+.claude/teams/
