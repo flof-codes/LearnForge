@@ -22,7 +22,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop sidebar — icons-only at md, full at lg */}
-      <aside className="hidden md:flex flex-col md:w-16 lg:w-60 min-h-screen bg-bg-secondary shrink-0 transition-all">
+      <aside className="hidden md:flex flex-col md:w-16 lg:w-60 bg-bg-secondary shrink-0 transition-all overflow-y-auto">
         <div className="px-3 pt-10 pb-3 lg:px-5 lg:pt-12 lg:pb-5">
           <div className="hidden lg:flex items-center gap-2.5">
             <img src="/logo.svg" alt="" width={24} height={24} />
