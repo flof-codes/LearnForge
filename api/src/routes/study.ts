@@ -376,10 +376,41 @@ export default async function studyRoutes(app: FastifyInstance) {
 
     const daysResult = await db.execute<{ d: string }>(daysQuery);
 
-    // Calculate streak in application code
+    // Distinct creation dates for creation streak
+    const creationDaysQuery = topicId
+      ? sql`
+          ${topicCte}
+          SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
+          FROM cards c
+          WHERE c.topic_id IN (SELECT id FROM topic_tree)
+            AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+          ORDER BY d DESC
+        `
+      : sql`
+          SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
+          FROM cards c
+          WHERE (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+          ORDER BY d DESC
+        `;
+    const creationDaysResult = await db.execute<{ d: string }>(creationDaysQuery);
+
+    // Cards created today
+    const createdTodayQuery = topicId
+      ? sql`
+          ${topicCte}
+          SELECT COUNT(*)::int AS n FROM cards c
+          WHERE c.topic_id IN (SELECT id FROM topic_tree)
+            AND c.created_at::date = CURRENT_DATE
+        `
+      : sql`SELECT COUNT(*)::int AS n FROM cards c WHERE c.created_at::date = CURRENT_DATE`;
+    const createdTodayResult = await db.execute<{ n: number }>(createdTodayQuery);
+
+    // Calculate streaks in application code
     const reviewDates = new Set(daysResult.rows.map(r => String(r.d).slice(0, 10)));
-    let streak = 0;
+    const creationDates = new Set(creationDaysResult.rows.map(r => String(r.d).slice(0, 10)));
     const today = new Date();
+
+    let streak = 0;
     for (let i = 0; i < 366; i++) {
       const check = new Date(today);
       check.setDate(today.getDate() - i);
@@ -388,6 +419,20 @@ export default async function studyRoutes(app: FastifyInstance) {
         streak++;
       } else if (i === 0) {
         continue; // today has no review yet, check from yesterday
+      } else {
+        break;
+      }
+    }
+
+    let creationStreak = 0;
+    for (let i = 0; i < 366; i++) {
+      const check = new Date(today);
+      check.setDate(today.getDate() - i);
+      const dateStr = check.toISOString().slice(0, 10);
+      if (creationDates.has(dateStr)) {
+        creationStreak++;
+      } else if (i === 0) {
+        continue; // today has no creation yet, check from yesterday
       } else {
         break;
       }
@@ -403,7 +448,9 @@ export default async function studyRoutes(app: FastifyInstance) {
 
     return {
       streak,
+      creationStreak,
       reviewsToday: counts.reviews_today,
+      cardsCreatedToday: createdTodayResult.rows[0]?.n ?? 0,
       averagePerDay: Math.round((counts.reviews_30d / 30) * 10) / 10,
       averagePerMonth: Math.round((counts.reviews_365d / 12) * 10) / 10,
       averagePerYear: counts.reviews_365d,

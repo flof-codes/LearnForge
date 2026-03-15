@@ -8,7 +8,6 @@ export interface Topic {
   childCount: number;
   cardCount: number;
   newCount?: number;
-  learningCount?: number;
   dueCount?: number;
 }
 
@@ -145,7 +144,9 @@ export interface StudySummary {
 
 export interface StudyStats {
   streak: number;
+  creationStreak: number;
   reviewsToday: number;
+  cardsCreatedToday: number;
   averagePerDay: number;
   averagePerMonth: number;
   averagePerYear: number;

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap, Plus, Layers, Flame } from 'lucide-react';
+import { GraduationCap, Plus, Layers, Flame, Sparkles } from 'lucide-react';
 import { useStudySummary, useStudyStats } from '../hooks/useStudy';
 import { BLOOM_COLORS } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -46,19 +46,32 @@ export default function Dashboard() {
 
       {/* Streak & Activity */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
             <div className="flex items-center gap-2 text-text-muted text-sm">
               <Flame size={14} />
-              <span>Streak</span>
+              <span>Review Streak</span>
             </div>
             <p className="text-3xl font-light tabular-nums mt-1">
               {stats.streak}<span className="text-sm text-text-muted ml-1">days</span>
             </p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">Today</p>
+            <div className="flex items-center gap-2 text-text-muted text-sm">
+              <Sparkles size={14} />
+              <span>Creation Streak</span>
+            </div>
+            <p className="text-3xl font-light tabular-nums mt-1">
+              {stats.creationStreak}<span className="text-sm text-text-muted ml-1">days</span>
+            </p>
+          </div>
+          <div className="bg-bg-secondary rounded-xl border border-border p-6">
+            <p className="text-text-muted text-sm">Reviews Today</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.reviewsToday}</p>
+          </div>
+          <div className="bg-bg-secondary rounded-xl border border-border p-6">
+            <p className="text-text-muted text-sm">Created Today</p>
+            <p className="text-3xl font-light tabular-nums mt-1">{stats.cardsCreatedToday}</p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
             <p className="text-text-muted text-sm">Avg / Day</p>

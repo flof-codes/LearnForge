@@ -123,6 +123,15 @@ describe("Study Flow", () => {
       expect(res.data.dueCount).toBe(SEED.totalDueCount);  // excludes new cards
     });
 
+    it("returns creation streak and cards created today", async () => {
+      const res = await api.get("/study/stats");
+      expect(res.status).toBe(200);
+      expect(res.data).toHaveProperty("creationStreak");
+      expect(res.data).toHaveProperty("cardsCreatedToday");
+      expect(typeof res.data.creationStreak).toBe("number");
+      expect(typeof res.data.cardsCreatedToday).toBe("number");
+    });
+
     it("classifies mature vs young review cards", async () => {
       const res = await api.get("/study/stats");
       // Card 8 (stability=45) should be mature (stability >= 21)
