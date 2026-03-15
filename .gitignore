@@ -37,6 +37,9 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Plans (internal)
+plans/
+
 # Card preview scratch files
 *-preview.html
 *-preview-*.html
