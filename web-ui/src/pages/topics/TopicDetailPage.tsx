@@ -85,8 +85,6 @@ export default function TopicDetailPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const newCount = (topic as any).newCount ?? 0;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const learningCount = (topic as any).learningCount ?? 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dueCount = (topic as any).dueCount ?? 0;
 
   return (
@@ -103,17 +101,12 @@ export default function TopicDetailPage() {
                 {newCount} new
               </span>
             )}
-            {learningCount > 0 && (
-              <span className="text-xs tabular-nums px-2 py-0.5 rounded bg-warning/15 text-warning">
-                {learningCount} learning
-              </span>
-            )}
             {dueCount > 0 && (
               <span className="text-xs tabular-nums px-2 py-0.5 rounded bg-accent-green/15 text-accent-green">
                 {dueCount} due
               </span>
             )}
-            {newCount === 0 && learningCount === 0 && dueCount === 0 && topic.cardCount > 0 && (
+            {newCount === 0 && dueCount === 0 && topic.cardCount > 0 && (
               <span className="text-xs text-text-muted">{topic.cardCount} cards, all up to date</span>
             )}
           </div>

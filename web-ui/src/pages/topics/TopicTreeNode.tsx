@@ -19,7 +19,6 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
   const hasChildren = topic.childCount > 0;
 
   const newCount = topic.newCount ?? 0;
-  const learningCount = topic.learningCount ?? 0;
   const dueCount = topic.dueCount ?? 0;
 
   return (
@@ -44,11 +43,6 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
           {newCount > 0 && (
             <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue" title="New">
               {newCount}
-            </span>
-          )}
-          {learningCount > 0 && (
-            <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded bg-warning/15 text-warning" title="Learning">
-              {learningCount}
             </span>
           )}
           {dueCount > 0 && (
