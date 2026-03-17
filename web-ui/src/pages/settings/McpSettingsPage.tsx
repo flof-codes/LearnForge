@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Copy, Check, AlertTriangle, Trash2 } from 'lucide-react';
+import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Monitor } from 'lucide-react';
 import { authService } from '../../api/auth';
 
 export default function McpSettingsPage() {
   const queryClient = useQueryClient();
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const mcpUrl = `${window.location.origin}/mcp`;
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['mcp-key-status'],
@@ -45,7 +46,7 @@ export default function McpSettingsPage() {
     <div className="p-6 max-w-2xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-text-primary">MCP Settings</h1>
-        <p className="text-text-muted mt-1">Manage your API key for Claude Desktop integration</p>
+        <p className="text-text-muted mt-1">Manage your MCP API key for AI assistant integration</p>
       </div>
 
       {/* Key Status */}
@@ -112,7 +113,10 @@ export default function McpSettingsPage() {
 
       {/* Claude Desktop Tutorial */}
       <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-lg font-medium text-text-primary">Claude Desktop Setup</h2>
+        <div className="flex items-center gap-3">
+          <Monitor size={20} className="text-accent-blue" />
+          <h2 className="text-lg font-medium text-text-primary">Claude Desktop Setup</h2>
+        </div>
         <p className="text-text-muted text-sm">
           Add this to your <code className="text-text-primary bg-bg-primary px-1.5 py-0.5 rounded text-xs">claude_desktop_config.json</code>:
         </p>
@@ -128,6 +132,37 @@ export default function McpSettingsPage() {
         </pre>
         <p className="text-text-muted text-xs">
           Replace <code className="text-text-primary">/path/to/mcp/src/index.ts</code> with the actual path and <code className="text-text-primary">YOUR_KEY_HERE</code> with your API key.
+        </p>
+      </section>
+
+      {/* Claude Web Tutorial */}
+      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Globe size={20} className="text-accent-blue" />
+          <h2 className="text-lg font-medium text-text-primary">Claude Web (claude.ai) Setup</h2>
+        </div>
+        <ol className="text-text-muted text-sm space-y-2 list-decimal list-inside">
+          <li>Open <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">claude.ai</a> and go to <strong className="text-text-primary">Settings</strong></li>
+          <li>Navigate to the <strong className="text-text-primary">Integrations</strong> tab</li>
+          <li>Click <strong className="text-text-primary">Add</strong> to add a custom integration</li>
+          <li>Enter a name, e.g. <code className="text-text-primary bg-bg-primary px-1.5 py-0.5 rounded text-xs">LearnForge</code></li>
+          <li>Set the server URL to:</li>
+        </ol>
+        <pre className="bg-bg-primary rounded-lg p-4 text-sm text-text-primary overflow-x-auto border border-border">{mcpUrl}</pre>
+        <ol start={6} className="text-text-muted text-sm space-y-2 list-decimal list-inside">
+          <li>Add your API key as the authentication token</li>
+          <li>Save — LearnForge tools will appear in your conversations</li>
+        </ol>
+      </section>
+
+      {/* Other AI Assistants */}
+      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-3">
+        <h2 className="text-lg font-medium text-text-primary">Other AI Assistants</h2>
+        <p className="text-text-muted text-sm">
+          <strong className="text-text-primary">ChatGPT:</strong> The desktop app supports local MCP servers (stdio transport only). Remote HTTP servers are not supported — you would need to clone the repo and use stdio mode.
+        </p>
+        <p className="text-text-muted text-sm">
+          <strong className="text-text-primary">Gemini:</strong> Google has MCP support through the Agent Development Kit (ADK) for developers, but the consumer Gemini app does not support custom MCP integrations.
         </p>
       </section>
     </div>
