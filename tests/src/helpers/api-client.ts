@@ -7,10 +7,11 @@ let apiInstance: AxiosInstance | null = null;
 /**
  * Authenticate with the test API and store the JWT token.
  */
-export async function login(): Promise<string> {
+export async function login(email?: string, password?: string): Promise<string> {
   const url = process.env.TEST_API_URL ?? TEST_CONFIG.apiUrl;
   const res = await axios.post(`${url}/auth/login`, {
-    password: TEST_CONFIG.authPassword,
+    email: email ?? TEST_CONFIG.email,
+    password: password ?? TEST_CONFIG.password,
   });
   token = res.data.token as string;
   apiInstance = null; // force re-creation with new token

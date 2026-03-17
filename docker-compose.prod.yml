@@ -1,0 +1,63 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: learnforge
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-learnforge}"
+      POSTGRES_DB: learnforge
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U learnforge"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    ports:
+      - "3008:3000"
+    environment:
+      DATABASE_URL: "postgresql://learnforge:${DB_PASSWORD:-learnforge}@db:5432/learnforge"
+      PORT: "3000"
+      IMAGE_PATH: /data/images
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_EXPIRES_IN: "7d"
+    volumes:
+      - ./data/images:/data/images
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "${VITE_API_URL}"
+    ports:
+      - "8090:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mcp:
+    build: ./mcp
+    ports:
+      - "3009:3001"
+    environment:
+      DATABASE_URL: "postgresql://learnforge:${DB_PASSWORD:-learnforge}@db:5432/learnforge"
+      PORT: "3001"
+      IMAGE_PATH: /data/images
+    volumes:
+      - ./data/images:/data/images
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+    name: learnforge_pg_data

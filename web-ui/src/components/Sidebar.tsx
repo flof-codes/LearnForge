@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { LayoutDashboard, FolderTree, Layers, GraduationCap, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const links = [
@@ -8,6 +8,7 @@ const links = [
   { to: '/topics', icon: FolderTree, label: 'Topics' },
   { to: '/cards/browse', icon: Layers, label: 'Cards' },
   { to: '/study', icon: GraduationCap, label: 'Study' },
+  { to: '/settings/mcp', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {

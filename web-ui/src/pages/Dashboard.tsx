@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { GraduationCap, Plus, Layers, Flame, Sparkles } from 'lucide-react';
 import { useStudySummary, useStudyStats } from '../hooks/useStudy';
+import { useTopics } from '../hooks/useTopics';
 import { BLOOM_COLORS } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import DueForecastChart from '../components/DueForecastChart';
+import TopicPieChart from '../components/TopicPieChart';
 
 const STATE_COLORS: Record<string, { bg: string; label: string }> = {
   new:         { bg: '#58a6ff', label: 'New' },
@@ -16,6 +18,7 @@ const STATE_COLORS: Record<string, { bg: string; label: string }> = {
 export default function Dashboard() {
   const { data: summary, isLoading: summaryLoading } = useStudySummary();
   const { data: stats, isLoading: statsLoading } = useStudyStats();
+  const { data: topics } = useTopics();
 
   if (summaryLoading || statsLoading) return <LoadingSpinner />;
 
@@ -113,6 +116,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Topic Distribution */}
+      {topics && topics.length > 0 && <TopicPieChart topics={topics} />}
 
       {/* Due Forecast */}
       <DueForecastChart />

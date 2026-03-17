@@ -1,5 +1,10 @@
 // ── Deterministic UUIDs matching seed.sql ──────────────────────────────────
 
+export const USERS = {
+  TEST_USER:  "00000000-0000-0000-0000-000000000099",
+  OTHER_USER: "00000000-0000-0000-0000-000000000098",
+} as const;
+
 export const TOPICS = {
   MATHEMATICS:      "10000000-0000-0000-0000-000000000001",
   ALGEBRA:          "10000000-0000-0000-0000-000000000002",
@@ -96,8 +101,11 @@ export const SEED = {
 export const TEST_CONFIG = {
   apiUrl: "http://localhost:4444",
   mcpUrl: "http://localhost:4445",
-  authPassword: "test-password",
-  mcpApiKey: "test-mcp-key",
+  email: "test@learnforge.dev",
+  password: "test-password",
+  mcpApiKey: "test-mcp-api-key-0099",
+  otherEmail: "other@learnforge.dev",
+  otherPassword: "test-password",
   dbPort: 5555,
   dbUser: "learnforge_test",
   dbPassword: "learnforge_test",

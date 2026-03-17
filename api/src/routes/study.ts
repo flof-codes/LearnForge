@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { sql } from "drizzle-orm";
+import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function studyRoutes(app: FastifyInstance) {
 
@@ -8,11 +9,12 @@ export default async function studyRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { topic_id?: string; limit?: string } }>("/study/due", async (req) => {
     const topicId = req.query.topic_id;
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit ?? "10", 10) || 10));
+    const userId = getUserId(req);
 
     const topicFilter = topicId
       ? sql`
           WITH RECURSIVE topic_tree AS (
-            SELECT id FROM topics WHERE id = ${topicId}::uuid
+            SELECT id FROM topics WHERE id = ${topicId}::uuid AND user_id = ${userId}
             UNION ALL
             SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
           )
@@ -34,7 +36,9 @@ export default async function studyRoutes(app: FastifyInstance) {
           FROM cards c
           JOIN fsrs_state fs ON fs.card_id = c.id
           LEFT JOIN bloom_state bs ON bs.card_id = c.id
+          JOIN topics t ON c.topic_id = t.id
           WHERE fs.due <= NOW()
+            AND t.user_id = ${userId}
           ORDER BY fs.due ASC
           LIMIT ${limit}
         `;
@@ -59,7 +63,7 @@ export default async function studyRoutes(app: FastifyInstance) {
     const cardIds = result.rows.map((r) => r.id);
 
     // Fetch reviews for all due cards in one query
-    const reviewsByCard = new Map<string, Array<{ bloomLevel: number; rating: number; questionText: string; answerExpected: string | null; reviewedAt: string }>>();
+    const reviewsByCard = new Map<string, Array<{ bloomLevel: number; rating: number; questionText: string; answerExpected: string | null; userAnswer: string | null; reviewedAt: string }>>();
 
     if (cardIds.length > 0) {
       const cardIdList = sql.join(cardIds.map(id => sql`${id}::uuid`), sql`, `);
@@ -69,9 +73,10 @@ export default async function studyRoutes(app: FastifyInstance) {
         rating: number;
         question_text: string;
         answer_expected: string | null;
+        user_answer: string | null;
         reviewed_at: string;
       }>(sql`
-        SELECT card_id, bloom_level, rating, question_text, answer_expected, reviewed_at
+        SELECT card_id, bloom_level, rating, question_text, answer_expected, user_answer, reviewed_at
         FROM reviews
         WHERE card_id IN (${cardIdList})
         ORDER BY reviewed_at DESC
@@ -84,6 +89,7 @@ export default async function studyRoutes(app: FastifyInstance) {
           rating: r.rating,
           questionText: r.question_text,
           answerExpected: r.answer_expected,
+          userAnswer: r.user_answer,
           reviewedAt: r.reviewed_at,
         });
         reviewsByCard.set(r.card_id, list);
@@ -117,11 +123,12 @@ export default async function studyRoutes(app: FastifyInstance) {
   // GET /study/summary — Session overview
   app.get<{ Querystring: { topic_id?: string } }>("/study/summary", async (req) => {
     const topicId = req.query.topic_id;
+    const userId = getUserId(req);
 
     const topicCte = topicId
       ? sql`
           WITH RECURSIVE topic_tree AS (
-            SELECT id FROM topics WHERE id = ${topicId}::uuid
+            SELECT id FROM topics WHERE id = ${topicId}::uuid AND user_id = ${userId}
             UNION ALL
             SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
           )
@@ -130,7 +137,7 @@ export default async function studyRoutes(app: FastifyInstance) {
 
     const cardFilter = topicId
       ? sql`WHERE c.topic_id IN (SELECT id FROM topic_tree)`
-      : sql``;
+      : sql`JOIN topics t ON c.topic_id = t.id WHERE t.user_id = ${userId}`;
 
     // Total cards, due count (excludes new), and new count
     const countsResult = await db.execute<{
@@ -186,7 +193,7 @@ export default async function studyRoutes(app: FastifyInstance) {
       FROM reviews r
       JOIN cards c ON c.id = r.card_id
       ${cardFilter}
-      ${topicId ? sql`AND` : sql`WHERE`} r.reviewed_at >= NOW() - INTERVAL '7 days'
+      AND r.reviewed_at >= NOW() - INTERVAL '7 days'
     `);
 
     const accuracy7d = accuracyResult.rows[0]?.accuracy ?? null;
@@ -204,11 +211,12 @@ export default async function studyRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { topic_id?: string; range?: string } }>("/study/due-forecast", async (req) => {
     const topicId = req.query.topic_id;
     const range = req.query.range === "year" ? "year" : "month";
+    const userId = getUserId(req);
 
     const topicCte = topicId
       ? sql`
           WITH RECURSIVE topic_tree AS (
-            SELECT id FROM topics WHERE id = ${topicId}::uuid
+            SELECT id FROM topics WHERE id = ${topicId}::uuid AND user_id = ${userId}
             UNION ALL
             SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
           )
@@ -217,7 +225,7 @@ export default async function studyRoutes(app: FastifyInstance) {
 
     const cardFilter = topicId
       ? sql`AND c.topic_id IN (SELECT id FROM topic_tree)`
-      : sql``;
+      : sql`AND c.topic_id IN (SELECT id FROM topics WHERE user_id = ${userId})`;
 
     // Overdue count (excludes new cards)
     const overdueResult = await db.execute<{ count: number }>(sql`
@@ -293,11 +301,12 @@ export default async function studyRoutes(app: FastifyInstance) {
   // GET /study/stats — Anki-style statistics
   app.get<{ Querystring: { topic_id?: string } }>("/study/stats", async (req) => {
     const topicId = req.query.topic_id;
+    const userId = getUserId(req);
 
     const topicCte = topicId
       ? sql`
           WITH RECURSIVE topic_tree AS (
-            SELECT id FROM topics WHERE id = ${topicId}::uuid
+            SELECT id FROM topics WHERE id = ${topicId}::uuid AND user_id = ${userId}
             UNION ALL
             SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
           )
@@ -306,7 +315,7 @@ export default async function studyRoutes(app: FastifyInstance) {
 
     const cardFilter = topicId
       ? sql`WHERE c.topic_id IN (SELECT id FROM topic_tree)`
-      : sql``;
+      : sql`JOIN topics t ON c.topic_id = t.id WHERE t.user_id = ${userId}`;
 
     // Card state counts + due
     const statesResult = await db.execute<{
@@ -348,6 +357,9 @@ export default async function studyRoutes(app: FastifyInstance) {
             COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '30 days')::int AS reviews_30d,
             COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '365 days')::int AS reviews_365d
           FROM reviews r
+          JOIN cards c ON c.id = r.card_id
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
         `;
 
     const reviewsResult = await db.execute<{
@@ -370,7 +382,10 @@ export default async function studyRoutes(app: FastifyInstance) {
       : sql`
           SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d
           FROM reviews r
-          WHERE (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+          JOIN cards c ON c.id = r.card_id
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+            AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
           ORDER BY d DESC
         `;
 
@@ -389,7 +404,9 @@ export default async function studyRoutes(app: FastifyInstance) {
       : sql`
           SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
           FROM cards c
-          WHERE (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+            AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
           ORDER BY d DESC
         `;
     const creationDaysResult = await db.execute<{ d: string }>(creationDaysQuery);
@@ -402,7 +419,12 @@ export default async function studyRoutes(app: FastifyInstance) {
           WHERE c.topic_id IN (SELECT id FROM topic_tree)
             AND c.created_at::date = CURRENT_DATE
         `
-      : sql`SELECT COUNT(*)::int AS n FROM cards c WHERE c.created_at::date = CURRENT_DATE`;
+      : sql`
+          SELECT COUNT(*)::int AS n FROM cards c
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+            AND c.created_at::date = CURRENT_DATE
+        `;
     const createdTodayResult = await db.execute<{ n: number }>(createdTodayQuery);
 
     // Calculate streaks in application code

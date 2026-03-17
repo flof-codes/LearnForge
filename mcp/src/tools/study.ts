@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "../db/connection.js";
 import { sql } from "drizzle-orm";
 
-export function registerStudyTools(server: McpServer) {
+export function registerStudyTools(server: McpServer, userId: string) {
   server.tool(
     "get_study_cards",
     "Get cards ready to study (new + due for review), optionally filtered by topic (includes descendants)",
@@ -18,7 +18,7 @@ export function registerStudyTools(server: McpServer) {
         const topicFilter = topic_id
           ? sql`
               WITH RECURSIVE topic_tree AS (
-                SELECT id FROM topics WHERE id = ${topic_id}::uuid
+                SELECT id FROM topics WHERE id = ${topic_id}::uuid AND user_id = ${userId}
                 UNION ALL
                 SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
               )
@@ -40,7 +40,9 @@ export function registerStudyTools(server: McpServer) {
               FROM cards c
               JOIN fsrs_state fs ON fs.card_id = c.id
               LEFT JOIN bloom_state bs ON bs.card_id = c.id
+              JOIN topics t ON c.topic_id = t.id
               WHERE fs.due <= NOW()
+                AND t.user_id = ${userId}
               ORDER BY fs.due ASC
               LIMIT ${limit}
             `;
@@ -64,7 +66,7 @@ export function registerStudyTools(server: McpServer) {
 
         const cardIds = result.rows.map((r) => r.id);
 
-        const reviewsByCard = new Map<string, Array<{ bloomLevel: number; rating: number; questionText: string; answerExpected: string | null; reviewedAt: string }>>();
+        const reviewsByCard = new Map<string, Array<{ bloomLevel: number; rating: number; questionText: string; answerExpected: string | null; userAnswer: string | null; reviewedAt: string }>>();
 
         if (cardIds.length > 0) {
           const reviewResult = await db.execute<{
@@ -73,9 +75,10 @@ export function registerStudyTools(server: McpServer) {
             rating: number;
             question_text: string;
             answer_expected: string | null;
+            user_answer: string | null;
             reviewed_at: string;
           }>(sql`
-            SELECT card_id, bloom_level, rating, question_text, answer_expected, reviewed_at
+            SELECT card_id, bloom_level, rating, question_text, answer_expected, user_answer, reviewed_at
             FROM reviews
             WHERE card_id IN (${sql.join(cardIds.map(id => sql`${id}::uuid`), sql`, `)})
             ORDER BY reviewed_at DESC
@@ -88,6 +91,7 @@ export function registerStudyTools(server: McpServer) {
               rating: r.rating,
               questionText: r.question_text,
               answerExpected: r.answer_expected,
+              userAnswer: r.user_answer,
               reviewedAt: r.reviewed_at,
             });
             reviewsByCard.set(r.card_id, list);
@@ -139,7 +143,7 @@ export function registerStudyTools(server: McpServer) {
         const topicCte = topic_id
           ? sql`
               WITH RECURSIVE topic_tree AS (
-                SELECT id FROM topics WHERE id = ${topic_id}::uuid
+                SELECT id FROM topics WHERE id = ${topic_id}::uuid AND user_id = ${userId}
                 UNION ALL
                 SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
               )
@@ -150,14 +154,25 @@ export function registerStudyTools(server: McpServer) {
           ? sql`AND c.topic_id IN (SELECT id FROM topic_tree)`
           : sql``;
 
+        // When no topic_id, we need to join topics to filter by user
+        const userJoin = topic_id
+          ? sql``
+          : sql`JOIN topics t ON c.topic_id = t.id`;
+
+        const userFilter = topic_id
+          ? sql``
+          : sql`AND t.user_id = ${userId}`;
+
         // Overdue count (excludes new cards)
         const overdueResult = await db.execute<{ count: number }>(sql`
           ${topicCte}
           SELECT COUNT(*)::int AS count
           FROM cards c
           JOIN fsrs_state fs ON fs.card_id = c.id
+          ${userJoin}
           WHERE fs.due <= NOW() AND fs.state > 0
           ${cardFilter}
+          ${userFilter}
         `);
         const overdue = overdueResult.rows[0]?.count ?? 0;
 
@@ -167,9 +182,11 @@ export function registerStudyTools(server: McpServer) {
             SELECT DATE(fs.due) AS due_date, COUNT(*)::int AS count
             FROM cards c
             JOIN fsrs_state fs ON fs.card_id = c.id
+            ${userJoin}
             WHERE fs.due > NOW()
               AND fs.due <= NOW() + INTERVAL '30 days'
               ${cardFilter}
+              ${userFilter}
             GROUP BY DATE(fs.due)
             ORDER BY due_date
           `);
@@ -196,9 +213,11 @@ export function registerStudyTools(server: McpServer) {
             SELECT DATE_TRUNC('month', fs.due)::date AS due_month, COUNT(*)::int AS count
             FROM cards c
             JOIN fsrs_state fs ON fs.card_id = c.id
+            ${userJoin}
             WHERE fs.due > NOW()
               AND fs.due <= NOW() + INTERVAL '12 months'
               ${cardFilter}
+              ${userFilter}
             GROUP BY DATE_TRUNC('month', fs.due)
             ORDER BY due_month
           `);
@@ -237,7 +256,7 @@ export function registerStudyTools(server: McpServer) {
         const topicCte = topic_id
           ? sql`
               WITH RECURSIVE topic_tree AS (
-                SELECT id FROM topics WHERE id = ${topic_id}::uuid
+                SELECT id FROM topics WHERE id = ${topic_id}::uuid AND user_id = ${userId}
                 UNION ALL
                 SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
               )
@@ -246,7 +265,7 @@ export function registerStudyTools(server: McpServer) {
 
         const cardFilter = topic_id
           ? sql`WHERE c.topic_id IN (SELECT id FROM topic_tree)`
-          : sql``;
+          : sql`JOIN topics t ON c.topic_id = t.id WHERE t.user_id = ${userId}`;
 
         // Total cards, due count (excludes new), and new count
         const countsResult = await db.execute<{
@@ -302,7 +321,7 @@ export function registerStudyTools(server: McpServer) {
           FROM reviews r
           JOIN cards c ON c.id = r.card_id
           ${cardFilter}
-          ${topic_id ? sql`AND` : sql`WHERE`} r.reviewed_at >= NOW() - INTERVAL '7 days'
+          AND r.reviewed_at >= NOW() - INTERVAL '7 days'
         `);
 
         const accuracy7d = accuracyResult.rows[0]?.accuracy ?? null;

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "../db/connection.js";
 import { sql } from "drizzle-orm";
 
-export function registerContextTools(server: McpServer) {
+export function registerContextTools(server: McpServer, userId: string) {
   server.tool(
     "get_topic_context",
     "Get all cards for a topic and its descendants (recursive). Returns card concept, tags, bloom state, and review history.",
@@ -15,7 +15,7 @@ export function registerContextTools(server: McpServer) {
       try {
         const result = await db.execute(sql`
           WITH RECURSIVE topic_tree AS (
-            SELECT id, 0 as depth FROM topics WHERE id = ${topic_id}
+            SELECT id, 0 as depth FROM topics WHERE id = ${topic_id} AND user_id = ${userId}
             UNION ALL
             SELECT t.id, tt.depth + 1 FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
             WHERE tt.depth < ${depth}
@@ -27,6 +27,7 @@ export function registerContextTools(server: McpServer) {
               'rating', r.rating,
               'questionText', r.question_text,
               'answerExpected', r.answer_expected,
+              'userAnswer', r.user_answer,
               'reviewedAt', r.reviewed_at
             ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
           FROM cards c
@@ -66,13 +67,16 @@ export function registerContextTools(server: McpServer) {
     },
     async ({ card_id, limit }) => {
       try {
+        // Verify source card belongs to user
         const sourceCheck = await db.execute(sql`
-          SELECT id FROM cards WHERE id = ${card_id}
+          SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id
+          WHERE c.id = ${card_id} AND t.user_id = ${userId}
         `);
         if (sourceCheck.rows.length === 0) {
           return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };
         }
 
+        // Only return similar cards that also belong to user
         const result = await db.execute(sql`
           SELECT c.id, c.concept, c.tags, c.topic_id,
             bs.current_level, bs.highest_reached,
@@ -82,12 +86,14 @@ export function registerContextTools(server: McpServer) {
               'rating', r.rating,
               'questionText', r.question_text,
               'answerExpected', r.answer_expected,
+              'userAnswer', r.user_answer,
               'reviewedAt', r.reviewed_at
             ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
           FROM cards c
+          JOIN topics t ON c.topic_id = t.id
           LEFT JOIN bloom_state bs ON bs.card_id = c.id
           LEFT JOIN reviews r ON r.card_id = c.id
-          WHERE c.id != ${card_id} AND c.embedding IS NOT NULL
+          WHERE c.id != ${card_id} AND c.embedding IS NOT NULL AND t.user_id = ${userId}
           GROUP BY c.id, c.concept, c.tags, c.topic_id, bs.current_level, bs.highest_reached, c.embedding
           ORDER BY c.embedding <=> (SELECT embedding FROM cards WHERE id = ${card_id})
           LIMIT ${limit}

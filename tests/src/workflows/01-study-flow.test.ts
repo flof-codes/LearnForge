@@ -154,6 +154,25 @@ describe("Study Flow", () => {
       expect(new Date(result.fsrsState.due).getTime()).toBeGreaterThan(beforeDue.getTime());
     });
 
+    it("persists user_answer and answer_expected", async () => {
+      const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "user-answer");
+      freshCardIds.push(card.id);
+
+      const result = await submitReview(api, card.id, 0, 3, {
+        answerExpected: "A, C",
+        userAnswer: "B, D",
+      });
+
+      expect(result.review.answerExpected).toBe("A, C");
+      expect(result.review.userAnswer).toBe("B, D");
+
+      // Verify it comes back on GET /cards/:id
+      const getRes = await api.get(`/cards/${card.id}`);
+      const review = getRes.data.reviews[0];
+      expect(review.answerExpected).toBe("A, C");
+      expect(review.userAnswer).toBe("B, D");
+    });
+
     it("card no longer due after Good review", async () => {
       const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "no-longer-due");
       freshCardIds.push(card.id);

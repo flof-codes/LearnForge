@@ -36,7 +36,6 @@ services:
       PORT: "3000"
       IMAGE_PATH: /data/images
       JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
-      AUTH_PASSWORD: "${AUTH_PASSWORD:-learnforge}"
       JWT_EXPIRES_IN: "7d"
     volumes:
       - ./data/images:/data/images
@@ -63,7 +62,6 @@ services:
     environment:
       DATABASE_URL: postgresql://learnforge:learnforge@db:5432/learnforge
       PORT: "3001"
-      MCP_API_KEY: "${MCP_API_KEY:-dev-mcp-key-change-me}"
       IMAGE_PATH: /data/images
     volumes:
       - ./data/images:/data/images

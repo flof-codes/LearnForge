@@ -3,7 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { images } from "../db/schema/index.js";
 import { config } from "../config.js";
@@ -30,7 +30,7 @@ function mimeToExt(mime: string): string {
   return map[mime] ?? "";
 }
 
-export function registerImageTools(server: McpServer) {
+export function registerImageTools(server: McpServer, userId: string) {
   server.tool(
     "upload_image",
     "Upload an image from a local file path. Supports png, jpg, jpeg, gif, webp, and svg.",
@@ -40,6 +40,17 @@ export function registerImageTools(server: McpServer) {
     },
     async ({ file_path, card_id }) => {
       try {
+        // If card_id is given, verify the card belongs to user
+        if (card_id) {
+          const ownerCheck = await db.execute<{ id: string }>(sql`
+            SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id
+            WHERE c.id = ${card_id} AND t.user_id = ${userId}
+          `);
+          if (ownerCheck.rows.length === 0) {
+            return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };
+          }
+        }
+
         // Restrict file reads to allowed directories to prevent arbitrary file exfiltration
         const resolved = path.resolve(file_path);
         const allowedPrefixes = [
@@ -86,6 +97,7 @@ export function registerImageTools(server: McpServer) {
           .values({
             id: fileId,
             cardId: card_id ?? null,
+            userId,
             filename: path.basename(file_path),
             mimeType,
           })
@@ -118,7 +130,7 @@ export function registerImageTools(server: McpServer) {
         const [row] = await db
           .select()
           .from(images)
-          .where(eq(images.id, image_id))
+          .where(sql`${images.id} = ${image_id} AND ${images.userId} = ${userId}`)
           .limit(1);
 
         if (!row) {

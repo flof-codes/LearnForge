@@ -1,0 +1,1 @@
+ALTER TABLE "reviews" ADD COLUMN "modality" text DEFAULT 'web' NOT NULL;

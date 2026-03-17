@@ -1,10 +1,13 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { eq } from "drizzle-orm";
 import { runMigrations } from "./db/migrate.js";
+import { db } from "./db/connection.js";
+import { users } from "./db/schema/index.js";
 import { registerTopicTools } from "./tools/topics.js";
 import { registerCardTools } from "./tools/cards.js";
 import { registerReviewTools } from "./tools/reviews.js";
@@ -17,40 +20,57 @@ import { config } from "./config.js";
 await runMigrations();
 
 // --- Build a fresh McpServer per session ---
-function createServer(): McpServer {
+function createServer(userId: string): McpServer {
   const server = new McpServer({ name: "learnforge", version: "1.0.0" });
-  registerTopicTools(server);
-  registerCardTools(server);
-  registerReviewTools(server);
-  registerStudyTools(server);
-  registerContextTools(server);
-  registerImageTools(server);
+  registerTopicTools(server, userId);
+  registerCardTools(server, userId);
+  registerReviewTools(server, userId);
+  registerStudyTools(server, userId);
+  registerContextTools(server, userId);
+  registerImageTools(server, userId);
   registerSkillTools(server);
   return server;
+}
+
+async function resolveApiKey(rawKey: string): Promise<string> {
+  const hash = createHash("sha256").update(rawKey).digest("hex");
+  const [user] = await db.select({ id: users.id }).from(users).where(eq(users.mcpApiKeyHash, hash));
+  if (!user) throw new Error("Invalid API key");
+  return user.id;
 }
 
 const isStdio = process.argv.includes("--stdio");
 
 if (isStdio) {
   // --- Stdio transport (for Claude Desktop) ---
-  const server = createServer();
+  const keyIdx = process.argv.indexOf("--api-key");
+  if (keyIdx === -1 || !process.argv[keyIdx + 1]) {
+    console.error("Error: --api-key <key> is required in stdio mode");
+    process.exit(1);
+  }
+  const rawKey = process.argv[keyIdx + 1];
+  const userId = await resolveApiKey(rawKey);
+
+  const server = createServer(userId);
   const transport = new StdioServerTransport();
   await server.connect(transport);
 } else {
   // --- StreamableHTTP transport ---
 
-  function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
+  async function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
     if (req.path === "/health") return next();
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       res.status(401).json({ error: "Missing API key" });
       return;
     }
-    if (authHeader.slice(7) !== config.mcpApiKey) {
+    try {
+      const userId = await resolveApiKey(authHeader.slice(7));
+      (req as unknown as Record<string, unknown>).userId = userId;
+      next();
+    } catch {
       res.status(403).json({ error: "Invalid API key" });
-      return;
     }
-    next();
   }
 
   const transports: Record<string, StreamableHTTPServerTransport> = {};
@@ -61,6 +81,7 @@ if (isStdio) {
 
   app.post("/mcp", async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    const userId = (req as unknown as Record<string, unknown>).userId as string;
     try {
       if (sessionId && transports[sessionId]) {
         await transports[sessionId].handleRequest(req, res, req.body);
@@ -75,7 +96,7 @@ if (isStdio) {
           const sid = transport.sessionId;
           if (sid && transports[sid]) delete transports[sid];
         };
-        const server = createServer();
+        const server = createServer(userId);
         await server.connect(transport);
         await transport.handleRequest(req, res, req.body);
         return;

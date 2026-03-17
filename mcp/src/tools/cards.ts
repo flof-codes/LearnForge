@@ -1,12 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { db } from "../db/connection.js";
-import { cards, bloomState, fsrsState, reviews } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
+import { cards, bloomState, fsrsState, reviews, topics } from "../db/schema/index.js";
+import { eq, sql } from "drizzle-orm";
 import { computeEmbedding } from "../services/embeddings.js";
 import { createInitialFsrsState } from "../services/fsrs.js";
 
-export function registerCardTools(server: McpServer) {
+export function registerCardTools(server: McpServer, userId: string) {
   // ── create_card ──────────────────────────────────────────────────────
   server.tool(
     "create_card",
@@ -20,6 +20,13 @@ export function registerCardTools(server: McpServer) {
     },
     async ({ topic_id, concept, front_html, back_html, tags }) => {
       try {
+        // Verify topic belongs to user
+        const [topic] = await db.select({ id: topics.id }).from(topics)
+          .where(sql`${topics.id} = ${topic_id} AND ${topics.userId} = ${userId}`);
+        if (!topic) {
+          return { content: [{ type: "text" as const, text: "Error: Topic not found" }], isError: true };
+        }
+
         const embedding = await computeEmbedding(concept);
         const initialFsrs = createInitialFsrsState();
 
@@ -66,11 +73,16 @@ export function registerCardTools(server: McpServer) {
     { card_id: z.string().uuid() },
     async ({ card_id }) => {
       try {
-        const [card] = await db.select().from(cards).where(eq(cards.id, card_id));
-        if (!card) {
+        // Verify card belongs to user through topic
+        const ownerCheck = await db.execute<{ id: string }>(sql`
+          SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id
+          WHERE c.id = ${card_id} AND t.user_id = ${userId}
+        `);
+        if (ownerCheck.rows.length === 0) {
           return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };
         }
 
+        const [card] = await db.select().from(cards).where(eq(cards.id, card_id));
         const [bloom] = await db.select().from(bloomState).where(eq(bloomState.cardId, card_id));
         const [fsrs] = await db.select().from(fsrsState).where(eq(fsrsState.cardId, card_id));
         const cardReviews = await db.select().from(reviews).where(eq(reviews.cardId, card_id));
@@ -98,6 +110,24 @@ export function registerCardTools(server: McpServer) {
     },
     async ({ card_id, concept, front_html, back_html, tags, topic_id }) => {
       try {
+        // Verify card belongs to user through topic
+        const ownerCheck = await db.execute<{ id: string }>(sql`
+          SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id
+          WHERE c.id = ${card_id} AND t.user_id = ${userId}
+        `);
+        if (ownerCheck.rows.length === 0) {
+          return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };
+        }
+
+        // If moving to a new topic, verify it also belongs to user
+        if (topic_id !== undefined) {
+          const [newTopic] = await db.select({ id: topics.id }).from(topics)
+            .where(sql`${topics.id} = ${topic_id} AND ${topics.userId} = ${userId}`);
+          if (!newTopic) {
+            return { content: [{ type: "text" as const, text: "Error: Target topic not found" }], isError: true };
+          }
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle .set() partial update
         const updates: Record<string, any> = {};
         if (concept !== undefined) updates.concept = concept;
@@ -130,6 +160,15 @@ export function registerCardTools(server: McpServer) {
     { card_id: z.string().uuid() },
     async ({ card_id }) => {
       try {
+        // Verify card belongs to user through topic
+        const ownerCheck = await db.execute<{ id: string }>(sql`
+          SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id
+          WHERE c.id = ${card_id} AND t.user_id = ${userId}
+        `);
+        if (ownerCheck.rows.length === 0) {
+          return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };
+        }
+
         const [deleted] = await db.delete(cards).where(eq(cards.id, card_id)).returning();
         if (!deleted) {
           return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };

@@ -1,13 +1,16 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { topics, cards } from "../db/schema/index.js";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function topicRoutes(app: FastifyInstance) {
 
   // GET /topics — root topics with child count + card stats (including descendants)
-  app.get("/topics", async () => {
+  app.get("/topics", async (req) => {
+    const userId = getUserId(req);
+
     const result = await db.execute<{
       id: string; name: string; description: string | null; parent_id: string | null; created_at: string;
       child_count: number; card_count: number; new_count: number; learning_count: number; due_count: number;
@@ -27,7 +30,7 @@ export default async function topicRoutes(app: FastifyInstance) {
           WITH RECURSIVE tree AS (SELECT t.id UNION ALL SELECT ch.id FROM topics ch JOIN tree tr ON ch.parent_id = tr.id) SELECT id FROM tree
         ) AND fs.due <= NOW() AND fs.state > 0) as due_count
       FROM topics t
-      WHERE t.parent_id IS NULL
+      WHERE t.parent_id IS NULL AND t.user_id = ${userId}
     `);
     return result.rows.map(r => ({
       id: r.id, name: r.name, description: r.description, parentId: r.parent_id, createdAt: r.created_at,
@@ -38,6 +41,7 @@ export default async function topicRoutes(app: FastifyInstance) {
   // GET /topics/:id — single topic with children + card count
   app.get<{ Params: { id: string } }>("/topics/:id", async (req) => {
     const { id } = req.params;
+    const userId = getUserId(req);
 
     const topicResult = await db.execute<{
       id: string; name: string; description: string | null; parent_id: string | null; created_at: string;
@@ -57,7 +61,7 @@ export default async function topicRoutes(app: FastifyInstance) {
           WITH RECURSIVE tree AS (SELECT t.id UNION ALL SELECT ch.id FROM topics ch JOIN tree tr ON ch.parent_id = tr.id) SELECT id FROM tree
         ) AND fs.due <= NOW() AND fs.state > 0) as due_count
       FROM topics t
-      WHERE t.id = ${id}
+      WHERE t.id = ${id} AND t.user_id = ${userId}
     `);
 
     if (topicResult.rows.length === 0) throw new NotFoundError("Topic not found");
@@ -99,6 +103,7 @@ export default async function topicRoutes(app: FastifyInstance) {
   // GET /topics/:id/tree — recursive CTE for full subtree
   app.get<{ Params: { id: string } }>("/topics/:id/tree", async (req) => {
     const { id } = req.params;
+    const userId = getUserId(req);
 
     const rows = await db.execute<{
       id: string;
@@ -108,7 +113,7 @@ export default async function topicRoutes(app: FastifyInstance) {
       card_count: number;
     }>(sql`
       WITH RECURSIVE topic_tree AS (
-        SELECT id, name, description, parent_id FROM topics WHERE id = ${id}
+        SELECT id, name, description, parent_id FROM topics WHERE id = ${id} AND user_id = ${userId}
         UNION ALL
         SELECT t.id, t.name, t.description, t.parent_id
         FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
@@ -139,10 +144,11 @@ export default async function topicRoutes(app: FastifyInstance) {
   // GET /topics/:id/breadcrumb — ancestor chain from root to this topic
   app.get<{ Params: { id: string } }>("/topics/:id/breadcrumb", async (req) => {
     const { id } = req.params;
+    const userId = getUserId(req);
 
     const result = await db.execute<{ id: string; name: string }>(sql`
       WITH RECURSIVE ancestors AS (
-        SELECT id, name, parent_id FROM topics WHERE id = ${id}
+        SELECT id, name, parent_id FROM topics WHERE id = ${id} AND user_id = ${userId}
         UNION ALL
         SELECT t.id, t.name, t.parent_id
         FROM topics t JOIN ancestors a ON t.id = a.parent_id
@@ -159,10 +165,11 @@ export default async function topicRoutes(app: FastifyInstance) {
   // POST /topics
   app.post<{ Body: { name: string; description?: string; parentId?: string } }>("/topics", async (req, reply) => {
     const { name, description, parentId } = req.body;
+    const userId = getUserId(req);
     if (!name) throw new ValidationError("name is required");
 
     if (parentId) {
-      const [parent] = await db.select({ id: topics.id }).from(topics).where(eq(topics.id, parentId));
+      const [parent] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, parentId), eq(topics.userId, userId)));
       if (!parent) throw new NotFoundError("Parent topic not found");
     }
 
@@ -170,6 +177,7 @@ export default async function topicRoutes(app: FastifyInstance) {
       name,
       description: description ?? null,
       parentId: parentId ?? null,
+      userId,
     }).returning();
 
     reply.status(201);
@@ -180,6 +188,7 @@ export default async function topicRoutes(app: FastifyInstance) {
   app.put<{ Params: { id: string }; Body: { name?: string; description?: string; parentId?: string } }>("/topics/:id", async (req) => {
     const { id } = req.params;
     const { name, description, parentId } = req.body;
+    const userId = getUserId(req);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle .set() partial update
     const updates: Record<string, any> = {};
@@ -188,6 +197,10 @@ export default async function topicRoutes(app: FastifyInstance) {
     if (parentId !== undefined) {
       if (parentId === id) throw new ValidationError("A topic cannot be its own parent");
       if (parentId !== null) {
+        // Verify parent belongs to user
+        const [parent] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, parentId), eq(topics.userId, userId)));
+        if (!parent) throw new NotFoundError("Parent topic not found");
+
         const cycleCheck = await db.execute<{ would_cycle: boolean }>(sql`
           WITH RECURSIVE ancestors AS (
             SELECT id, parent_id, 0 as depth FROM topics WHERE id = ${parentId}
@@ -205,7 +218,7 @@ export default async function topicRoutes(app: FastifyInstance) {
       updates.parentId = parentId;
     }
 
-    const [updated] = await db.update(topics).set(updates).where(eq(topics.id, id)).returning();
+    const [updated] = await db.update(topics).set(updates).where(and(eq(topics.id, id), eq(topics.userId, userId))).returning();
     if (!updated) throw new NotFoundError("Topic not found");
     return updated;
   });
@@ -213,6 +226,11 @@ export default async function topicRoutes(app: FastifyInstance) {
   // DELETE /topics/:id — only allowed when topic has no cards
   app.delete<{ Params: { id: string } }>("/topics/:id", async (req, reply) => {
     const { id } = req.params;
+    const userId = getUserId(req);
+
+    // Verify topic belongs to user
+    const [topic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, id), eq(topics.userId, userId)));
+    if (!topic) throw new NotFoundError("Topic not found");
 
     // Guard: block deletion if topic still has cards
     const [{ count }] = await db
@@ -228,7 +246,7 @@ export default async function topicRoutes(app: FastifyInstance) {
     await db.update(topics).set({ parentId: null }).where(eq(topics.parentId, id));
 
     // Delete the topic (cards cascade via FK)
-    const [deleted] = await db.delete(topics).where(eq(topics.id, id)).returning();
+    const [deleted] = await db.delete(topics).where(and(eq(topics.id, id), eq(topics.userId, userId))).returning();
     if (!deleted) throw new NotFoundError("Topic not found");
 
     reply.status(204);

@@ -6,11 +6,12 @@ import { mkdir, unlink, stat } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { createWriteStream } from "node:fs";
 import path from "node:path";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { images } from "../db/schema/index.js";
 import { config } from "../config.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { getUserId } from "../lib/auth-helpers.js";
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/png",
@@ -51,6 +52,8 @@ export default async function imageRoutes(app: FastifyInstance) {
       );
     }
 
+    const userId = getUserId(request);
+
     // Extract optional card_id from fields (accept both snake_case and camelCase)
     const cardIdField = data.fields["card_id"] ?? data.fields["cardId"];
     let cardId: string | null = null;
@@ -85,6 +88,7 @@ export default async function imageRoutes(app: FastifyInstance) {
       .values({
         id: fileId,
         cardId,
+        userId,
         filename: data.filename,
         mimeType: data.mimetype,
       })
@@ -103,11 +107,12 @@ export default async function imageRoutes(app: FastifyInstance) {
   // GET /images/:id  —  stream the image file
   app.get<{ Params: { id: string } }>("/images/:id", async (request, reply) => {
     const { id } = request.params;
+    const userId = getUserId(request);
 
     const [row] = await db
       .select()
       .from(images)
-      .where(eq(images.id, id))
+      .where(and(eq(images.id, id), eq(images.userId, userId)))
       .limit(1);
 
     if (!row) {
@@ -137,11 +142,12 @@ export default async function imageRoutes(app: FastifyInstance) {
   // DELETE /images/:id  —  remove image from DB and disk
   app.delete<{ Params: { id: string } }>("/images/:id", async (request, reply) => {
     const { id } = request.params;
+    const userId = getUserId(request);
 
     const [row] = await db
       .select()
       .from(images)
-      .where(eq(images.id, id))
+      .where(and(eq(images.id, id), eq(images.userId, userId)))
       .limit(1);
 
     if (!row) {
@@ -149,7 +155,7 @@ export default async function imageRoutes(app: FastifyInstance) {
     }
 
     // Delete DB record first
-    await db.delete(images).where(eq(images.id, id));
+    await db.delete(images).where(and(eq(images.id, id), eq(images.userId, userId)));
 
     // Then remove file from disk (best-effort)
     const filePath = path.join(config.imagePath, `${row.id}${extFromMime(row.mimeType)}`);

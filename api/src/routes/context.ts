@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { sql } from "drizzle-orm";
 import { NotFoundError } from "../lib/errors.js";
+import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function contextRoutes(app: FastifyInstance) {
 
@@ -9,10 +10,11 @@ export default async function contextRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string }; Querystring: { depth?: string } }>("/context/topic/:id", async (req) => {
     const { id } = req.params;
     const depth = req.query.depth ? parseInt(req.query.depth, 10) : 100;
+    const userId = getUserId(req);
 
     const result = await db.execute(sql`
       WITH RECURSIVE topic_tree AS (
-        SELECT id, 0 as depth FROM topics WHERE id = ${id}
+        SELECT id, 0 as depth FROM topics WHERE id = ${id} AND user_id = ${userId}
         UNION ALL
         SELECT t.id, tt.depth + 1 FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
         WHERE tt.depth < ${depth}
@@ -26,6 +28,7 @@ export default async function contextRoutes(app: FastifyInstance) {
           'rating', r.rating,
           'questionText', r.question_text,
           'answerExpected', r.answer_expected,
+          'userAnswer', r.user_answer,
           'reviewedAt', r.reviewed_at
         ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
       FROM cards c
@@ -58,10 +61,13 @@ export default async function contextRoutes(app: FastifyInstance) {
   app.get<{ Params: { card_id: string }; Querystring: { limit?: string } }>("/context/similar/:card_id", async (req) => {
     const { card_id } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : 15;
+    const userId = getUserId(req);
 
-    // Check if the source card exists
+    // Check if the source card exists and belongs to user
     const sourceCheck = await db.execute(sql`
-      SELECT id FROM cards WHERE id = ${card_id}
+      SELECT c.id FROM cards c
+      JOIN topics t ON c.topic_id = t.id
+      WHERE c.id = ${card_id} AND t.user_id = ${userId}
     `);
     if (sourceCheck.rows.length === 0) {
       throw new NotFoundError("Card not found");
@@ -76,13 +82,15 @@ export default async function contextRoutes(app: FastifyInstance) {
           'rating', r.rating,
           'questionText', r.question_text,
           'answerExpected', r.answer_expected,
+          'userAnswer', r.user_answer,
           'reviewedAt', r.reviewed_at
         ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
       FROM cards c,
         (SELECT embedding FROM cards WHERE id = ${card_id}) target
+      JOIN topics t ON c.topic_id = t.id
       LEFT JOIN bloom_state bs ON bs.card_id = c.id
       LEFT JOIN reviews r ON r.card_id = c.id
-      WHERE c.id != ${card_id} AND c.embedding IS NOT NULL
+      WHERE c.id != ${card_id} AND c.embedding IS NOT NULL AND t.user_id = ${userId}
       GROUP BY c.id, c.concept, c.tags, c.topic_id, bs.current_level, bs.highest_reached, target.embedding, c.embedding
       ORDER BY c.embedding <=> target.embedding
       LIMIT ${limit}

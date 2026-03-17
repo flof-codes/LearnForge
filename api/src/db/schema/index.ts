@@ -1,3 +1,4 @@
+export { users } from "./users.js";
 export { topics, topicsRelations } from "./topics.js";
 export { cards, cardsRelations } from "./cards.js";
 export { bloomState, bloomStateRelations } from "./bloomState.js";

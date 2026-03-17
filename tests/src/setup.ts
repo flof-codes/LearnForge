@@ -71,7 +71,7 @@ async function authenticate(): Promise<string> {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: "test-password" }),
+    body: JSON.stringify({ email: "test@learnforge.dev", password: "test-password" }),
   });
 
   if (!res.ok) {
@@ -180,7 +180,7 @@ export async function setup(): Promise<void> {
   process.env.TEST_API_URL = API_URL;
   process.env.TEST_MCP_URL = MCP_URL;
   process.env.TEST_JWT_TOKEN = token;
-  process.env.TEST_MCP_API_KEY = "test-mcp-key";
+  process.env.TEST_MCP_API_KEY = "test-mcp-api-key-0099";
 
   console.log("\n=== Setup Complete ===\n");
 }

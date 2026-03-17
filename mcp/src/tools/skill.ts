@@ -46,6 +46,7 @@ When the user wants to study ("quiz me", "let's learn", etc.):
    f. **Immediately** evaluate the response, assign rating 1-4, and call \`submit_review\` with:
       - \`question_text\`: the **exact, complete question** as shown to the user — including all MCQ options with letters (e.g. "Which of the following... A) option1 B) option2 C) option3 (Select all that apply)")
       - \`answer_expected\`: the correct/ideal answer (e.g. "A, C" for MCQ, or a full text answer for open response)
+      - \`user_answer\`: the user's actual answer (e.g. "B, D" for MCQ, or the text they provided for open response)
       Do NOT batch reviews — submit after EACH card, not at the end of the session.
    g. Give feedback right away (2-4 sentences): what was right, what's missing, hint for next time.
    h. Report Bloom level changes and next due date before moving to the next card.

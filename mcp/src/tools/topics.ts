@@ -4,7 +4,7 @@ import { db } from "../db/connection.js";
 import { topics, cards } from "../db/schema/index.js";
 import { eq, sql } from "drizzle-orm";
 
-export function registerTopicTools(server: McpServer) {
+export function registerTopicTools(server: McpServer, userId: string) {
   // ── list_topics ──────────────────────────────────────────────────────
   server.tool(
     "list_topics",
@@ -22,7 +22,7 @@ export function registerTopicTools(server: McpServer) {
               WITH RECURSIVE tree AS (SELECT t.id UNION ALL SELECT ch.id FROM topics ch JOIN tree tr ON ch.parent_id = tr.id) SELECT id FROM tree
             )) as card_count
           FROM topics t
-          WHERE t.parent_id IS NULL
+          WHERE t.parent_id IS NULL AND t.user_id = ${userId}
         `);
         const rows = result.rows.map(r => ({
           id: r.id, name: r.name, description: r.description, parentId: r.parent_id, createdAt: r.created_at,
@@ -52,7 +52,7 @@ export function registerTopicTools(server: McpServer) {
           card_count: number;
         }>(sql`
           WITH RECURSIVE topic_tree AS (
-            SELECT id, name, description, parent_id FROM topics WHERE id = ${topic_id}
+            SELECT id, name, description, parent_id FROM topics WHERE id = ${topic_id} AND user_id = ${userId}
             UNION ALL
             SELECT t.id, t.name, t.description, t.parent_id
             FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
@@ -110,6 +110,7 @@ export function registerTopicTools(server: McpServer) {
           name,
           description: description ?? null,
           parentId: parent_id ?? null,
+          userId,
         }).returning();
 
         return { content: [{ type: "text" as const, text: JSON.stringify(created, null, 2) }] };
@@ -158,7 +159,9 @@ export function registerTopicTools(server: McpServer) {
           updates.parentId = parent_id;
         }
 
-        const [updated] = await db.update(topics).set(updates).where(eq(topics.id, topic_id)).returning();
+        const [updated] = await db.update(topics).set(updates)
+          .where(sql`${topics.id} = ${topic_id} AND ${topics.userId} = ${userId}`)
+          .returning();
         if (!updated) {
           return { content: [{ type: "text" as const, text: "Error: Topic not found" }], isError: true };
         }
@@ -195,7 +198,9 @@ export function registerTopicTools(server: McpServer) {
         await db.update(topics).set({ parentId: null }).where(eq(topics.parentId, topic_id));
 
         // Delete the topic (cards cascade via FK)
-        const [deleted] = await db.delete(topics).where(eq(topics.id, topic_id)).returning();
+        const [deleted] = await db.delete(topics)
+          .where(sql`${topics.id} = ${topic_id} AND ${topics.userId} = ${userId}`)
+          .returning();
         if (!deleted) {
           return { content: [{ type: "text" as const, text: "Error: Topic not found" }], isError: true };
         }

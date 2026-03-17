@@ -1,18 +1,20 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { reviews, fsrsState, bloomState } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { processReview, applyModalityMultiplier, isValidModality, type FsrsDbState, type StudyModality } from "../services/fsrs.js";
 import { computeBloomTransition } from "../services/bloom.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function reviewRoutes(app: FastifyInstance) {
 
   // POST /reviews — submit a review
   app.post<{
-    Body: { card_id: string; bloom_level: number; rating: number; question_text: string; skip_bloom?: boolean; modality?: string; answer_expected?: string };
+    Body: { card_id: string; bloom_level: number; rating: number; question_text: string; skip_bloom?: boolean; modality?: string; answer_expected?: string; user_answer?: string };
   }>("/reviews", async (req, reply) => {
-    const { card_id, bloom_level, rating, question_text, skip_bloom, modality: rawModality, answer_expected } = req.body;
+    const { card_id, bloom_level, rating, question_text, skip_bloom, modality: rawModality, answer_expected, user_answer } = req.body;
+    const userId = getUserId(req);
 
     if (!card_id) throw new ValidationError("card_id is required");
     if (bloom_level === undefined || bloom_level < 0 || bloom_level > 5) {
@@ -22,6 +24,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
       throw new ValidationError("rating must be between 1 and 4");
     }
     if (!question_text) throw new ValidationError("question_text is required");
+
+    // Verify card belongs to user
+    const ownershipCheck = await db.execute<{ id: string }>(sql`
+      SELECT c.id FROM cards c
+      JOIN topics t ON c.topic_id = t.id
+      WHERE c.id = ${card_id} AND t.user_id = ${userId}
+    `);
+    if (ownershipCheck.rows.length === 0) throw new NotFoundError("Card not found");
 
     const modality: StudyModality = (rawModality && isValidModality(rawModality))
       ? rawModality
@@ -36,6 +46,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
         questionText: question_text,
         modality,
         answerExpected: answer_expected,
+        userAnswer: user_answer,
       }).returning();
 
       // 2. Read current fsrs_state → process → update

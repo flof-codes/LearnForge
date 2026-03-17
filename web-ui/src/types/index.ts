@@ -113,6 +113,7 @@ export interface Review {
   rating: number;
   questionText: string;
   answerExpected: string | null;
+  userAnswer: string | null;
   modality: "chat" | "web" | "mcq";
   reviewedAt: string;
 }
@@ -123,6 +124,7 @@ export interface SubmitReviewInput {
   rating: number;
   question_text: string;
   answer_expected?: string;
+  user_answer?: string;
   skip_bloom?: boolean;
   modality?: "chat" | "web" | "mcq";
 }
@@ -183,7 +185,7 @@ export interface DueCard {
   tags: string[];
   bloomState: { currentLevel: number; highestReached: number };
   fsrsState: { due: string; stability: number; difficulty: number; reps: number; lapses: number; state: number };
-  reviews: { bloomLevel: number; rating: number; questionText: string; answerExpected: string | null; reviewedAt: string }[];
+  reviews: { bloomLevel: number; rating: number; questionText: string; answerExpected: string | null; userAnswer: string | null; reviewedAt: string }[];
 }
 
 // --- Images ---
@@ -194,4 +196,18 @@ export interface ImageRecord {
   filename: string;
   mimeType: string;
   createdAt: string;
+}
+
+// --- User ---
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+// --- MCP Key ---
+export interface McpKeyStatus {
+  hasKey: boolean;
+  createdAt: string | null;
 }

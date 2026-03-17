@@ -23,14 +23,14 @@ erDiagram
     }
 
     bloom_state {
-        uuid card_id PK_FK "CASCADE"
+        uuid card_id PK,FK "CASCADE"
         smallint current_level "NOT NULL, default 0 (0-5)"
         smallint highest_reached "NOT NULL, default 0 (0-5)"
         timestamptz updated_at "NOT NULL, auto-update"
     }
 
     fsrs_state {
-        uuid card_id PK_FK "CASCADE"
+        uuid card_id PK,FK "CASCADE"
         double stability "NOT NULL, default 0"
         double difficulty "NOT NULL, default 0"
         timestamptz due "NOT NULL, default NOW()"
@@ -48,6 +48,7 @@ erDiagram
         text question_text "NOT NULL"
         text modality "NOT NULL, default 'web'"
         text answer_expected "nullable"
+        text user_answer "nullable"
         timestamptz reviewed_at "NOT NULL, default NOW()"
     }
 
@@ -91,7 +92,7 @@ Flashcards belonging to a topic. Each card has HTML for front (question) and bac
 - Card maturity classification: Young (state=2, stability < 21d), Mature (state=2, stability >= 21d)
 
 ### reviews
-Review log. Many reviews per card. Records the Bloom level at review time, the FSRS rating (1=Again, 2=Hard, 3=Good, 4=Easy), the question text used, the study modality (chat/web/mcq), and optionally the expected correct answer (`answer_expected`). The `question_text` contains the full question including MCQ options; `answer_expected` stores the ideal answer for history tracking.
+Review log. Many reviews per card. Records the Bloom level at review time, the FSRS rating (1=Again, 2=Hard, 3=Good, 4=Easy), the question text used, the study modality (chat/web/mcq), the expected correct answer (`answer_expected`), and the user's actual response (`user_answer`). The `question_text` contains the full question including MCQ options; `answer_expected` stores the ideal answer and `user_answer` stores what the user responded, enabling review of past mistakes.
 
 ### images
 File-based image storage. Optionally linked to a card (`SET NULL` on card delete so orphan images can be cleaned up separately). Physical files stored at `IMAGE_PATH`.

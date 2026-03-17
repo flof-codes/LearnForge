@@ -24,6 +24,7 @@ export default function CardDetailPage() {
   const resetCard = useResetCard();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const cardIds = state.cardIds ?? [];
   const currentIdx = cardIds.indexOf(id!);
@@ -161,24 +162,37 @@ export default function CardDetailPage() {
                   <th className="text-left py-2 pr-4">Date</th>
                   <th className="text-left py-2 pr-4">Bloom Level</th>
                   <th className="text-left py-2 pr-4">Rating</th>
-                  <th className="text-left py-2">Question</th>
+                  <th className="text-left py-2 pr-4">Question</th>
+                  <th className="text-left py-2">Answer</th>
                 </tr>
               </thead>
               <tbody>
-                {card.reviews.map((review, i) => (
-                  <tr key={review.id ?? i} className="border-b border-border/50">
-                    <td className="py-2 pr-4">{new Date(review.reviewedAt).toLocaleString()}</td>
-                    <td className="py-2 pr-4"><BloomBadge level={review.bloomLevel} /></td>
-                    <td className="py-2 pr-4">
-                      <span className={`font-medium ${
-                        review.rating >= 3 ? 'text-accent-green' : review.rating === 2 ? 'text-warning' : 'text-danger'
-                      }`}>
-                        {['', 'Again', 'Hard', 'Good', 'Easy'][review.rating]}
-                      </span>
-                    </td>
-                    <td className="py-2 text-text-muted truncate max-w-[200px]">{review.questionText}</td>
-                  </tr>
-                ))}
+                {card.reviews.map((review, i) => {
+                  const isExpanded = expandedRow === i;
+                  return (
+                    <tr
+                      key={review.id ?? i}
+                      className="border-b border-border/50 cursor-pointer hover:bg-bg-surface/50 transition-colors"
+                      onClick={() => setExpandedRow(isExpanded ? null : i)}
+                    >
+                      <td className="py-2 pr-4 align-top">{new Date(review.reviewedAt).toLocaleString()}</td>
+                      <td className="py-2 pr-4 align-top"><BloomBadge level={review.bloomLevel} /></td>
+                      <td className="py-2 pr-4 align-top">
+                        <span className={`font-medium ${
+                          review.rating >= 3 ? 'text-accent-green' : review.rating === 2 ? 'text-warning' : 'text-danger'
+                        }`}>
+                          {['', 'Again', 'Hard', 'Good', 'Easy'][review.rating]}
+                        </span>
+                      </td>
+                      <td className={`py-2 pr-4 text-text-muted ${isExpanded ? 'whitespace-pre-wrap break-words' : 'truncate max-w-[200px]'}`}>
+                        {review.questionText}
+                      </td>
+                      <td className={`py-2 text-text-muted ${isExpanded ? 'whitespace-pre-wrap break-words' : 'truncate max-w-[200px]'}`}>
+                        {review.userAnswer ?? '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -2,11 +2,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { db } from "../db/connection.js";
 import { reviews, fsrsState, bloomState } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { processReview, applyModalityMultiplier, type FsrsDbState, type StudyModality } from "../services/fsrs.js";
 import { computeBloomTransition } from "../services/bloom.js";
 
-export function registerReviewTools(server: McpServer) {
+export function registerReviewTools(server: McpServer, userId: string) {
   server.tool(
     "submit_review",
     "Submit a review for a card, updating FSRS scheduling and Bloom's taxonomy state. The modality parameter affects interval scheduling: 'chat' (AI conversation, 1.25x interval), 'web' (self-rating, 1.0x), 'mcq' (multiple choice, 0.75x).",
@@ -17,9 +17,19 @@ export function registerReviewTools(server: McpServer) {
       question_text: z.string().min(1).describe("The exact, complete question as shown to the user — including all MCQ options with letters"),
       modality: z.enum(["chat", "web", "mcq"]).default("chat").optional(),
       answer_expected: z.string().optional().describe("The correct/ideal answer (e.g. 'A, C' for MCQ or full text for open response)"),
+      user_answer: z.string().optional().describe("The user's actual answer (e.g. 'B, D' for MCQ or the text they provided)"),
     },
-    async ({ card_id, bloom_level, rating, question_text, modality: rawModality, answer_expected }) => {
+    async ({ card_id, bloom_level, rating, question_text, modality: rawModality, answer_expected, user_answer }) => {
       try {
+        // Verify card belongs to user through topic
+        const ownerCheck = await db.execute<{ id: string }>(sql`
+          SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id
+          WHERE c.id = ${card_id} AND t.user_id = ${userId}
+        `);
+        if (ownerCheck.rows.length === 0) {
+          return { content: [{ type: "text" as const, text: "Error: Card not found" }], isError: true };
+        }
+
         const modality: StudyModality = rawModality ?? "chat";
 
         const result = await db.transaction(async (tx) => {
@@ -31,6 +41,7 @@ export function registerReviewTools(server: McpServer) {
             questionText: question_text,
             modality,
             answerExpected: answer_expected,
+            userAnswer: user_answer,
           }).returning();
 
           // 2. Read current fsrs_state -> process -> update

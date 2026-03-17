@@ -24,7 +24,6 @@ services:
       PORT: "3000"
       IMAGE_PATH: /data/images
       JWT_SECRET: test-jwt-secret
-      AUTH_PASSWORD: test-password
       JWT_EXPIRES_IN: "1h"
     volumes:
       - test-images:/data/images
@@ -45,7 +44,6 @@ services:
     environment:
       DATABASE_URL: postgresql://learnforge_test:learnforge_test@test-db:5432/learnforge_test
       PORT: "3001"
-      MCP_API_KEY: test-mcp-key
       IMAGE_PATH: /data/images
     volumes:
       - test-images:/data/images

@@ -1,21 +1,36 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { cards, bloomState, fsrsState, reviews } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
+import { cards, bloomState, fsrsState, reviews, topics } from "../db/schema/index.js";
+import { eq, and, sql } from "drizzle-orm";
 import { computeEmbedding } from "../services/embeddings.js";
 import { createInitialFsrsState } from "../services/fsrs.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { getUserId } from "../lib/auth-helpers.js";
+
+async function verifyCardOwnership(cardId: string, userId: string): Promise<void> {
+  const result = await db.execute<{ id: string }>(sql`
+    SELECT c.id FROM cards c
+    JOIN topics t ON c.topic_id = t.id
+    WHERE c.id = ${cardId} AND t.user_id = ${userId}
+  `);
+  if (result.rows.length === 0) throw new NotFoundError("Card not found");
+}
 
 export default async function cardRoutes(app: FastifyInstance) {
 
   // POST /cards — create a new card with bloom + fsrs state
   app.post<{ Body: { topic_id: string; concept: string; front_html: string; back_html: string; tags?: string[] } }>("/cards", async (req, reply) => {
     const { topic_id, concept, front_html, back_html, tags } = req.body;
+    const userId = getUserId(req);
 
     if (!topic_id) throw new ValidationError("topic_id is required");
     if (!concept) throw new ValidationError("concept is required");
     if (!front_html) throw new ValidationError("front_html is required");
     if (!back_html) throw new ValidationError("back_html is required");
+
+    // Verify topic belongs to user
+    const [topic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topic_id), eq(topics.userId, userId)));
+    if (!topic) throw new NotFoundError("Topic not found");
 
     const embedding = await computeEmbedding(concept);
     const initialFsrs = createInitialFsrsState();
@@ -55,6 +70,9 @@ export default async function cardRoutes(app: FastifyInstance) {
   // GET /cards/:id — single card with bloom_state, fsrs_state, and reviews
   app.get<{ Params: { id: string } }>("/cards/:id", async (req) => {
     const { id } = req.params;
+    const userId = getUserId(req);
+
+    await verifyCardOwnership(id, userId);
 
     const [card] = await db.select().from(cards).where(eq(cards.id, id));
     if (!card) throw new NotFoundError("Card not found");
@@ -70,6 +88,15 @@ export default async function cardRoutes(app: FastifyInstance) {
   app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string } }>("/cards/:id", async (req) => {
     const { id } = req.params;
     const { concept, front_html, back_html, tags, topic_id } = req.body;
+    const userId = getUserId(req);
+
+    await verifyCardOwnership(id, userId);
+
+    // If topic_id is being changed, verify new topic belongs to user
+    if (topic_id !== undefined) {
+      const [newTopic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topic_id), eq(topics.userId, userId)));
+      if (!newTopic) throw new NotFoundError("Topic not found");
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle .set() partial update
     const updates: Record<string, any> = {};
@@ -92,6 +119,9 @@ export default async function cardRoutes(app: FastifyInstance) {
   // POST /cards/:id/reset — reset bloom + fsrs state and delete review history
   app.post<{ Params: { id: string } }>("/cards/:id/reset", async (req) => {
     const { id } = req.params;
+    const userId = getUserId(req);
+
+    await verifyCardOwnership(id, userId);
 
     const [card] = await db.select().from(cards).where(eq(cards.id, id));
     if (!card) throw new NotFoundError("Card not found");
@@ -130,6 +160,9 @@ export default async function cardRoutes(app: FastifyInstance) {
   // DELETE /cards/:id — hard delete (cascades to bloom_state, fsrs_state, reviews)
   app.delete<{ Params: { id: string } }>("/cards/:id", async (req, reply) => {
     const { id } = req.params;
+    const userId = getUserId(req);
+
+    await verifyCardOwnership(id, userId);
 
     const [deleted] = await db.delete(cards).where(eq(cards.id, id)).returning();
     if (!deleted) throw new NotFoundError("Card not found");

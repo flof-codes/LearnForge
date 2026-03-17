@@ -1,6 +1,8 @@
 # Stage 1: Build
 FROM node:20-slim AS build
 WORKDIR /app
+ARG VITE_API_URL=http://localhost:3333
+ENV VITE_API_URL=${VITE_API_URL}
 COPY package*.json ./
 RUN npm ci
 COPY . .

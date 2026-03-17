@@ -50,6 +50,14 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
               {dueCount}
             </span>
           )}
+          {topic.cardCount > 0 && (
+            <span
+              className="text-[11px] tabular-nums text-text-muted"
+              title={`${topic.cardCount} card${topic.cardCount !== 1 ? 's' : ''} total`}
+            >
+              {topic.cardCount}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -1,0 +1,63 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ── API type check ──
+      - name: Install API dependencies
+        run: npm ci
+        working-directory: api
+
+      - name: TypeScript check (API)
+        run: npx tsc --noEmit
+        working-directory: api
+
+      # ── MCP type check ──
+      - name: Install MCP dependencies
+        run: npm ci
+        working-directory: mcp
+
+      - name: TypeScript check (MCP)
+        run: npx tsc --noEmit
+        working-directory: mcp
+
+      # ── Web UI build check ──
+      - name: Install Web UI dependencies
+        run: npm ci
+        working-directory: web-ui
+
+      - name: TypeScript & build check (Web UI)
+        run: npm run build
+        working-directory: web-ui
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
+            cd /opt/learnforge &&
+            GIT_SSH_COMMAND="ssh -i /home/github_deploy/.ssh/github_learnforge_access -o StrictHostKeyChecking=no" git pull origin main &&
+            sudo docker compose -f docker-compose.prod.yml down &&
+            sudo docker compose -f docker-compose.prod.yml up --build -d
+          '

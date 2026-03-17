@@ -13,6 +13,7 @@ import CardDetailPage from './pages/cards/CardDetailPage';
 import CardEditorPage from './pages/cards/CardEditorPage';
 import StudyStartPage from './pages/study/StudyStartPage';
 import StudySessionPage from './pages/study/StudySessionPage';
+import McpSettingsPage from './pages/settings/McpSettingsPage';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="cards/:id/edit" element={<CardEditorPage />} />
               <Route path="study" element={<StudyStartPage />} />
               <Route path="study/session" element={<StudySessionPage />} />
+              <Route path="settings/mcp" element={<McpSettingsPage />} />
             </Route>
           </Routes>
         </ErrorBoundary>

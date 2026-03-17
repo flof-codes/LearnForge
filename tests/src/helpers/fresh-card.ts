@@ -50,13 +50,15 @@ export async function submitReview(
   cardId: string,
   bloomLevel: number,
   rating: number,
-  opts: { modality?: string; skipBloom?: boolean; questionText?: string } = {},
+  opts: { modality?: string; skipBloom?: boolean; questionText?: string; answerExpected?: string; userAnswer?: string } = {},
 ): Promise<Record<string, any>> {
   const res = await api.post("/reviews", {
     card_id: cardId,
     bloom_level: bloomLevel,
     rating,
     question_text: opts.questionText ?? "Test question",
+    answer_expected: opts.answerExpected,
+    user_answer: opts.userAnswer,
     modality: opts.modality,
     skip_bloom: opts.skipBloom,
   });

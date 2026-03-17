@@ -22,6 +22,20 @@
       "when": 1771970084946,
       "tag": "0002_thankful_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773613593566,
+      "tag": "0003_unique_lucky_pierre",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774051200000,
+      "tag": "0004_multi_user_auth",
+      "breakpoints": true
     }
   ]
 }

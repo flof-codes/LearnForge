@@ -10,6 +10,7 @@ export const reviews = pgTable("reviews", {
   questionText: text("question_text").notNull(),
   modality: text("modality").default("web").notNull(),
   answerExpected: text("answer_expected"),
+  userAnswer: text("user_answer"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
