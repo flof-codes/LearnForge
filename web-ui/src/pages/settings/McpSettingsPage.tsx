@@ -150,9 +150,12 @@ export default function McpSettingsPage() {
         </ol>
         <pre className="bg-bg-primary rounded-lg p-4 text-sm text-text-primary overflow-x-auto border border-border">{mcpUrl}</pre>
         <ol start={6} className="text-text-muted text-sm space-y-2 list-decimal list-inside">
-          <li>Add your API key as the authentication token</li>
-          <li>Save — LearnForge tools will appear in your conversations</li>
+          <li>Claude.ai will redirect you to sign in with your LearnForge credentials</li>
+          <li>After signing in, LearnForge tools will appear in your conversations</li>
         </ol>
+        <p className="text-text-muted text-xs">
+          Authentication uses OAuth 2.0 — no API key needed for Claude Web.
+        </p>
       </section>
 
       {/* Other AI Assistants */}

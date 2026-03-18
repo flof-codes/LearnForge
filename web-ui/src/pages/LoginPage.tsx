@@ -19,7 +19,7 @@ export default function LoginPage() {
     try {
       const { data } = await authService.login(email, password);
       login(data.token);
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'Login failed');

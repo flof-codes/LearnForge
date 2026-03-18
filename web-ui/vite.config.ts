@@ -9,7 +9,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           codemirror: ['codemirror', '@codemirror/lang-html', '@codemirror/theme-one-dark', '@codemirror/state', '@codemirror/view'],
-          vendor: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', 'axios'],
+          vendor: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', 'axios', 'i18next', 'react-i18next'],
         },
       },
     },

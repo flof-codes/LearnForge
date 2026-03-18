@@ -15,7 +15,7 @@ export default function StudyStartPage() {
   const handleStart = () => {
     const params = new URLSearchParams();
     if (topicId) params.set('topicId', topicId);
-    navigate(`/study/session?${params.toString()}`);
+    navigate(`/dashboard/study/session?${params.toString()}`);
   };
 
   if (isLoading) return <LoadingSpinner />;

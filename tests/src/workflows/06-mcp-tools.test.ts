@@ -396,7 +396,7 @@ describe("MCP Tools", () => {
         capabilities: {},
         clientInfo: { name: "test", version: "1.0.0" },
       });
-      expect(status).toBe(403);
+      expect(status).toBe(401);
     });
   });
 });

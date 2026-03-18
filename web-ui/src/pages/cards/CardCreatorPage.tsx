@@ -12,7 +12,7 @@ export default function CardCreatorPage() {
 
   const handleSubmit = (data: CreateCardInput) => {
     createCard.mutate(data, {
-      onSuccess: (card) => navigate(`/cards/${card.id}`),
+      onSuccess: (card) => navigate(`/dashboard/cards/${card.id}`),
     });
   };
 

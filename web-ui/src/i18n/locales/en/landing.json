@@ -1,0 +1,81 @@
+{
+  "hero": {
+    "title": "Learn smarter, not harder",
+    "subtitle": "AI-powered flashcards with scientifically optimized spaced repetition, Bloom's Taxonomy tracking, and a conversational AI tutor.",
+    "cta": "Request Early Access",
+    "github": "View on GitHub"
+  },
+  "features": {
+    "sectionTitle": "Built for deep learning",
+    "sectionSubtitle": "LearnForge combines proven learning science with modern AI to help you truly understand — not just memorize.",
+    "fsrs": {
+      "title": "FSRS Algorithm",
+      "description": "Free Spaced Repetition Scheduler optimizes your review intervals based on your actual performance. Each card is scheduled individually — you review exactly when you need to."
+    },
+    "bloom": {
+      "title": "Bloom's Taxonomy",
+      "description": "Track your cognitive depth from Remember to Create. Cards progress through six levels as your understanding deepens, ensuring you don't just memorize but truly master concepts."
+    },
+    "ai": {
+      "title": "AI Tutor",
+      "description": "Create rich, interactive flashcards through conversation with Claude. The AI tutor generates cards with formulas, diagrams, and multiple-choice questions — tailored to your learning goals."
+    }
+  },
+  "screenshots": {
+    "sectionTitle": "See it in action",
+    "dashboard": "Dashboard",
+    "dashboardDesc": "Track your progress with streaks, accuracy, and card state overview.",
+    "study": "Study Session",
+    "studyDesc": "Interactive cards with KaTeX formulas, MCQ, and spaced repetition ratings.",
+    "cards": "Card Browser",
+    "cardsDesc": "Browse, filter, and search your entire card collection by topic and Bloom level."
+  },
+  "howItWorks": {
+    "sectionTitle": "How it works",
+    "step1": {
+      "title": "Create",
+      "description": "Tell the AI tutor what you want to learn. It creates rich, interactive flashcards with formulas, diagrams, and quizzes."
+    },
+    "step2": {
+      "title": "Study",
+      "description": "FSRS schedules your reviews at scientifically optimal intervals. You study what you need, when you need it."
+    },
+    "step3": {
+      "title": "Master",
+      "description": "Bloom's Taxonomy tracks your understanding depth. Progress from basic recall to creative application."
+    }
+  },
+  "techFeatures": {
+    "sectionTitle": "Built for serious learners",
+    "katex": {
+      "title": "KaTeX Formulas",
+      "description": "Beautiful math rendering for STEM subjects"
+    },
+    "mcq": {
+      "title": "Interactive MCQ",
+      "description": "Multiple-choice questions with instant feedback"
+    },
+    "svg": {
+      "title": "SVG Diagrams",
+      "description": "Visual learning with custom diagrams and charts"
+    },
+    "search": {
+      "title": "Semantic Search",
+      "description": "Find related cards by meaning, not just keywords"
+    },
+    "darkTheme": {
+      "title": "Dark Theme",
+      "description": "Easy on the eyes for late-night study sessions"
+    },
+    "openSource": {
+      "title": "Open Source",
+      "description": "AGPL-3.0 licensed — inspect, modify, self-host"
+    }
+  },
+  "earlyAccess": {
+    "title": "Want to try LearnForge?",
+    "description": "LearnForge is in early development. If you're interested in trying it out, send me an email and I'll set up a testing account for you.",
+    "cta": "Request an Account",
+    "note": "Free during early access. No credit card required."
+  }
+}

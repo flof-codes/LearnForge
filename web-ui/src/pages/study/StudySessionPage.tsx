@@ -83,7 +83,7 @@ export default function StudySessionPage() {
       <div className="max-w-md mx-auto text-center py-12">
         <p className="text-lg text-danger mb-2">Failed to load cards</p>
         <p className="text-sm text-text-muted mb-4">{(error as Error).message}</p>
-        <button onClick={() => navigate('/study')} className="px-4 py-2 rounded-lg bg-accent-blue text-white text-sm">
+        <button onClick={() => navigate('/dashboard/study')} className="px-4 py-2 rounded-lg bg-accent-blue text-white text-sm">
           Back to Study
         </button>
       </div>
@@ -94,7 +94,7 @@ export default function StudySessionPage() {
     return (
       <div className="max-w-md mx-auto text-center py-12">
         <p className="text-lg text-text-muted mb-4">No cards are due right now.</p>
-        <button onClick={() => navigate('/study')} className="px-4 py-2 rounded-lg bg-accent-blue text-white text-sm">
+        <button onClick={() => navigate('/dashboard/study')} className="px-4 py-2 rounded-lg bg-accent-blue text-white text-sm">
           Back to Study
         </button>
       </div>
@@ -136,8 +136,8 @@ export default function StudySessionPage() {
         onViewDetail={() => {
           const params = new URLSearchParams();
           if (topicId) params.set('topicId', topicId);
-          navigate(`/cards/${currentCard.id}`, {
-            state: { returnTo: `/study/session?${params.toString()}` },
+          navigate(`/dashboard/cards/${currentCard.id}`, {
+            state: { returnTo: `/dashboard/study/session?${params.toString()}` },
           });
         }}
         disabled={submitReview.isPending || !!feedback}

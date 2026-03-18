@@ -63,6 +63,7 @@ services:
       DATABASE_URL: postgresql://learnforge:learnforge@db:5432/learnforge
       PORT: "3001"
       IMAGE_PATH: /data/images
+      MCP_PUBLIC_URL: "http://localhost:3001"
     volumes:
       - ./data/images:/data/images
     depends_on:

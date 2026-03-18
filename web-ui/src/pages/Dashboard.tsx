@@ -152,21 +152,21 @@ export default function Dashboard() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <Link
-          to="/study"
+          to="/dashboard/study"
           className="flex items-center gap-3 bg-bg-secondary rounded-xl border border-border p-6 hover:bg-bg-surface transition-colors"
         >
           <GraduationCap size={22} className="text-accent-green" />
           <span className="font-medium">Start Study</span>
         </Link>
         <Link
-          to="/cards/new"
+          to="/dashboard/cards/new"
           className="flex items-center gap-3 bg-bg-secondary rounded-xl border border-border p-6 hover:bg-bg-surface transition-colors"
         >
           <Plus size={22} className="text-accent-blue" />
           <span className="font-medium">Create Card</span>
         </Link>
         <Link
-          to="/topics"
+          to="/dashboard/topics"
           className="flex items-center gap-3 bg-bg-secondary rounded-xl border border-border p-6 hover:bg-bg-surface transition-colors"
         >
           <Layers size={22} className="text-accent-purple" />

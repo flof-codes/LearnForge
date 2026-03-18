@@ -50,3 +50,21 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-bg-hover);
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+.lf-hero-gradient {
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-primary) 0%,
+    #0d1117 40%,
+    #111827 70%,
+    var(--color-bg-primary) 100%
+  );
+}
+
+.lf-glow {
+  box-shadow: 0 0 80px -20px rgba(88, 166, 255, 0.12);
+}

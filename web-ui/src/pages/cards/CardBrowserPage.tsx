@@ -77,7 +77,7 @@ export default function CardBrowserPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-medium">Cards</h1>
         <Link
-          to="/cards/new"
+          to="/dashboard/cards/new"
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
         >
           <Plus size={16} /> New Card

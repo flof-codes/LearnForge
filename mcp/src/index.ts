@@ -4,6 +4,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { authorizationHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/authorize.js";
+import { tokenHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/token.js";
+import { clientRegistrationHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/register.js";
+import { revocationHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/revoke.js";
+import { metadataHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/metadata.js";
+import type { OAuthMetadata, OAuthProtectedResourceMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { eq } from "drizzle-orm";
 import { runMigrations } from "./db/migrate.js";
 import { db } from "./db/connection.js";
@@ -16,6 +22,7 @@ import { registerContextTools } from "./tools/context.js";
 import { registerImageTools } from "./tools/images.js";
 import { registerSkillTools } from "./tools/skill.js";
 import { config } from "./config.js";
+import { LearnForgeOAuthProvider, handleLogin, cleanupExpiredOAuth } from "./auth/oauth-provider.js";
 
 await runMigrations();
 
@@ -55,31 +62,103 @@ if (isStdio) {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 } else {
-  // --- StreamableHTTP transport ---
+  // --- StreamableHTTP transport with OAuth + API key auth ---
 
-  async function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
-    if (req.path === "/health") return next();
+  const provider = new LearnForgeOAuthProvider();
+  const mcpPublicUrl = config.mcpPublicUrl;
+
+  // OAuth Authorization Server metadata
+  const issuerUrl = new URL(mcpPublicUrl);
+  // Strip path for issuer (must be origin only or origin+path without trailing slash)
+  const issuer = `${issuerUrl.protocol}//${issuerUrl.host}`;
+
+  const oauthMetadata: OAuthMetadata = {
+    issuer,
+    authorization_endpoint: `${mcpPublicUrl}/authorize`,
+    token_endpoint: `${mcpPublicUrl}/token`,
+    registration_endpoint: `${mcpPublicUrl}/register`,
+    revocation_endpoint: `${mcpPublicUrl}/revoke`,
+    response_types_supported: ["code"],
+    code_challenge_methods_supported: ["S256"],
+    token_endpoint_auth_methods_supported: ["client_secret_post", "none"],
+    grant_types_supported: ["authorization_code", "refresh_token"],
+  };
+
+  const protectedResourceMetadata: OAuthProtectedResourceMetadata = {
+    resource: mcpPublicUrl,
+    authorization_servers: [issuer],
+    bearer_methods_supported: ["header"],
+  };
+
+  // --- Dual auth middleware: OAuth token first, then API key fallback ---
+  async function dualAuth(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ error: "Missing API key" });
+      res.status(401).json({ error: "Missing authentication" });
       return;
     }
+
+    const rawToken = authHeader.slice(7);
+
+    // Try OAuth token first
     try {
-      const userId = await resolveApiKey(authHeader.slice(7));
+      const authInfo = await provider.verifyAccessToken(rawToken);
+      const userId = authInfo.extra?.userId as string | undefined;
+      if (userId) {
+        (req as unknown as Record<string, unknown>).userId = userId;
+        return next();
+      }
+    } catch {
+      // Not a valid OAuth token, try API key
+    }
+
+    // Fallback: API key
+    try {
+      const userId = await resolveApiKey(rawToken);
       (req as unknown as Record<string, unknown>).userId = userId;
       next();
     } catch {
-      res.status(403).json({ error: "Invalid API key" });
+      res.status(401).json({ error: "Invalid authentication" });
     }
   }
 
   const transports: Record<string, StreamableHTTPServerTransport> = {};
 
   const app = express();
-  app.use(express.json());
-  app.use(apiKeyAuth);
 
-  app.post("/mcp", async (req: Request, res: Response) => {
+  // --- OAuth discovery endpoints (no auth) ---
+  app.use("/.well-known/oauth-authorization-server", metadataHandler(oauthMetadata));
+  app.use("/.well-known/oauth-protected-resource", metadataHandler(protectedResourceMetadata));
+
+  // --- OAuth flow endpoints (no auth) ---
+  app.use("/mcp/authorize", authorizationHandler({ provider }));
+  app.use("/mcp/token", tokenHandler({ provider }));
+  app.use("/mcp/register", clientRegistrationHandler({ clientsStore: provider.clientsStore }));
+  app.use("/mcp/revoke", revocationHandler({ provider }));
+
+  // --- Login handler (processes OAuth login form) ---
+  app.post("/mcp/login", express.urlencoded({ extended: false }), async (req: Request, res: Response) => {
+    try {
+      const result = await handleLogin(req.body as Record<string, string>);
+      if ("redirect" in result) {
+        res.redirect(result.redirect);
+      } else {
+        res.setHeader("Content-Type", "text/html");
+        res.send(result.html);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      if (!res.headersSent) {
+        res.status(500).send("Internal server error");
+      }
+    }
+  });
+
+  // --- Health check (no auth) ---
+  app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+  // --- MCP protocol endpoints (dual auth) ---
+  app.post("/mcp", express.json(), dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     const userId = (req as unknown as Record<string, unknown>).userId as string;
     try {
@@ -110,7 +189,7 @@ if (isStdio) {
     }
   });
 
-  app.get("/mcp", async (req: Request, res: Response) => {
+  app.get("/mcp", dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
       res.status(400).json({ error: "Invalid or missing session ID" });
@@ -119,7 +198,7 @@ if (isStdio) {
     await transports[sessionId].handleRequest(req, res);
   });
 
-  app.delete("/mcp", async (req: Request, res: Response) => {
+  app.delete("/mcp", express.json(), dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
       res.status(400).json({ error: "Invalid or missing session ID" });
@@ -128,13 +207,18 @@ if (isStdio) {
     await transports[sessionId].handleRequest(req, res);
   });
 
-  app.get("/health", (_req, res) => res.json({ status: "ok" }));
+  // --- Cleanup interval ---
+  const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+  const cleanupTimer = setInterval(() => {
+    cleanupExpiredOAuth().catch((err) => console.error("OAuth cleanup error:", err));
+  }, CLEANUP_INTERVAL_MS);
 
   app.listen(config.port, "0.0.0.0", () => {
     console.log(`MCP StreamableHTTP server listening on port ${config.port}`);
   });
 
   process.on("SIGINT", async () => {
+    clearInterval(cleanupTimer);
     for (const sid of Object.keys(transports)) {
       await transports[sid].close().catch(() => {});
       delete transports[sid];

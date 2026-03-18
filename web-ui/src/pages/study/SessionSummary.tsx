@@ -35,13 +35,13 @@ export default function SessionSummary({ cardsReviewed, ratings, bloomChanges }:
 
       <div className="flex gap-3">
         <Link
-          to="/"
+          to="/dashboard"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-bg-surface border border-border text-sm hover:bg-bg-hover transition-colors"
         >
           <ArrowLeft size={16} /> Dashboard
         </Link>
         <Link
-          to="/study"
+          to="/dashboard/study"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-accent-blue text-white text-sm hover:opacity-90 transition-opacity"
         >
           <RotateCcw size={16} /> Study More

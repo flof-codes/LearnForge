@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import PublicLayout from './components/PublicLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
@@ -14,6 +15,10 @@ import CardEditorPage from './pages/cards/CardEditorPage';
 import StudyStartPage from './pages/study/StudyStartPage';
 import StudySessionPage from './pages/study/StudySessionPage';
 import McpSettingsPage from './pages/settings/McpSettingsPage';
+import LandingPage from './pages/public/LandingPage';
+import ImpressumPage from './pages/public/ImpressumPage';
+import DatenschutzPage from './pages/public/DatenschutzPage';
+import AGBPage from './pages/public/AGBPage';
 
 export default function App() {
   return (
@@ -21,8 +26,19 @@ export default function App() {
       <AuthProvider>
         <ErrorBoundary>
           <Routes>
+            {/* Public marketing pages */}
+            <Route element={<PublicLayout />}>
+              <Route index element={<LandingPage />} />
+              <Route path="impressum" element={<ImpressumPage />} />
+              <Route path="datenschutz" element={<DatenschutzPage />} />
+              <Route path="agb" element={<AGBPage />} />
+            </Route>
+
+            {/* Auth */}
             <Route path="/login" element={<LoginPage />} />
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+
+            {/* Authenticated app */}
+            <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="topics" element={<TopicsPage />} />
               <Route path="topics/:id" element={<TopicDetailPage />} />
@@ -34,6 +50,12 @@ export default function App() {
               <Route path="study/session" element={<StudySessionPage />} />
               <Route path="settings/mcp" element={<McpSettingsPage />} />
             </Route>
+
+            {/* Legacy redirects for bookmarked URLs */}
+            <Route path="/topics/*" element={<Navigate to="/dashboard/topics" replace />} />
+            <Route path="/cards/*" element={<Navigate to="/dashboard/cards/browse" replace />} />
+            <Route path="/study/*" element={<Navigate to="/dashboard/study" replace />} />
+            <Route path="/settings/*" element={<Navigate to="/dashboard/settings/mcp" replace />} />
           </Routes>
         </ErrorBoundary>
       </AuthProvider>

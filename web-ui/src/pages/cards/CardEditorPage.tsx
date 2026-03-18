@@ -16,7 +16,7 @@ export default function CardEditorPage() {
 
   const handleSubmit = (data: UpdateCardInput) => {
     updateCard.mutate({ id: id!, data }, {
-      onSuccess: () => navigate(`/cards/${id}`),
+      onSuccess: () => navigate(`/dashboard/cards/${id}`),
     });
   };
 

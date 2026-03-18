@@ -4,11 +4,11 @@ import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } 
 import { useAuth } from '../contexts/AuthContext';
 
 const links = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/topics', icon: FolderTree, label: 'Topics' },
-  { to: '/cards/browse', icon: Layers, label: 'Cards' },
-  { to: '/study', icon: GraduationCap, label: 'Study' },
-  { to: '/settings/mcp', icon: Settings, label: 'Settings' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard/topics', icon: FolderTree, label: 'Topics' },
+  { to: '/dashboard/cards/browse', icon: Layers, label: 'Cards' },
+  { to: '/dashboard/study', icon: GraduationCap, label: 'Study' },
+  { to: '/dashboard/settings/mcp', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {
@@ -38,7 +38,7 @@ export default function Sidebar() {
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={to === '/dashboard'}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors justify-center lg:justify-start ${
                   isActive

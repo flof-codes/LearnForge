@@ -79,7 +79,7 @@ export default function TopicDetailPage() {
   if (!topic) return <p className="text-text-muted">Topic not found.</p>;
 
   const handleDelete = () => {
-    deleteTopic.mutate(id!, { onSuccess: () => navigate('/topics') });
+    deleteTopic.mutate(id!, { onSuccess: () => navigate('/dashboard/topics') });
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,7 +134,7 @@ export default function TopicDetailPage() {
             {topic.children.map(child => (
               <Link
                 key={child.id}
-                to={`/topics/${child.id}`}
+                to={`/dashboard/topics/${child.id}`}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-bg-surface transition-colors"
               >
                 <FolderTree size={14} className="text-text-muted" />
@@ -160,7 +160,7 @@ export default function TopicDetailPage() {
             Cards {filter !== 'all' ? `(${filteredCards.length} of ${allCards.length})` : `(${allCards.length})`}
           </h2>
           <Link
-            to={`/cards/new?topicId=${id}`}
+            to={`/dashboard/cards/new?topicId=${id}`}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-accent-blue text-white hover:opacity-90 transition-opacity"
           >
             <Plus size={14} /> Add Card
@@ -206,7 +206,7 @@ export default function TopicDetailPage() {
             {filteredCards.map(card => (
               <Link
                 key={card.id}
-                to={`/cards/${card.id}`}
+                to={`/dashboard/cards/${card.id}`}
                 className="bg-bg-secondary rounded-xl border border-border p-4 hover:bg-bg-surface transition-colors"
               >
                 <p className="text-sm line-clamp-2 mb-2">{card.concept}</p>

@@ -35,7 +35,7 @@ export default function CardDetailPage() {
   if (!card) return <p className="text-text-muted">Card not found.</p>;
 
   const handleDelete = () => {
-    deleteCard.mutate(id!, { onSuccess: () => navigate('/cards/browse') });
+    deleteCard.mutate(id!, { onSuccess: () => navigate('/dashboard/cards/browse') });
   };
 
   const handleReset = () => {
@@ -43,7 +43,7 @@ export default function CardDetailPage() {
   };
 
   const goToCard = (targetId: string) => {
-    navigate(`/cards/${targetId}`, { state, replace: true });
+    navigate(`/dashboard/cards/${targetId}`, { state, replace: true });
   };
 
   const fsrs = card.fsrsState;
@@ -83,7 +83,7 @@ export default function CardDetailPage() {
               </button>
             </>
           )}
-          <Link to={`/cards/${id}/edit`} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors" title="Edit card">
+          <Link to={`/dashboard/cards/${id}/edit`} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors" title="Edit card">
             <Pencil size={16} />
           </Link>
           <button onClick={() => setResetOpen(true)} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-warning transition-colors" title="Reset progress">

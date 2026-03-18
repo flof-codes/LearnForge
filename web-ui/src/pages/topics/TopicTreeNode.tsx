@@ -34,7 +34,7 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </button>
 
-        <div className="flex-1 flex items-center gap-2 min-w-0" onClick={() => navigate(`/topics/${topic.id}`)}>
+        <div className="flex-1 flex items-center gap-2 min-w-0" onClick={() => navigate(`/dashboard/topics/${topic.id}`)}>
           <Layers size={14} className="text-text-muted shrink-0" />
           <span className="text-sm truncate">{topic.name}</span>
         </div>

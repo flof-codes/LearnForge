@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "features": "Features",
+    "github": "GitHub",
+    "login": "Login",
+    "dashboard": "Dashboard"
+  },
+  "footer": {
+    "tagline": "AI-powered spaced repetition",
+    "product": "Product",
+    "features": "Features",
+    "github": "GitHub",
+    "openSource": "Open Source",
+    "legal": "Legal",
+    "impressum": "Impressum",
+    "datenschutz": "Privacy Policy",
+    "agb": "Terms of Service",
+    "contact": "Contact",
+    "license": "Licensed under AGPL-3.0",
+    "sourceCode": "Source Code"
+  },
+  "language": {
+    "en": "EN",
+    "de": "DE"
+  }
+}

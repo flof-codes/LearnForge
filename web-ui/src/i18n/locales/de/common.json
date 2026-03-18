@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "features": "Features",
+    "github": "GitHub",
+    "login": "Anmelden",
+    "dashboard": "Dashboard"
+  },
+  "footer": {
+    "tagline": "KI-gesteuerte Wiederholung",
+    "product": "Produkt",
+    "features": "Features",
+    "github": "GitHub",
+    "openSource": "Open Source",
+    "legal": "Rechtliches",
+    "impressum": "Impressum",
+    "datenschutz": "Datenschutz",
+    "agb": "AGB",
+    "contact": "Kontakt",
+    "license": "Lizenziert unter AGPL-3.0",
+    "sourceCode": "Quellcode"
+  },
+  "language": {
+    "en": "EN",
+    "de": "DE"
+  }
+}

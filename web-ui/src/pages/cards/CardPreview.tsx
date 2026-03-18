@@ -15,7 +15,7 @@ interface Props {
 export default function CardPreview({ id, frontHtml, bloomLevel, tags, isDue, topicPath, cardIds }: Props) {
   return (
     <Link
-      to={`/cards/${id}`}
+      to={`/dashboard/cards/${id}`}
       state={cardIds ? { cardIds } : undefined}
       className="bg-bg-secondary rounded-xl border border-border hover:bg-bg-surface transition-colors block overflow-hidden"
     >

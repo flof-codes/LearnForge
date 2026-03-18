@@ -1,0 +1,81 @@
+{
+  "hero": {
+    "title": "Lerne effizienter, nicht mehr",
+    "subtitle": "KI-gesteuerte Lernkarten mit wissenschaftlich optimierter Wiederholung, Bloom-Taxonomie-Tracking und einem KI-Tutor.",
+    "cta": "Zugang anfragen",
+    "github": "Auf GitHub ansehen"
+  },
+  "features": {
+    "sectionTitle": "Entwickelt für tiefes Lernen",
+    "sectionSubtitle": "LearnForge kombiniert bewährte Lernwissenschaft mit moderner KI, damit du wirklich verstehst — nicht nur auswendig lernst.",
+    "fsrs": {
+      "title": "FSRS-Algorithmus",
+      "description": "Der Free Spaced Repetition Scheduler optimiert deine Wiederholungsintervalle basierend auf deiner tatsächlichen Leistung. Jede Karte wird individuell geplant — du wiederholst genau dann, wenn du es brauchst."
+    },
+    "bloom": {
+      "title": "Bloom-Taxonomie",
+      "description": "Verfolge deine kognitive Tiefe von Erinnern bis Erschaffen. Karten durchlaufen sechs Stufen, während dein Verständnis wächst — so stellst du sicher, dass du Konzepte wirklich beherrschst."
+    },
+    "ai": {
+      "title": "KI-Tutor",
+      "description": "Erstelle interaktive Lernkarten im Gespräch mit Claude. Der KI-Tutor generiert Karten mit Formeln, Diagrammen und Multiple-Choice-Fragen — angepasst an deine Lernziele."
+    }
+  },
+  "screenshots": {
+    "sectionTitle": "In Aktion sehen",
+    "dashboard": "Dashboard",
+    "dashboardDesc": "Verfolge deinen Fortschritt mit Streaks, Genauigkeit und Kartenübersicht.",
+    "study": "Lernsitzung",
+    "studyDesc": "Interaktive Karten mit KaTeX-Formeln, MCQ und Wiederholungsbewertungen.",
+    "cards": "Kartenbrowser",
+    "cardsDesc": "Durchsuche und filtere deine gesamte Kartensammlung nach Thema und Bloom-Stufe."
+  },
+  "howItWorks": {
+    "sectionTitle": "So funktioniert's",
+    "step1": {
+      "title": "Erstellen",
+      "description": "Sag dem KI-Tutor, was du lernen möchtest. Er erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizfragen."
+    },
+    "step2": {
+      "title": "Lernen",
+      "description": "FSRS plant deine Wiederholungen zu wissenschaftlich optimalen Zeitpunkten. Du lernst, was du brauchst, wann du es brauchst."
+    },
+    "step3": {
+      "title": "Meistern",
+      "description": "Die Bloom-Taxonomie verfolgt deine Verständnistiefe. Fortschritt von einfachem Erinnern bis zur kreativen Anwendung."
+    }
+  },
+  "techFeatures": {
+    "sectionTitle": "Für ernsthaftes Lernen gebaut",
+    "katex": {
+      "title": "KaTeX-Formeln",
+      "description": "Schöne Darstellung mathematischer Formeln für MINT-Fächer"
+    },
+    "mcq": {
+      "title": "Interaktive MCQ",
+      "description": "Multiple-Choice-Fragen mit sofortigem Feedback"
+    },
+    "svg": {
+      "title": "SVG-Diagramme",
+      "description": "Visuelles Lernen mit eigenen Diagrammen und Charts"
+    },
+    "search": {
+      "title": "Semantische Suche",
+      "description": "Finde verwandte Karten nach Bedeutung, nicht nur Stichwörtern"
+    },
+    "darkTheme": {
+      "title": "Dark Theme",
+      "description": "Augenschonend für nächtliche Lernsitzungen"
+    },
+    "openSource": {
+      "title": "Open Source",
+      "description": "AGPL-3.0 lizenziert — einsehen, anpassen, selbst hosten"
+    }
+  },
+  "earlyAccess": {
+    "title": "Willst du LearnForge ausprobieren?",
+    "description": "LearnForge befindet sich in aktiver Entwicklung. Wenn du es testen möchtest, schreib mir eine E-Mail und ich richte dir einen Testzugang ein.",
+    "cta": "Zugang anfragen",
+    "note": "Kostenlos während der Early-Access-Phase. Keine Kreditkarte nötig."
+  }
+}
