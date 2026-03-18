@@ -125,6 +125,7 @@ if (isStdio) {
   const transports: Record<string, StreamableHTTPServerTransport> = {};
 
   const app = express();
+  app.set("trust proxy", 1);
 
   // --- OAuth discovery endpoints (no auth) ---
   app.use("/.well-known/oauth-authorization-server", metadataHandler(oauthMetadata));
