@@ -43,6 +43,13 @@
       "when": 1773785609432,
       "tag": "0005_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774051200001,
+      "tag": "0006_stripe_billing",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,10 @@ services:
       IMAGE_PATH: /data/images
       JWT_SECRET: "${JWT_SECRET}"
       JWT_EXPIRES_IN: "7d"
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
+      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET:-}"
+      STRIPE_PRICE_ID: "${STRIPE_PRICE_ID:-}"
+      APP_URL: "${APP_URL:-http://localhost:5173}"
     volumes:
       - ./data/images:/data/images
     depends_on:

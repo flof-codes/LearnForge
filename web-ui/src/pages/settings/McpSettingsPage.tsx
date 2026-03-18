@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Monitor } from 'lucide-react';
+import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Monitor, Sun, Moon, MonitorSmartphone } from 'lucide-react';
 import { authService } from '../../api/auth';
+import { useTheme } from '../../contexts/ThemeContext';
+
+const themeOptions = [
+  { value: 'auto' as const, label: 'Auto', icon: MonitorSmartphone },
+  { value: 'light' as const, label: 'Light', icon: Sun },
+  { value: 'dark' as const, label: 'Dark', icon: Moon },
+];
 
 export default function McpSettingsPage() {
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const mcpUrl = `${window.location.origin}/mcp`;
@@ -45,9 +53,33 @@ export default function McpSettingsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">MCP Settings</h1>
-        <p className="text-text-muted mt-1">Manage your MCP API key for AI assistant integration</p>
+        <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
+        <p className="text-text-muted mt-1">Appearance and MCP integration</p>
       </div>
+
+      {/* Theme */}
+      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Sun size={20} className="text-accent-blue" />
+          <h2 className="text-lg font-medium text-text-primary">Theme</h2>
+        </div>
+        <div className="flex items-center rounded-lg border border-border overflow-hidden w-fit">
+          {themeOptions.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => setTheme(value)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                theme === value
+                  ? 'bg-accent-blue/15 text-accent-blue font-medium'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Key Status */}
       <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">

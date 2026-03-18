@@ -6,6 +6,7 @@ import { BLOOM_COLORS } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import DueForecastChart from '../components/DueForecastChart';
 import TopicPieChart from '../components/TopicPieChart';
+import SubscriptionBanner from '../components/SubscriptionBanner';
 
 const STATE_COLORS: Record<string, { bg: string; label: string }> = {
   new:         { bg: '#58a6ff', label: 'New' },
@@ -27,6 +28,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      <SubscriptionBanner />
       <h1 className="text-2xl font-medium">Dashboard</h1>
 
       {/* Stats row */}

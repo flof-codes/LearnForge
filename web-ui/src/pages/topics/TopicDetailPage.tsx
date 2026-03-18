@@ -10,6 +10,7 @@ import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import DueForecastChart from '../../components/DueForecastChart';
+import SubscriptionBanner from '../../components/SubscriptionBanner';
 
 type CardFilter = 'all' | 'new' | 'learning' | 'due';
 type CardSort = 'newest' | 'oldest' | 'updated' | 'studied';
@@ -89,6 +90,7 @@ export default function TopicDetailPage() {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
       <TopicBreadcrumb topicId={id} />
 
       <div className="flex items-start justify-between">

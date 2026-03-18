@@ -46,6 +46,25 @@ async function resolveApiKey(rawKey: string): Promise<string> {
   return user.id;
 }
 
+async function checkSubscription(userId: string): Promise<void> {
+  const [user] = await db.select({
+    trialEndsAt: users.trialEndsAt,
+    subscriptionStatus: users.subscriptionStatus,
+    subscriptionCurrentPeriodEnd: users.subscriptionCurrentPeriodEnd,
+  }).from(users).where(eq(users.id, userId));
+
+  if (!user) throw new Error("User not found");
+
+  const now = new Date();
+  const trialActive = user.trialEndsAt > now;
+  const subscriptionActive = user.subscriptionStatus === "active" &&
+    user.subscriptionCurrentPeriodEnd != null && user.subscriptionCurrentPeriodEnd > now;
+
+  if (!trialActive && !subscriptionActive) {
+    throw new Error("Subscription expired. Please subscribe at learnforge.eu to continue using MCP tools.");
+  }
+}
+
 const isStdio = process.argv.includes("--stdio");
 
 if (isStdio) {
@@ -57,6 +76,7 @@ if (isStdio) {
   }
   const rawKey = process.argv[keyIdx + 1];
   const userId = await resolveApiKey(rawKey);
+  await checkSubscription(userId);
 
   const server = createServer(userId);
   const transport = new StdioServerTransport();
@@ -105,6 +125,12 @@ if (isStdio) {
       const authInfo = await provider.verifyAccessToken(rawToken);
       const userId = authInfo.extra?.userId as string | undefined;
       if (userId) {
+        try {
+          await checkSubscription(userId);
+        } catch (err) {
+          res.status(403).json({ error: (err as Error).message });
+          return;
+        }
         (req as unknown as Record<string, unknown>).userId = userId;
         return next();
       }
@@ -115,6 +141,12 @@ if (isStdio) {
     // Fallback: API key
     try {
       const userId = await resolveApiKey(rawToken);
+      try {
+        await checkSubscription(userId);
+      } catch (err) {
+        res.status(403).json({ error: (err as Error).message });
+        return;
+      }
       (req as unknown as Record<string, unknown>).userId = userId;
       next();
     } catch {

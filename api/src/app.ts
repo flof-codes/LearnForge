@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
+import rawBody from "fastify-raw-body";
 import authPlugin from "./plugins/auth.js";
 import authRoutes from "./routes/auth.js";
 import topicRoutes from "./routes/topics.js";
@@ -10,7 +11,8 @@ import studyRoutes from "./routes/study.js";
 import contextRoutes from "./routes/context.js";
 import imageRoutes from "./routes/images.js";
 import mcpKeyRoutes from "./routes/mcp-keys.js";
-import { NotFoundError, ValidationError, UnauthorizedError } from "./lib/errors.js";
+import billingRoutes from "./routes/billing.js";
+import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -21,6 +23,7 @@ export function buildApp() {
     allowedHeaders: ["Content-Type", "Authorization"],
   });
   app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+  app.register(rawBody, { field: "rawBody", global: false, runFirst: true });
   app.register(authPlugin);
 
   app.setErrorHandler((error: Error & { validation?: unknown }, _request, reply) => {
@@ -29,6 +32,9 @@ export function buildApp() {
     }
     if (error instanceof NotFoundError) {
       return reply.status(404).send({ error: error.message });
+    }
+    if (error instanceof ForbiddenError) {
+      return reply.status(403).send({ error: error.message });
     }
     if (error instanceof ValidationError) {
       return reply.status(400).send({ error: error.message });
@@ -48,6 +54,7 @@ export function buildApp() {
   app.register(contextRoutes);
   app.register(imageRoutes);
   app.register(mcpKeyRoutes);
+  app.register(billingRoutes);
 
   app.get("/health", async () => ({ status: "ok" }));
 

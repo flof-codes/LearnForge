@@ -204,6 +204,12 @@ export interface User {
   email: string;
   name: string;
   createdAt: string;
+  trialEndsAt: string;
+  subscriptionStatus: string | null;
+  hasActiveSubscription: boolean;
+  hasActiveTrial: boolean;
+  isActive: boolean;
+  hasStripeCustomer: boolean;
 }
 
 // --- MCP Key ---

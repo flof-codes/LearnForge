@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, CreditCard, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LogoIcon from './public/LogoIcon';
 
@@ -10,6 +10,7 @@ const links = [
   { to: '/dashboard/cards/browse', icon: Layers, label: 'Cards' },
   { to: '/dashboard/study', icon: GraduationCap, label: 'Study' },
   { to: '/dashboard/settings/mcp', icon: Settings, label: 'Settings' },
+  { to: '/dashboard/settings/billing', icon: CreditCard, label: 'Billing' },
 ];
 
 export default function Sidebar() {

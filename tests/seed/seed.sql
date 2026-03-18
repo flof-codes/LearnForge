@@ -21,19 +21,21 @@ $$ LANGUAGE sql;
 -- argon2id hash of 'test-password':
 -- $argon2id$v=19$m=65536,t=3,p=4$HPGkNxgQCYEoCAQAW0ycNg$y6zGOdfZtsbRNPQApTmbFpfnzDwSJSCCPp2Uy3nArn8
 
-INSERT INTO users (id, email, password_hash, name, mcp_api_key_hash, mcp_api_key_created_at) VALUES
+INSERT INTO users (id, email, password_hash, name, mcp_api_key_hash, mcp_api_key_created_at, trial_ends_at) VALUES
   ('00000000-0000-0000-0000-000000000099',
    'test@learnforge.dev',
    '$argon2id$v=19$m=65536,t=3,p=4$HPGkNxgQCYEoCAQAW0ycNg$y6zGOdfZtsbRNPQApTmbFpfnzDwSJSCCPp2Uy3nArn8',
    'Test User',
    'b398cd4aff7b2b6fad9537e2bc8a690f43974ecf3bb4b8f1f79b044de7e42d00',
-   NOW()),
+   NOW(),
+   NOW() + INTERVAL '30 days'),
   ('00000000-0000-0000-0000-000000000098',
    'other@learnforge.dev',
    '$argon2id$v=19$m=65536,t=3,p=4$HPGkNxgQCYEoCAQAW0ycNg$y6zGOdfZtsbRNPQApTmbFpfnzDwSJSCCPp2Uy3nArn8',
    'Other User',
    NULL,
-   NULL);
+   NULL,
+   NOW() + INTERVAL '30 days');
 
 -- ── Topics (6 rows) ────────────────────────────────────────────────────────
 

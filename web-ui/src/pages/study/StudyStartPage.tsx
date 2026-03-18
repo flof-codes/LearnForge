@@ -5,6 +5,7 @@ import { useTopics } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
 import { BLOOM_COLORS } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import SubscriptionBanner from '../../components/SubscriptionBanner';
 
 export default function StudyStartPage() {
   const [topicId, setTopicId] = useState('');
@@ -24,6 +25,7 @@ export default function StudyStartPage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
+      <SubscriptionBanner />
       <h1 className="text-2xl font-medium">Study Session</h1>
 
       {/* Topic selector */}

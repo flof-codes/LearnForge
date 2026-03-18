@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import PublicLayout from './components/PublicLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import TopicsPage from './pages/topics/TopicsPage';
 import TopicDetailPage from './pages/topics/TopicDetailPage';
@@ -15,6 +17,7 @@ import CardEditorPage from './pages/cards/CardEditorPage';
 import StudyStartPage from './pages/study/StudyStartPage';
 import StudySessionPage from './pages/study/StudySessionPage';
 import McpSettingsPage from './pages/settings/McpSettingsPage';
+import BillingPage from './pages/settings/BillingPage';
 import LandingPage from './pages/public/LandingPage';
 import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
@@ -23,6 +26,7 @@ import AGBPage from './pages/public/AGBPage';
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <AuthProvider>
         <ErrorBoundary>
           <Routes>
@@ -36,6 +40,7 @@ export default function App() {
 
             {/* Auth */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
             {/* Authenticated app */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -49,6 +54,7 @@ export default function App() {
               <Route path="study" element={<StudyStartPage />} />
               <Route path="study/session" element={<StudySessionPage />} />
               <Route path="settings/mcp" element={<McpSettingsPage />} />
+              <Route path="settings/billing" element={<BillingPage />} />
             </Route>
 
             {/* Legacy redirects for bookmarked URLs */}
@@ -59,6 +65,7 @@ export default function App() {
           </Routes>
         </ErrorBoundary>
       </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

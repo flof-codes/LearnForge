@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useCard, useUpdateCard } from '../../hooks/useCards';
 import CardEditor from './CardEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import SubscriptionBanner from '../../components/SubscriptionBanner';
 import type { UpdateCardInput } from '../../types';
 
 export default function CardEditorPage() {
@@ -22,6 +23,7 @@ export default function CardEditorPage() {
 
   return (
     <div className="space-y-4">
+      <SubscriptionBanner />
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-text-muted hover:text-text-primary">
         <ArrowLeft size={16} /> Back
       </button>

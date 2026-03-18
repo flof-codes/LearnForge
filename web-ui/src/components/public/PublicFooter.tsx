@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LogoIcon from './LogoIcon';
+import ThemeSwitcher from './ThemeSwitcher';
 
 const GITHUB_URL = 'https://github.com/flof-codes/LearnForge';
 
@@ -58,14 +59,17 @@ export default function PublicFooter() {
         {/* Bottom bar */}
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">
           <p>{t('footer.license')}</p>
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            {t('footer.sourceCode')}
-          </a>
+          <div className="flex items-center gap-4">
+            <ThemeSwitcher />
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-text-primary transition-colors"
+            >
+              {t('footer.sourceCode')}
+            </a>
+          </div>
         </div>
       </div>
     </footer>

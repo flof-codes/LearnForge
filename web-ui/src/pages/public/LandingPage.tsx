@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
-  Brain, Layers, Sparkles, Mail, Github,
+  Brain, Layers, Sparkles, Github, Heart,
   FunctionSquare, ListChecks, BarChart3, Search, Moon, Code2,
 } from 'lucide-react';
 
@@ -43,12 +44,12 @@ export default function LandingPage() {
             {t('hero.subtitle')}
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="#early-access"
+            <Link
+              to="/register"
               className="px-8 py-3.5 rounded-xl bg-accent-blue text-white font-medium text-base hover:opacity-90 transition-opacity"
             >
               {t('hero.cta')}
-            </a>
+            </Link>
             <a
               href={GITHUB_URL}
               target="_blank"
@@ -178,8 +179,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Early Access CTA */}
-      <section id="early-access" className="py-20 sm:py-28">
+      {/* Pricing */}
+      <section id="pricing" className="py-20 sm:py-28">
+        <div className="max-w-2xl mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary mb-12">
+            Simple Pricing
+          </h2>
+          <div className="bg-bg-secondary rounded-xl border border-border p-8 max-w-sm mx-auto">
+            <p className="text-4xl font-semibold text-text-primary">EUR 2<span className="text-lg font-normal text-text-muted">/month</span></p>
+            <p className="text-text-muted text-sm mt-2">billed annually at EUR 24/year</p>
+            <div className="mt-6 mb-6">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-accent-blue/15 text-accent-blue">
+                30-day free trial
+              </span>
+            </div>
+            <Link
+              to="/register"
+              className="block w-full py-3 rounded-xl bg-accent-blue text-white font-medium text-base hover:opacity-90 transition-opacity"
+            >
+              Get Started
+            </Link>
+            <p className="text-text-muted text-xs mt-4">No credit card required to start</p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA + Donation */}
+      <section className="py-20 sm:py-28 bg-bg-secondary/50">
         <div className="max-w-2xl mx-auto px-6 text-center">
           <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary mb-4">
             {t('earlyAccess.title')}
@@ -187,15 +213,23 @@ export default function LandingPage() {
           <p className="text-text-muted mb-8 leading-relaxed">
             {t('earlyAccess.description')}
           </p>
-          <a
-            href="mailto:office@learnforge.eu?subject=LearnForge Early Access"
+          <Link
+            to="/register"
             className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-accent-blue text-white font-medium text-lg hover:opacity-90 transition-opacity"
           >
-            <Mail size={22} />
             {t('earlyAccess.cta')}
-          </a>
-          <p className="mt-4 text-sm text-text-muted">{t('earlyAccess.note')}</p>
-          <p className="mt-2 text-sm text-text-muted">{t('earlyAccess.prerequisite')}</p>
+          </Link>
+          <div className="mt-8 flex items-center justify-center gap-2 text-text-muted text-sm">
+            <Heart size={16} />
+            <a
+              href="https://donate.stripe.com/placeholder"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent-blue hover:underline"
+            >
+              Support the project with a donation
+            </a>
+          </div>
         </div>
       </section>
     </>

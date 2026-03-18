@@ -24,6 +24,7 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    // 403 is not force-redirected — components handle it via isActive flag
     return Promise.reject(error);
   },
 );
