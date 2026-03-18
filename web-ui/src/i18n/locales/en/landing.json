@@ -2,7 +2,7 @@
   "hero": {
     "title": "Learn smarter, not harder",
     "subtitle": "A Claude MCP server that turns AI conversations into scientifically optimized flashcards — with spaced repetition, Bloom's Taxonomy tracking, and interactive study sessions.",
-    "cta": "Request Early Access",
+    "cta": "Get Started Free",
     "github": "View on GitHub"
   },
   "features": {
@@ -72,11 +72,12 @@
       "description": "AGPL-3.0 licensed — inspect, modify, self-host"
     }
   },
-  "earlyAccess": {
-    "title": "Want to try LearnForge?",
-    "description": "LearnForge is in early development. If you're interested in trying it out, send me an email and I'll set up a testing account for you.",
-    "cta": "Request an Account",
-    "note": "Free during early access. No credit card required.",
+  "pricing": {
+    "title": "Free for 30 days",
+    "subtitle": "Try LearnForge with full access. No credit card required.",
+    "cta": "Get Started Free",
+    "note": "After your trial: EUR 2/month, billed annually at EUR 24/year.",
+    "donation": "Support the project with a donation",
     "prerequisite": "Requires a Claude Pro, Team, or Enterprise subscription for AI features."
   }
 }

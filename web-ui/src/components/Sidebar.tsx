@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LogoIcon from './public/LogoIcon';
 
@@ -9,8 +9,6 @@ const links = [
   { to: '/dashboard/topics', icon: FolderTree, label: 'Topics' },
   { to: '/dashboard/cards/browse', icon: Layers, label: 'Cards' },
   { to: '/dashboard/study', icon: GraduationCap, label: 'Study' },
-  { to: '/dashboard/settings/mcp', icon: Settings, label: 'Settings' },
-  { to: '/dashboard/settings/billing', icon: CreditCard, label: 'Billing' },
 ];
 
 export default function Sidebar() {
@@ -55,7 +53,21 @@ export default function Sidebar() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-2 lg:p-3">
+        <div className="p-2 lg:p-3 space-y-1">
+          <NavLink
+            to="/dashboard/settings"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors w-full justify-center lg:justify-start ${
+                isActive
+                  ? 'bg-subtle-active text-text-primary font-medium'
+                  : 'text-text-muted hover:bg-subtle-hover hover:text-text-primary'
+              }`
+            }
+            title="Settings"
+          >
+            <Settings size={18} />
+            <span className="hidden lg:inline">Settings</span>
+          </NavLink>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:bg-subtle-hover hover:text-text-primary transition-colors w-full justify-center lg:justify-start"
@@ -84,6 +96,17 @@ export default function Sidebar() {
             <span>{label}</span>
           </NavLink>
         ))}
+        <NavLink
+          to="/dashboard/settings"
+          className={({ isActive }) =>
+            `flex-1 flex flex-col items-center gap-1 py-2 text-xs transition-colors ${
+              isActive ? 'text-accent-blue' : 'text-text-muted'
+            }`
+          }
+        >
+          <Settings size={20} />
+          <span>Settings</span>
+        </NavLink>
         <button
           onClick={handleLogout}
           className="flex-1 flex flex-col items-center gap-1 py-2 text-xs text-text-muted transition-colors"

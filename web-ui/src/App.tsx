@@ -17,7 +17,6 @@ import CardEditorPage from './pages/cards/CardEditorPage';
 import StudyStartPage from './pages/study/StudyStartPage';
 import StudySessionPage from './pages/study/StudySessionPage';
 import McpSettingsPage from './pages/settings/McpSettingsPage';
-import BillingPage from './pages/settings/BillingPage';
 import LandingPage from './pages/public/LandingPage';
 import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
@@ -53,15 +52,16 @@ export default function App() {
               <Route path="cards/:id/edit" element={<CardEditorPage />} />
               <Route path="study" element={<StudyStartPage />} />
               <Route path="study/session" element={<StudySessionPage />} />
-              <Route path="settings/mcp" element={<McpSettingsPage />} />
-              <Route path="settings/billing" element={<BillingPage />} />
+              <Route path="settings" element={<McpSettingsPage />} />
+              <Route path="settings/mcp" element={<Navigate to="/dashboard/settings" replace />} />
+              <Route path="settings/billing" element={<Navigate to="/dashboard/settings" replace />} />
             </Route>
 
             {/* Legacy redirects for bookmarked URLs */}
             <Route path="/topics/*" element={<Navigate to="/dashboard/topics" replace />} />
             <Route path="/cards/*" element={<Navigate to="/dashboard/cards/browse" replace />} />
             <Route path="/study/*" element={<Navigate to="/dashboard/study" replace />} />
-            <Route path="/settings/*" element={<Navigate to="/dashboard/settings/mcp" replace />} />
+            <Route path="/settings/*" element={<Navigate to="/dashboard/settings" replace />} />
           </Routes>
         </ErrorBoundary>
       </AuthProvider>

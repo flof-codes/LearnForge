@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft } from 'lucide-react';
 import { authService } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -30,7 +30,12 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-bg-primary">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-bg-secondary rounded-xl border border-border p-8 space-y-6">
+      <div className="w-full max-w-sm">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-4">
+          <ArrowLeft size={16} />
+          Back to home
+        </Link>
+      <form onSubmit={handleSubmit} className="w-full bg-bg-secondary rounded-xl border border-border p-8 space-y-6">
         <div className="text-center">
           <Lock size={32} className="mx-auto text-accent-blue mb-3" />
           <h1 className="text-xl font-medium text-text-primary">LearnForge</h1>
@@ -75,6 +80,7 @@ export default function LoginPage() {
           <Link to="/register" className="text-accent-blue hover:underline">Sign up</Link>
         </p>
       </form>
+      </div>
     </div>
   );
 }

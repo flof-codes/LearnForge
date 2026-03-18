@@ -2,7 +2,7 @@
   "hero": {
     "title": "Lerne effizienter, nicht mehr",
     "subtitle": "Ein Claude-MCP-Server, der KI-Gespräche in wissenschaftlich optimierte Lernkarten verwandelt — mit Spaced Repetition, Bloom-Taxonomie-Tracking und interaktiven Lernsitzungen.",
-    "cta": "Zugang anfragen",
+    "cta": "Kostenlos starten",
     "github": "Auf GitHub ansehen"
   },
   "features": {
@@ -72,11 +72,12 @@
       "description": "AGPL-3.0 lizenziert — einsehen, anpassen, selbst hosten"
     }
   },
-  "earlyAccess": {
-    "title": "Willst du LearnForge ausprobieren?",
-    "description": "LearnForge befindet sich in aktiver Entwicklung. Wenn du es testen möchtest, schreib mir eine E-Mail und ich richte dir einen Testzugang ein.",
-    "cta": "Zugang anfragen",
-    "note": "Kostenlos während der Early-Access-Phase. Keine Kreditkarte nötig.",
+  "pricing": {
+    "title": "30 Tage kostenlos",
+    "subtitle": "Teste LearnForge mit vollem Zugang. Keine Kreditkarte nötig.",
+    "cta": "Kostenlos starten",
+    "note": "Nach der Testphase: EUR 2/Monat, jährlich abgerechnet zu EUR 24/Jahr.",
+    "donation": "Unterstütze das Projekt mit einer Spende",
     "prerequisite": "Erfordert ein Claude Pro-, Team- oder Enterprise-Abo für KI-Funktionen."
   }
 }
