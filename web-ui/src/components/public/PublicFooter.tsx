@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import LogoIcon from './LogoIcon';
 
 const GITHUB_URL = 'https://github.com/flof-codes/LearnForge';
 
@@ -13,7 +14,7 @@ export default function PublicFooter() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5 mb-3">
-              <img src="/logo.svg" alt="" width={20} height={20} />
+              <LogoIcon size={20} />
               <span className="font-medium text-text-primary">LearnForge</span>
             </div>
             <p className="text-sm text-text-muted">{t('footer.tagline')}</p>

@@ -38,13 +38,27 @@ The MCP server can also run locally in stdio mode (for Claude Desktop):
 cd mcp && npm run dev -- --stdio
 ```
 
+## Environment Variables
+
+Copy `.env.example` to `.env` at the project root. Docker Compose reads this file automatically.
+
+| Variable | Service | Required | Default | Description |
+|----------|---------|----------|---------|-------------|
+| `JWT_SECRET` | API | **Yes** | `dev-jwt-secret-change-me` | Secret key for signing JWT tokens. Must be changed for production. |
+| `JWT_EXPIRES_IN` | API | No | `7d` | JWT token expiration duration. |
+| `DATABASE_URL` | API, MCP | No | `postgresql://learnforge:learnforge@localhost:5432/learnforge` | PostgreSQL connection string. Set automatically by Docker Compose. |
+| `PORT` | API, MCP | No | API: `3000`, MCP: `3001` | Server listening port. Set automatically by Docker Compose. |
+| `IMAGE_PATH` | API, MCP | No | Docker: `/data/images`, Local: `~/.learnforge/images` | Directory for uploaded card images. |
+| `MCP_PUBLIC_URL` | MCP | No | `http://localhost:3001` | Public URL of the MCP server (OAuth callbacks, image URLs). |
+| `VITE_API_URL` | Web UI | No | `http://localhost:3333` | API base URL for the frontend (build-time). |
+
+When running with Docker Compose, only `JWT_SECRET` needs to be set -- all other variables have working defaults. When running services locally (outside Docker), you may also need to set `DATABASE_URL` and `IMAGE_PATH`.
+
 ## Authentication
 
 - **Web UI / API**: Password login via `POST /auth/login`, returns JWT token. All API routes require `Authorization: Bearer <token>`.
-- **MCP HTTP**: API key via `Authorization: Bearer <MCP_API_KEY>`.
+- **MCP HTTP**: OAuth 2.0 or API key via `Authorization: Bearer <token>`.
 - **MCP stdio**: No auth (local process).
-
-Env vars: `JWT_SECRET`, `AUTH_PASSWORD`, `MCP_API_KEY` (see `.env.example`).
 
 ## Database Backup
 
@@ -81,3 +95,7 @@ npm run test:integration:up    # start test containers
 npm run test:integration:run   # run Vitest
 npm run test:integration:down  # tear down
 ```
+
+## License
+
+LearnForge is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).

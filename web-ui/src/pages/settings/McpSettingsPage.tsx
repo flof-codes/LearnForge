@@ -102,7 +102,7 @@ export default function McpSettingsPage() {
             </code>
             <button
               onClick={handleCopy}
-              className="shrink-0 p-2.5 bg-bg-primary border border-border rounded-lg hover:bg-white/[0.04] transition-colors"
+              className="shrink-0 p-2.5 bg-bg-primary border border-border rounded-lg hover:bg-subtle-hover transition-colors"
               title="Copy to clipboard"
             >
               {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-text-muted" />}

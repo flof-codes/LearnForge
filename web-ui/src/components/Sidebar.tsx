@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import LogoIcon from './public/LogoIcon';
 
 const links = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -26,11 +27,11 @@ export default function Sidebar() {
       <aside className="hidden md:flex flex-col md:w-16 lg:w-60 bg-bg-secondary shrink-0 transition-all overflow-y-auto">
         <div className="px-3 pt-10 pb-3 lg:px-5 lg:pt-12 lg:pb-5">
           <div className="hidden lg:flex items-center gap-2.5">
-            <img src="/logo.svg" alt="" width={24} height={24} />
+            <LogoIcon size={24} />
             <h1 className="text-lg font-medium text-text-primary tracking-tight">LearnForge</h1>
           </div>
           <div className="lg:hidden flex justify-center">
-            <img src="/logo.svg" alt="LearnForge" width={24} height={24} />
+            <LogoIcon size={24} />
           </div>
         </div>
         <nav className="flex-1 p-2 lg:p-3 space-y-1">
@@ -42,8 +43,8 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors justify-center lg:justify-start ${
                   isActive
-                    ? 'bg-white/[0.06] text-text-primary font-medium'
-                    : 'text-text-muted hover:bg-white/[0.04] hover:text-text-primary'
+                    ? 'bg-subtle-active text-text-primary font-medium'
+                    : 'text-text-muted hover:bg-subtle-hover hover:text-text-primary'
                 }`
               }
               title={label}
@@ -56,7 +57,7 @@ export default function Sidebar() {
         <div className="p-2 lg:p-3">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:bg-white/[0.04] hover:text-text-primary transition-colors w-full justify-center lg:justify-start"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:bg-subtle-hover hover:text-text-primary transition-colors w-full justify-center lg:justify-start"
             title="Logout"
           >
             <LogOut size={18} />

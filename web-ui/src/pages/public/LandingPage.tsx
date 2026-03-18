@@ -195,6 +195,7 @@ export default function LandingPage() {
             {t('earlyAccess.cta')}
           </a>
           <p className="mt-4 text-sm text-text-muted">{t('earlyAccess.note')}</p>
+          <p className="mt-2 text-sm text-text-muted">{t('earlyAccess.prerequisite')}</p>
         </div>
       </section>
     </>

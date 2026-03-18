@@ -13,6 +13,8 @@
   --color-border: rgba(255,255,255,0.08);
   --color-danger: #f85149;
   --color-warning: #d29922;
+  --color-subtle-hover: rgba(255,255,255,0.04);
+  --color-subtle-active: rgba(255,255,255,0.06);
 
   --color-bloom-0-bg: #0d2818;
   --color-bloom-0-text: #56d364;
@@ -67,4 +69,48 @@ html {
 
 .lf-glow {
   box-shadow: 0 0 80px -20px rgba(88, 166, 255, 0.12);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f5f7fa;
+    --color-bg-surface: #e8ecf1;
+    --color-bg-hover: #dde2e8;
+    --color-text-primary: #1a202c;
+    --color-text-muted: #64748b;
+    --color-accent-green: #16a34a;
+    --color-accent-blue: #2563eb;
+    --color-accent-purple: #7c3aed;
+    --color-border: rgba(0, 0, 0, 0.10);
+    --color-danger: #dc2626;
+    --color-warning: #d97706;
+    --color-subtle-hover: rgba(0,0,0,0.04);
+    --color-subtle-active: rgba(0,0,0,0.06);
+
+    --color-bloom-0-bg: #dcfce7;
+    --color-bloom-0-text: #15803d;
+    --color-bloom-1-bg: #dbeafe;
+    --color-bloom-1-text: #1d4ed8;
+    --color-bloom-2-bg: #e0e7ff;
+    --color-bloom-2-text: #4338ca;
+    --color-bloom-3-bg: #ede9fe;
+    --color-bloom-3-text: #6d28d9;
+    --color-bloom-4-bg: #f3e8ff;
+    --color-bloom-4-text: #7e22ce;
+    --color-bloom-5-bg: #fae8ff;
+    --color-bloom-5-text: #a21caf;
+  }
+
+  .lf-hero-gradient {
+    background: linear-gradient(180deg, #ffffff 0%, #f0f4ff 40%, #e8f0fe 70%, #ffffff 100%);
+  }
+
+  .lf-glow {
+    box-shadow: 0 0 80px -20px rgba(37, 99, 235, 0.10);
+  }
+
+  ::-webkit-scrollbar-track { background: #ffffff; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 }

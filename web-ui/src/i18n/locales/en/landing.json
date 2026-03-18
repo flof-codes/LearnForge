@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Learn smarter, not harder",
-    "subtitle": "AI-powered flashcards with scientifically optimized spaced repetition, Bloom's Taxonomy tracking, and a conversational AI tutor.",
+    "subtitle": "A Claude MCP server that turns AI conversations into scientifically optimized flashcards — with spaced repetition, Bloom's Taxonomy tracking, and interactive study sessions.",
     "cta": "Request Early Access",
     "github": "View on GitHub"
   },
@@ -17,8 +17,8 @@
       "description": "Track your cognitive depth from Remember to Create. Cards progress through six levels as your understanding deepens, ensuring you don't just memorize but truly master concepts."
     },
     "ai": {
-      "title": "AI Tutor",
-      "description": "Create rich, interactive flashcards through conversation with Claude. The AI tutor generates cards with formulas, diagrams, and multiple-choice questions — tailored to your learning goals."
+      "title": "Claude MCP Integration",
+      "description": "LearnForge connects to Claude via the Model Context Protocol (MCP). Talk to Claude about what you want to learn — it creates interactive flashcards with KaTeX formulas, SVG diagrams, and multiple-choice questions using LearnForge's tools."
     }
   },
   "screenshots": {
@@ -33,16 +33,16 @@
   "howItWorks": {
     "sectionTitle": "How it works",
     "step1": {
-      "title": "Create",
-      "description": "Tell the AI tutor what you want to learn. It creates rich, interactive flashcards with formulas, diagrams, and quizzes."
+      "title": "Connect Claude",
+      "description": "Add LearnForge as an MCP server in Claude Desktop or your Claude client. This gives Claude access to flashcard creation, study scheduling, and review tools."
     },
     "step2": {
-      "title": "Study",
-      "description": "FSRS schedules your reviews at scientifically optimal intervals. You study what you need, when you need it."
+      "title": "Learn with Claude",
+      "description": "Tell Claude what you want to study. It creates rich, interactive flashcards with formulas, diagrams, and quizzes — all stored in your LearnForge instance."
     },
     "step3": {
-      "title": "Master",
-      "description": "Bloom's Taxonomy tracks your understanding depth. Progress from basic recall to creative application."
+      "title": "Study & Master",
+      "description": "Review cards in the web app or via Claude. FSRS schedules your reviews at optimal intervals while Bloom's Taxonomy tracks your understanding depth."
     }
   },
   "techFeatures": {
@@ -64,8 +64,8 @@
       "description": "Find related cards by meaning, not just keywords"
     },
     "darkTheme": {
-      "title": "Dark Theme",
-      "description": "Easy on the eyes for late-night study sessions"
+      "title": "Dark & Light Theme",
+      "description": "Adapts to your system preference for comfortable studying"
     },
     "openSource": {
       "title": "Open Source",
@@ -76,6 +76,7 @@
     "title": "Want to try LearnForge?",
     "description": "LearnForge is in early development. If you're interested in trying it out, send me an email and I'll set up a testing account for you.",
     "cta": "Request an Account",
-    "note": "Free during early access. No credit card required."
+    "note": "Free during early access. No credit card required.",
+    "prerequisite": "Requires a Claude Pro, Team, or Enterprise subscription for AI features."
   }
 }

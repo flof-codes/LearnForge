@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Menu, X } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
+import LogoIcon from './LogoIcon';
 
 const GITHUB_URL = 'https://github.com/flof-codes/LearnForge';
 
@@ -15,7 +16,7 @@ export default function PublicHeader() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/logo.svg" alt="" width={24} height={24} />
+          <LogoIcon size={24} />
           <span className="text-lg font-medium text-text-primary tracking-tight">LearnForge</span>
         </Link>
 

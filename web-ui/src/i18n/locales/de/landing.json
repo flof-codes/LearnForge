@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Lerne effizienter, nicht mehr",
-    "subtitle": "KI-gesteuerte Lernkarten mit wissenschaftlich optimierter Wiederholung, Bloom-Taxonomie-Tracking und einem KI-Tutor.",
+    "subtitle": "Ein Claude-MCP-Server, der KI-Gespräche in wissenschaftlich optimierte Lernkarten verwandelt — mit Spaced Repetition, Bloom-Taxonomie-Tracking und interaktiven Lernsitzungen.",
     "cta": "Zugang anfragen",
     "github": "Auf GitHub ansehen"
   },
@@ -17,8 +17,8 @@
       "description": "Verfolge deine kognitive Tiefe von Erinnern bis Erschaffen. Karten durchlaufen sechs Stufen, während dein Verständnis wächst — so stellst du sicher, dass du Konzepte wirklich beherrschst."
     },
     "ai": {
-      "title": "KI-Tutor",
-      "description": "Erstelle interaktive Lernkarten im Gespräch mit Claude. Der KI-Tutor generiert Karten mit Formeln, Diagrammen und Multiple-Choice-Fragen — angepasst an deine Lernziele."
+      "title": "Claude-MCP-Integration",
+      "description": "LearnForge verbindet sich mit Claude über das Model Context Protocol (MCP). Sprich mit Claude über das, was du lernen willst — es erstellt interaktive Lernkarten mit KaTeX-Formeln, SVG-Diagrammen und Multiple-Choice-Fragen mithilfe der LearnForge-Tools."
     }
   },
   "screenshots": {
@@ -33,16 +33,16 @@
   "howItWorks": {
     "sectionTitle": "So funktioniert's",
     "step1": {
-      "title": "Erstellen",
-      "description": "Sag dem KI-Tutor, was du lernen möchtest. Er erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizfragen."
+      "title": "Claude verbinden",
+      "description": "Füge LearnForge als MCP-Server in Claude Desktop oder deinem Claude-Client hinzu. Dadurch erhält Claude Zugriff auf Kartenerstellung, Lernplanung und Review-Tools."
     },
     "step2": {
-      "title": "Lernen",
-      "description": "FSRS plant deine Wiederholungen zu wissenschaftlich optimalen Zeitpunkten. Du lernst, was du brauchst, wann du es brauchst."
+      "title": "Mit Claude lernen",
+      "description": "Sag Claude, was du lernen möchtest. Es erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizfragen — alles gespeichert in deiner LearnForge-Instanz."
     },
     "step3": {
-      "title": "Meistern",
-      "description": "Die Bloom-Taxonomie verfolgt deine Verständnistiefe. Fortschritt von einfachem Erinnern bis zur kreativen Anwendung."
+      "title": "Lernen & Meistern",
+      "description": "Wiederhole Karten in der Web-App oder über Claude. FSRS plant deine Wiederholungen zu optimalen Zeitpunkten, während die Bloom-Taxonomie deine Verständnistiefe verfolgt."
     }
   },
   "techFeatures": {
@@ -64,8 +64,8 @@
       "description": "Finde verwandte Karten nach Bedeutung, nicht nur Stichwörtern"
     },
     "darkTheme": {
-      "title": "Dark Theme",
-      "description": "Augenschonend für nächtliche Lernsitzungen"
+      "title": "Dark- & Light-Theme",
+      "description": "Passt sich deiner Systemeinstellung an für angenehmes Lernen"
     },
     "openSource": {
       "title": "Open Source",
@@ -76,6 +76,7 @@
     "title": "Willst du LearnForge ausprobieren?",
     "description": "LearnForge befindet sich in aktiver Entwicklung. Wenn du es testen möchtest, schreib mir eine E-Mail und ich richte dir einen Testzugang ein.",
     "cta": "Zugang anfragen",
-    "note": "Kostenlos während der Early-Access-Phase. Keine Kreditkarte nötig."
+    "note": "Kostenlos während der Early-Access-Phase. Keine Kreditkarte nötig.",
+    "prerequisite": "Erfordert ein Claude Pro-, Team- oder Enterprise-Abo für KI-Funktionen."
   }
 }
