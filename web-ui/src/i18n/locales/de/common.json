@@ -1,12 +1,14 @@
 {
   "nav": {
     "features": "Features",
+    "pricing": "Preise",
     "github": "GitHub",
     "login": "Anmelden",
+    "signup": "Registrieren",
     "dashboard": "Dashboard"
   },
   "footer": {
-    "tagline": "KI-gesteuerte Wiederholung",
+    "tagline": "Dein KI-Gedächtniswächter",
     "product": "Produkt",
     "features": "Features",
     "github": "GitHub",
@@ -17,7 +19,24 @@
     "agb": "AGB",
     "contact": "Kontakt",
     "license": "Lizenziert unter AGPL-3.0",
-    "sourceCode": "Quellcode"
+    "sourceCode": "Quellcode",
+    "builtBy": "Entwickelt von"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signingIn": "Anmeldung...",
+    "signUp": "Registrieren",
+    "signingUp": "Konto wird erstellt...",
+    "signInSubtitle": "Willkommen zurück bei LearnForge",
+    "signUpSubtitle": "Starte deine 30-tägige Testphase",
+    "createAccount": "Konto erstellen",
+    "noAccount": "Noch kein Konto?",
+    "hasAccount": "Bereits ein Konto?",
+    "backToHome": "Zurück zur Startseite",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "name": "Name",
+    "passwordHint": "Mindestens 8 Zeichen"
   },
   "language": {
     "en": "EN",

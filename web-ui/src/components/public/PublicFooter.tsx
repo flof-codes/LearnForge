@@ -4,12 +4,16 @@ import LogoIcon from './LogoIcon';
 import ThemeSwitcher from './ThemeSwitcher';
 
 const GITHUB_URL = 'https://github.com/flof-codes/LearnForge';
+const OPERATOR_EMAIL = import.meta.env.OPERATOR_EMAIL || 'office@learnforge.eu';
 
 export default function PublicFooter() {
   const { t } = useTranslation();
 
   return (
     <footer className="border-t border-border bg-bg-secondary">
+      {/* Bloom spectrum decorative line */}
+      <div className="lf-bloom-spectrum h-[3px] rounded-full" />
+
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {/* Brand */}
@@ -41,8 +45,8 @@ export default function PublicFooter() {
           <div>
             <h3 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('footer.contact')}</h3>
             <nav className="space-y-2">
-              <a href="mailto:office@learnforge.eu" className="block text-sm text-text-muted hover:text-text-primary transition-colors">
-                office@learnforge.eu
+              <a href={`mailto:${OPERATOR_EMAIL}`} className="block text-sm text-text-muted hover:text-text-primary transition-colors">
+                {OPERATOR_EMAIL}
               </a>
               <a
                 href={GITHUB_URL}
@@ -58,7 +62,21 @@ export default function PublicFooter() {
 
         {/* Bottom bar */}
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">
-          <p>{t('footer.license')}</p>
+          <div className="flex items-center gap-2">
+            <p>{t('footer.license')}</p>
+            <span className="hidden sm:inline">·</span>
+            <p>
+              {t('footer.builtBy')}{' '}
+              <a
+                href="https://flof.codes"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-blue hover:underline"
+              >
+                flof.codes
+              </a>
+            </p>
+          </div>
           <div className="flex items-center gap-4">
             <ThemeSwitcher />
             <a

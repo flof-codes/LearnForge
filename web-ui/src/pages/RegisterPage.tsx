@@ -1,20 +1,29 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import { authService } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
+import LogoIcon from '../components/public/LogoIcon';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agbAccepted, setAgbAccepted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
+  const { t: tLegal } = useTranslation('legal');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!agbAccepted) {
+      setError(tLegal('register.agbRequired'));
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -30,17 +39,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg-primary">
-      <div className="w-full max-w-sm">
+    <div className="flex items-center justify-center min-h-screen lf-hero-gradient">
+      <div className="w-full max-w-sm px-6">
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-4">
           <ArrowLeft size={16} />
-          Back to home
+          {t('auth.backToHome')}
         </Link>
-      <form onSubmit={handleSubmit} className="w-full bg-bg-secondary rounded-xl border border-border p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="w-full bg-bg-secondary rounded-xl border border-border p-8 space-y-6 lf-glow">
         <div className="text-center">
-          <UserPlus size={32} className="mx-auto text-accent-blue mb-3" />
-          <h1 className="text-xl font-medium text-text-primary">Create Account</h1>
-          <p className="text-text-muted text-sm mt-1">Start your 30-day free trial</p>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <LogoIcon size={32} />
+            <span className="text-xl font-medium text-text-primary">LearnForge</span>
+          </div>
+          <div className="lf-bloom-spectrum h-0.5 rounded-full w-16 mx-auto mb-3" />
+          <p className="text-text-muted text-sm">{t('auth.signUpSubtitle')}</p>
         </div>
 
         {error && (
@@ -52,7 +64,7 @@ export default function RegisterPage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
+            placeholder={t('auth.name')}
             autoFocus
             autoComplete="name"
             className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
@@ -62,7 +74,7 @@ export default function RegisterPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={t('auth.email')}
             autoComplete="email"
             className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
           />
@@ -72,25 +84,44 @@ export default function RegisterPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t('auth.password')}
               autoComplete="new-password"
               className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
             />
-            <p className="text-text-muted text-xs mt-1.5">At least 8 characters</p>
+            <p className="text-text-muted text-xs mt-1.5">{t('auth.passwordHint')}</p>
           </div>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agbAccepted}
+              onChange={(e) => setAgbAccepted(e.target.checked)}
+              className="mt-1 shrink-0 w-4 h-4 rounded border-border accent-accent-blue"
+            />
+            <span className="text-text-muted text-xs leading-relaxed">
+              <Trans
+                i18nKey="register.agbCheckbox"
+                ns="legal"
+                components={{
+                  agbLink: <Link to="/agb" target="_blank" className="text-accent-blue hover:underline" />,
+                  privacyLink: <Link to="/datenschutz" target="_blank" className="text-accent-blue hover:underline" />,
+                }}
+              />
+            </span>
+          </label>
         </div>
 
         <button
           type="submit"
-          disabled={loading || !name || !email || !password}
+          disabled={loading || !name || !email || !password || !agbAccepted}
           className="w-full py-2.5 bg-accent-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? 'Creating account...' : 'Sign up'}
+          {loading ? t('auth.signingUp') : t('auth.signUp')}
         </button>
 
         <p className="text-center text-text-muted text-sm">
-          Already have an account?{' '}
-          <Link to="/login" className="text-accent-blue hover:underline">Sign in</Link>
+          {t('auth.hasAccount')}{' '}
+          <Link to="/login" className="text-accent-blue hover:underline">{t('auth.signIn')}</Link>
         </p>
       </form>
       </div>

@@ -51,10 +51,14 @@ services:
     build:
       context: ./web-ui
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3333
+        OPERATOR_NAME: "${OPERATOR_NAME:-LearnForge}"
+        OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
+        OPERATOR_CITY: "${OPERATOR_CITY:-Austria}"
+        OPERATOR_EMAIL: "${OPERATOR_EMAIL:-office@learnforge.eu}"
     ports:
       - "5173:3000"
-    environment:
-      - VITE_API_URL=http://localhost:3333
     depends_on:
       - api
     restart: unless-stopped

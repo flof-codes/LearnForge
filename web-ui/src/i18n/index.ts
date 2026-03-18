@@ -24,7 +24,15 @@ i18n
       lookupQuerystring: 'lng',
       caches: ['localStorage'],
     },
-    interpolation: { escapeValue: false },
+    interpolation: {
+      escapeValue: false,
+      defaultVariables: {
+        operatorName: import.meta.env.OPERATOR_NAME || 'LearnForge',
+        operatorAddress: import.meta.env.OPERATOR_ADDRESS || '',
+        operatorCity: import.meta.env.OPERATOR_CITY || 'Austria',
+        operatorEmail: import.meta.env.OPERATOR_EMAIL || 'office@learnforge.eu',
+      },
+    },
   });
 
 export default i18n;

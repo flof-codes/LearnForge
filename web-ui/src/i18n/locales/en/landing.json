@@ -1,83 +1,137 @@
 {
+  "meta": {
+    "title": "Never see the same question twice",
+    "description": "LearnForge is your AI Memory Guardian — dynamic question reformulation, Bloom's Taxonomy depth tracking, and science-backed spaced repetition."
+  },
   "hero": {
-    "title": "Learn smarter, not harder",
-    "subtitle": "A Claude MCP server that turns AI conversations into scientifically optimized flashcards — with spaced repetition, Bloom's Taxonomy tracking, and interactive study sessions.",
-    "cta": "Get Started Free",
-    "github": "View on GitHub"
+    "hook": "Never see the same question twice.",
+    "subtitle": "Traditional flashcards make you memorize the card. LearnForge makes you understand the concept — with AI-powered reformulation, cognitive depth tracking, and science-backed scheduling.",
+    "ctaPrimary": "Start Learning Free",
+    "ctaGithub": "View on GitHub"
+  },
+  "problem": {
+    "title": "The Recognition Trap",
+    "lead": "After seeing the same card enough times, your brain takes a shortcut. You recognize the layout instead of recalling the concept. You feel confident — until the exam phrases it differently.",
+    "card1": {
+      "title": "Same question, every time",
+      "description": "Traditional flashcard apps show you the identical card on every review. Your brain memorizes the visual pattern, not the knowledge."
+    },
+    "card2": {
+      "title": "Stuck at surface level",
+      "description": "Can you recite the definition? Great. Can you apply it? Analyze it? Most tools never ask — they stop at 'do you remember?'"
+    },
+    "card3": {
+      "title": "One size fits nobody",
+      "description": "The same format, the same difficulty, the same question type. No adaptation to how deeply you actually understand each concept."
+    }
+  },
+  "solution": {
+    "title": "Your AI Memory Guardian",
+    "lead": "LearnForge sits between you and the forgetting curve. It knows what you know, how deeply you know it, and asks exactly the right question to make sure nothing slips away.",
+    "point1": {
+      "title": "Dynamic reformulation",
+      "description": "Every review phrases the question differently. Different angle, different format. You can't fake understanding by recognizing a card layout."
+    },
+    "point2": {
+      "title": "Cognitive depth tracking",
+      "description": "Six levels of understanding per concept — from basic recall to critical thinking. The system automatically escalates as you prove mastery."
+    },
+    "point3": {
+      "title": "Science-backed scheduling",
+      "description": "FSRS algorithm with modality-aware intervals. Harder study modes earn longer breaks. Every review is optimally timed for your memory."
+    }
   },
   "features": {
-    "sectionTitle": "Built for deep learning",
-    "sectionSubtitle": "LearnForge combines proven learning science with modern AI to help you truly understand — not just memorize.",
-    "fsrs": {
-      "title": "FSRS Algorithm",
-      "description": "Free Spaced Repetition Scheduler optimizes your review intervals based on your actual performance. Each card is scheduled individually — you review exactly when you need to."
+    "title": "Built for deep learning",
+    "subtitle": "Every feature exists because the science says it works.",
+    "card1": {
+      "badge": "Core",
+      "title": "Dynamic Question Reformulation",
+      "description": "AI rephrases every question on every review. Same concept, fresh perspective. The recognition trap becomes impossible."
     },
-    "bloom": {
-      "title": "Bloom's Taxonomy",
-      "description": "Track your cognitive depth from Remember to Create. Cards progress through six levels as your understanding deepens, ensuring you don't just memorize but truly master concepts."
+    "card2": {
+      "badge": "Unique",
+      "title": "Bloom's Taxonomy Progression",
+      "description": "Track six levels of understanding per concept. Graduate from 'what is it?' to 'what would you do with it?' — automatically."
     },
-    "ai": {
-      "title": "Claude MCP Integration",
-      "description": "LearnForge connects to Claude via the Model Context Protocol (MCP). Talk to Claude about what you want to learn — it creates interactive flashcards with KaTeX formulas, SVG diagrams, and multiple-choice questions using LearnForge's tools."
+    "card3": {
+      "badge": "Science",
+      "title": "FSRS Spaced Repetition",
+      "description": "The latest scheduling algorithm adapts to your individual memory patterns. No ease factor hell, no one-size-fits-all intervals."
+    },
+    "card4": {
+      "badge": "AI",
+      "title": "AI-Native Card Creation",
+      "description": "Create cards through natural conversation. KaTeX formulas, SVG diagrams, interactive quizzes — all generated from what you tell the AI."
     }
-  },
-  "screenshots": {
-    "sectionTitle": "See it in action",
-    "dashboard": "Dashboard",
-    "dashboardDesc": "Track your progress with streaks, accuracy, and card state overview.",
-    "study": "Study Session",
-    "studyDesc": "Interactive cards with KaTeX formulas, MCQ, and spaced repetition ratings.",
-    "cards": "Card Browser",
-    "cardsDesc": "Browse, filter, and search your entire card collection by topic and Bloom level."
   },
   "howItWorks": {
-    "sectionTitle": "How it works",
+    "title": "How it works",
     "step1": {
-      "title": "Connect Claude",
-      "description": "Add LearnForge as an MCP server in Claude Desktop or your Claude client. This gives Claude access to flashcard creation, study scheduling, and review tools."
+      "title": "Talk to your AI tutor",
+      "description": "Connect LearnForge to Claude via MCP. Tell it what you want to learn — it creates interactive flashcards with formulas, diagrams, and quizzes."
     },
     "step2": {
-      "title": "Learn with Claude",
-      "description": "Tell Claude what you want to study. It creates rich, interactive flashcards with formulas, diagrams, and quizzes — all stored in your LearnForge instance."
+      "title": "Study your way",
+      "description": "Review in the web app or via AI chat. Choose classic self-rating, multiple choice, or open questions. Harder modes earn longer intervals."
     },
     "step3": {
-      "title": "Study & Master",
-      "description": "Review cards in the web app or via Claude. FSRS schedules your reviews at optimal intervals while Bloom's Taxonomy tracks your understanding depth."
+      "title": "Master every concept",
+      "description": "Watch your understanding deepen through Bloom's levels. FSRS schedules your reviews at optimal intervals. Nothing slips away."
     }
   },
-  "techFeatures": {
-    "sectionTitle": "Built for serious learners",
-    "katex": {
-      "title": "KaTeX Formulas",
-      "description": "Beautiful math rendering for STEM subjects"
-    },
-    "mcq": {
-      "title": "Interactive MCQ",
-      "description": "Multiple-choice questions with instant feedback"
-    },
-    "svg": {
-      "title": "SVG Diagrams",
-      "description": "Visual learning with custom diagrams and charts"
-    },
-    "search": {
-      "title": "Semantic Search",
-      "description": "Find related cards by meaning, not just keywords"
-    },
-    "darkTheme": {
-      "title": "Dark & Light Theme",
-      "description": "Adapts to your system preference for comfortable studying"
-    },
-    "openSource": {
-      "title": "Open Source",
-      "description": "AGPL-3.0 licensed — inspect, modify, self-host"
+  "bloom": {
+    "title": "Six levels of understanding",
+    "subtitle": "Traditional flashcards stop at level 1. LearnForge takes you to level 6.",
+    "levels": {
+      "0": { "name": "Remember", "description": "Recall facts and basic concepts" },
+      "1": { "name": "Understand", "description": "Explain ideas and interpret meaning" },
+      "2": { "name": "Apply", "description": "Use knowledge in new situations" },
+      "3": { "name": "Analyze", "description": "Break down and compare concepts" },
+      "4": { "name": "Evaluate", "description": "Justify decisions and assess validity" },
+      "5": { "name": "Create", "description": "Design, construct, and synthesize" }
     }
+  },
+  "openSource": {
+    "title": "Your data, your choice",
+    "cloud": {
+      "title": "Cloud",
+      "point1": "30-day free trial, no setup",
+      "point2": "Automatic updates and backups",
+      "point3": "Managed infrastructure"
+    },
+    "selfHost": {
+      "title": "Self-Host",
+      "point1": "Full control over your data",
+      "point2": "Docker Compose deployment",
+      "point3": "AGPL-3.0 — free forever"
+    }
+  },
+  "community": {
+    "title": "Shape the future of learning",
+    "stat1": "Open Source",
+    "stat2": "Built With Science",
+    "stat3": "AI-Powered",
+    "cta": "Star on GitHub"
   },
   "pricing": {
-    "title": "Free for 30 days",
-    "subtitle": "Try LearnForge with full access. No credit card required.",
-    "cta": "Get Started Free",
-    "note": "After your trial: EUR 2/month, billed annually at EUR 24/year.",
-    "donation": "Support the project with a donation",
-    "prerequisite": "Requires a Claude Pro, Team, or Enterprise subscription for AI features."
+    "title": "Start learning today",
+    "trial": {
+      "title": "Free Trial",
+      "price": "€0",
+      "period": "30 days",
+      "features": ["Full access to all features", "No credit card required", "Cancel anytime"]
+    },
+    "annual": {
+      "title": "Annual",
+      "price": "€2",
+      "period": "/month",
+      "billed": "Billed annually at €24/year",
+      "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support"]
+    },
+    "cta": "Start Your Free Trial",
+    "claudeNote": "Requires a Claude Pro, Team, or Enterprise subscription for AI features.",
+    "donation": "Love LearnForge? Help keep it independent.",
+    "donationLink": "Support the project"
   }
 }

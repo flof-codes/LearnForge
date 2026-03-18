@@ -199,7 +199,8 @@ if (isStdio) {
         await transports[sessionId].handleRequest(req, res, req.body);
         return;
       }
-      if (!sessionId && isInitializeRequest(req.body)) {
+      // Allow (re-)initialization even with a stale session ID
+      if (isInitializeRequest(req.body)) {
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (sid) => { transports[sid] = transport; },
@@ -213,7 +214,13 @@ if (isStdio) {
         await transport.handleRequest(req, res, req.body);
         return;
       }
-      res.status(400).json({ error: "Bad Request: No valid session ID" });
+      if (sessionId) {
+        res.status(400).json({
+          error: "Session not found. The server was restarted and your session was lost. Please reconnect.",
+        });
+      } else {
+        res.status(400).json({ error: "Missing session ID. Send an initialize request first." });
+      }
     } catch (error) {
       console.error("MCP error:", error);
       if (!res.headersSent) {
@@ -225,7 +232,10 @@ if (isStdio) {
   app.get("/mcp", dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
-      res.status(400).json({ error: "Invalid or missing session ID" });
+      const msg = sessionId
+        ? "Session not found. The server was restarted and your session was lost. Please reconnect."
+        : "Missing session ID.";
+      res.status(400).json({ error: msg });
       return;
     }
     await transports[sessionId].handleRequest(req, res);
@@ -234,7 +244,10 @@ if (isStdio) {
   app.delete("/mcp", express.json(), dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
-      res.status(400).json({ error: "Invalid or missing session ID" });
+      const msg = sessionId
+        ? "Session not found. The server was restarted and your session was lost. Please reconnect."
+        : "Missing session ID.";
+      res.status(400).json({ error: msg });
       return;
     }
     await transports[sessionId].handleRequest(req, res);

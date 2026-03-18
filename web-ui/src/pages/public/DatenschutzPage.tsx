@@ -53,6 +53,8 @@ export default function DatenschutzPage() {
           <li>{t('datenschutz.rightRectification')}</li>
           <li>{t('datenschutz.rightErasure')}</li>
           <li>{t('datenschutz.rightPortability')}</li>
+          <li>{t('datenschutz.rightRestriction')}</li>
+          <li><strong>{t('datenschutz.rightObjection')}</strong></li>
           <li>{t('datenschutz.rightComplaint')}</li>
         </ul>
       </LegalSection>
@@ -62,7 +64,15 @@ export default function DatenschutzPage() {
       </LegalSection>
 
       <LegalSection title={t('datenschutz.thirdPartyTitle')}>
-        <p>{t('datenschutz.thirdPartyText')}</p>
+        <p>{t('datenschutz.thirdPartyIntro')}</p>
+        <p>{t('datenschutz.thirdPartyStripe')}</p>
+        <p>{t('datenschutz.thirdPartyEmbeddings')}</p>
+        <p>{t('datenschutz.thirdPartyFsrs')}</p>
+        <p>{t('datenschutz.thirdPartyNone')}</p>
+      </LegalSection>
+
+      <LegalSection title={t('datenschutz.automatedTitle')}>
+        <p>{t('datenschutz.automatedText')}</p>
       </LegalSection>
 
       <LegalSection title={t('datenschutz.changesTitle')}>

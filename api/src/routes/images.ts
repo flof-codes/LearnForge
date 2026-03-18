@@ -12,6 +12,7 @@ import { images } from "../db/schema/index.js";
 import { config } from "../config.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
+import { extFromMime } from "../lib/image-utils.js";
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/png",
@@ -22,17 +23,6 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-
-function extFromMime(mime: string): string {
-  const map: Record<string, string> = {
-    "image/png": ".png",
-    "image/jpeg": ".jpg",
-    "image/gif": ".gif",
-    "image/webp": ".webp",
-    "image/svg+xml": ".svg",
-  };
-  return map[mime] ?? "";
-}
 
 async function ensureImageDir(): Promise<void> {
   await mkdir(config.imagePath, { recursive: true });

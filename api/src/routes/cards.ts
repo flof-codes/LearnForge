@@ -6,6 +6,7 @@ import { computeEmbedding } from "../services/embeddings.js";
 import { createInitialFsrsState } from "../services/fsrs.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
+import { validateCardHtml } from "../lib/sanitize-card-html.js";
 
 async function verifyCardOwnership(cardId: string, userId: string): Promise<void> {
   const result = await db.execute<{ id: string }>(sql`
@@ -27,6 +28,8 @@ export default async function cardRoutes(app: FastifyInstance) {
     if (!concept) throw new ValidationError("concept is required");
     if (!front_html) throw new ValidationError("front_html is required");
     if (!back_html) throw new ValidationError("back_html is required");
+    validateCardHtml(front_html, "front_html");
+    validateCardHtml(back_html, "back_html");
 
     // Verify topic belongs to user
     const [topic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topic_id), eq(topics.userId, userId)));
@@ -97,6 +100,9 @@ export default async function cardRoutes(app: FastifyInstance) {
       const [newTopic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topic_id), eq(topics.userId, userId)));
       if (!newTopic) throw new NotFoundError("Topic not found");
     }
+
+    if (front_html !== undefined) validateCardHtml(front_html, "front_html");
+    if (back_html !== undefined) validateCardHtml(back_html, "back_html");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle .set() partial update
     const updates: Record<string, any> = {};

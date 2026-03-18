@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { authService } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
+import LogoIcon from '../components/public/LogoIcon';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,17 +32,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg-primary">
-      <div className="w-full max-w-sm">
+    <div className="flex items-center justify-center min-h-screen lf-hero-gradient">
+      <div className="w-full max-w-sm px-6">
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-4">
           <ArrowLeft size={16} />
-          Back to home
+          {t('auth.backToHome')}
         </Link>
-      <form onSubmit={handleSubmit} className="w-full bg-bg-secondary rounded-xl border border-border p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="w-full bg-bg-secondary rounded-xl border border-border p-8 space-y-6 lf-glow">
         <div className="text-center">
-          <Lock size={32} className="mx-auto text-accent-blue mb-3" />
-          <h1 className="text-xl font-medium text-text-primary">LearnForge</h1>
-          <p className="text-text-muted text-sm mt-1">Sign in to continue</p>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <LogoIcon size={32} />
+            <span className="text-xl font-medium text-text-primary">LearnForge</span>
+          </div>
+          <div className="lf-bloom-spectrum h-0.5 rounded-full w-16 mx-auto mb-3" />
+          <p className="text-text-muted text-sm">{t('auth.signInSubtitle')}</p>
         </div>
 
         {error && (
@@ -51,7 +57,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={t('auth.email')}
             autoFocus
             autoComplete="email"
             className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
@@ -61,7 +67,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder={t('auth.password')}
             autoComplete="current-password"
             className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
           />
@@ -72,12 +78,12 @@ export default function LoginPage() {
           disabled={loading || !email || !password}
           className="w-full py-2.5 bg-accent-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? 'Signing in...' : 'Sign in'}
+          {loading ? t('auth.signingIn') : t('auth.signIn')}
         </button>
 
         <p className="text-center text-text-muted text-sm">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="text-accent-blue hover:underline">Sign up</Link>
+          {t('auth.noAccount')}{' '}
+          <Link to="/register" className="text-accent-blue hover:underline">{t('auth.signUp')}</Link>
         </p>
       </form>
       </div>

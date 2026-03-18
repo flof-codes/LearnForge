@@ -5,6 +5,7 @@ import { cards, bloomState, fsrsState, reviews, topics } from "../db/schema/inde
 import { eq, sql } from "drizzle-orm";
 import { computeEmbedding } from "../services/embeddings.js";
 import { createInitialFsrsState } from "../services/fsrs.js";
+import { validateCardHtml } from "../lib/sanitize-card-html.js";
 
 export function registerCardTools(server: McpServer, userId: string) {
   // ── create_card ──────────────────────────────────────────────────────
@@ -20,6 +21,9 @@ export function registerCardTools(server: McpServer, userId: string) {
     },
     async ({ topic_id, concept, front_html, back_html, tags }) => {
       try {
+        validateCardHtml(front_html, "front_html");
+        validateCardHtml(back_html, "back_html");
+
         // Verify topic belongs to user
         const [topic] = await db.select({ id: topics.id }).from(topics)
           .where(sql`${topics.id} = ${topic_id} AND ${topics.userId} = ${userId}`);
@@ -110,6 +114,9 @@ export function registerCardTools(server: McpServer, userId: string) {
     },
     async ({ card_id, concept, front_html, back_html, tags, topic_id }) => {
       try {
+        if (front_html !== undefined) validateCardHtml(front_html, "front_html");
+        if (back_html !== undefined) validateCardHtml(back_html, "back_html");
+
         // Verify card belongs to user through topic
         const ownerCheck = await db.execute<{ id: string }>(sql`
           SELECT c.id FROM cards c JOIN topics t ON c.topic_id = t.id

@@ -1,83 +1,137 @@
 {
+  "meta": {
+    "title": "Nie dieselbe Frage zweimal sehen",
+    "description": "LearnForge ist dein KI-Gedächtniswächter — dynamische Frageumformulierung, Bloom-Taxonomie-Tiefenverfolgung und wissenschaftlich fundierte Wiederholungsplanung."
+  },
   "hero": {
-    "title": "Lerne effizienter, nicht mehr",
-    "subtitle": "Ein Claude-MCP-Server, der KI-Gespräche in wissenschaftlich optimierte Lernkarten verwandelt — mit Spaced Repetition, Bloom-Taxonomie-Tracking und interaktiven Lernsitzungen.",
-    "cta": "Kostenlos starten",
-    "github": "Auf GitHub ansehen"
+    "hook": "Nie dieselbe Frage zweimal.",
+    "subtitle": "Herkömmliche Lernkarten lassen dich die Karte auswendig lernen. LearnForge sorgt dafür, dass du das Konzept verstehst — mit KI-gestützter Umformulierung, kognitiver Tiefenverfolgung und wissenschaftlich fundierter Planung.",
+    "ctaPrimary": "Kostenlos starten",
+    "ctaGithub": "Auf GitHub ansehen"
+  },
+  "problem": {
+    "title": "Die Wiedererkennungsfalle",
+    "lead": "Wenn du dieselbe Karte oft genug siehst, nimmt dein Gehirn eine Abkürzung. Du erkennst das Layout wieder, statt das Konzept abzurufen. Du fühlst dich sicher — bis die Prüfung es anders formuliert.",
+    "card1": {
+      "title": "Immer dieselbe Frage",
+      "description": "Herkömmliche Lernkarten-Apps zeigen dir bei jeder Wiederholung die identische Karte. Dein Gehirn merkt sich das visuelle Muster, nicht das Wissen."
+    },
+    "card2": {
+      "title": "An der Oberfläche hängengeblieben",
+      "description": "Du kannst die Definition aufsagen? Super. Kannst du sie anwenden? Analysieren? Die meisten Tools fragen nie — sie bleiben bei 'Erinnerst du dich?'"
+    },
+    "card3": {
+      "title": "Einheitsgröße für niemanden",
+      "description": "Dasselbe Format, derselbe Schwierigkeitsgrad, derselbe Fragetyp. Keine Anpassung daran, wie tief du jedes Konzept wirklich verstehst."
+    }
+  },
+  "solution": {
+    "title": "Dein KI-Gedächtniswächter",
+    "lead": "LearnForge steht zwischen dir und der Vergessenskurve. Es weiß, was du weißt, wie tief du es verstehst, und stellt genau die richtige Frage, damit nichts verloren geht.",
+    "point1": {
+      "title": "Dynamische Umformulierung",
+      "description": "Jede Wiederholung formuliert die Frage anders. Anderer Blickwinkel, anderes Format. Du kannst Verständnis nicht durch Wiedererkennung vortäuschen."
+    },
+    "point2": {
+      "title": "Kognitive Tiefenverfolgung",
+      "description": "Sechs Verständnisstufen pro Konzept — von einfachem Abruf bis kritischem Denken. Das System steigert automatisch, wenn du Meisterschaft beweist."
+    },
+    "point3": {
+      "title": "Wissenschaftlich fundierte Planung",
+      "description": "FSRS-Algorithmus mit modalitätsbewussten Intervallen. Schwierigere Lernmodi bringen längere Pausen. Jede Wiederholung ist optimal für dein Gedächtnis getimed."
+    }
   },
   "features": {
-    "sectionTitle": "Entwickelt für tiefes Lernen",
-    "sectionSubtitle": "LearnForge kombiniert bewährte Lernwissenschaft mit moderner KI, damit du wirklich verstehst — nicht nur auswendig lernst.",
-    "fsrs": {
-      "title": "FSRS-Algorithmus",
-      "description": "Der Free Spaced Repetition Scheduler optimiert deine Wiederholungsintervalle basierend auf deiner tatsächlichen Leistung. Jede Karte wird individuell geplant — du wiederholst genau dann, wenn du es brauchst."
+    "title": "Entwickelt für tiefes Lernen",
+    "subtitle": "Jedes Feature existiert, weil die Wissenschaft sagt, dass es funktioniert.",
+    "card1": {
+      "badge": "Kern",
+      "title": "Dynamische Frageumformulierung",
+      "description": "KI formuliert jede Frage bei jeder Wiederholung um. Gleiches Konzept, frische Perspektive. Die Wiedererkennungsfalle wird unmöglich."
     },
-    "bloom": {
-      "title": "Bloom-Taxonomie",
-      "description": "Verfolge deine kognitive Tiefe von Erinnern bis Erschaffen. Karten durchlaufen sechs Stufen, während dein Verständnis wächst — so stellst du sicher, dass du Konzepte wirklich beherrschst."
+    "card2": {
+      "badge": "Einzigartig",
+      "title": "Bloom-Taxonomie-Progression",
+      "description": "Verfolge sechs Verständnisstufen pro Konzept. Steige auf von 'Was ist das?' zu 'Was würdest du damit machen?' — automatisch."
     },
-    "ai": {
-      "title": "Claude-MCP-Integration",
-      "description": "LearnForge verbindet sich mit Claude über das Model Context Protocol (MCP). Sprich mit Claude über das, was du lernen willst — es erstellt interaktive Lernkarten mit KaTeX-Formeln, SVG-Diagrammen und Multiple-Choice-Fragen mithilfe der LearnForge-Tools."
+    "card3": {
+      "badge": "Wissenschaft",
+      "title": "FSRS Spaced Repetition",
+      "description": "Der neueste Planungsalgorithmus passt sich deinen individuellen Gedächtnismustern an. Kein Ease-Factor-Problem, keine Einheitsintervalle."
+    },
+    "card4": {
+      "badge": "KI",
+      "title": "KI-native Kartenerstellung",
+      "description": "Erstelle Karten durch natürliche Konversation. KaTeX-Formeln, SVG-Diagramme, interaktive Quizze — alles generiert aus dem, was du der KI erzählst."
     }
-  },
-  "screenshots": {
-    "sectionTitle": "In Aktion sehen",
-    "dashboard": "Dashboard",
-    "dashboardDesc": "Verfolge deinen Fortschritt mit Streaks, Genauigkeit und Kartenübersicht.",
-    "study": "Lernsitzung",
-    "studyDesc": "Interaktive Karten mit KaTeX-Formeln, MCQ und Wiederholungsbewertungen.",
-    "cards": "Kartenbrowser",
-    "cardsDesc": "Durchsuche und filtere deine gesamte Kartensammlung nach Thema und Bloom-Stufe."
   },
   "howItWorks": {
-    "sectionTitle": "So funktioniert's",
+    "title": "So funktioniert's",
     "step1": {
-      "title": "Claude verbinden",
-      "description": "Füge LearnForge als MCP-Server in Claude Desktop oder deinem Claude-Client hinzu. Dadurch erhält Claude Zugriff auf Kartenerstellung, Lernplanung und Review-Tools."
+      "title": "Sprich mit deinem KI-Tutor",
+      "description": "Verbinde LearnForge mit Claude über MCP. Erzähl, was du lernen willst — es erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizzen."
     },
     "step2": {
-      "title": "Mit Claude lernen",
-      "description": "Sag Claude, was du lernen möchtest. Es erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizfragen — alles gespeichert in deiner LearnForge-Instanz."
+      "title": "Lerne auf deine Art",
+      "description": "Wiederhole in der Web-App oder per KI-Chat. Wähle klassische Selbstbewertung, Multiple Choice oder offene Fragen. Schwierigere Modi bringen längere Intervalle."
     },
     "step3": {
-      "title": "Lernen & Meistern",
-      "description": "Wiederhole Karten in der Web-App oder über Claude. FSRS plant deine Wiederholungen zu optimalen Zeitpunkten, während die Bloom-Taxonomie deine Verständnistiefe verfolgt."
+      "title": "Meistere jedes Konzept",
+      "description": "Beobachte, wie dein Verständnis durch die Bloom-Stufen wächst. FSRS plant deine Wiederholungen in optimalen Abständen. Nichts geht verloren."
     }
   },
-  "techFeatures": {
-    "sectionTitle": "Für ernsthaftes Lernen gebaut",
-    "katex": {
-      "title": "KaTeX-Formeln",
-      "description": "Schöne Darstellung mathematischer Formeln für MINT-Fächer"
-    },
-    "mcq": {
-      "title": "Interaktive MCQ",
-      "description": "Multiple-Choice-Fragen mit sofortigem Feedback"
-    },
-    "svg": {
-      "title": "SVG-Diagramme",
-      "description": "Visuelles Lernen mit eigenen Diagrammen und Charts"
-    },
-    "search": {
-      "title": "Semantische Suche",
-      "description": "Finde verwandte Karten nach Bedeutung, nicht nur Stichwörtern"
-    },
-    "darkTheme": {
-      "title": "Dark- & Light-Theme",
-      "description": "Passt sich deiner Systemeinstellung an für angenehmes Lernen"
-    },
-    "openSource": {
-      "title": "Open Source",
-      "description": "AGPL-3.0 lizenziert — einsehen, anpassen, selbst hosten"
+  "bloom": {
+    "title": "Sechs Stufen des Verstehens",
+    "subtitle": "Herkömmliche Lernkarten bleiben bei Stufe 1 stehen. LearnForge bringt dich bis Stufe 6.",
+    "levels": {
+      "0": { "name": "Erinnern", "description": "Fakten und Grundkonzepte abrufen" },
+      "1": { "name": "Verstehen", "description": "Ideen erklären und Bedeutung interpretieren" },
+      "2": { "name": "Anwenden", "description": "Wissen in neuen Situationen nutzen" },
+      "3": { "name": "Analysieren", "description": "Konzepte aufschlüsseln und vergleichen" },
+      "4": { "name": "Bewerten", "description": "Entscheidungen begründen und Gültigkeit prüfen" },
+      "5": { "name": "Erschaffen", "description": "Entwerfen, konstruieren und synthetisieren" }
     }
+  },
+  "openSource": {
+    "title": "Deine Daten, deine Wahl",
+    "cloud": {
+      "title": "Cloud",
+      "point1": "30 Tage kostenlos, kein Setup",
+      "point2": "Automatische Updates und Backups",
+      "point3": "Verwaltete Infrastruktur"
+    },
+    "selfHost": {
+      "title": "Self-Host",
+      "point1": "Volle Kontrolle über deine Daten",
+      "point2": "Docker-Compose-Deployment",
+      "point3": "AGPL-3.0 — für immer kostenlos"
+    }
+  },
+  "community": {
+    "title": "Gestalte die Zukunft des Lernens",
+    "stat1": "Open Source",
+    "stat2": "Wissenschaftlich fundiert",
+    "stat3": "KI-gestützt",
+    "cta": "Auf GitHub ansehen"
   },
   "pricing": {
-    "title": "30 Tage kostenlos",
-    "subtitle": "Teste LearnForge mit vollem Zugang. Keine Kreditkarte nötig.",
-    "cta": "Kostenlos starten",
-    "note": "Nach der Testphase: EUR 2/Monat, jährlich abgerechnet zu EUR 24/Jahr.",
-    "donation": "Unterstütze das Projekt mit einer Spende",
-    "prerequisite": "Erfordert ein Claude Pro-, Team- oder Enterprise-Abo für KI-Funktionen."
+    "title": "Heute mit dem Lernen beginnen",
+    "trial": {
+      "title": "Kostenlose Testphase",
+      "price": "€0",
+      "period": "30 Tage",
+      "features": ["Voller Zugang zu allen Features", "Keine Kreditkarte erforderlich", "Jederzeit kündbar"]
+    },
+    "annual": {
+      "title": "Jährlich",
+      "price": "€2",
+      "period": "/Monat",
+      "billed": "Jährlich abgerechnet zu €24/Jahr",
+      "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support"]
+    },
+    "cta": "Kostenlose Testphase starten",
+    "claudeNote": "Erfordert ein Claude Pro-, Team- oder Enterprise-Abo für KI-Funktionen.",
+    "donation": "Du magst LearnForge? Hilf, es unabhängig zu halten.",
+    "donationLink": "Projekt unterstützen"
   }
 }

@@ -1,12 +1,14 @@
 {
   "nav": {
     "features": "Features",
+    "pricing": "Pricing",
     "github": "GitHub",
     "login": "Login",
+    "signup": "Sign Up",
     "dashboard": "Dashboard"
   },
   "footer": {
-    "tagline": "AI-powered spaced repetition",
+    "tagline": "Your AI Memory Guardian",
     "product": "Product",
     "features": "Features",
     "github": "GitHub",
@@ -17,7 +19,24 @@
     "agb": "Terms of Service",
     "contact": "Contact",
     "license": "Licensed under AGPL-3.0",
-    "sourceCode": "Source Code"
+    "sourceCode": "Source Code",
+    "builtBy": "Built by"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "signUp": "Sign up",
+    "signingUp": "Creating account...",
+    "signInSubtitle": "Welcome back to LearnForge",
+    "signUpSubtitle": "Start your 30-day free trial",
+    "createAccount": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "backToHome": "Back to home",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "passwordHint": "At least 8 characters"
   },
   "language": {
     "en": "EN",

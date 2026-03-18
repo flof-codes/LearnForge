@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Monitor, Sun, Moon, MonitorSmartphone, CreditCard, CheckCircle, XCircle, Heart } from 'lucide-react';
+import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Sun, Moon, MonitorSmartphone, CreditCard, CheckCircle, XCircle, Heart, Download } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { authService, billingService } from '../../api/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -26,11 +27,15 @@ export default function McpSettingsPage() {
   const [copied, setCopied] = useState(false);
   const mcpUrl = `${window.location.origin}/mcp`;
 
+  const { t } = useTranslation('legal');
+
   // Billing state
   const [searchParams, setSearchParams] = useSearchParams();
   const [banner, setBanner] = useState<{ type: 'success' | 'canceled'; message: string } | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [withdrawalConsent, setWithdrawalConsent] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const successParam = searchParams.get('success');
   const canceledParam = searchParams.get('canceled');
@@ -97,6 +102,32 @@ export default function McpSettingsPage() {
     } catch {
       setBanner({ type: 'canceled', message: 'Failed to open billing portal. Please try again.' });
       setPortalLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('learnforge_token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+      const response = await fetch(`${baseUrl}/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `learnforge-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setBanner({ type: 'canceled', message: 'Failed to export data. Please try again.' });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -185,9 +216,20 @@ export default function McpSettingsPage() {
 
         {!user?.hasActiveSubscription && (
           <>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={withdrawalConsent}
+                onChange={(e) => setWithdrawalConsent(e.target.checked)}
+                className="mt-0.5 shrink-0 w-4 h-4 rounded border-border accent-accent-blue"
+              />
+              <span className="text-text-muted text-xs leading-relaxed">
+                {t('billing.withdrawalConsent')}
+              </span>
+            </label>
             <button
               onClick={handleCheckout}
-              disabled={checkoutLoading}
+              disabled={checkoutLoading || !withdrawalConsent}
               className="w-full py-2.5 bg-accent-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {checkoutLoading ? 'Redirecting...' : 'Subscribe — EUR 24/year'}
@@ -230,12 +272,33 @@ export default function McpSettingsPage() {
         </a>
       </section>
 
+      {/* Data Export */}
+      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Download size={20} className="text-accent-blue" />
+          <h2 className="text-lg font-medium text-text-primary">Export Data</h2>
+        </div>
+        <p className="text-text-muted text-sm">
+          Download all your topics, cards, review history, and images as a ZIP file.
+        </p>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="w-full py-2.5 bg-bg-primary border border-border text-text-primary rounded-lg font-medium hover:bg-bg-surface transition-colors disabled:opacity-50"
+        >
+          {exporting ? 'Preparing export...' : 'Download Export (.zip)'}
+        </button>
+      </section>
+
       {/* Key Status */}
       <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
         <div className="flex items-center gap-3">
           <Key size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">API Key</h2>
         </div>
+        <p className="text-text-muted text-sm">
+          Required for AI assistants that don&apos;t support OAuth, such as Gemini, Cursor, or other MCP clients. Claude users can skip this — Claude connects via OAuth automatically.
+        </p>
 
         {status?.hasKey ? (
           <div className="flex items-center justify-between">
@@ -292,50 +355,25 @@ export default function McpSettingsPage() {
         </section>
       )}
 
-      {/* Claude Desktop Tutorial */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <Monitor size={20} className="text-accent-blue" />
-          <h2 className="text-lg font-medium text-text-primary">Claude Desktop Setup</h2>
-        </div>
-        <p className="text-text-muted text-sm">
-          Add this to your <code className="text-text-primary bg-bg-primary px-1.5 py-0.5 rounded text-xs">claude_desktop_config.json</code>:
-        </p>
-        <pre className="bg-bg-primary rounded-lg p-4 text-sm text-text-primary overflow-x-auto border border-border">
-{JSON.stringify({
-  mcpServers: {
-    learnforge: {
-      command: "npx",
-      args: ["tsx", "/path/to/mcp/src/index.ts", "--stdio", "--api-key", "YOUR_KEY_HERE"]
-    }
-  }
-}, null, 2)}
-        </pre>
-        <p className="text-text-muted text-xs">
-          Replace <code className="text-text-primary">/path/to/mcp/src/index.ts</code> with the actual path and <code className="text-text-primary">YOUR_KEY_HERE</code> with your API key.
-        </p>
-      </section>
-
       {/* Claude Web Tutorial */}
       <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
         <div className="flex items-center gap-3">
           <Globe size={20} className="text-accent-blue" />
-          <h2 className="text-lg font-medium text-text-primary">Claude Web (claude.ai) Setup</h2>
+          <h2 className="text-lg font-medium text-text-primary">Claude (claude.ai) Setup</h2>
         </div>
         <ol className="text-text-muted text-sm space-y-2 list-decimal list-inside">
-          <li>Open <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">claude.ai</a> and go to <strong className="text-text-primary">Settings</strong></li>
-          <li>Navigate to the <strong className="text-text-primary">Integrations</strong> tab</li>
-          <li>Click <strong className="text-text-primary">Add</strong> to add a custom integration</li>
-          <li>Enter a name, e.g. <code className="text-text-primary bg-bg-primary px-1.5 py-0.5 rounded text-xs">LearnForge</code></li>
-          <li>Set the server URL to:</li>
+          <li>Open <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">claude.ai</a> and go to <strong className="text-text-primary">Settings &gt; Connectors</strong></li>
+          <li>Scroll down and click <strong className="text-text-primary">Add custom connector</strong></li>
+          <li>Enter the server URL:</li>
         </ol>
         <pre className="bg-bg-primary rounded-lg p-4 text-sm text-text-primary overflow-x-auto border border-border">{mcpUrl}</pre>
-        <ol start={6} className="text-text-muted text-sm space-y-2 list-decimal list-inside">
-          <li>Claude.ai will redirect you to sign in with your LearnForge credentials</li>
-          <li>After signing in, LearnForge tools will appear in your conversations</li>
+        <ol start={4} className="text-text-muted text-sm space-y-2 list-decimal list-inside">
+          <li>Click <strong className="text-text-primary">Add</strong> to confirm</li>
+          <li>You will be redirected to sign in with your LearnForge credentials</li>
+          <li>In a conversation, click the <strong className="text-text-primary">+</strong> button, select <strong className="text-text-primary">Connectors</strong>, and toggle LearnForge on</li>
         </ol>
         <p className="text-text-muted text-xs">
-          Authentication uses OAuth 2.0 — no API key needed for Claude Web.
+          Authentication uses OAuth 2.0 — no API key needed. Works on Claude Pro, Max, Team, and Enterprise plans.
         </p>
       </section>
 

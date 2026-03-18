@@ -12,6 +12,7 @@ import contextRoutes from "./routes/context.js";
 import imageRoutes from "./routes/images.js";
 import mcpKeyRoutes from "./routes/mcp-keys.js";
 import billingRoutes from "./routes/billing.js";
+import exportRoutes from "./routes/export.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
 
 export function buildApp() {
@@ -55,6 +56,7 @@ export function buildApp() {
   app.register(imageRoutes);
   app.register(mcpKeyRoutes);
   app.register(billingRoutes);
+  app.register(exportRoutes);
 
   app.get("/health", async () => ({ status: "ok" }));
 

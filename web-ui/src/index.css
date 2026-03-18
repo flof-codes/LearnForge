@@ -112,3 +112,63 @@ html {
 [data-theme="light"] ::-webkit-scrollbar-track { background: #ffffff; }
 [data-theme="light"] ::-webkit-scrollbar-thumb { background: #d1d5db; }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Fade-in animation */
+.lf-fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.lf-fade-in.lf-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children reveal */
+.lf-stagger > *:nth-child(1) { transition-delay: 0s; }
+.lf-stagger > *:nth-child(2) { transition-delay: 0.1s; }
+.lf-stagger > *:nth-child(3) { transition-delay: 0.2s; }
+.lf-stagger > *:nth-child(4) { transition-delay: 0.3s; }
+.lf-stagger > *:nth-child(5) { transition-delay: 0.4s; }
+.lf-stagger > *:nth-child(6) { transition-delay: 0.5s; }
+
+/* Card glow on hover */
+.lf-card-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.lf-card-glow:hover {
+  box-shadow: 0 0 24px -4px rgba(88, 166, 255, 0.2);
+  border-color: rgba(88, 166, 255, 0.3);
+}
+[data-theme="light"] .lf-card-glow:hover {
+  box-shadow: 0 0 24px -4px rgba(37, 99, 235, 0.15);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+/* Bloom spectrum gradient line */
+.lf-bloom-spectrum {
+  background: linear-gradient(
+    90deg,
+    var(--color-bloom-0-text),
+    var(--color-bloom-1-text),
+    var(--color-bloom-2-text),
+    var(--color-bloom-3-text),
+    var(--color-bloom-4-text),
+    var(--color-bloom-5-text)
+  );
+}
+
+/* CTA glow */
+.lf-cta-glow {
+  box-shadow: 0 0 20px -4px rgba(88, 166, 255, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+.lf-cta-glow:hover {
+  box-shadow: 0 0 32px -4px rgba(88, 166, 255, 0.5);
+}
+[data-theme="light"] .lf-cta-glow {
+  box-shadow: 0 0 20px -4px rgba(37, 99, 235, 0.25);
+}
+[data-theme="light"] .lf-cta-glow:hover {
+  box-shadow: 0 0 32px -4px rgba(37, 99, 235, 0.4);
+}

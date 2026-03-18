@@ -25,6 +25,9 @@ export default function PublicHeader() {
           <a href="/#features" className="text-sm text-text-muted hover:text-text-primary transition-colors">
             {t('nav.features')}
           </a>
+          <a href="/#pricing" className="text-sm text-text-muted hover:text-text-primary transition-colors">
+            {t('nav.pricing')}
+          </a>
           <a
             href={GITHUB_URL}
             target="_blank"
@@ -36,9 +39,15 @@ export default function PublicHeader() {
           <LanguageSwitcher />
           <Link
             to="/login"
-            className="text-sm px-4 py-2 rounded-lg border border-border text-text-primary hover:bg-bg-surface transition-colors"
+            className="text-sm text-text-muted hover:text-text-primary transition-colors"
           >
             {t('nav.login')}
+          </Link>
+          <Link
+            to="/register"
+            className="text-sm px-4 py-2 rounded-lg bg-accent-blue text-white font-medium hover:opacity-90 transition-opacity"
+          >
+            {t('nav.signup')}
           </Link>
         </nav>
 
@@ -62,6 +71,13 @@ export default function PublicHeader() {
             {t('nav.features')}
           </a>
           <a
+            href="/#pricing"
+            onClick={() => setMobileOpen(false)}
+            className="block text-sm text-text-muted hover:text-text-primary"
+          >
+            {t('nav.pricing')}
+          </a>
+          <a
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
@@ -71,13 +87,22 @@ export default function PublicHeader() {
           </a>
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <LanguageSwitcher />
-            <Link
-              to="/login"
-              onClick={() => setMobileOpen(false)}
-              className="text-sm px-4 py-2 rounded-lg border border-border text-text-primary hover:bg-bg-surface transition-colors"
-            >
-              {t('nav.login')}
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/login"
+                onClick={() => setMobileOpen(false)}
+                className="text-sm text-text-muted hover:text-text-primary transition-colors"
+              >
+                {t('nav.login')}
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileOpen(false)}
+                className="text-sm px-4 py-2 rounded-lg bg-accent-blue text-white font-medium hover:opacity-90 transition-opacity"
+              >
+                {t('nav.signup')}
+              </Link>
+            </div>
           </div>
         </div>
       )}
