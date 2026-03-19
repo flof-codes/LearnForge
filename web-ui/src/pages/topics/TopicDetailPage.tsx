@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Pencil, Trash2, Plus, FolderTree } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTopic, useDeleteTopic } from '../../hooks/useTopics';
 import { contextService } from '../../api/context';
 import { useQuery } from '@tanstack/react-query';
@@ -29,6 +30,7 @@ interface ContextCard {
 }
 
 export default function TopicDetailPage() {
+  const { t } = useTranslation('app');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: topic, isLoading } = useTopic(id!);
@@ -77,7 +79,7 @@ export default function TopicDetailPage() {
   }, [allCards, filter, sort]);
 
   if (isLoading) return <LoadingSpinner />;
-  if (!topic) return <p className="text-text-muted">Topic not found.</p>;
+  if (!topic) return <p className="text-text-muted">{t('topics.notFound')}</p>;
 
   const handleDelete = () => {
     deleteTopic.mutate(id!, { onSuccess: () => navigate('/dashboard/topics') });
@@ -100,16 +102,16 @@ export default function TopicDetailPage() {
           <div className="flex items-center gap-3 mt-2">
             {newCount > 0 && (
               <span className="text-xs tabular-nums px-2 py-0.5 rounded bg-accent-blue/15 text-accent-blue">
-                {newCount} new
+                {t('topics.newBadge', { count: newCount })}
               </span>
             )}
             {dueCount > 0 && (
               <span className="text-xs tabular-nums px-2 py-0.5 rounded bg-accent-green/15 text-accent-green">
-                {dueCount} due
+                {t('topics.dueBadge', { count: dueCount })}
               </span>
             )}
             {newCount === 0 && dueCount === 0 && topic.cardCount > 0 && (
-              <span className="text-xs text-text-muted">{topic.cardCount} cards, all up to date</span>
+              <span className="text-xs text-text-muted">{t('topics.allUpToDate', { count: topic.cardCount })}</span>
             )}
           </div>
         </div>
@@ -121,7 +123,7 @@ export default function TopicDetailPage() {
             onClick={() => setDeleteOpen(true)}
             disabled={topic.cardCount > 0}
             className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-danger transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-muted"
-            title={topic.cardCount > 0 ? `Delete or move ${topic.cardCount} card(s) first` : 'Delete topic'}
+            title={topic.cardCount > 0 ? t('topics.deleteCardFirst', { count: topic.cardCount }) : t('topics.delete')}
           >
             <Trash2 size={16} />
           </button>
@@ -131,7 +133,7 @@ export default function TopicDetailPage() {
       {/* Subtopics */}
       {topic.children && topic.children.length > 0 && (
         <div className="bg-bg-secondary rounded-xl border border-border p-5">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Subtopics</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('topics.subtopics')}</h2>
           <div className="space-y-1">
             {topic.children.map(child => (
               <Link
@@ -159,24 +161,24 @@ export default function TopicDetailPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">
-            Cards {filter !== 'all' ? `(${filteredCards.length} of ${allCards.length})` : `(${allCards.length})`}
+            {filter !== 'all' ? t('topics.cardsFiltered', { filtered: filteredCards.length, total: allCards.length }) : t('topics.cardsCount', { count: allCards.length })}
           </h2>
           <Link
             to={`/dashboard/cards/new?topicId=${id}`}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-accent-blue text-white hover:opacity-90 transition-opacity"
           >
-            <Plus size={14} /> Add Card
+            <Plus size={14} /> {t('topics.addCard')}
           </Link>
         </div>
 
         {allCards.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {([
-              { key: 'all', label: 'All' },
-              { key: 'new', label: 'New' },
-              { key: 'learning', label: 'Learning' },
-              { key: 'due', label: 'Due' },
-            ] as const).map(f => (
+              { key: 'all' as CardFilter, label: t('cards.filterAll') },
+              { key: 'new' as CardFilter, label: t('cards.filterNew') },
+              { key: 'learning' as CardFilter, label: t('cards.filterLearning') },
+              { key: 'due' as CardFilter, label: t('cards.filterDue') },
+            ]).map(f => (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
@@ -195,10 +197,10 @@ export default function TopicDetailPage() {
               onChange={e => setSort(e.target.value as CardSort)}
               className="text-xs bg-bg-surface text-text-muted rounded-lg px-2 py-1 border-none outline-none cursor-pointer hover:text-text transition-colors"
             >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="updated">Recently updated</option>
-              <option value="studied">Recently studied</option>
+              <option value="newest">{t('cards.sortNewest')}</option>
+              <option value="oldest">{t('cards.sortOldest')}</option>
+              <option value="updated">{t('cards.sortUpdated')}</option>
+              <option value="studied">{t('cards.sortStudied')}</option>
             </select>
           </div>
         )}
@@ -223,11 +225,11 @@ export default function TopicDetailPage() {
           </div>
         ) : allCards.length > 0 ? (
           <div className="text-center py-8 text-text-muted bg-bg-secondary rounded-xl border border-border">
-            <p className="text-sm">No cards match this filter.</p>
+            <p className="text-sm">{t('topics.noCardsFilter')}</p>
           </div>
         ) : (
           <div className="text-center py-8 text-text-muted bg-bg-secondary rounded-xl border border-border">
-            <p className="text-sm">No cards in this topic yet.</p>
+            <p className="text-sm">{t('topics.noCardsInTopic')}</p>
           </div>
         )}
       </div>
@@ -236,9 +238,9 @@ export default function TopicDetailPage() {
       <EditTopicModal open={editOpen} topic={topic as any} onClose={() => setEditOpen(false)} />
       <ConfirmModal
         open={deleteOpen}
-        title="Delete Topic"
-        message={`Delete "${topic.name}"? Child topics will become root topics.`}
-        confirmLabel="Delete"
+        title={t('topics.deleteTitle')}
+        message={t('topics.deleteMessage', { name: topic.name })}
+        confirmLabel={t('topics.deleteConfirm')}
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}

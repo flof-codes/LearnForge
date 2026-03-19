@@ -5,26 +5,27 @@ export default function LanguageSwitcher() {
   const current = i18n.language?.startsWith('de') ? 'de' : 'en';
 
   return (
-    <div className="flex items-center rounded-lg border border-border overflow-hidden text-xs">
+    <div className="inline-flex items-center rounded-lg border border-border overflow-hidden text-sm">
       <button
         onClick={() => i18n.changeLanguage('en')}
-        className={`px-2.5 py-1.5 transition-colors ${
+        className={`px-4 py-2 transition-colors ${
           current === 'en'
             ? 'bg-accent-blue/15 text-accent-blue font-medium'
             : 'text-text-muted hover:text-text-primary'
         }`}
       >
-        EN
+        English
       </button>
+      <span className="w-px self-stretch bg-border" />
       <button
         onClick={() => i18n.changeLanguage('de')}
-        className={`px-2.5 py-1.5 transition-colors ${
+        className={`px-4 py-2 transition-colors ${
           current === 'de'
             ? 'bg-accent-blue/15 text-accent-blue font-medium'
             : 'text-text-muted hover:text-text-primary'
         }`}
       >
-        DE
+        Deutsch
       </button>
     </div>
   );

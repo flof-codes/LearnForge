@@ -130,8 +130,22 @@
       "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support"]
     },
     "cta": "Start Your Free Trial",
-    "claudeNote": "Requires a Claude Pro, Team, or Enterprise subscription for AI features.",
+    "claudeNote": "Works with any Claude plan, including the free tier (1 connector included).",
     "donation": "Love LearnForge? Help keep it independent.",
     "donationLink": "Support the project"
+  },
+  "seo": {
+    "orgDescription": "Open-source AI-powered spaced repetition platform with dynamic question reformulation and Bloom's Taxonomy depth tracking.",
+    "appCategory": "EducationalApplication",
+    "faq": {
+      "q1": "What is LearnForge?",
+      "a1": "LearnForge is an open-source learning platform that uses AI to dynamically reformulate flashcard questions on every review, tracks cognitive depth using Bloom's Taxonomy, and schedules reviews with the FSRS spaced repetition algorithm.",
+      "q2": "How is LearnForge different from Anki or other flashcard apps?",
+      "a2": "Traditional flashcard apps show you the same question every time, leading to pattern recognition instead of true understanding. LearnForge rephrases every question using AI and tracks six levels of cognitive depth per concept — from basic recall to critical thinking.",
+      "q3": "Is LearnForge free?",
+      "a3": "LearnForge offers a 30-day free trial with full access. After that, it costs €2/month billed annually. Self-hosting is always free under the AGPL-3.0 license.",
+      "q4": "What is Bloom's Taxonomy?",
+      "a4": "Bloom's Taxonomy is a framework of six cognitive levels: Remember, Understand, Apply, Analyze, Evaluate, and Create. LearnForge tracks your mastery at each level and automatically escalates question difficulty as you improve."
+    }
   }
 }

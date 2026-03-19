@@ -21,6 +21,7 @@ import LandingPage from './pages/public/LandingPage';
 import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
 import AGBPage from './pages/public/AGBPage';
+import DocsPage from './pages/public/DocsPage';
 
 export default function App() {
   return (
@@ -35,6 +36,10 @@ export default function App() {
               <Route path="impressum" element={<ImpressumPage />} />
               <Route path="datenschutz" element={<DatenschutzPage />} />
               <Route path="agb" element={<AGBPage />} />
+              <Route path="docs" element={<DocsPage />} />
+              <Route path="privacy" element={<DatenschutzPage />} />
+              <Route path="terms" element={<AGBPage />} />
+              <Route path="imprint" element={<ImpressumPage />} />
             </Route>
 
             {/* Auth */}

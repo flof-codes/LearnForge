@@ -4,17 +4,21 @@ import { useTranslation } from 'react-i18next';
 interface Props {
   title: string;
   lastUpdated: string;
+  slug: 'impressum' | 'datenschutz' | 'agb';
   children: React.ReactNode;
 }
 
-export default function LegalPageLayout({ title, lastUpdated, children }: Props) {
-  const { i18n } = useTranslation();
+export default function LegalPageLayout({ title, lastUpdated, slug, children }: Props) {
+  const { t, i18n } = useTranslation('legal');
+  const description = t(`meta.${slug}Description`, { defaultValue: '' });
 
   return (
     <>
       <Helmet>
         <html lang={i18n.language} />
         <title>{title} — LearnForge</title>
+        {description && <meta name="description" content={description} />}
+        <link rel="canonical" href={`https://learnforge.eu/${slug}`} />
       </Helmet>
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-semibold text-text-primary mb-2">{title}</h1>

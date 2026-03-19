@@ -5,7 +5,7 @@ export default function ImpressumPage() {
   const { t } = useTranslation('legal');
 
   return (
-    <LegalPageLayout title={t('impressum.title')} lastUpdated={t('impressum.lastUpdated')}>
+    <LegalPageLayout title={t('impressum.title')} lastUpdated={t('impressum.lastUpdated')} slug="impressum">
       <p className="text-text-muted">{t('impressum.intro')}</p>
 
       <LegalSection title={t('impressum.operator')}>

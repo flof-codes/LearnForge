@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface RatingButtonsProps {
   onRate: (rating: 1 | 2 | 3 | 4) => void;
@@ -6,10 +7,10 @@ interface RatingButtonsProps {
 }
 
 const ratings = [
-  { value: 1 as const, label: 'Again', bg: '#da3633', shortcut: 'A' },
-  { value: 2 as const, label: 'Hard', bg: '#d29922', shortcut: 'S' },
-  { value: 3 as const, label: 'Good', bg: '#2ea043', shortcut: 'D' },
-  { value: 4 as const, label: 'Easy', bg: '#58a6ff', shortcut: 'F' },
+  { value: 1 as const, labelKey: 'ratings.again', bg: '#da3633', shortcut: 'A' },
+  { value: 2 as const, labelKey: 'ratings.hard', bg: '#d29922', shortcut: 'S' },
+  { value: 3 as const, labelKey: 'ratings.good', bg: '#2ea043', shortcut: 'D' },
+  { value: 4 as const, labelKey: 'ratings.easy', bg: '#58a6ff', shortcut: 'F' },
 ];
 
 // Map keys to rating values — letters (home row) + numbers as fallback
@@ -23,6 +24,7 @@ const CODE_MAP: Record<string, 1 | 2 | 3 | 4> = {
 };
 
 export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) {
+  const { t } = useTranslation('app');
   const onRateRef = useRef(onRate);
   const disabledRef = useRef(disabled);
   onRateRef.current = onRate; // eslint-disable-line react-hooks/refs
@@ -53,7 +55,7 @@ export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) 
 
   return (
     <div className="flex gap-3">
-      {ratings.map(({ value, label, bg, shortcut }) => (
+      {ratings.map(({ value, labelKey, bg, shortcut }) => (
         <button
           key={value}
           onClick={() => onRate(value)}
@@ -63,7 +65,7 @@ export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) 
           }`}
           style={{ backgroundColor: bg }}
         >
-          {label}
+          {t(labelKey)}
           <span className="block text-xs opacity-70 mt-0.5">{shortcut}</span>
         </button>
       ))}

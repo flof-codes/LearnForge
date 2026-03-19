@@ -220,20 +220,18 @@ Prüft:
 
 ### Phase 2: Parallele Spezialisten (nach bestandenem Lint Gate)
 
-Alle 4 Agenten gleichzeitig ausführen:
+Alle 3 Agenten gleichzeitig ausführen:
 
 ```
-Use the plan-completeness agent to verify all plan steps were implemented.
+Use the code-review agent to verify plan completeness and check for security issues.
 Use the sync-checker agent to verify api/ and mcp/ shared code is in sync.
-Use the security-auditor agent to check for security issues.
 Use the test-coverage agent to run tests and check coverage.
 ```
 
 | Agent | Prüft | Blocker-Kriterien |
 |-------|-------|-------------------|
-| **plan-completeness** | Plan-Vollständigkeit, Diff-Review, Dateigröße, Clean Code, Typisierung | Fehlende Steps, `any` in neuem Code, unrelated Changes |
+| **code-review** | Plan-Vollständigkeit, Diff-Review, Architektur, Dateigröße, Clean Code, Secrets, SQL-Injection, Input-Validation, Sensitive Logs, Auth | Fehlende Steps, unrelated Changes, jedes Security-Issue |
 | **sync-checker** | api/ vs mcp/ Schema- und Service-Dateien | Plan ändert eine Kopie ohne die andere |
-| **security-auditor** | Secrets, SQL-Injection, Input-Validation, Auth | Jedes Security-Issue |
 | **test-coverage** | Integration Tests, Coverage, Test-Abdeckung neuer Features | Failing Tests |
 
 Jeder Agent gibt **PASS / WARN / BLOCKER** zurück.

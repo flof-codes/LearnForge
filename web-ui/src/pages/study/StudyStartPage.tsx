@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTopics } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
 import { BLOOM_COLORS } from '../../types';
@@ -8,6 +9,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
 
 export default function StudyStartPage() {
+  const { t } = useTranslation('app');
   const [topicId, setTopicId] = useState('');
   const { data: topics } = useTopics();
   const { data: summary, isLoading } = useStudySummary(topicId || undefined);
@@ -26,20 +28,20 @@ export default function StudyStartPage() {
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <SubscriptionBanner />
-      <h1 className="text-2xl font-medium">Study Session</h1>
+      <h1 className="text-2xl font-medium">{t('study.title')}</h1>
 
       {/* Topic selector */}
       <div className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
         <div>
-          <label className="block text-sm text-text-muted mb-1">Topic</label>
+          <label className="block text-sm text-text-muted mb-1">{t('study.topic')}</label>
           <select
             value={topicId}
             onChange={e => setTopicId(e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"
           >
-            <option value="">All Topics</option>
-            {(topics ?? []).map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+            <option value="">{t('study.allTopics')}</option>
+            {(topics ?? []).map(tp => (
+              <option key={tp.id} value={tp.id}>{tp.name}</option>
             ))}
           </select>
         </div>
@@ -52,19 +54,19 @@ export default function StudyStartPage() {
           <div className="grid grid-cols-4 gap-4 text-center mb-4">
             <div>
               <p className="text-2xl font-light tabular-nums">{summary.totalCards}</p>
-              <p className="text-xs text-text-muted">Total</p>
+              <p className="text-xs text-text-muted">{t('study.total')}</p>
             </div>
             <div>
               <p className="text-2xl font-light tabular-nums text-accent-blue">{summary.newCount}</p>
-              <p className="text-xs text-text-muted">New</p>
+              <p className="text-xs text-text-muted">{t('study.new')}</p>
             </div>
             <div>
               <p className="text-2xl font-light tabular-nums text-warning">{summary.dueCount}</p>
-              <p className="text-xs text-text-muted">Due</p>
+              <p className="text-xs text-text-muted">{t('study.due')}</p>
             </div>
             <div>
               <p className="text-2xl font-light tabular-nums">{summary.accuracy7d != null ? `${summary.accuracy7d}%` : '--'}</p>
-              <p className="text-xs text-text-muted">7d Accuracy</p>
+              <p className="text-xs text-text-muted">{t('study.accuracy7d')}</p>
             </div>
           </div>
           {totalBloom > 0 && (
@@ -78,7 +80,7 @@ export default function StudyStartPage() {
                     key={level}
                     className="h-full transition-all duration-500"
                     style={{ width: `${pct}%`, backgroundColor: BLOOM_COLORS[level].text }}
-                    title={`${BLOOM_COLORS[level].label}: ${count}`}
+                    title={`${t(BLOOM_COLORS[level].labelKey)}: ${count}`}
                   />
                 );
               })}
@@ -95,8 +97,8 @@ export default function StudyStartPage() {
       >
         <GraduationCap size={24} />
         {summary && (summary.dueCount + summary.newCount) === 0
-          ? 'No cards due'
-          : `Start Session (${(summary?.dueCount ?? 0) + (summary?.newCount ?? 0)} cards)`}
+          ? t('study.noCardsDue')
+          : t('study.startSession', { count: (summary?.dueCount ?? 0) + (summary?.newCount ?? 0) })}
       </button>
     </div>
   );

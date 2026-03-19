@@ -178,6 +178,85 @@
     "finalSeverability": "Should any provision of these Terms be or become invalid, the validity of the remaining provisions shall not be affected.",
     "finalCurrent": "The current version of these Terms applies."
   },
+  "meta": {
+    "impressumDescription": "Legal notice and contact information for LearnForge.",
+    "datenschutzDescription": "Privacy policy — how LearnForge handles your personal data.",
+    "agbDescription": "Terms of service for using LearnForge.",
+    "docsDescription": "Documentation — how to connect and use LearnForge with Claude."
+  },
+  "docs": {
+    "title": "Documentation",
+    "subtitle": "Learn how to connect LearnForge to Claude and get the most out of your AI tutor.",
+    "whatIs": {
+      "title": "What is LearnForge",
+      "description": "LearnForge is a spaced repetition platform that connects to Claude as a connector (Model Context Protocol). Every time you review a concept, the AI rephrases the question — so you prove real understanding, not pattern recognition.",
+      "feature1": "Tracks your understanding across six cognitive levels (Bloom's Taxonomy) — from basic recall to critical thinking",
+      "feature2": "Schedules reviews with a science-backed algorithm that adapts to how you study",
+      "feature3": "Creates interactive flashcards with formulas, diagrams, and quizzes through conversation"
+    },
+    "connect": {
+      "title": "Connect to Claude",
+      "prerequisite": "You need a <registerLink>LearnForge account</registerLink> (free, no credit card required) and a Claude account (any plan — the free tier includes 1 connector).",
+      "step1": "Open claude.ai and go to Settings > Connectors",
+      "step2": "Scroll down and click Add custom connector",
+      "step3": "Enter the server URL:",
+      "step4": "Click Add to confirm",
+      "step5": "You will be redirected to sign in with your LearnForge credentials",
+      "step6": "In a conversation, click the + button, select Connectors, and toggle LearnForge on",
+      "note": "Authentication uses OAuth 2.0 — no API key needed. Works on any Claude plan, including the free tier."
+    },
+    "study": {
+      "title": "Study with AI",
+      "promptsLabel": "Try saying:",
+      "prompt1": "Quiz me",
+      "prompt2": "Quiz me on Biology",
+      "prompt3": "Let's learn",
+      "description": "Claude starts by showing your study summary — how many cards are due, your new card count, and your Bloom level distribution. Then you pick a topic and study mode.",
+      "chatMode": "Chat Mode (default)",
+      "chatModeDesc": "You type free-form answers in your own words. This is the deepest form of learning — correct answers earn longer review intervals.",
+      "mcqMode": "MCQ Mode",
+      "mcqModeDesc": "Multiple choice questions for faster sessions. Great for quick reviews, but intervals are shorter since recognition is easier than recall.",
+      "workflow": "Claude asks questions one by one, adapted to your current Bloom level. After each answer you get immediate feedback — what was right, what's missing, and a hint for next time. At the end, you see a session summary with your accuracy and any Bloom level changes."
+    },
+    "cards": {
+      "title": "Create Cards with AI",
+      "promptsLabel": "Try saying:",
+      "prompt1": "Create a card about photosynthesis",
+      "prompt2": "Make a flashcard for the Krebs cycle",
+      "description": "Claude generates a visual flashcard with a clean question on the front and an interactive explanation on the back — including accordion sections, KaTeX formulas, and SVG diagrams where appropriate.",
+      "workflow": "You always see a rendered preview first. Nothing is saved until you explicitly confirm. You can request changes (\"make it simpler\", \"add a diagram\", \"change the question\") as many times as you like before approving."
+    },
+    "manageCards": {
+      "title": "Manage Cards",
+      "promptsLabel": "Try saying:",
+      "prompt1": "Edit my photosynthesis card",
+      "prompt2": "Delete the card about mitosis",
+      "prompt3": "Show me my study forecast",
+      "description": "Beyond creating cards, you can ask Claude to edit, delete, or review your existing cards and study schedule:",
+      "cap1": "Edit cards — change the question, update the answer, or move a card to a different topic",
+      "cap2": "Delete cards you no longer need",
+      "cap3": "View your due forecast — see how many reviews are coming up by day or month",
+      "cap4": "Upload images to cards for visual learning and diagrams"
+    },
+    "topics": {
+      "title": "Manage Topics",
+      "promptsLabel": "Try saying:",
+      "prompt1": "Create a topic called Organic Chemistry",
+      "prompt2": "Show my topics",
+      "description": "Claude can organize your learning material into a topic hierarchy. What you can do:",
+      "cap1": "Create new topics, optionally nested under a parent",
+      "cap2": "Rename topics and add descriptions",
+      "cap3": "Build multi-level hierarchies (e.g. Biology > Cell Biology > Mitosis)",
+      "cap4": "Delete empty topics (cards must be moved or deleted first)"
+    },
+    "help": {
+      "title": "Need Help?",
+      "contact": "If you run into any issues or have questions, reach out to us and we'll do our best to help.",
+      "email": "{{operatorEmail}}",
+      "privacyLink": "Privacy Policy",
+      "termsLink": "Terms of Service"
+    }
+  },
   "register": {
     "agbCheckbox": "I agree to the <agbLink>Terms of Service</agbLink> and acknowledge the <privacyLink>Privacy Policy</privacyLink>.",
     "agbRequired": "You must agree to the Terms to continue."

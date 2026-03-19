@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   tags: string[];
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function TagInput({ tags, onChange }: Props) {
+  const { t } = useTranslation('app');
   const [input, setInput] = useState('');
 
   const addTag = () => {
@@ -43,7 +45,7 @@ export default function TagInput({ tags, onChange }: Props) {
         onKeyDown={handleKeyDown}
         onBlur={addTag}
         className="flex-1 min-w-[80px] bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-        placeholder={tags.length === 0 ? 'Type tag + Enter' : ''}
+        placeholder={tags.length === 0 ? t('cardEditor.tagPlaceholder') : ''}
       />
     </div>
   );

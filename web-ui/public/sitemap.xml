@@ -2,18 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://learnforge.eu/</loc>
+    <lastmod>2026-03-19</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://learnforge.eu/register</loc>
+    <lastmod>2026-03-19</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://learnforge.eu/docs</loc>
+    <lastmod>2026-03-19</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://learnforge.eu/impressum</loc>
+    <lastmod>2026-03-19</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://learnforge.eu/datenschutz</loc>
+    <lastmod>2026-03-19</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://learnforge.eu/agb</loc>
+    <lastmod>2026-03-19</lastmod>
     <priority>0.3</priority>
   </url>
 </urlset>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import RatingButtons from '../../components/RatingButtons';
 import type { DueCard } from '../../types';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function InteractiveCard({ card, onRate, onViewDetail, disabled }: Props) {
+  const { t } = useTranslation('app');
   const [flipped, setFlipped] = useState(false);
 
   // Reset flip state when card changes
@@ -37,15 +39,15 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
       <div className="bg-bg-secondary rounded-xl border border-border p-6 relative pb-16">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
-            {flipped ? 'Back' : 'Front'}
+            {flipped ? t('study.back') : t('study.front')}
           </div>
           {onViewDetail && (
             <button
               onClick={onViewDetail}
               className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-blue transition-colors"
-              title="View card details"
+              title={t('study.viewDetails')}
             >
-              <Info size={14} /> Details
+              <Info size={14} /> {t('study.details')}
             </button>
           )}
         </div>
@@ -60,7 +62,7 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
         <button
           onClick={() => setFlipped(prev => !prev)}
           className="absolute bottom-0 right-0 group"
-          title="Flip card (Space)"
+          title={t('study.flipCard')}
         >
           {/* Folded corner triangle */}
           <svg width="56" height="56" viewBox="0 0 56 56" className="transition-transform duration-200 group-hover:scale-110 origin-bottom-right">

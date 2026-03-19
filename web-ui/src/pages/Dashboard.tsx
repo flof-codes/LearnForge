@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { GraduationCap, Plus, Layers, Flame, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useStudySummary, useStudyStats } from '../hooks/useStudy';
 import { useTopics } from '../hooks/useTopics';
 import { BLOOM_COLORS } from '../types';
@@ -8,15 +9,16 @@ import DueForecastChart from '../components/DueForecastChart';
 import TopicPieChart from '../components/TopicPieChart';
 import SubscriptionBanner from '../components/SubscriptionBanner';
 
-const STATE_COLORS: Record<string, { bg: string; label: string }> = {
-  new:         { bg: '#58a6ff', label: 'New' },
-  learning:    { bg: '#d29922', label: 'Learning' },
-  relearning:  { bg: '#f85149', label: 'Relearning' },
-  young:       { bg: '#56d364', label: 'Young' },
-  mature:      { bg: '#bc8cff', label: 'Mature' },
+const STATE_COLOR_MAP: Record<string, string> = {
+  new:         '#58a6ff',
+  learning:    '#d29922',
+  relearning:  '#f85149',
+  young:       '#56d364',
+  mature:      '#bc8cff',
 };
 
 export default function Dashboard() {
+  const { t } = useTranslation('app');
   const { data: summary, isLoading: summaryLoading } = useStudySummary();
   const { data: stats, isLoading: statsLoading } = useStudyStats();
   const { data: topics } = useTopics();
@@ -29,20 +31,20 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <SubscriptionBanner />
-      <h1 className="text-2xl font-medium">Dashboard</h1>
+      <h1 className="text-2xl font-medium">{t('dashboard.title')}</h1>
 
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <p className="text-text-muted text-sm">Total Cards</p>
+          <p className="text-text-muted text-sm">{t('dashboard.totalCards')}</p>
           <p className="text-3xl font-light tabular-nums mt-1">{summary?.totalCards ?? 0}</p>
         </div>
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <p className="text-text-muted text-sm">Due Now</p>
+          <p className="text-text-muted text-sm">{t('dashboard.dueNow')}</p>
           <p className="text-3xl font-light tabular-nums mt-1 text-warning">{summary?.dueCount ?? 0}</p>
         </div>
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <p className="text-text-muted text-sm">7-Day Accuracy</p>
+          <p className="text-text-muted text-sm">{t('dashboard.accuracy7d')}</p>
           <p className="text-3xl font-light tabular-nums mt-1">
             {summary?.accuracy7d != null ? `${summary.accuracy7d}%` : '--'}
           </p>
@@ -55,35 +57,35 @@ export default function Dashboard() {
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
             <div className="flex items-center gap-2 text-text-muted text-sm">
               <Flame size={14} />
-              <span>Review Streak</span>
+              <span>{t('dashboard.reviewStreak')}</span>
             </div>
             <p className="text-3xl font-light tabular-nums mt-1">
-              {stats.streak}<span className="text-sm text-text-muted ml-1">days</span>
+              {stats.streak}<span className="text-sm text-text-muted ml-1">{t('dashboard.days')}</span>
             </p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
             <div className="flex items-center gap-2 text-text-muted text-sm">
               <Sparkles size={14} />
-              <span>Creation Streak</span>
+              <span>{t('dashboard.creationStreak')}</span>
             </div>
             <p className="text-3xl font-light tabular-nums mt-1">
-              {stats.creationStreak}<span className="text-sm text-text-muted ml-1">days</span>
+              {stats.creationStreak}<span className="text-sm text-text-muted ml-1">{t('dashboard.days')}</span>
             </p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">Reviews Today</p>
+            <p className="text-text-muted text-sm">{t('dashboard.reviewsToday')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.reviewsToday}</p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">Created Today</p>
+            <p className="text-text-muted text-sm">{t('dashboard.createdToday')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.cardsCreatedToday}</p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">Avg / Day</p>
+            <p className="text-text-muted text-sm">{t('dashboard.avgPerDay')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.averagePerDay}</p>
           </div>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">Avg / Month</p>
+            <p className="text-text-muted text-sm">{t('dashboard.avgPerMonth')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.averagePerMonth}</p>
           </div>
         </div>
@@ -92,7 +94,7 @@ export default function Dashboard() {
       {/* Card States */}
       {stats && totalStateCards > 0 && (
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-4">Card States</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-4">{t('dashboard.cardStates')}</h2>
           <div className="h-6 flex rounded-full overflow-hidden bg-bg-surface">
             {Object.entries(stats.cardStates).map(([key, count]) => {
               const pct = totalStateCards > 0 ? (count / totalStateCards) * 100 : 0;
@@ -101,8 +103,8 @@ export default function Dashboard() {
                 <div
                   key={key}
                   className="h-full transition-all duration-500"
-                  style={{ width: `${pct}%`, backgroundColor: STATE_COLORS[key].bg }}
-                  title={`${STATE_COLORS[key].label}: ${count}`}
+                  style={{ width: `${pct}%`, backgroundColor: STATE_COLOR_MAP[key] }}
+                  title={`${t(`cardStates.${key}`)}: ${count}`}
                 />
               );
             })}
@@ -110,8 +112,8 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
             {Object.entries(stats.cardStates).map(([key, count]) => (
               <div key={key} className="flex items-center gap-2 text-xs text-text-muted">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STATE_COLORS[key].bg }} />
-                <span>{STATE_COLORS[key].label}</span>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STATE_COLOR_MAP[key] }} />
+                <span>{t(`cardStates.${key}`)}</span>
                 <span className="tabular-nums">{count}</span>
               </div>
             ))}
@@ -128,7 +130,7 @@ export default function Dashboard() {
       {/* Bloom distribution */}
       {summary && totalBloom > 0 && (
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-4">Bloom Level Distribution</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-4">{t('dashboard.bloomDistribution')}</h2>
           <div className="space-y-2">
             {[0, 1, 2, 3, 4, 5].map(level => {
               const count = summary.bloomLevels[String(level)] ?? 0;
@@ -136,7 +138,7 @@ export default function Dashboard() {
               const color = BLOOM_COLORS[level];
               return (
                 <div key={level} className="flex items-center gap-3">
-                  <span className="text-xs w-20 text-right" style={{ color: color.text }}>{color.label}</span>
+                  <span className="text-xs w-20 text-right" style={{ color: color.text }}>{t(color.labelKey)}</span>
                   <div className="flex-1 h-5 bg-bg-surface rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
@@ -158,29 +160,29 @@ export default function Dashboard() {
           className="flex items-center gap-3 bg-bg-secondary rounded-xl border border-border p-6 hover:bg-bg-surface transition-colors"
         >
           <GraduationCap size={22} className="text-accent-green" />
-          <span className="font-medium">Start Study</span>
+          <span className="font-medium">{t('dashboard.startStudy')}</span>
         </Link>
         <Link
           to="/dashboard/cards/new"
           className="flex items-center gap-3 bg-bg-secondary rounded-xl border border-border p-6 hover:bg-bg-surface transition-colors"
         >
           <Plus size={22} className="text-accent-blue" />
-          <span className="font-medium">Create Card</span>
+          <span className="font-medium">{t('dashboard.createCard')}</span>
         </Link>
         <Link
           to="/dashboard/topics"
           className="flex items-center gap-3 bg-bg-secondary rounded-xl border border-border p-6 hover:bg-bg-surface transition-colors"
         >
           <Layers size={22} className="text-accent-purple" />
-          <span className="font-medium">Browse Topics</span>
+          <span className="font-medium">{t('dashboard.browseTopics')}</span>
         </Link>
       </div>
 
       {/* Empty state */}
       {summary?.totalCards === 0 && (
         <div className="text-center py-12 text-text-muted">
-          <p className="text-lg mb-2">No cards yet</p>
-          <p className="text-sm">Create a topic and add some cards to get started.</p>
+          <p className="text-lg mb-2">{t('dashboard.noCardsYet')}</p>
+          <p className="text-sm">{t('dashboard.noCardsHint')}</p>
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ export default function AGBPage() {
   const { t } = useTranslation('legal');
 
   return (
-    <LegalPageLayout title={t('agb.title')} lastUpdated={t('agb.lastUpdated')}>
+    <LegalPageLayout title={t('agb.title')} lastUpdated={t('agb.lastUpdated')} slug="agb">
       {/* 1. Scope */}
       <LegalSection title={t('agb.scopeTitle')}>
         <p>{t('agb.scopeText')}</p>

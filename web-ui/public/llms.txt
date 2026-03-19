@@ -1,0 +1,29 @@
+# LearnForge
+
+> AI-powered spaced repetition with dynamic question reformulation and Bloom's Taxonomy depth tracking.
+
+LearnForge is an open-source learning platform that solves the "recognition trap" — where learners memorize what a flashcard looks like instead of understanding the concept. Every review dynamically reformulates the question using AI, tracks cognitive depth across six Bloom's Taxonomy levels, and schedules reviews using the FSRS algorithm.
+
+## Key Features
+- Dynamic question reformulation: AI rephrases every question on every review
+- Bloom's Taxonomy progression: 6 levels from Remember to Create per concept
+- FSRS spaced repetition: science-backed scheduling with modality-aware intervals
+- AI-native card creation: create cards through conversation with Claude via MCP
+- Multiple study modalities: self-rating, multiple choice, open response
+- Open source: AGPL-3.0, self-hostable via Docker Compose
+
+## Links
+- Website: https://learnforge.eu
+- GitHub: https://github.com/flof-codes/LearnForge
+- Register: https://learnforge.eu/register
+
+## Pricing
+- 30-day free trial, no credit card required
+- EUR 24/year (EUR 2/month) after trial
+- Self-hosting is free forever (AGPL-3.0)
+
+## Technical
+- Built with: React, Fastify, PostgreSQL (pgvector), MCP protocol
+- AI integration: Claude via Model Context Protocol (MCP)
+- Scheduling: FSRS (Free Spaced Repetition Scheduler)
+- Cognitive model: Bloom's Taxonomy (6 levels)

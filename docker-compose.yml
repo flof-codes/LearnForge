@@ -53,6 +53,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:3333
+        VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
         OPERATOR_NAME: "${OPERATOR_NAME:-LearnForge}"
         OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
         OPERATOR_CITY: "${OPERATOR_CITY:-Austria}"

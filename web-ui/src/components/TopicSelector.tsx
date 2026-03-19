@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTopics } from '../hooks/useTopics';
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function TopicSelector({ value, onChange }: Props) {
+  const { t } = useTranslation('app');
   const { data: topics } = useTopics();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -35,7 +37,7 @@ export default function TopicSelector({ value, onChange }: Props) {
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-left focus:outline-none focus:border-accent-blue"
       >
         <span className={selected ? 'text-text-primary' : 'text-text-muted'}>
-          {selected ? selected.name : 'Select topic...'}
+          {selected ? selected.name : t('topicSelector.selectTopic')}
         </span>
         <ChevronDown size={14} className="text-text-muted" />
       </button>
@@ -45,7 +47,7 @@ export default function TopicSelector({ value, onChange }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full px-3 py-2 bg-bg-surface border-b border-border text-sm text-text-primary outline-none placeholder:text-text-muted"
-            placeholder="Search topics..."
+            placeholder={t('topicSelector.searchTopics')}
             autoFocus
           />
           {filtered.map(t => (
@@ -61,7 +63,7 @@ export default function TopicSelector({ value, onChange }: Props) {
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="px-3 py-2 text-sm text-text-muted">No topics found</p>
+            <p className="px-3 py-2 text-sm text-text-muted">{t('topicSelector.noTopicsFound')}</p>
           )}
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Github } from 'lucide-react';
+import LogoIcon from '../LogoIcon';
 
 const GITHUB_URL = 'https://github.com/flof-codes/LearnForge';
 
@@ -10,7 +11,13 @@ export default function HeroSection() {
   return (
     <section className="lf-hero-gradient py-24 sm:py-32 lg:py-40">
       <div className="max-w-4xl mx-auto px-6 text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-text-primary tracking-tight leading-tight">
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <LogoIcon size={64} />
+          <span className="text-6xl sm:text-7xl font-bold text-text-primary tracking-tight">
+            LearnForge
+          </span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-text-primary tracking-tight leading-tight">
           {t('hero.hook')}
         </h1>
         <p className="mt-6 text-lg sm:text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
@@ -45,7 +52,7 @@ export default function HeroSection() {
           </div>
           <img
             src="/screenshots/dashboard.png"
-            alt="LearnForge Dashboard"
+            alt="LearnForge dashboard showing spaced repetition study progress with Bloom's Taxonomy levels"
             className="w-full bg-bg-primary"
           />
         </div>

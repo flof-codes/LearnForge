@@ -178,6 +178,85 @@
     "finalSeverability": "Sollten einzelne Bestimmungen dieser AGB unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen davon unberührt.",
     "finalCurrent": "Es gilt die jeweils aktuelle Fassung dieser AGB."
   },
+  "meta": {
+    "impressumDescription": "Impressum und Kontaktdaten von LearnForge.",
+    "datenschutzDescription": "Datenschutzerklärung — wie LearnForge mit deinen personenbezogenen Daten umgeht.",
+    "agbDescription": "Allgemeine Geschäftsbedingungen für die Nutzung von LearnForge.",
+    "docsDescription": "Dokumentation — wie du LearnForge mit Claude verbindest und verwendest."
+  },
+  "docs": {
+    "title": "Dokumentation",
+    "subtitle": "Erfahre, wie du LearnForge mit Claude verbindest und das Beste aus deinem KI-Tutor herausholst.",
+    "whatIs": {
+      "title": "Was ist LearnForge",
+      "description": "LearnForge ist eine Spaced-Repetition-Plattform, die sich als Connector (Model Context Protocol) mit Claude verbindet. Bei jeder Wiederholung formuliert die KI die Frage neu — so beweist du echtes Verständnis, kein Auswendiglernen.",
+      "feature1": "Verfolgt dein Verständnis über sechs kognitive Stufen (Bloom-Taxonomie) — von einfachem Erinnern bis kritischem Denken",
+      "feature2": "Plant Wiederholungen mit einem wissenschaftlich fundierten Algorithmus, der sich an dein Lernverhalten anpasst",
+      "feature3": "Erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizfragen im Gespräch"
+    },
+    "connect": {
+      "title": "Mit Claude verbinden",
+      "prerequisite": "Du brauchst ein <registerLink>LearnForge-Konto</registerLink> (kostenlos, keine Kreditkarte nötig) und ein Claude-Konto (jeder Plan — der kostenlose enthält 1 Connector).",
+      "step1": "Öffne claude.ai und gehe zu Settings > Connectors",
+      "step2": "Scrolle nach unten und klicke auf Add custom connector",
+      "step3": "Gib die Server-URL ein:",
+      "step4": "Klicke auf Add zur Bestätigung",
+      "step5": "Du wirst weitergeleitet, um dich mit deinen LearnForge-Zugangsdaten anzumelden",
+      "step6": "Klicke in einer Unterhaltung auf den +-Button, wähle Connectors und aktiviere LearnForge",
+      "note": "Authentifizierung über OAuth 2.0 — kein API-Schlüssel nötig. Funktioniert mit jedem Claude-Plan, auch dem kostenlosen."
+    },
+    "study": {
+      "title": "Lernen mit KI",
+      "promptsLabel": "Sag zum Beispiel:",
+      "prompt1": "Frag mich ab",
+      "prompt2": "Frag mich Biologie ab",
+      "prompt3": "Lass uns lernen",
+      "description": "Claude zeigt dir zuerst eine Übersicht — wie viele Karten fällig sind, wie viele neue Karten bereitstehen und deine Bloom-Level-Verteilung. Dann wählst du ein Thema und einen Lernmodus.",
+      "chatMode": "Chat-Modus (Standard)",
+      "chatModeDesc": "Du tippst Antworten in eigenen Worten. Das ist die tiefste Form des Lernens — richtige Antworten verdienen längere Wiederholungsintervalle.",
+      "mcqMode": "MCQ-Modus",
+      "mcqModeDesc": "Multiple-Choice-Fragen für schnellere Sitzungen. Ideal für kurze Wiederholungen, aber die Intervalle sind kürzer, da Wiedererkennung einfacher ist als freier Abruf.",
+      "workflow": "Claude stellt Fragen einzeln, angepasst an dein aktuelles Bloom-Level. Nach jeder Antwort bekommst du sofort Feedback — was richtig war, was fehlt und einen Hinweis für das nächste Mal. Am Ende siehst du eine Zusammenfassung mit deiner Genauigkeit und etwaigen Bloom-Level-Änderungen."
+    },
+    "cards": {
+      "title": "Karten mit KI erstellen",
+      "promptsLabel": "Sag zum Beispiel:",
+      "prompt1": "Erstelle eine Karte über Photosynthese",
+      "prompt2": "Mach eine Lernkarte zum Citratzyklus",
+      "description": "Claude erstellt eine visuelle Lernkarte mit einer klaren Frage auf der Vorderseite und einer interaktiven Erklärung auf der Rückseite — mit Akkordeon-Abschnitten, KaTeX-Formeln und SVG-Diagrammen, wo sinnvoll.",
+      "workflow": "Du siehst immer zuerst eine gerenderte Vorschau. Nichts wird gespeichert, bis du explizit bestätigst. Du kannst beliebig oft Änderungen anfordern (\"mach es einfacher\", \"füge ein Diagramm hinzu\", \"ändere die Frage\"), bevor du freigibst."
+    },
+    "manageCards": {
+      "title": "Karten verwalten",
+      "promptsLabel": "Sag zum Beispiel:",
+      "prompt1": "Bearbeite meine Photosynthese-Karte",
+      "prompt2": "Lösche die Karte über Mitose",
+      "prompt3": "Zeig mir meine Lernprognose",
+      "description": "Neben dem Erstellen von Karten kannst du Claude bitten, bestehende Karten zu bearbeiten, zu löschen oder deinen Lernplan einzusehen:",
+      "cap1": "Karten bearbeiten — Frage ändern, Antwort aktualisieren oder eine Karte in ein anderes Thema verschieben",
+      "cap2": "Karten löschen, die du nicht mehr brauchst",
+      "cap3": "Lernprognose ansehen — sieh dir an, wie viele Wiederholungen in den nächsten Tagen oder Monaten anstehen",
+      "cap4": "Bilder zu Karten hochladen für visuelles Lernen und Diagramme"
+    },
+    "topics": {
+      "title": "Themen verwalten",
+      "promptsLabel": "Sag zum Beispiel:",
+      "prompt1": "Erstelle ein Thema namens Organische Chemie",
+      "prompt2": "Zeig meine Themen",
+      "description": "Claude kann dein Lernmaterial in eine Themen-Hierarchie organisieren. Das kannst du tun:",
+      "cap1": "Neue Themen erstellen, optional unter einem übergeordneten Thema",
+      "cap2": "Themen umbenennen und Beschreibungen hinzufügen",
+      "cap3": "Mehrstufige Hierarchien aufbauen (z.B. Biologie > Zellbiologie > Mitose)",
+      "cap4": "Leere Themen löschen (Karten müssen vorher verschoben oder gelöscht werden)"
+    },
+    "help": {
+      "title": "Brauchst du Hilfe?",
+      "contact": "Wenn du auf Probleme stößt oder Fragen hast, schreib uns und wir helfen dir gerne weiter.",
+      "email": "{{operatorEmail}}",
+      "privacyLink": "Datenschutzerklärung",
+      "termsLink": "Allgemeine Geschäftsbedingungen"
+    }
+  },
   "register": {
     "agbCheckbox": "Ich stimme den <agbLink>Allgemeinen Geschäftsbedingungen</agbLink> zu und habe die <privacyLink>Datenschutzerklärung</privacyLink> zur Kenntnis genommen.",
     "agbRequired": "Du musst den AGB zustimmen, um fortzufahren."

@@ -1,19 +1,22 @@
+import { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LogoIcon from './public/LogoIcon';
 
-const links = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/dashboard/topics', icon: FolderTree, label: 'Topics' },
-  { to: '/dashboard/cards/browse', icon: Layers, label: 'Cards' },
-  { to: '/dashboard/study', icon: GraduationCap, label: 'Study' },
-];
-
 export default function Sidebar() {
+  const { t } = useTranslation('app');
   const { logout } = useAuth();
   const queryClient = useQueryClient();
+
+  const links = useMemo(() => [
+    { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
+    { to: '/dashboard/topics', icon: FolderTree, label: t('nav.topics') },
+    { to: '/dashboard/cards/browse', icon: Layers, label: t('nav.cards') },
+    { to: '/dashboard/study', icon: GraduationCap, label: t('nav.study') },
+  ], [t]);
 
   const handleLogout = () => {
     queryClient.clear();
@@ -63,18 +66,18 @@ export default function Sidebar() {
                   : 'text-text-muted hover:bg-subtle-hover hover:text-text-primary'
               }`
             }
-            title="Settings"
+            title={t('nav.settings')}
           >
             <Settings size={18} />
-            <span className="hidden lg:inline">Settings</span>
+            <span className="hidden lg:inline">{t('nav.settings')}</span>
           </NavLink>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:bg-subtle-hover hover:text-text-primary transition-colors w-full justify-center lg:justify-start"
-            title="Logout"
+            title={t('nav.logout')}
           >
             <LogOut size={18} />
-            <span className="hidden lg:inline">Logout</span>
+            <span className="hidden lg:inline">{t('nav.logout')}</span>
           </button>
         </div>
       </aside>
@@ -105,14 +108,14 @@ export default function Sidebar() {
           }
         >
           <Settings size={20} />
-          <span>Settings</span>
+          <span>{t('nav.settings')}</span>
         </NavLink>
         <button
           onClick={handleLogout}
           className="flex-1 flex flex-col items-center gap-1 py-2 text-xs text-text-muted transition-colors"
         >
           <LogOut size={20} />
-          <span>Logout</span>
+          <span>{t('nav.logout')}</span>
         </button>
       </nav>
     </>

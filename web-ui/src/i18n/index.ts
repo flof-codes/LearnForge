@@ -5,17 +5,19 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import enCommon from './locales/en/common.json';
 import enLanding from './locales/en/landing.json';
 import enLegal from './locales/en/legal.json';
+import enApp from './locales/en/app.json';
 import deCommon from './locales/de/common.json';
 import deLanding from './locales/de/landing.json';
 import deLegal from './locales/de/legal.json';
+import deApp from './locales/de/app.json';
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      en: { common: enCommon, landing: enLanding, legal: enLegal },
-      de: { common: deCommon, landing: deLanding, legal: deLegal },
+      en: { common: enCommon, landing: enLanding, legal: enLegal, app: enApp },
+      de: { common: deCommon, landing: deLanding, legal: deLegal, app: deApp },
     },
     fallbackLng: 'en',
     defaultNS: 'common',

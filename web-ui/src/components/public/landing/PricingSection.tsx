@@ -66,10 +66,15 @@ export default function PricingSection() {
             {t('pricing.cta')}
           </Link>
           <p className="text-text-muted text-sm mt-4">{t('pricing.claudeNote')}</p>
-          <div className="mt-4 flex items-center justify-center gap-2 text-text-muted text-sm">
+          <a
+            href={import.meta.env.VITE_DONATION_URL || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center justify-center gap-2 text-text-muted text-sm hover:text-text-primary transition-colors"
+          >
             <Heart size={16} />
             <span>{t('pricing.donation')}</span>
-          </div>
+          </a>
         </div>
       </div>
     </section>

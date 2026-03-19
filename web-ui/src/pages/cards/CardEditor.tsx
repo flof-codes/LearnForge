@@ -3,6 +3,7 @@ import { EditorView, basicSetup } from 'codemirror';
 import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorState } from '@codemirror/state';
+import { useTranslation } from 'react-i18next';
 import TopicSelector from '../../components/TopicSelector';
 import TagInput from '../../components/TagInput';
 import CardHtmlRender from '../../components/CardHtmlRender';
@@ -47,6 +48,7 @@ function useCodeMirror(initialValue: string, onChange: (value: string) => void) 
 }
 
 export default function CardEditor({ initialData, onSubmit, isPending }: Props) {
+  const { t } = useTranslation('app');
   const [concept, setConcept] = useState(initialData?.concept ?? '');
   const [topicId, setTopicId] = useState(initialData?.topicId ?? '');
   const [frontHtml, setFrontHtml] = useState(initialData?.frontHtml ?? '');
@@ -91,34 +93,34 @@ export default function CardEditor({ initialData, onSubmit, isPending }: Props) 
       {/* Left column - form fields */}
       <div className="flex-[3] space-y-4">
         <div>
-          <label className="block text-sm text-text-muted mb-1">Concept</label>
+          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.concept')}</label>
           <textarea
             value={concept}
             onChange={e => setConcept(e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-text-primary text-sm focus:outline-none focus:border-accent-blue resize-none"
             rows={2}
-            placeholder="Plain-text summary of the concept (used for embeddings & search)"
+            placeholder={t('cardEditor.conceptPlaceholder')}
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm text-text-muted mb-1">Topic</label>
+          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.topic')}</label>
           <TopicSelector value={topicId} onChange={setTopicId} />
         </div>
 
         <div>
-          <label className="block text-sm text-text-muted mb-1">Front HTML</label>
+          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.frontHtml')}</label>
           <div className="rounded-lg border border-border overflow-hidden" ref={frontEditorRef} />
         </div>
 
         <div>
-          <label className="block text-sm text-text-muted mb-1">Back HTML</label>
+          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.backHtml')}</label>
           <div className="rounded-lg border border-border overflow-hidden" ref={backEditorRef} />
         </div>
 
         <div>
-          <label className="block text-sm text-text-muted mb-1">Tags</label>
+          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.tags')}</label>
           <TagInput tags={tags} onChange={setTags} />
         </div>
 
@@ -127,28 +129,28 @@ export default function CardEditor({ initialData, onSubmit, isPending }: Props) 
           disabled={!concept.trim() || !topicId || !frontHtml.trim() || !backHtml.trim() || isPending}
           className="px-6 py-2.5 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {isPending ? 'Saving...' : initialData ? 'Save Changes' : 'Create Card'}
+          {isPending ? t('cardEditor.saving') : initialData ? t('cardEditor.saveChanges') : t('cardEditor.createCard')}
         </button>
       </div>
 
       {/* Right column - live preview */}
       <div className="flex-[2] space-y-3">
         <div className="flex items-center gap-2">
-          <label className="text-sm text-text-muted">Preview:</label>
+          <label className="text-sm text-text-muted">{t('cardEditor.preview')}</label>
           <div className="flex rounded-lg overflow-hidden border border-border">
             <button
               type="button"
               onClick={() => setPreviewSide('front')}
               className={`px-3 py-1 text-xs ${previewSide === 'front' ? 'bg-accent-blue text-white' : 'bg-bg-surface text-text-muted'}`}
             >
-              Front
+              {t('cardEditor.front')}
             </button>
             <button
               type="button"
               onClick={() => setPreviewSide('back')}
               className={`px-3 py-1 text-xs ${previewSide === 'back' ? 'bg-accent-blue text-white' : 'bg-bg-surface text-text-muted'}`}
             >
-              Back
+              {t('cardEditor.back')}
             </button>
           </div>
         </div>

@@ -9,7 +9,7 @@ import { computeBloomTransition } from "../services/bloom.js";
 export function registerReviewTools(server: McpServer, userId: string) {
   server.tool(
     "submit_review",
-    "Submit a review for a card, updating FSRS scheduling and Bloom's taxonomy state. The modality parameter affects interval scheduling: 'chat' (AI conversation, 1.25x interval), 'web' (self-rating, 1.0x), 'mcq' (multiple choice, 0.75x).",
+    "Submit a review for a card, updating FSRS scheduling and Bloom's taxonomy state. The modality parameter affects interval scheduling: 'chat' (AI open question, 1.2x interval), 'web' (self-rating, 0.95x), 'mcq' (AI multiple choice, 1.05x).",
     {
       card_id: z.string().uuid(),
       bloom_level: z.number().int().min(0).max(5),

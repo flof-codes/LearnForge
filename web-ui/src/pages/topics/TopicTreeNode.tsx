@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronDown, Pencil, Trash2, Plus, Layers } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTopic } from '../../hooks/useTopics';
 import type { Topic } from '../../types';
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth = 0 }: Props) {
+  const { t } = useTranslation('app');
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
   const { data: topicDetail } = useTopic(expanded ? topic.id : '');
@@ -41,19 +43,19 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
 
         <div className="flex items-center gap-1.5 shrink-0 mr-1">
           {newCount > 0 && (
-            <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue" title="New">
+            <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue" title={t('cards.filterNew')}>
               {newCount}
             </span>
           )}
           {dueCount > 0 && (
-            <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green" title="Due">
+            <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green" title={t('cards.filterDue')}>
               {dueCount}
             </span>
           )}
           {topic.cardCount > 0 && (
             <span
               className="text-[11px] tabular-nums text-text-muted"
-              title={`${topic.cardCount} card${topic.cardCount !== 1 ? 's' : ''} total`}
+              title={t('topics.cardTotal', { count: topic.cardCount })}
             >
               {topic.cardCount}
             </span>
@@ -61,17 +63,17 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
         </div>
 
         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={(e) => { e.stopPropagation(); onCreate(topic.id); }} className="p-1 text-text-muted hover:text-accent-green" title="Add child">
+          <button onClick={(e) => { e.stopPropagation(); onCreate(topic.id); }} className="p-1 text-text-muted hover:text-accent-green" title={t('topics.addChild')}>
             <Plus size={14} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onEdit(topic); }} className="p-1 text-text-muted hover:text-accent-blue" title="Edit">
+          <button onClick={(e) => { e.stopPropagation(); onEdit(topic); }} className="p-1 text-text-muted hover:text-accent-blue" title={t('topics.edit')}>
             <Pencil size={14} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(topic); }}
             disabled={topic.cardCount > 0}
             className="p-1 text-text-muted hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-muted"
-            title={topic.cardCount > 0 ? `Delete or move ${topic.cardCount} card(s) first` : 'Delete'}
+            title={topic.cardCount > 0 ? t('topics.deleteCardFirst', { count: topic.cardCount }) : t('topics.delete')}
           >
             <Trash2 size={14} />
           </button>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, Pencil, Trash2, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCard, useDeleteCard, useResetCard } from '../../hooks/useCards';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import TopicBreadcrumb from '../../components/TopicBreadcrumb';
@@ -15,6 +16,7 @@ interface LocationState {
 }
 
 export default function CardDetailPage() {
+  const { t } = useTranslation('app');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,8 +33,10 @@ export default function CardDetailPage() {
   const prevId = currentIdx > 0 ? cardIds[currentIdx - 1] : null;
   const nextId = currentIdx >= 0 && currentIdx < cardIds.length - 1 ? cardIds[currentIdx + 1] : null;
 
+  const ratingLabels = ['', t('ratings.again'), t('ratings.hard'), t('ratings.good'), t('ratings.easy')];
+
   if (isLoading) return <LoadingSpinner />;
-  if (!card) return <p className="text-text-muted">Card not found.</p>;
+  if (!card) return <p className="text-text-muted">{t('cardDetail.notFound')}</p>;
 
   const handleDelete = () => {
     deleteCard.mutate(id!, { onSuccess: () => navigate('/dashboard/cards/browse') });
@@ -56,7 +60,7 @@ export default function CardDetailPage() {
       {/* Top bar: back + prev/next + actions */}
       <div className="flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-text-muted hover:text-text-primary">
-          <ChevronLeft size={16} /> Back
+          <ChevronLeft size={16} /> {t('common.back')}
         </button>
 
         <div className="flex items-center gap-2">
@@ -66,7 +70,7 @@ export default function CardDetailPage() {
                 onClick={() => prevId && goToCard(prevId)}
                 disabled={!prevId}
                 className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Previous card"
+                title={t('cardDetail.previousCard')}
               >
                 <ArrowLeft size={16} />
               </button>
@@ -77,19 +81,19 @@ export default function CardDetailPage() {
                 onClick={() => nextId && goToCard(nextId)}
                 disabled={!nextId}
                 className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Next card"
+                title={t('cardDetail.nextCard')}
               >
                 <ArrowRight size={16} />
               </button>
             </>
           )}
-          <Link to={`/dashboard/cards/${id}/edit`} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors" title="Edit card">
+          <Link to={`/dashboard/cards/${id}/edit`} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors" title={t('cardDetail.editCard')}>
             <Pencil size={16} />
           </Link>
-          <button onClick={() => setResetOpen(true)} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-warning transition-colors" title="Reset progress">
+          <button onClick={() => setResetOpen(true)} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-warning transition-colors" title={t('cardDetail.resetProgress')}>
             <RotateCcw size={16} />
           </button>
-          <button onClick={() => setDeleteOpen(true)} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-danger transition-colors" title="Delete card">
+          <button onClick={() => setDeleteOpen(true)} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-danger transition-colors" title={t('cardDetail.deleteCard')}>
             <Trash2 size={16} />
           </button>
         </div>
@@ -98,18 +102,18 @@ export default function CardDetailPage() {
       {/* Card content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-bg-secondary rounded-xl border border-border p-5">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Front</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.front')}</h2>
           <CardHtmlRender html={card.frontHtml} interactive />
         </div>
         <div className="bg-bg-secondary rounded-xl border border-border p-5">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Back</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.back')}</h2>
           <CardHtmlRender html={card.backHtml} interactive />
         </div>
       </div>
 
       {/* Concept */}
       <div className="bg-bg-secondary rounded-xl border border-border p-5">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Concept</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.concept')}</h2>
         <p className="text-sm text-text-primary">{card.concept}</p>
         <div className="flex items-center gap-2 mt-3">
           {bloom && <BloomBadge level={bloom.currentLevel} />}
@@ -123,29 +127,29 @@ export default function CardDetailPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {bloom && (
           <div className="bg-bg-secondary rounded-xl border border-border p-5">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Bloom State</h2>
+            <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.bloomState')}</h2>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Current Level</span>
-                <span style={{ color: BLOOM_COLORS[bloom.currentLevel]?.text }}>{BLOOM_COLORS[bloom.currentLevel]?.label}</span>
+                <span className="text-text-muted">{t('cardDetail.currentLevel')}</span>
+                <span style={{ color: BLOOM_COLORS[bloom.currentLevel]?.text }}>{t(BLOOM_COLORS[bloom.currentLevel]?.labelKey)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Highest Reached</span>
-                <span style={{ color: BLOOM_COLORS[bloom.highestReached]?.text }}>{BLOOM_COLORS[bloom.highestReached]?.label}</span>
+                <span className="text-text-muted">{t('cardDetail.highestReached')}</span>
+                <span style={{ color: BLOOM_COLORS[bloom.highestReached]?.text }}>{t(BLOOM_COLORS[bloom.highestReached]?.labelKey)}</span>
               </div>
             </div>
           </div>
         )}
         {fsrs && (
           <div className="bg-bg-secondary rounded-xl border border-border p-5">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">FSRS State</h2>
+            <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.fsrsState')}</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-text-muted">State</span><span>{FSRS_STATE_LABELS[fsrs.state as number] ?? 'Unknown'}</span></div>
-              <div className="flex justify-between"><span className="text-text-muted">Due</span><span>{new Date(fsrs.due).toLocaleDateString()}</span></div>
-              <div className="flex justify-between"><span className="text-text-muted">Stability</span><span>{fsrs.stability.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-text-muted">Difficulty</span><span>{fsrs.difficulty.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-text-muted">Reviews</span><span>{fsrs.reps}</span></div>
-              <div className="flex justify-between"><span className="text-text-muted">Lapses</span><span>{fsrs.lapses}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.state')}</span><span>{t(FSRS_STATE_LABELS[fsrs.state as number] ?? 'fsrs.unknown')}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.dueDate')}</span><span>{new Date(fsrs.due).toLocaleDateString()}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.stability')}</span><span>{fsrs.stability.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.difficulty')}</span><span>{fsrs.difficulty.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.reviews')}</span><span>{fsrs.reps}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.lapses')}</span><span>{fsrs.lapses}</span></div>
             </div>
           </div>
         )}
@@ -154,16 +158,16 @@ export default function CardDetailPage() {
       {/* Review history */}
       {card.reviews && card.reviews.length > 0 && (
         <div className="bg-bg-secondary rounded-xl border border-border p-5">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Review History</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.reviewHistory')}</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-text-muted border-b border-border">
-                  <th className="text-left py-2 pr-4">Date</th>
-                  <th className="text-left py-2 pr-4">Bloom Level</th>
-                  <th className="text-left py-2 pr-4">Rating</th>
-                  <th className="text-left py-2 pr-4">Question</th>
-                  <th className="text-left py-2">Answer</th>
+                  <th className="text-left py-2 pr-4">{t('cardDetail.date')}</th>
+                  <th className="text-left py-2 pr-4">{t('cardDetail.bloomLevel')}</th>
+                  <th className="text-left py-2 pr-4">{t('cardDetail.rating')}</th>
+                  <th className="text-left py-2 pr-4">{t('cardDetail.question')}</th>
+                  <th className="text-left py-2">{t('cardDetail.answer')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -181,14 +185,14 @@ export default function CardDetailPage() {
                         <span className={`font-medium ${
                           review.rating >= 3 ? 'text-accent-green' : review.rating === 2 ? 'text-warning' : 'text-danger'
                         }`}>
-                          {['', 'Again', 'Hard', 'Good', 'Easy'][review.rating]}
+                          {ratingLabels[review.rating]}
                         </span>
                       </td>
                       <td className={`py-2 pr-4 text-text-muted ${isExpanded ? 'whitespace-pre-wrap break-words' : 'truncate max-w-[200px]'}`}>
                         {review.questionText}
                       </td>
                       <td className={`py-2 text-text-muted ${isExpanded ? 'whitespace-pre-wrap break-words' : 'truncate max-w-[200px]'}`}>
-                        {review.userAnswer ?? '—'}
+                        {review.userAnswer ?? '\u2014'}
                       </td>
                     </tr>
                   );
@@ -201,9 +205,9 @@ export default function CardDetailPage() {
 
       <ConfirmModal
         open={resetOpen}
-        title="Reset Progress"
-        message="This will reset the Bloom and FSRS state to their initial values and delete all review history for this card."
-        confirmLabel="Reset"
+        title={t('cardDetail.resetTitle')}
+        message={t('cardDetail.resetMessage')}
+        confirmLabel={t('cardDetail.resetConfirm')}
         danger
         onConfirm={handleReset}
         onCancel={() => setResetOpen(false)}
@@ -211,9 +215,9 @@ export default function CardDetailPage() {
 
       <ConfirmModal
         open={deleteOpen}
-        title="Delete Card"
-        message="This will permanently delete this card and all its review history."
-        confirmLabel="Delete"
+        title={t('cardDetail.deleteTitle')}
+        message={t('cardDetail.deleteMessage')}
+        confirmLabel={t('cardDetail.deleteConfirm')}
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}

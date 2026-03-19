@@ -38,6 +38,9 @@ export default function PublicFooter() {
               <Link to="/agb" className="block text-sm text-text-muted hover:text-text-primary transition-colors">
                 {t('footer.agb')}
               </Link>
+              <Link to="/docs" className="block text-sm text-text-muted hover:text-text-primary transition-colors">
+                {t('nav.docs')}
+              </Link>
             </nav>
           </div>
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDueForecast } from '../hooks/useStudy';
 
 interface DueForecastChartProps {
@@ -6,6 +7,7 @@ interface DueForecastChartProps {
 }
 
 export default function DueForecastChart({ topicId }: DueForecastChartProps) {
+  const { t } = useTranslation('app');
   const [range, setRange] = useState<'month' | 'year'>('month');
   const { data, isLoading } = useDueForecast(topicId, range);
 
@@ -20,10 +22,10 @@ export default function DueForecastChart({ topicId }: DueForecastChartProps) {
     <div className="bg-bg-secondary rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">Due Forecast</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">{t('dueForecast.title')}</h2>
           {data.overdue > 0 && (
             <span className="text-xs tabular-nums px-2 py-0.5 rounded bg-danger/15 text-danger">
-              {data.overdue} overdue
+              {t('dueForecast.overdue', { count: data.overdue })}
             </span>
           )}
         </div>
@@ -38,7 +40,7 @@ export default function DueForecastChart({ topicId }: DueForecastChartProps) {
                   : 'bg-bg-surface text-text-muted hover:text-text'
               }`}
             >
-              {r === 'month' ? '30 Days' : '12 Months'}
+              {r === 'month' ? t('dueForecast.thirtyDays') : t('dueForecast.twelveMonths')}
             </button>
           ))}
         </div>

@@ -130,8 +130,22 @@
       "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support"]
     },
     "cta": "Kostenlose Testphase starten",
-    "claudeNote": "Erfordert ein Claude Pro-, Team- oder Enterprise-Abo für KI-Funktionen.",
+    "claudeNote": "Funktioniert mit jedem Claude-Plan, auch dem kostenlosen (1 Connector enthalten).",
     "donation": "Du magst LearnForge? Hilf, es unabhängig zu halten.",
     "donationLink": "Projekt unterstützen"
+  },
+  "seo": {
+    "orgDescription": "Open-Source-Lernplattform mit KI-gestützter Spaced Repetition, dynamischer Frageumformulierung und Bloom-Taxonomie-Tiefenverfolgung.",
+    "appCategory": "EducationalApplication",
+    "faq": {
+      "q1": "Was ist LearnForge?",
+      "a1": "LearnForge ist eine Open-Source-Lernplattform, die KI nutzt, um Lernkarten-Fragen bei jeder Wiederholung dynamisch umzuformulieren, die kognitive Tiefe mit der Bloom-Taxonomie verfolgt und Wiederholungen mit dem FSRS-Algorithmus plant.",
+      "q2": "Wie unterscheidet sich LearnForge von Anki oder anderen Lernkarten-Apps?",
+      "a2": "Herkömmliche Lernkarten-Apps zeigen immer dieselbe Frage, was zu Mustererkennung statt echtem Verständnis führt. LearnForge formuliert jede Frage per KI um und verfolgt sechs Stufen kognitiver Tiefe pro Konzept — vom einfachen Abruf bis zum kritischen Denken.",
+      "q3": "Ist LearnForge kostenlos?",
+      "a3": "LearnForge bietet eine 30-tägige kostenlose Testphase mit vollem Zugang. Danach kostet es 2 €/Monat bei jährlicher Abrechnung. Self-Hosting ist unter der AGPL-3.0-Lizenz immer kostenlos.",
+      "q4": "Was ist die Bloom-Taxonomie?",
+      "a4": "Die Bloom-Taxonomie ist ein Rahmenwerk mit sechs kognitiven Stufen: Erinnern, Verstehen, Anwenden, Analysieren, Bewerten und Erschaffen. LearnForge verfolgt deine Meisterschaft auf jeder Stufe und steigert automatisch die Frageschwierigkeit."
+    }
   }
 }

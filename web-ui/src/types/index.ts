@@ -79,16 +79,17 @@ export interface BloomState {
 }
 
 export const BLOOM_LEVELS = [
-  'Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'
+  'bloom.remember', 'bloom.understand', 'bloom.apply',
+  'bloom.analyze', 'bloom.evaluate', 'bloom.create',
 ] as const;
 
-export const BLOOM_COLORS: Record<number, { bg: string; text: string; label: string }> = {
-  0: { bg: '#0d2818', text: '#56d364', label: 'Remember' },
-  1: { bg: '#0c2d3e', text: '#58c4dc', label: 'Understand' },
-  2: { bg: '#1c1e3a', text: '#8b9cf0', label: 'Apply' },
-  3: { bg: '#272450', text: '#b0a4e0', label: 'Analyze' },
-  4: { bg: '#3b1a60', text: '#c8b8f0', label: 'Evaluate' },
-  5: { bg: '#461860', text: '#d4b8f0', label: 'Create' },
+export const BLOOM_COLORS: Record<number, { bg: string; text: string; labelKey: string }> = {
+  0: { bg: '#0d2818', text: '#56d364', labelKey: 'bloom.remember' },
+  1: { bg: '#0c2d3e', text: '#58c4dc', labelKey: 'bloom.understand' },
+  2: { bg: '#1c1e3a', text: '#8b9cf0', labelKey: 'bloom.apply' },
+  3: { bg: '#272450', text: '#b0a4e0', labelKey: 'bloom.analyze' },
+  4: { bg: '#3b1a60', text: '#c8b8f0', labelKey: 'bloom.evaluate' },
+  5: { bg: '#461860', text: '#d4b8f0', labelKey: 'bloom.create' },
 };
 
 // --- FSRS State ---
@@ -103,7 +104,7 @@ export interface FsrsState {
   state: 0 | 1 | 2 | 3;
 }
 
-export const FSRS_STATE_LABELS = ['New', 'Learning', 'Review', 'Relearning'] as const;
+export const FSRS_STATE_LABELS = ['fsrs.new', 'fsrs.learning', 'fsrs.review', 'fsrs.relearning'] as const;
 
 // --- Reviews ---
 export interface Review {

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Topic } from '../types';
 
 const TOPIC_COLORS = [
@@ -16,6 +17,7 @@ interface TopicPieChartProps {
 }
 
 export default function TopicPieChart({ topics }: TopicPieChartProps) {
+  const { t } = useTranslation('app');
   const withCards = topics
     .filter(t => t.cardCount > 0)
     .sort((a, b) => b.cardCount - a.cardCount);
@@ -33,7 +35,7 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
     const rest = withCards.slice(7).reduce((sum, t) => sum + t.cardCount, 0);
     slices = [
       ...top.map(t => ({ name: t.name, count: t.cardCount })),
-      { name: 'Other', count: rest },
+      { name: t('topicPieChart.other'), count: rest },
     ];
   }
 
@@ -54,7 +56,7 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
   return (
     <div className="bg-bg-secondary rounded-xl border border-border p-6">
       <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-4">
-        Cards by Topic
+        {t('topicPieChart.title')}
       </h2>
       <div className="flex flex-col items-center">
         <svg viewBox="0 0 200 200" className="w-48 h-48">
@@ -92,7 +94,7 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
             className="fill-text-muted"
             style={{ fontSize: '11px' }}
           >
-            cards
+            {t('topicPieChart.cards')}
           </text>
         </svg>
         <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-4">

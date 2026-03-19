@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, FolderTree } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTopics, useDeleteTopic } from '../../hooks/useTopics';
 import TopicTreeNode from './TopicTreeNode';
 import CreateTopicModal from './CreateTopicModal';
@@ -9,6 +10,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import type { Topic } from '../../types';
 
 export default function TopicsPage() {
+  const { t } = useTranslation('app');
   const { data: topics, isLoading } = useTopics();
   const deleteTopic = useDeleteTopic();
 
@@ -32,13 +34,13 @@ export default function TopicsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium">Topics</h1>
+        <h1 className="text-2xl font-medium">{t('topics.title')}</h1>
         <button
           onClick={() => handleCreate()}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
         >
           <Plus size={16} />
-          New Topic
+          {t('topics.newTopic')}
         </button>
       </div>
 
@@ -56,7 +58,7 @@ export default function TopicsPage() {
         ) : (
           <div className="text-center py-12 text-text-muted">
             <FolderTree size={40} className="mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No topics yet. Create one to get started.</p>
+            <p className="text-sm">{t('topics.noTopicsYet')}</p>
           </div>
         )}
       </div>
@@ -73,9 +75,9 @@ export default function TopicsPage() {
       />
       <ConfirmModal
         open={!!deletingTopic}
-        title="Delete Topic"
-        message={`Delete "${deletingTopic?.name}"? Child topics will become root topics.`}
-        confirmLabel="Delete"
+        title={t('topics.deleteTitle')}
+        message={t('topics.deleteMessage', { name: deletingTopic?.name })}
+        confirmLabel={t('topics.deleteConfirm')}
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeletingTopic(null)}

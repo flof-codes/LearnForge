@@ -16,18 +16,18 @@
   --color-subtle-hover: rgba(255,255,255,0.04);
   --color-subtle-active: rgba(255,255,255,0.06);
 
-  --color-bloom-0-bg: #0d2818;
-  --color-bloom-0-text: #56d364;
-  --color-bloom-1-bg: #0c2d3e;
-  --color-bloom-1-text: #58c4dc;
-  --color-bloom-2-bg: #1c1e3a;
-  --color-bloom-2-text: #8b9cf0;
-  --color-bloom-3-bg: #272450;
-  --color-bloom-3-text: #b0a4e0;
-  --color-bloom-4-bg: #3b1a60;
-  --color-bloom-4-text: #c8b8f0;
-  --color-bloom-5-bg: #461860;
-  --color-bloom-5-text: #d4b8f0;
+  --color-bloom-0-bg: #052e16;
+  --color-bloom-0-text: #4ade80;
+  --color-bloom-1-bg: #042f2e;
+  --color-bloom-1-text: #2dd4bf;
+  --color-bloom-2-bg: #172554;
+  --color-bloom-2-text: #60a5fa;
+  --color-bloom-3-bg: #1e1b4b;
+  --color-bloom-3-text: #818cf8;
+  --color-bloom-4-bg: #2e1065;
+  --color-bloom-4-text: #a78bfa;
+  --color-bloom-5-bg: #4a044e;
+  --color-bloom-5-text: #e879f9;
 }
 
 body {
@@ -87,17 +87,17 @@ html {
   --color-subtle-hover: rgba(0,0,0,0.04);
   --color-subtle-active: rgba(0,0,0,0.06);
 
-  --color-bloom-0-bg: #dcfce7;
+  --color-bloom-0-bg: #bbf7d0;
   --color-bloom-0-text: #15803d;
-  --color-bloom-1-bg: #dbeafe;
-  --color-bloom-1-text: #1d4ed8;
-  --color-bloom-2-bg: #e0e7ff;
-  --color-bloom-2-text: #4338ca;
-  --color-bloom-3-bg: #ede9fe;
-  --color-bloom-3-text: #6d28d9;
-  --color-bloom-4-bg: #f3e8ff;
+  --color-bloom-1-bg: #a5f3fc;
+  --color-bloom-1-text: #0e7490;
+  --color-bloom-2-bg: #bfdbfe;
+  --color-bloom-2-text: #1d4ed8;
+  --color-bloom-3-bg: #c7d2fe;
+  --color-bloom-3-text: #4338ca;
+  --color-bloom-4-bg: #ddd6fe;
   --color-bloom-4-text: #7e22ce;
-  --color-bloom-5-bg: #fae8ff;
+  --color-bloom-5-bg: #f5d0fe;
   --color-bloom-5-text: #a21caf;
 }
 

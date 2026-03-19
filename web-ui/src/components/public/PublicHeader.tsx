@@ -28,6 +28,9 @@ export default function PublicHeader() {
           <a href="/#pricing" className="text-sm text-text-muted hover:text-text-primary transition-colors">
             {t('nav.pricing')}
           </a>
+          <Link to="/docs" className="text-sm text-text-muted hover:text-text-primary transition-colors">
+            {t('nav.docs')}
+          </Link>
           <a
             href={GITHUB_URL}
             target="_blank"
@@ -77,6 +80,13 @@ export default function PublicHeader() {
           >
             {t('nav.pricing')}
           </a>
+          <Link
+            to="/docs"
+            onClick={() => setMobileOpen(false)}
+            className="block text-sm text-text-muted hover:text-text-primary"
+          >
+            {t('nav.docs')}
+          </Link>
           <a
             href={GITHUB_URL}
             target="_blank"

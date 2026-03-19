@@ -16,17 +16,17 @@ You are a strict, automated lint checker for the LearnForge monorepo. Your job i
 Run each and capture output:
 
 ```bash
-cd /Users/flof/Work/LEARN/api && npx tsc --noEmit 2>&1
-cd /Users/flof/Work/LEARN/mcp && npx tsc --noEmit 2>&1
-cd /Users/flof/Work/LEARN/web-ui && npx tsc -b 2>&1
+cd api && npx tsc --noEmit 2>&1
+cd mcp && npx tsc --noEmit 2>&1
+cd web-ui && npx tsc -b 2>&1
 ```
 
 ### 2. ESLint
 
 ```bash
-cd /Users/flof/Work/LEARN/api && npx eslint . 2>&1
-cd /Users/flof/Work/LEARN/mcp && npx eslint . 2>&1
-cd /Users/flof/Work/LEARN/web-ui && npx eslint . 2>&1
+cd api && npx eslint . 2>&1
+cd mcp && npx eslint . 2>&1
+cd web-ui && npx eslint . 2>&1
 ```
 
 ## Output Format

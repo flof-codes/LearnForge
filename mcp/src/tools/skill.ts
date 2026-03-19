@@ -28,8 +28,8 @@ When the user wants to study ("quiz me", "let's learn", etc.):
 
 1. Call \`get_study_summary\` (optionally with topic_id) → present overview (total due, breakdown by topic, Bloom distribution).
 2. Ask the user which topic and study mode:
-   - **Chat** (default): AI asks questions, user types answers, AI evaluates. Deepest learning — interval gets 1.25× boost. Pass modality="chat" to submit_review.
-   - **MCQ only**: Multiple-choice only. Faster but less retention — interval reduced to 0.75×. Pass modality="mcq" to submit_review.
+   - **Chat** (default): AI asks open questions, user types answers, AI evaluates. Deepest learning — interval gets 1.2× boost. Pass modality="chat" to submit_review.
+   - **MCQ only**: AI-generated multiple-choice at current Bloom level — interval boosted to 1.05×. Pass modality="mcq" to submit_review.
 3. Call \`get_study_cards\` with topic_id and limit=5.
 4. For each card:
    a. Read the concept, bloom_state.current_level, and review history.

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { Trans, useTranslation } from 'react-i18next';
 import { authService } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,6 +41,9 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen lf-hero-gradient">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="w-full max-w-sm px-6">
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-4">
           <ArrowLeft size={16} />

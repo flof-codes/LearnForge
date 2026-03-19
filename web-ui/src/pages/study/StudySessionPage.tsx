@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useDueCards } from '../../hooks/useStudy';
 import { useSubmitReview } from '../../hooks/useReviews';
 import BloomBadge from '../../components/BloomBadge';
@@ -12,6 +13,7 @@ import { BLOOM_COLORS } from '../../types';
 import type { DueCard } from '../../types';
 
 export default function StudySessionPage() {
+  const { t } = useTranslation('app');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const topicId = searchParams.get('topicId') || undefined;
@@ -81,10 +83,10 @@ export default function StudySessionPage() {
   if (error) {
     return (
       <div className="max-w-md mx-auto text-center py-12">
-        <p className="text-lg text-danger mb-2">Failed to load cards</p>
+        <p className="text-lg text-danger mb-2">{t('study.failedToLoad')}</p>
         <p className="text-sm text-text-muted mb-4">{(error as Error).message}</p>
         <button onClick={() => navigate('/dashboard/study')} className="px-4 py-2 rounded-lg bg-accent-blue text-white text-sm">
-          Back to Study
+          {t('study.backToStudy')}
         </button>
       </div>
     );
@@ -93,9 +95,9 @@ export default function StudySessionPage() {
   if (cards.length === 0) {
     return (
       <div className="max-w-md mx-auto text-center py-12">
-        <p className="text-lg text-text-muted mb-4">No cards are due right now.</p>
+        <p className="text-lg text-text-muted mb-4">{t('study.noCardsDueNow')}</p>
         <button onClick={() => navigate('/dashboard/study')} className="px-4 py-2 rounded-lg bg-accent-blue text-white text-sm">
-          Back to Study
+          {t('study.backToStudy')}
         </button>
       </div>
     );
@@ -111,13 +113,13 @@ export default function StudySessionPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BloomBadge level={currentCard.bloomState.currentLevel} />
-          <span className="text-sm text-text-muted">Card {currentIndex + 1} of {cards.length}</span>
+          <span className="text-sm text-text-muted">{t('study.cardOf', { current: currentIndex + 1, total: cards.length })}</span>
         </div>
         <button
           onClick={() => setDone(true)}
           className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary"
         >
-          <X size={16} /> End
+          <X size={16} /> {t('study.end')}
         </button>
       </div>
 
@@ -160,20 +162,16 @@ export default function StudySessionPage() {
         >
           {feedback.bloomFrom !== feedback.bloomTo && (
             <p className="text-sm font-medium">
-              Bloom:{' '}
-              <span style={{ color: BLOOM_COLORS[feedback.bloomFrom]?.text }}>
-                {BLOOM_COLORS[feedback.bloomFrom]?.label}
-              </span>
-              {' → '}
-              <span style={{ color: BLOOM_COLORS[feedback.bloomTo]?.text }}>
-                {BLOOM_COLORS[feedback.bloomTo]?.label}
-              </span>
+              {t('study.bloomChange', {
+                from: t(BLOOM_COLORS[feedback.bloomFrom]?.labelKey ?? 'bloom.remember'),
+                to: t(BLOOM_COLORS[feedback.bloomTo]?.labelKey ?? 'bloom.remember'),
+              })}
             </p>
           )}
           <p className="text-xs text-text-muted">
-            Next review: {new Date(feedback.nextDue).toLocaleDateString()}
+            {t('study.nextReview', { date: new Date(feedback.nextDue).toLocaleDateString() })}
           </p>
-          <p className="text-xs text-text-muted opacity-60">Click to continue</p>
+          <p className="text-xs text-text-muted opacity-60">{t('study.clickToContinue')}</p>
         </div>
       )}
     </div>

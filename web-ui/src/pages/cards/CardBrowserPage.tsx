@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Layers } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTopics } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
 import { contextService } from '../../api/context';
@@ -13,6 +14,7 @@ type StatusFilter = 'all' | 'new' | 'learning' | 'due';
 type CardSort = 'newest' | 'oldest' | 'updated' | 'studied';
 
 export default function CardBrowserPage() {
+  const { t } = useTranslation('app');
   const [search, setSearch] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
   const [bloomFilter, setBloomFilter] = useState<number | ''>('');
@@ -34,7 +36,7 @@ export default function CardBrowserPage() {
       if (!topics?.length) return [];
       const results = await Promise.all(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        topics.map(t => contextService.topicCards(t.id, 100).then(r => r.data as any[]))
+        topics.map(tp => contextService.topicCards(tp.id, 100).then(r => r.data as any[]))
       );
       return results.flat();
     },
@@ -75,12 +77,12 @@ export default function CardBrowserPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium">Cards</h1>
+        <h1 className="text-2xl font-medium">{t('cards.title')}</h1>
         <Link
           to="/dashboard/cards/new"
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
         >
-          <Plus size={16} /> New Card
+          <Plus size={16} /> {t('cards.newCard')}
         </Link>
       </div>
 
@@ -92,7 +94,7 @@ export default function CardBrowserPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"
-            placeholder="Search concepts..."
+            placeholder={t('cards.searchPlaceholder')}
           />
         </div>
         <select
@@ -100,9 +102,9 @@ export default function CardBrowserPage() {
           onChange={e => setTopicFilter(e.target.value)}
           className="px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"
         >
-          <option value="">All Topics</option>
-          {(topics ?? []).map(t => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+          <option value="">{t('cards.allTopics')}</option>
+          {(topics ?? []).map(tp => (
+            <option key={tp.id} value={tp.id}>{tp.name}</option>
           ))}
         </select>
         <select
@@ -110,9 +112,9 @@ export default function CardBrowserPage() {
           onChange={e => setBloomFilter(e.target.value === '' ? '' : Number(e.target.value))}
           className="px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"
         >
-          <option value="">All Bloom Levels</option>
+          <option value="">{t('cards.allBloomLevels')}</option>
           {[0, 1, 2, 3, 4, 5].map(l => (
-            <option key={l} value={l}>{BLOOM_COLORS[l].label}</option>
+            <option key={l} value={l}>{t(BLOOM_COLORS[l].labelKey)}</option>
           ))}
         </select>
       </div>
@@ -120,10 +122,10 @@ export default function CardBrowserPage() {
       {/* Status filter + Sort */}
       <div className="flex flex-wrap items-center gap-2">
         {([
-          { key: 'all', label: 'All' },
-          { key: 'new', label: 'New' },
-          { key: 'learning', label: 'Learning' },
-          { key: 'due', label: 'Due' },
+          { key: 'all', labelKey: 'cards.filterAll' },
+          { key: 'new', labelKey: 'cards.filterNew' },
+          { key: 'learning', labelKey: 'cards.filterLearning' },
+          { key: 'due', labelKey: 'cards.filterDue' },
         ] as const).map(f => (
           <button
             key={f.key}
@@ -134,7 +136,7 @@ export default function CardBrowserPage() {
                 : 'bg-bg-surface text-text-muted hover:text-text'
             }`}
           >
-            {f.label}
+            {t(f.labelKey)}
           </button>
         ))}
         <span className="text-border">|</span>
@@ -143,10 +145,10 @@ export default function CardBrowserPage() {
           onChange={e => setSort(e.target.value as CardSort)}
           className="text-xs bg-bg-surface text-text-muted rounded-lg px-2 py-1 border-none outline-none cursor-pointer hover:text-text transition-colors"
         >
-          <option value="newest">Newest</option>
-          <option value="oldest">Oldest</option>
-          <option value="updated">Recently updated</option>
-          <option value="studied">Recently studied</option>
+          <option value="newest">{t('cards.sortNewest')}</option>
+          <option value="oldest">{t('cards.sortOldest')}</option>
+          <option value="updated">{t('cards.sortUpdated')}</option>
+          <option value="studied">{t('cards.sortStudied')}</option>
         </select>
       </div>
 
@@ -155,7 +157,7 @@ export default function CardBrowserPage() {
         <LoadingSpinner />
       ) : cards.length > 0 ? (
         <>
-          <p className="text-sm text-text-muted">{cards.length} card{cards.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-text-muted">{t('cards.cardCount', { count: cards.length })}</p>
           <CardGrid cards={cards} topics={topics} />
         </>
       ) : (
@@ -163,8 +165,8 @@ export default function CardBrowserPage() {
           <Layers size={40} className="mx-auto mb-3 opacity-50" />
           <p className="text-sm">
             {search || topicFilter || bloomFilter !== '' || statusFilter !== 'all'
-              ? 'No cards match your filters.'
-              : 'No cards yet. Create a card to get started.'}
+              ? t('cards.noMatchFilters')
+              : t('cards.noCardsYet')}
           </p>
         </div>
       )}
@@ -172,7 +174,7 @@ export default function CardBrowserPage() {
       {/* Summary stats */}
       {summary && (
         <div className="text-xs text-text-muted text-right">
-          {summary.totalCards} total cards | {summary.dueCount} due
+          {t('cards.totalAndDue', { total: summary.totalCards, due: summary.dueCount })}
         </div>
       )}
     </div>

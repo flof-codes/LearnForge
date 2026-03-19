@@ -5,7 +5,7 @@ export default function DatenschutzPage() {
   const { t } = useTranslation('legal');
 
   return (
-    <LegalPageLayout title={t('datenschutz.title')} lastUpdated={t('datenschutz.lastUpdated')}>
+    <LegalPageLayout title={t('datenschutz.title')} lastUpdated={t('datenschutz.lastUpdated')} slug="datenschutz">
       <LegalSection title={t('datenschutz.introTitle')}>
         <p>{t('datenschutz.introText')}</p>
       </LegalSection>

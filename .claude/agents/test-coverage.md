@@ -16,7 +16,7 @@ You run the integration test suite and report results. You also check whether ne
 First check if test containers are running:
 
 ```bash
-cd /Users/flof/Work/LEARN && docker compose -f tests/docker-compose.test.yml ps 2>&1
+docker compose -f tests/docker-compose.test.yml ps 2>&1
 ```
 
 If not running, start them:
@@ -30,13 +30,13 @@ Wait for health checks to pass (up to 60 seconds).
 ### 2. Run Integration Tests
 
 ```bash
-cd /Users/flof/Work/LEARN && npm run test:integration:run 2>&1
+npm run test:integration:run 2>&1
 ```
 
 ### 3. Run with Coverage (if available)
 
 ```bash
-cd /Users/flof/Work/LEARN/tests && npx vitest run --config vitest.config.ts --coverage 2>&1
+cd tests && npx vitest run --config vitest.config.ts --coverage 2>&1
 ```
 
 ### 4. Report Test Results
@@ -60,7 +60,7 @@ Use `git diff --name-only` to find files changed in the current plan. For each n
 After tests complete:
 
 ```bash
-cd /Users/flof/Work/LEARN && npm run test:integration:down
+npm run test:integration:down
 ```
 
 ## Output Format

@@ -31,9 +31,9 @@ export function createInitialFsrsState(): FsrsDbState {
 export type StudyModality = "chat" | "web" | "mcq";
 
 const MODALITY_MULTIPLIERS: Record<StudyModality, number> = {
-  chat: 1.25,
-  web: 1.0,
-  mcq: 0.75,
+  chat: 1.2,
+  web: 0.95,
+  mcq: 1.05,
 };
 
 export function isValidModality(value: string): value is StudyModality {
