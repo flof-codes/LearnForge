@@ -43,13 +43,26 @@ When the user wants to study ("quiz me", "let's learn", etc.):
       - **open_response**: Ask in normal chat text (user types free-form answer).
       - **MCQ option length limit:** The AskUserQuestion widget truncates options at 105 characters. When any MCQ option exceeds this limit, use the **letter-key pattern**: display the full options (A through E with complete text) in the chat message above the widget, then present only the short letter labels ("A", "B", "C", "D") as widget options. Never present truncated options — the user must always be able to read the full text.
       - **CRITICAL — Option order**: Each card from \`get_study_cards\` includes an \`optionShuffle\` array (e.g. [3, 1, 6, 2, 5, 4]) — a pre-randomized ordering of positions 1-6. You MUST use this array to place your options. Put your first option at position optionShuffle[0], second at optionShuffle[1], etc. This prevents LLM bias toward placing correct answers first. Do NOT ignore optionShuffle or override it with your own ordering.
-   f. **Immediately** evaluate the response, assign rating 1-4, and call \`submit_review\` with:
+   f. After the user answers, evaluate and respond — but **feedback comes FIRST, saving comes AFTER**. The exact flow depends on the question type:
+
+      **MCQ / multi_select / single_select / slider flow:**
+      1. Give feedback on the current card (2-4 sentences): what was right, what's missing, hint for next time. Report Bloom level changes.
+      2. Write the NEXT card's question as chat text (so the user can read it while the review saves).
+      3. Call \`submit_review\` for the CURRENT (just-evaluated) card.
+      4. Present the NEXT card's answer options via \`AskUserQuestion\`.
+
+      **Open response flow:**
+      1. Give feedback on the current card (2-4 sentences): what was right, what's missing, hint for next time. Report Bloom level changes.
+      2. Call \`submit_review\` for the current card at the end of the feedback message.
+      3. Then ask the next question in chat text (the user types their answer as a normal message).
+
+      \`submit_review\` params (same for both flows):
       - \`question_text\`: the **exact, complete question** as shown to the user — including all MCQ options with letters (e.g. "Which of the following... A) option1 B) option2 C) option3 (Select all that apply)")
       - \`answer_expected\`: the correct/ideal answer (e.g. "A, C" for MCQ, or a full text answer for open response)
       - \`user_answer\`: the user's actual answer (e.g. "B, D" for MCQ, or the text they provided for open response)
       Do NOT batch reviews — submit after EACH card, not at the end of the session.
-   g. Give feedback right away (2-4 sentences): what was right, what's missing, hint for next time.
-   h. Report Bloom level changes and next due date before moving to the next card.
+
+   **Note on the first card:** The first card in a session has no previous card to save — just present the question directly via chat text + \`AskUserQuestion\` (MCQ) or chat text alone (open response).
 
 **When to use multi_select vs single_select:**
 - **Default to multi_select** unless the user explicitly requests single_select or the question is purely binary (yes/no, true/false).
