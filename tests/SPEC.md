@@ -194,11 +194,11 @@ Full CRUD cycle for cards through the API.
 
 | Test | What it verifies |
 |------|-----------------|
-| **Create card with all fields** | POST /cards → 201, returns card + bloomState (level 0) + fsrsState (state 0, due ~now), embedding is 384-dim array |
+| **Create card with all fields** | POST /cards → 201, returns card + bloomState (level 0) + fsrsState (state 0, due ~now), embedding is 1024-dim array |
 | **Create card minimal fields** | POST /cards with only required fields → tags default to [], embedding still computed |
 | **Read card with state** | GET /cards/:id → includes bloomState, fsrsState, reviews array |
 | **Update concept triggers re-embedding** | PUT /cards/:id with new concept → embedding changes, updatedAt advances |
-| **Update non-concept fields** | PUT /cards/:id with only front_html → embedding unchanged |
+| **Update front_html triggers re-embedding** | PUT /cards/:id with front_html → embedding recomputed (all content changes trigger re-embedding) |
 | **Move card to different topic** | PUT /cards/:id with new topic_id → card.topicId updated, old topic stats decrease, new topic stats increase |
 | **Delete card cascades** | DELETE /cards/:id → 204, bloom_state gone, fsrs_state gone, reviews gone, associated image.card_id set to null |
 | **Create card with invalid topic** | POST /cards with non-existent topic_id → 404 |
@@ -215,8 +215,8 @@ The core learning workflow: fetch due → answer → reschedule.
 | **Fetch due with limit** | GET /study/due?limit=2 → returns exactly 2 |
 | **Submit review rating=Good** | POST /reviews (rating=3) → fsrsState.due pushed forward, fsrsState.reps incremented, fsrsState.state may advance |
 | **Submit review rating=Again** | POST /reviews (rating=1) → fsrsState.lapses incremented, fsrsState.state may go to Relearning |
-| **Review with chat modality** | POST /reviews (modality=chat) → due date pushed 1.25x further than web baseline |
-| **Review with mcq modality** | POST /reviews (modality=mcq) → due date pushed 0.75x compared to web baseline |
+| **Review with chat modality** | POST /reviews (modality=chat) → due date pushed 1.2x further than web baseline |
+| **Review with mcq modality** | POST /reviews (modality=mcq) → due date pushed 1.05x further than web baseline |
 | **Verify study summary** | GET /study/summary → totalCards, dueCount, bloomLevels distribution matches seed data |
 | **Summary with topic filter** | GET /study/summary?topic_id=Biology → only counts Biology + Cell Biology cards |
 | **Study stats** | GET /study/stats → streak, reviewsToday, cardStates breakdown matches expectations |
@@ -333,6 +333,29 @@ Edge cases, validation failures, constraint violations.
 | **FK constraint: card for non-existent topic** | POST /cards with bad topic_id → error |
 | **FK constraint: review for non-existent card** | POST /reviews with bad card_id → error |
 | **Concurrent reviews on same card** | Two reviews submitted simultaneously → both succeed, state is consistent |
+
+### 13. Profile Management (`profile-management.test.ts`)
+
+User profile management endpoints.
+
+| Test | What it verifies |
+|------|-----------------|
+| **Update name** | PUT /auth/profile with name → 200, name updated |
+| **Trim name** | Whitespace is trimmed from name |
+| **Reject empty name** | Empty/whitespace name → 400 |
+| **Update email with password** | PUT /auth/profile with email + current_password → 200 |
+| **Login with new email** | POST /auth/login with changed email works |
+| **Normalize email** | Email stored as lowercase |
+| **Reject email without password** | Email change without current_password → 400 |
+| **Reject email with wrong password** | Wrong current_password → 401 |
+| **Reject duplicate email** | Email already used by another user → 400 |
+| **Update both name and email** | Both fields updated in single request |
+| **Change password** | PUT /auth/password → 200, can login with new password |
+| **Old password rejected** | Cannot login with old password after change |
+| **Reject missing current password** | → 400 |
+| **Reject wrong current password** | → 401 |
+| **Reject short password** | New password < 8 chars → 400 |
+| **Auth required** | Unauthenticated requests → 401 |
 
 ---
 

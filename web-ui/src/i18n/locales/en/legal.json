@@ -86,8 +86,8 @@
     "trialExpiry": "After the trial period expires without a subscription, the account remains active but access to learning features is restricted. Existing data is preserved and can still be exported.",
 
     "pricingTitle": "5. Pricing and Payment",
-    "pricingText": "The subscription costs EUR 24.00 per year (including all taxes, VAT-exempt under Kleinunternehmerregelung). Billing is processed annually in advance through the payment provider Stripe.",
-    "pricingRenewal": "The subscription renews automatically for one additional year unless cancelled before the end of the current billing period.",
+    "pricingText": "The subscription is available as a monthly plan (EUR 4.99 per month) or an annual plan (EUR 48.00 per year, equivalent to EUR 4.00 per month). All prices include all taxes (VAT-exempt under Kleinunternehmerregelung). Billing is processed through the payment provider Stripe.",
+    "pricingRenewal": "The subscription renews automatically at the end of each billing period (monthly or annually) unless cancelled before renewal.",
     "pricingReminder": "The Operator will notify the user by email in due time before the end of the billing period about the upcoming automatic renewal and the option to cancel.",
     "pricingDefault": "In case of payment default, the user will be notified by email. If payment remains outstanding after a 14-day grace period, the Operator may suspend access to the Service.",
 
@@ -130,7 +130,7 @@
     "warrantyDevelopment": "The Service is under active development. Features and user interface may change. Such developments do not constitute defects as long as the core functionality (creating, organizing, and reviewing flashcards) is preserved. Changes that materially impair the contractual use will be announced at least 30 days in advance. The user has a special right of termination in such cases.",
 
     "liabilityTitle": "11. Limitation of Liability",
-    "liabilityGross": "In cases of slight negligence, the Operator is only liable for breaches of essential contractual obligations (obligations whose fulfillment is a prerequisite for the proper performance of the contract). In such cases, liability is limited to the foreseeable, contract-typical damage, up to a maximum of the annual fee (EUR 24.00).",
+    "liabilityGross": "In cases of slight negligence, the Operator is only liable for breaches of essential contractual obligations (obligations whose fulfillment is a prerequisite for the proper performance of the contract). In such cases, liability is limited to the foreseeable, contract-typical damage, up to a maximum of EUR 59.88 (equivalent to one year of the monthly subscription).",
     "liabilityConsequential": "The Operator is not liable for consequential damages, lost profits, or lost data insofar as these are attributable to slight negligence.",
     "liabilityBackup": "The Operator performs regular data backups. In addition, the user can use the export function at any time (see Section 9). The Operator is liable for data loss within the scope of the preceding paragraphs.",
     "liabilityProduct": "Liability under the Produkthaftungsgesetz (Product Liability Act) and claims for damages under Art. 82 GDPR remain unaffected.",

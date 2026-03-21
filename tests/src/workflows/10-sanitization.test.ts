@@ -22,7 +22,7 @@ describe("HTML Sanitization", () => {
 
   describe("Size validation", () => {
     it("rejects card with oversized front_html", async () => {
-      const hugeHtml = "<div>" + "x".repeat(600 * 1024) + "</div>";
+      const hugeHtml = "<div>" + "x".repeat(110 * 1024) + "</div>";
       const res = await api.post("/cards", {
         topic_id: TOPICS.EMPTY_TOPIC,
         concept: "Oversized front",
@@ -31,11 +31,11 @@ describe("HTML Sanitization", () => {
       });
       expect(res.status).toBe(400);
       expect(res.data.error).toContain("front_html");
-      expect(res.data.error).toContain("500KB");
+      expect(res.data.error).toContain("100KB");
     });
 
     it("rejects card with oversized back_html", async () => {
-      const hugeHtml = "<div>" + "x".repeat(600 * 1024) + "</div>";
+      const hugeHtml = "<div>" + "x".repeat(110 * 1024) + "</div>";
       const res = await api.post("/cards", {
         topic_id: TOPICS.EMPTY_TOPIC,
         concept: "Oversized back",
@@ -57,7 +57,7 @@ describe("HTML Sanitization", () => {
       expect(createRes.status).toBe(201);
       freshCardIds.push(createRes.data.id);
 
-      const hugeHtml = "<div>" + "x".repeat(600 * 1024) + "</div>";
+      const hugeHtml = "<div>" + "x".repeat(110 * 1024) + "</div>";
       const res = await api.put(`/cards/${createRes.data.id}`, {
         back_html: hugeHtml,
       });
@@ -121,8 +121,9 @@ describe("HTML Sanitization", () => {
     });
 
     it("accepts card just under size limit", async () => {
-      // ~490KB should pass
-      const html = "<div>" + "x".repeat(490 * 1024) + "</div>";
+      // ~10KB of realistic content (well under 100KB limit)
+      const paragraph = "<p>This is a sample paragraph with some educational content about mathematics and science. </p>\n";
+      const html = "<div>" + paragraph.repeat(Math.floor((10 * 1024) / paragraph.length)) + "</div>";
       const res = await api.post("/cards", {
         topic_id: TOPICS.EMPTY_TOPIC,
         concept: "Large but valid card",

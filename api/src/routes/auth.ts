@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import argon2 from "argon2";
 import { db } from "../db/connection.js";
 import { users } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
 
@@ -59,8 +59,7 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get("/auth/me", async (request) => {
-    const userId = getUserId(request);
+  async function getUserProfile(userId: string) {
     const [user] = await db
       .select({
         id: users.id,
@@ -95,5 +94,82 @@ export default async function authRoutes(app: FastifyInstance) {
       isActive: trialActive || !!subscriptionActive,
       hasStripeCustomer: !!user.stripeCustomerId,
     };
+  }
+
+  app.get("/auth/me", async (request) => {
+    const userId = getUserId(request);
+    return getUserProfile(userId);
   });
+
+  app.put<{ Body: { name?: string; email?: string; current_password?: string } }>(
+    "/auth/profile",
+    async (request) => {
+      const userId = getUserId(request);
+      const { name, email, current_password } = request.body ?? {};
+
+      if (!name && !email) throw new ValidationError("name or email is required");
+
+      const updateFields: Record<string, string> = {};
+
+      if (name !== undefined) {
+        const trimmedName = name.trim();
+        if (!trimmedName) throw new ValidationError("name cannot be empty");
+        updateFields.name = trimmedName;
+      }
+
+      if (email !== undefined) {
+        if (!current_password) throw new ValidationError("current_password is required to change email");
+
+        const [currentUser] = await db
+          .select({ passwordHash: users.passwordHash })
+          .from(users)
+          .where(eq(users.id, userId));
+        if (!currentUser) throw new UnauthorizedError("User not found");
+
+        const valid = await argon2.verify(currentUser.passwordHash, current_password);
+        if (!valid) throw new UnauthorizedError("Invalid password");
+
+        const normalizedEmail = email.toLowerCase().trim();
+
+        const [existing] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(and(eq(users.email, normalizedEmail), ne(users.id, userId)));
+        if (existing) throw new ValidationError("An account with this email already exists");
+
+        updateFields.email = normalizedEmail;
+      }
+
+      await db.update(users).set(updateFields).where(eq(users.id, userId));
+
+      return getUserProfile(userId);
+    },
+  );
+
+  app.put<{ Body: { current_password: string; new_password: string } }>(
+    "/auth/password",
+    async (request) => {
+      const userId = getUserId(request);
+      const { current_password, new_password } = request.body ?? {};
+
+      if (!current_password) throw new ValidationError("current_password is required");
+      if (!new_password) throw new ValidationError("new_password is required");
+
+      const [user] = await db
+        .select({ passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.id, userId));
+      if (!user) throw new UnauthorizedError("User not found");
+
+      const valid = await argon2.verify(user.passwordHash, current_password);
+      if (!valid) throw new UnauthorizedError("Invalid password");
+
+      if (new_password.length < 8) throw new ValidationError("password must be at least 8 characters");
+
+      const passwordHash = await argon2.hash(new_password);
+      await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+
+      return { success: true };
+    },
+  );
 }

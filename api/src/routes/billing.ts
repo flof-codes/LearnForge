@@ -14,8 +14,21 @@ import {
 } from "../services/stripe.js";
 
 export default async function billingRoutes(app: FastifyInstance) {
-  app.post("/billing/checkout", async (request) => {
+  app.post<{ Body: { plan: string } }>("/billing/checkout", async (request) => {
     const userId = getUserId(request);
+    const { plan } = request.body ?? {};
+
+    if (plan !== "monthly" && plan !== "annual") {
+      throw new ValidationError("Invalid plan. Must be 'monthly' or 'annual'");
+    }
+
+    const priceId = plan === "monthly"
+      ? config.stripePriceIdMonthly
+      : config.stripePriceIdAnnual;
+
+    if (!priceId) {
+      throw new ValidationError("Subscription plan not configured");
+    }
 
     const [user] = await db
       .select({
@@ -41,12 +54,22 @@ export default async function billingRoutes(app: FastifyInstance) {
         .where(eq(users.id, userId));
     }
 
-    const url = await createCheckoutSession({
-      customerId,
-      priceId: config.stripePriceId,
-      successUrl: `${config.appUrl}/dashboard/settings/billing?success=true`,
-      cancelUrl: `${config.appUrl}/dashboard/settings/billing?canceled=true`,
-    });
+    let url: string | null;
+    try {
+      url = await createCheckoutSession({
+        customerId,
+        priceId,
+        successUrl: `${config.appUrl}/dashboard/settings/billing?success=true`,
+        cancelUrl: `${config.appUrl}/dashboard/settings/billing?canceled=true`,
+      });
+    } catch (err) {
+      app.log.error(err, "Stripe checkout session creation failed");
+      throw new ValidationError("Unable to create checkout session. Please try again.");
+    }
+
+    if (!url) {
+      throw new ValidationError("Unable to create checkout session. Please try again.");
+    }
 
     return { url };
   });
@@ -63,10 +86,16 @@ export default async function billingRoutes(app: FastifyInstance) {
       throw new ValidationError("No billing account found");
     }
 
-    const url = await createCustomerPortalSession(
-      user.stripeCustomerId,
-      `${config.appUrl}/dashboard/settings/billing`,
-    );
+    let url: string;
+    try {
+      url = await createCustomerPortalSession(
+        user.stripeCustomerId,
+        `${config.appUrl}/dashboard/settings/billing`,
+      );
+    } catch (err) {
+      app.log.error(err, "Stripe portal session creation failed");
+      throw new ValidationError("Unable to open billing portal. Please try again.");
+    }
 
     return { url };
   });

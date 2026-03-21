@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "../db/connection.js";
 import { cards, bloomState, fsrsState, reviews, topics } from "../db/schema/index.js";
 import { eq, sql } from "drizzle-orm";
-import { computeEmbedding } from "../services/embeddings.js";
+import { computeEmbedding, buildEmbeddingText } from "../services/embeddings.js";
 import { createInitialFsrsState } from "../services/fsrs.js";
 import { validateCardHtml } from "../lib/sanitize-card-html.js";
 
@@ -31,7 +31,7 @@ export function registerCardTools(server: McpServer, userId: string) {
           return { content: [{ type: "text" as const, text: "Error: Topic not found" }], isError: true };
         }
 
-        const embedding = await computeEmbedding(concept);
+        const embedding = await computeEmbedding(buildEmbeddingText(concept, tags ?? [], front_html, back_html));
         const initialFsrs = createInitialFsrsState();
 
         const result = await db.transaction(async (tx) => {
@@ -103,7 +103,7 @@ export function registerCardTools(server: McpServer, userId: string) {
   // ── update_card ──────────────────────────────────────────────────────
   server.tool(
     "update_card",
-    "Update a card's content. Recomputes embedding if concept changes",
+    "Update a card's content. Recomputes embedding if concept, content, or tags change",
     {
       card_id: z.string().uuid(),
       concept: z.string().optional(),
@@ -143,8 +143,17 @@ export function registerCardTools(server: McpServer, userId: string) {
         if (tags !== undefined) updates.tags = tags;
         if (topic_id !== undefined) updates.topicId = topic_id;
 
-        if (concept !== undefined) {
-          updates.embedding = await computeEmbedding(concept);
+        // Recompute embedding if any content field changed
+        if (concept !== undefined || front_html !== undefined || back_html !== undefined || tags !== undefined) {
+          const [current] = await db.select().from(cards).where(eq(cards.id, card_id));
+          if (current) {
+            updates.embedding = await computeEmbedding(buildEmbeddingText(
+              concept ?? current.concept,
+              tags ?? current.tags ?? [],
+              front_html ?? current.frontHtml,
+              back_html ?? current.backHtml,
+            ));
+          }
         }
 
         const [updated] = await db.update(cards).set(updates).where(eq(cards.id, card_id)).returning();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Sun, Moon, MonitorSmartphone, CreditCard, CheckCircle, XCircle, Heart, Download } from 'lucide-react';
+import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Sun, Moon, MonitorSmartphone, CreditCard, CheckCircle, XCircle, Heart, Download, User } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { authService, billingService } from '../../api/auth';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,10 +34,20 @@ export default function McpSettingsPage() {
   // Billing state
   const [searchParams, setSearchParams] = useSearchParams();
   const [banner, setBanner] = useState<{ type: 'success' | 'canceled'; message: string } | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutLoadingPlan, setCheckoutLoadingPlan] = useState<'monthly' | 'annual' | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [withdrawalConsent, setWithdrawalConsent] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  const [profileName, setProfileName] = useState(user?.name ?? '');
+  const [profileEmail, setProfileEmail] = useState(user?.email ?? '');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const successParam = searchParams.get('success');
   const canceledParam = searchParams.get('canceled');
@@ -78,6 +88,62 @@ export default function McpSettingsPage() {
     },
   });
 
+  const profileMutation = useMutation({
+    mutationFn: (data: { name?: string; email?: string; current_password?: string }) =>
+      authService.updateProfile(data).then(r => r.data),
+    onSuccess: () => {
+      refreshUser();
+      setEmailPassword('');
+      setProfileMessage({ type: 'success', text: t('app:settings.profile.saved') });
+    },
+    onError: (error: Error) => {
+      const axErr = error as import('axios').AxiosError<{ message?: string }>;
+      setProfileMessage({ type: 'error', text: axErr.response?.data?.message || error.message });
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: (data: { current_password: string; new_password: string }) =>
+      authService.changePassword(data).then(r => r.data),
+    onSuccess: () => {
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+      setPwMessage({ type: 'success', text: t('app:settings.profile.passwordChanged') });
+    },
+    onError: (error: Error) => {
+      const axErr = error as import('axios').AxiosError<{ message?: string }>;
+      setPwMessage({ type: 'error', text: axErr.response?.data?.message || error.message });
+    },
+  });
+
+  const handleProfileSave = () => {
+    setProfileMessage(null);
+    const data: { name?: string; email?: string; current_password?: string } = {};
+    if (profileName.trim() !== user?.name) data.name = profileName.trim();
+    if (profileEmail.trim().toLowerCase() !== user?.email) {
+      data.email = profileEmail.trim();
+      data.current_password = emailPassword;
+    }
+    if (!data.name && !data.email) return;
+    profileMutation.mutate(data);
+  };
+
+  const handlePasswordChange = () => {
+    setPwMessage(null);
+    if (newPw.length < 8) {
+      setPwMessage({ type: 'error', text: t('app:settings.profile.passwordTooShort') });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setPwMessage({ type: 'error', text: t('app:settings.profile.passwordMismatch') });
+      return;
+    }
+    passwordMutation.mutate({ current_password: currentPw, new_password: newPw });
+  };
+
+  const emailChanged = profileEmail.trim().toLowerCase() !== (user?.email ?? '');
+
   const handleCopy = async () => {
     if (!newKey) return;
     await navigator.clipboard.writeText(newKey);
@@ -85,14 +151,14 @@ export default function McpSettingsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCheckout = async () => {
-    setCheckoutLoading(true);
+  const handleCheckout = async (plan: 'monthly' | 'annual') => {
+    setCheckoutLoadingPlan(plan);
     try {
-      const { data } = await billingService.createCheckout();
+      const { data } = await billingService.createCheckout(plan);
       window.location.href = data.url;
     } catch {
       setBanner({ type: 'canceled', message: t('app:settings.subscription.checkoutFailed') });
-      setCheckoutLoading(false);
+      setCheckoutLoadingPlan(null);
     }
   };
 
@@ -157,6 +223,124 @@ export default function McpSettingsPage() {
           <span className="text-sm">{banner.message}</span>
         </div>
       )}
+
+      {/* Profile */}
+      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <User size={20} className="text-accent-blue" />
+          <h2 className="text-lg font-medium text-text-primary">{t('app:settings.profile.title')}</h2>
+        </div>
+
+        {profileMessage && (
+          <div className={`rounded-lg px-3 py-2 text-sm ${
+            profileMessage.type === 'success'
+              ? 'bg-green-900/20 text-green-400'
+              : 'bg-red-900/20 text-red-400'
+          }`}>
+            {profileMessage.text}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.name')}</label>
+            <input
+              type="text"
+              value={profileName}
+              onChange={e => setProfileName(e.target.value)}
+              className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.email')}</label>
+            <input
+              type="email"
+              value={profileEmail}
+              onChange={e => setProfileEmail(e.target.value)}
+              className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent-blue"
+            />
+          </div>
+          {emailChanged && (
+            <div>
+              <label className="block text-sm text-text-muted mb-1">
+                {t('app:settings.profile.currentPassword')}
+                <span className="ml-2 text-xs text-text-muted">({t('app:settings.profile.currentPasswordHint')})</span>
+              </label>
+              <input
+                type="password"
+                value={emailPassword}
+                onChange={e => setEmailPassword(e.target.value)}
+                className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent-blue"
+              />
+            </div>
+          )}
+          <button
+            onClick={handleProfileSave}
+            disabled={profileMutation.isPending}
+            className="px-4 py-2 bg-accent-blue text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {profileMutation.isPending ? t('app:settings.profile.saving') : t('app:settings.profile.save')}
+          </button>
+        </div>
+      </section>
+
+      {/* Change Password */}
+      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Key size={20} className="text-accent-blue" />
+          <h2 className="text-lg font-medium text-text-primary">{t('app:settings.profile.changePassword')}</h2>
+        </div>
+
+        {pwMessage && (
+          <div className={`rounded-lg px-3 py-2 text-sm ${
+            pwMessage.type === 'success'
+              ? 'bg-green-900/20 text-green-400'
+              : 'bg-red-900/20 text-red-400'
+          }`}>
+            {pwMessage.text}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.currentPassword')}</label>
+            <input
+              type="password"
+              value={currentPw}
+              onChange={e => setCurrentPw(e.target.value)}
+              className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-text-muted mb-1">
+              {t('app:settings.profile.newPassword')}
+              <span className="ml-2 text-xs text-text-muted">({t('app:settings.profile.newPasswordHint')})</span>
+            </label>
+            <input
+              type="password"
+              value={newPw}
+              onChange={e => setNewPw(e.target.value)}
+              className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.confirmPassword')}</label>
+            <input
+              type="password"
+              value={confirmPw}
+              onChange={e => setConfirmPw(e.target.value)}
+              className="w-full px-3 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent-blue"
+            />
+          </div>
+          <button
+            onClick={handlePasswordChange}
+            disabled={passwordMutation.isPending || !currentPw || !newPw || !confirmPw}
+            className="px-4 py-2 bg-accent-blue text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {passwordMutation.isPending ? t('app:settings.profile.changingPassword') : t('app:settings.profile.changePasswordButton')}
+          </button>
+        </div>
+      </section>
 
       {/* Language */}
       <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
@@ -227,6 +411,48 @@ export default function McpSettingsPage() {
 
         {!user?.hasActiveSubscription && (
           <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Monthly */}
+              <div className="rounded-lg border border-border p-4 bg-bg-primary">
+                <div className="text-sm font-medium text-text-primary mb-1">
+                  {t('app:settings.subscription.monthly.title')}
+                </div>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-2xl font-semibold text-text-primary">
+                    {t('app:settings.subscription.monthly.price')}
+                  </span>
+                  <span className="text-text-muted text-sm">
+                    {t('app:settings.subscription.monthly.period')}
+                  </span>
+                </div>
+                <p className="text-xs text-text-muted">
+                  {t('app:settings.subscription.monthly.billed')}
+                </p>
+              </div>
+              {/* Annual */}
+              <div className="rounded-lg border-2 border-accent-blue/30 p-4 bg-bg-primary">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-text-primary">
+                    {t('app:settings.subscription.annual.title')}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent-blue/20 text-accent-blue">
+                    {t('app:settings.subscription.annual.badge')}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-2xl font-semibold text-text-primary">
+                    {t('app:settings.subscription.annual.price')}
+                  </span>
+                  <span className="text-text-muted text-sm">
+                    {t('app:settings.subscription.annual.period')}
+                  </span>
+                </div>
+                <p className="text-xs text-text-muted">
+                  {t('app:settings.subscription.annual.billed')}
+                </p>
+              </div>
+            </div>
+
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -238,14 +464,23 @@ export default function McpSettingsPage() {
                 {t('legal:billing.withdrawalConsent')}
               </span>
             </label>
-            <button
-              onClick={handleCheckout}
-              disabled={checkoutLoading || !withdrawalConsent}
-              className="w-full py-2.5 bg-accent-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {checkoutLoading ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.subscribe')}
-            </button>
-            <p className="text-text-muted text-xs text-center">{t('app:settings.subscription.billedAnnually')}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                onClick={() => handleCheckout('monthly')}
+                disabled={checkoutLoadingPlan !== null || !withdrawalConsent}
+                className="w-full py-2.5 bg-bg-primary border border-border text-text-primary rounded-lg font-medium hover:bg-bg-surface transition-colors disabled:opacity-50"
+              >
+                {checkoutLoadingPlan === 'monthly' ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.selectMonthly')}
+              </button>
+              <button
+                onClick={() => handleCheckout('annual')}
+                disabled={checkoutLoadingPlan !== null || !withdrawalConsent}
+                className="w-full py-2.5 bg-accent-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {checkoutLoadingPlan === 'annual' ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.selectAnnual')}
+              </button>
+            </div>
           </>
         )}
 

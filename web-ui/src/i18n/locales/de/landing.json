@@ -122,12 +122,20 @@
       "period": "30 Tage",
       "features": ["Voller Zugang zu allen Features", "Keine Kreditkarte erforderlich", "Jederzeit kündbar"]
     },
+    "monthly": {
+      "title": "Monatlich",
+      "price": "€4,99",
+      "period": "/Monat",
+      "billed": "Monatlich abgerechnet",
+      "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support"]
+    },
     "annual": {
       "title": "Jährlich",
-      "price": "€2",
+      "badge": "20% sparen",
+      "price": "€4",
       "period": "/Monat",
-      "billed": "Jährlich abgerechnet zu €24/Jahr",
-      "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support"]
+      "billed": "€48 jährlich abgerechnet",
+      "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support", "20% Rabatt"]
     },
     "cta": "Kostenlose Testphase starten",
     "claudeNote": "Funktioniert mit jedem Claude-Plan, auch dem kostenlosen (1 Connector enthalten).",
@@ -143,7 +151,7 @@
       "q2": "Wie unterscheidet sich LearnForge von Anki oder anderen Lernkarten-Apps?",
       "a2": "Herkömmliche Lernkarten-Apps zeigen immer dieselbe Frage, was zu Mustererkennung statt echtem Verständnis führt. LearnForge formuliert jede Frage per KI um und verfolgt sechs Stufen kognitiver Tiefe pro Konzept — vom einfachen Abruf bis zum kritischen Denken.",
       "q3": "Ist LearnForge kostenlos?",
-      "a3": "LearnForge bietet eine 30-tägige kostenlose Testphase mit vollem Zugang. Danach kostet es 2 €/Monat bei jährlicher Abrechnung. Self-Hosting ist unter der AGPL-3.0-Lizenz immer kostenlos.",
+      "a3": "LearnForge bietet eine 30-tägige kostenlose Testphase mit vollem Zugang. Danach kannst du zwischen 4,99 €/Monat oder 4 €/Monat bei jährlicher Abrechnung (48 €/Jahr, 20% Ersparnis) wählen. Self-Hosting ist unter der AGPL-3.0-Lizenz immer kostenlos.",
       "q4": "Was ist die Bloom-Taxonomie?",
       "a4": "Die Bloom-Taxonomie ist ein Rahmenwerk mit sechs kognitiven Stufen: Erinnern, Verstehen, Anwenden, Analysieren, Bewerten und Erschaffen. LearnForge verfolgt deine Meisterschaft auf jeder Stufe und steigert automatisch die Frageschwierigkeit."
     }

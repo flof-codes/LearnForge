@@ -17,14 +17,18 @@ services:
 
   test-api:
     build: ../api
+    mem_limit: 4g
     ports:
       - "4444:3000"
+    env_file:
+      - .env.test
     environment:
       DATABASE_URL: postgresql://learnforge_test:learnforge_test@test-db:5432/learnforge_test
       PORT: "3000"
       IMAGE_PATH: /data/images
       JWT_SECRET: test-jwt-secret
       JWT_EXPIRES_IN: "1h"
+      APP_URL: http://localhost:4444
     volumes:
       - test-images:/data/images
     healthcheck:
@@ -39,6 +43,7 @@ services:
 
   test-mcp:
     build: ../mcp
+    mem_limit: 4g
     ports:
       - "4445:3001"
     environment:

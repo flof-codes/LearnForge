@@ -191,7 +191,7 @@ GET /health
 - Concept changes trigger embedding recomputation.
 - Topic filtering for study/context uses recursive CTEs to include descendant topics.
 - Image files stored on disk at `IMAGE_PATH` (container: `/data/images`, MCP local: `~/.learnforge/images`).
-- FSRS intervals are adjusted by study modality: chat (1.25x), web (1.0x), mcq (0.75x).
+- FSRS intervals are adjusted by study modality: chat (1.2x), web (0.95x), mcq (1.05x).
 
 ## Conventions
 

@@ -86,8 +86,8 @@
     "trialExpiry": "Nach Ablauf der Testphase ohne Abonnement bleibt das Konto bestehen, der Zugang zu den Lernfunktionen wird jedoch eingeschränkt. Die erstellten Daten bleiben erhalten und können weiterhin exportiert werden.",
 
     "pricingTitle": "5. Preise und Zahlung",
-    "pricingText": "Das Abonnement kostet EUR 24,00 pro Jahr (inkl. aller Steuern, USt-befreit gemäß Kleinunternehmerregelung). Die Abrechnung erfolgt jährlich im Voraus über den Zahlungsdienstleister Stripe.",
-    "pricingRenewal": "Das Abonnement verlängert sich automatisch um jeweils ein weiteres Jahr, sofern es nicht vor Ablauf der laufenden Vertragsperiode gekündigt wird.",
+    "pricingText": "Das Abonnement ist als Monatsplan (EUR 4,99 pro Monat) oder Jahresplan (EUR 48,00 pro Jahr, entspricht EUR 4,00 pro Monat) verfügbar. Alle Preise inkl. aller Steuern (USt-befreit gemäß Kleinunternehmerregelung). Die Abrechnung erfolgt über den Zahlungsdienstleister Stripe.",
+    "pricingRenewal": "Das Abonnement verlängert sich automatisch am Ende jeder Abrechnungsperiode (monatlich oder jährlich), sofern es nicht vor der Verlängerung gekündigt wird.",
     "pricingReminder": "Der Betreiber erinnert den Nutzer rechtzeitig vor Ablauf der Vertragsperiode per E-Mail an die bevorstehende automatische Verlängerung und die Kündigungsmöglichkeit.",
     "pricingDefault": "Bei Zahlungsverzug wird der Nutzer per E-Mail informiert. Bleibt die Zahlung nach einer Nachfrist von 14 Tagen aus, kann der Betreiber den Zugang zum Dienst sperren.",
 
@@ -130,7 +130,7 @@
     "warrantyDevelopment": "Der Dienst befindet sich in aktiver Entwicklung. Funktionsumfang und Benutzeroberfläche können sich ändern. Solche Weiterentwicklungen stellen keinen Mangel dar, sofern die Kernfunktionen (Erstellen, Organisieren und Wiederholen von Lernkarten) erhalten bleiben. Änderungen, die den vertragsgemäßen Gebrauch wesentlich beeinträchtigen, werden mindestens 30 Tage vorab angekündigt. Der Nutzer hat in diesem Fall ein Sonderkündigungsrecht.",
 
     "liabilityTitle": "11. Haftungsbeschränkung",
-    "liabilityGross": "Bei leichter Fahrlässigkeit haftet der Betreiber nur bei Verletzung wesentlicher Vertragspflichten (Pflichten, deren Erfüllung die ordnungsgemäße Durchführung des Vertrages überhaupt erst ermöglicht). In diesem Fall ist die Haftung auf den vorhersehbaren, vertragstypischen Schaden begrenzt, höchstens jedoch auf den Betrag des Jahresentgelts (EUR 24,00).",
+    "liabilityGross": "Bei leichter Fahrlässigkeit haftet der Betreiber nur bei Verletzung wesentlicher Vertragspflichten (Pflichten, deren Erfüllung die ordnungsgemäße Durchführung des Vertrages überhaupt erst ermöglicht). In diesem Fall ist die Haftung auf den vorhersehbaren, vertragstypischen Schaden begrenzt, höchstens jedoch auf den Betrag von EUR 59,88 (entspricht einem Jahr des Monatsabonnements).",
     "liabilityConsequential": "Der Betreiber haftet nicht für Folgeschäden, entgangenen Gewinn oder entgangene Daten, soweit diese auf leichte Fahrlässigkeit zurückzuführen sind.",
     "liabilityBackup": "Der Betreiber führt regelmäßige Datensicherungen durch. Darüber hinaus steht dem Nutzer jederzeit die Exportfunktion zur Verfügung (siehe Abschnitt 9). Für Datenverluste haftet der Betreiber im Rahmen der vorstehenden Absätze.",
     "liabilityProduct": "Die Haftung nach dem Produkthaftungsgesetz und Schadensersatzansprüche nach Art. 82 DSGVO bleiben unberührt.",

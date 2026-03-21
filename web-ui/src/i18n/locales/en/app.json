@@ -200,8 +200,27 @@
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Appearance, billing, and MCP integration",
+    "subtitle": "Profile, appearance, billing, and MCP integration",
     "loading": "Loading...",
+    "profile": {
+      "title": "Profile",
+      "name": "Display Name",
+      "email": "Email Address",
+      "currentPassword": "Current Password",
+      "currentPasswordHint": "Required to change email",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Profile updated successfully.",
+      "changePassword": "Change Password",
+      "newPassword": "New Password",
+      "newPasswordHint": "At least 8 characters",
+      "confirmPassword": "Confirm New Password",
+      "changePasswordButton": "Change Password",
+      "changingPassword": "Changing...",
+      "passwordChanged": "Password changed successfully.",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordTooShort": "Password must be at least 8 characters."
+    },
     "language": {
       "title": "Language"
     },
@@ -221,8 +240,21 @@
       "expired": "Expired",
       "expiredMessage": "Your trial has expired",
       "redirecting": "Redirecting...",
-      "subscribe": "Subscribe \u2014 EUR 24/year",
-      "billedAnnually": "EUR 2/month, billed annually",
+      "monthly": {
+        "title": "Monthly",
+        "price": "\u20ac4.99",
+        "period": "/month",
+        "billed": "Billed monthly"
+      },
+      "annual": {
+        "title": "Annual",
+        "badge": "Save 20%",
+        "price": "\u20ac4.00",
+        "period": "/month",
+        "billed": "\u20ac48 billed annually"
+      },
+      "selectMonthly": "Subscribe Monthly",
+      "selectAnnual": "Subscribe Annual",
       "openBillingPortal": "Open Billing Portal",
       "taxNote": "Prices include all taxes. No VAT is shown (small business exemption per \u00a7 6(1)(27) UStG).",
       "successBanner": "Subscription activated! Thank you for supporting LearnForge.",

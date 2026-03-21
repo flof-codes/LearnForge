@@ -37,9 +37,9 @@ describe("Card Lifecycle", () => {
       expect(res.data.concept).toBe("Test card with all fields");
       expect(res.data.tags).toEqual(["test", "full"]);
 
-      // Embedding should be 384-dim array
+      // Embedding should be 1024-dim array
       expect(Array.isArray(res.data.embedding)).toBe(true);
-      expect(res.data.embedding).toHaveLength(384);
+      expect(res.data.embedding).toHaveLength(1024);
 
       // Bloom state initialized to 0
       expect(res.data.bloomState).toBeDefined();
@@ -65,7 +65,7 @@ describe("Card Lifecycle", () => {
 
       expect(res.data.tags).toEqual([]);
       expect(Array.isArray(res.data.embedding)).toBe(true);
-      expect(res.data.embedding).toHaveLength(384);
+      expect(res.data.embedding).toHaveLength(1024);
     });
 
     it("rejects card with invalid topic", async () => {
@@ -113,18 +113,19 @@ describe("Card Lifecycle", () => {
       );
     });
 
-    it("updates non-concept fields without changing embedding", async () => {
-      const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "no-embed-change");
+    it("updates front_html and triggers re-embedding", async () => {
+      const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "html-embed-change");
       freshCardIds.push(card.id);
 
       const originalEmbedding = card.embedding;
 
       const res = await api.put(`/cards/${card.id}`, {
-        front_html: "<p>Updated front</p>",
+        front_html: "<p>Completely different front content about quantum physics</p>",
       });
       expect(res.status).toBe(200);
-      expect(res.data.frontHtml).toBe("<p>Updated front</p>");
-      expect(res.data.embedding).toEqual(originalEmbedding);
+      expect(res.data.frontHtml).toBe("<p>Completely different front content about quantum physics</p>");
+      // Embedding is now recomputed for any content change, not just concept
+      expect(res.data.embedding).not.toEqual(originalEmbedding);
     });
 
     it("moves card to different topic", async () => {

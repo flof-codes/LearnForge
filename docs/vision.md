@@ -63,9 +63,9 @@ Create cards through natural conversation with AI. Describe what you learned, an
 
 ### 4. Multiple Study Modalities
 Choose how you want to study:
-- **Classic web review** -- self-rated, Anki-style (1.0x interval)
-- **Multiple choice** -- faster, tests discrimination between concepts (0.75x interval)
-- **Open questions via AI** -- deepest learning, AI evaluates your actual answer (1.25x interval)
+- **Classic web review** -- self-rated, Anki-style (0.95x interval)
+- **Multiple choice** -- faster, tests discrimination between concepts (1.05x interval)
+- **Open questions via AI** -- deepest learning, AI evaluates your actual answer (1.2x interval)
 
 Harder modalities earn longer intervals. The system rewards deeper engagement.
 

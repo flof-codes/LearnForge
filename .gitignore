@@ -12,6 +12,7 @@ web-ui/dist/
 .env
 .env.local
 .env.*.local
+tests/.env.test
 
 # Data
 data/

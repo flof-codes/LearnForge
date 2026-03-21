@@ -18,9 +18,14 @@ export const authService = {
     api.post<{ key: string }>('/auth/mcp-key'),
   revokeMcpKey: () =>
     api.delete('/auth/mcp-key'),
+  updateProfile: (data: { name?: string; email?: string; current_password?: string }) =>
+    api.put<User>('/auth/profile', data),
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.put<{ success: boolean }>('/auth/password', data),
 };
 
 export const billingService = {
-  createCheckout: () => api.post<{ url: string }>('/billing/checkout'),
+  createCheckout: (plan: 'monthly' | 'annual') =>
+    api.post<{ url: string }>('/billing/checkout', { plan }),
   createPortalSession: () => api.post<{ url: string }>('/billing/portal'),
 };

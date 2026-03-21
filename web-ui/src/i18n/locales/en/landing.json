@@ -122,12 +122,20 @@
       "period": "30 days",
       "features": ["Full access to all features", "No credit card required", "Cancel anytime"]
     },
+    "monthly": {
+      "title": "Monthly",
+      "price": "€4.99",
+      "period": "/month",
+      "billed": "Billed monthly",
+      "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support"]
+    },
     "annual": {
       "title": "Annual",
-      "price": "€2",
+      "badge": "Save 20%",
+      "price": "€4",
       "period": "/month",
-      "billed": "Billed annually at €24/year",
-      "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support"]
+      "billed": "€48 billed annually",
+      "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support", "20% discount"]
     },
     "cta": "Start Your Free Trial",
     "claudeNote": "Works with any Claude plan, including the free tier (1 connector included).",
@@ -143,7 +151,7 @@
       "q2": "How is LearnForge different from Anki or other flashcard apps?",
       "a2": "Traditional flashcard apps show you the same question every time, leading to pattern recognition instead of true understanding. LearnForge rephrases every question using AI and tracks six levels of cognitive depth per concept — from basic recall to critical thinking.",
       "q3": "Is LearnForge free?",
-      "a3": "LearnForge offers a 30-day free trial with full access. After that, it costs €2/month billed annually. Self-hosting is always free under the AGPL-3.0 license.",
+      "a3": "LearnForge offers a 30-day free trial with full access. After that, choose between €4.99/month or €4/month billed annually (€48/year, 20% savings). Self-hosting is always free under the AGPL-3.0 license.",
       "q4": "What is Bloom's Taxonomy?",
       "a4": "Bloom's Taxonomy is a framework of six cognitive levels: Remember, Understand, Apply, Analyze, Evaluate, and Create. LearnForge tracks your mastery at each level and automatically escalates question difficulty as you improve."
     }

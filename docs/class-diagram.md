@@ -88,7 +88,7 @@ Flashcards belonging to a topic. Each card has HTML for front (question) and bac
 - `stability`: interval (in days) at which recall probability = 90%
 - `difficulty`: card difficulty parameter (0-10 range)
 - `due`: next review timestamp
-- Modality multipliers adjust intervals: chat (1.25x), web (1.0x), mcq (0.75x)
+- Modality multipliers adjust intervals: chat (1.2x), web (0.95x), mcq (1.05x)
 - Card maturity classification: Young (state=2, stability < 21d), Mature (state=2, stability >= 21d)
 
 ### reviews

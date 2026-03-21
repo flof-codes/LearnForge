@@ -215,9 +215,10 @@ if (isStdio) {
         return;
       }
       if (sessionId) {
-        res.status(400).json({
-          error: "Session not found. The server was restarted and your session was lost. Please reconnect.",
-        });
+        // 404 signals to the MCP client that the session is gone and it must
+        // re-initialize (per StreamableHTTP spec). Claude.ai handles this
+        // automatically, so container restarts become transparent.
+        res.status(404).json({ error: "Session not found" });
       } else {
         res.status(400).json({ error: "Missing session ID. Send an initialize request first." });
       }
@@ -232,10 +233,7 @@ if (isStdio) {
   app.get("/mcp", dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
-      const msg = sessionId
-        ? "Session not found. The server was restarted and your session was lost. Please reconnect."
-        : "Missing session ID.";
-      res.status(400).json({ error: msg });
+      res.status(sessionId ? 404 : 400).json({ error: sessionId ? "Session not found" : "Missing session ID." });
       return;
     }
     await transports[sessionId].handleRequest(req, res);
@@ -244,10 +242,7 @@ if (isStdio) {
   app.delete("/mcp", express.json(), dualAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
-      const msg = sessionId
-        ? "Session not found. The server was restarted and your session was lost. Please reconnect."
-        : "Missing session ID.";
-      res.status(400).json({ error: msg });
+      res.status(sessionId ? 404 : 400).json({ error: sessionId ? "Session not found" : "Missing session ID." });
       return;
     }
     await transports[sessionId].handleRequest(req, res);

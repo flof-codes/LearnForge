@@ -27,7 +27,7 @@ export function buildApp() {
   app.register(rawBody, { field: "rawBody", global: false, runFirst: true });
   app.register(authPlugin);
 
-  app.setErrorHandler((error: Error & { validation?: unknown }, _request, reply) => {
+  app.setErrorHandler((error: Error & { validation?: unknown; statusCode?: number }, _request, reply) => {
     if (error instanceof UnauthorizedError) {
       return reply.status(401).send({ error: error.message });
     }
@@ -42,6 +42,9 @@ export function buildApp() {
     }
     if (error.validation) {
       return reply.status(400).send({ error: error.message });
+    }
+    if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+      return reply.status(error.statusCode).send({ error: error.message });
     }
     app.log.error(error);
     return reply.status(500).send({ error: "Internal server error" });

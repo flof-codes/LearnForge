@@ -12,7 +12,7 @@ export default function PricingSection() {
           {t('pricing.title')}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {/* Free Trial */}
           <div className="rounded-xl border border-border p-8 bg-bg-secondary">
             <h3 className="text-lg font-medium text-text-primary mb-1">
@@ -34,11 +34,38 @@ export default function PricingSection() {
             </ul>
           </div>
 
+          {/* Monthly */}
+          <div className="rounded-xl border border-border p-8 bg-bg-secondary">
+            <h3 className="text-lg font-medium text-text-primary mb-1">
+              {t('pricing.monthly.title')}
+            </h3>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="text-3xl font-semibold text-text-primary">
+                {t('pricing.monthly.price')}
+              </span>
+              <span className="text-text-muted text-sm">{t('pricing.monthly.period')}</span>
+            </div>
+            <p className="text-sm text-text-muted mb-6">{t('pricing.monthly.billed')}</p>
+            <ul className="space-y-3 mb-6">
+              {(t('pricing.monthly.features', { returnObjects: true }) as string[]).map((feature, i) => (
+                <li key={i} className="flex items-center gap-2.5 text-sm text-text-muted">
+                  <Check size={16} className="text-accent-blue shrink-0" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Annual */}
           <div className="rounded-xl border-2 border-accent-blue/30 p-8 bg-bg-secondary lf-card-glow">
-            <h3 className="text-lg font-medium text-text-primary mb-1">
-              {t('pricing.annual.title')}
-            </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-medium text-text-primary">
+                {t('pricing.annual.title')}
+              </h3>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent-blue/20 text-accent-blue font-medium">
+                {t('pricing.annual.badge')}
+              </span>
+            </div>
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-3xl font-semibold text-text-primary">
                 {t('pricing.annual.price')}

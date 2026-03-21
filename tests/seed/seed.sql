@@ -10,10 +10,10 @@
 --   40000000-... = reviews
 -- ============================================================================
 
--- Helper: generate deterministic 384-dim vectors from an integer seed
+-- Helper: generate deterministic 1024-dim vectors from an integer seed
 CREATE OR REPLACE FUNCTION _fake_emb(seed int) RETURNS vector AS $$
-  SELECT array_agg(sin(seed * 0.7 + i * 0.1))::vector(384)
-  FROM generate_series(1, 384) AS i
+  SELECT array_agg(sin(seed * 0.7 + i * 0.1))::vector(1024)
+  FROM generate_series(1, 1024) AS i
 $$ LANGUAGE sql;
 
 -- ── Users (2 rows) ──────────────────────────────────────────────────────────

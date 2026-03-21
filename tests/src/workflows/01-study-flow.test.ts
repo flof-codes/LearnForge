@@ -214,11 +214,11 @@ describe("Study Flow", () => {
       const webInterval = new Date(webResult.fsrsState.due).getTime() - now;
       const chatInterval = new Date(chatResult.fsrsState.due).getTime() - now;
 
-      // Chat modality (1.25x) should push due further than web (1.0x)
+      // Chat modality (1.2x) should push due further than web (0.95x)
       expect(chatInterval).toBeGreaterThan(webInterval);
     });
 
-    it("mcq modality pushes due less than web", async () => {
+    it("mcq modality pushes due further than web", async () => {
       const cardWeb = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "modality-web2");
       const cardMcq = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "modality-mcq");
       freshCardIds.push(cardWeb.id, cardMcq.id);
@@ -230,8 +230,8 @@ describe("Study Flow", () => {
       const webInterval = new Date(webResult.fsrsState.due).getTime() - now;
       const mcqInterval = new Date(mcqResult.fsrsState.due).getTime() - now;
 
-      // MCQ modality (0.75x) should push due less than web (1.0x)
-      expect(mcqInterval).toBeLessThan(webInterval);
+      // MCQ modality (1.05x) should push due further than web (0.95x)
+      expect(mcqInterval).toBeGreaterThan(webInterval);
     });
   });
 });

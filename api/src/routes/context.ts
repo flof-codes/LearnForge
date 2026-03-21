@@ -85,8 +85,8 @@ export default async function contextRoutes(app: FastifyInstance) {
           'userAnswer', r.user_answer,
           'reviewedAt', r.reviewed_at
         ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
-      FROM cards c,
-        (SELECT embedding FROM cards WHERE id = ${card_id}) target
+      FROM cards c
+      CROSS JOIN (SELECT embedding FROM cards WHERE id = ${card_id}) target
       JOIN topics t ON c.topic_id = t.id
       LEFT JOIN bloom_state bs ON bs.card_id = c.id
       LEFT JOIN reviews r ON r.card_id = c.id

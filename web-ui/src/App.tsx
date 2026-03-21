@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -23,6 +23,12 @@ import DatenschutzPage from './pages/public/DatenschutzPage';
 import AGBPage from './pages/public/AGBPage';
 import DocsPage from './pages/public/DocsPage';
 
+function AuthRedirect({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -32,7 +38,7 @@ export default function App() {
           <Routes>
             {/* Public marketing pages */}
             <Route element={<PublicLayout />}>
-              <Route index element={<LandingPage />} />
+              <Route index element={<AuthRedirect><LandingPage /></AuthRedirect>} />
               <Route path="impressum" element={<ImpressumPage />} />
               <Route path="datenschutz" element={<DatenschutzPage />} />
               <Route path="agb" element={<AGBPage />} />

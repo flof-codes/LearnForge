@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTopics } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
+import { cardService } from '../../api/cards';
 import { contextService } from '../../api/context';
 import { useQuery } from '@tanstack/react-query';
 import CardGrid from './CardGrid';
@@ -13,9 +14,19 @@ import { BLOOM_COLORS } from '../../types';
 type StatusFilter = 'all' | 'new' | 'learning' | 'due';
 type CardSort = 'newest' | 'oldest' | 'updated' | 'studied';
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 export default function CardBrowserPage() {
   const { t } = useTranslation('app');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [topicFilter, setTopicFilter] = useState('');
   const [bloomFilter, setBloomFilter] = useState<number | ''>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -25,8 +36,14 @@ export default function CardBrowserPage() {
 
   // Fetch all cards via context endpoint for the selected topic, or use a broad fetch
   const { data: allCards, isLoading } = useQuery({
-    queryKey: ['cards', 'browse', topicFilter],
+    queryKey: ['cards', 'browse', topicFilter, debouncedSearch],
     queryFn: async () => {
+      // Semantic search when there is a search query
+      if (debouncedSearch.trim()) {
+        const res = await cardService.search(debouncedSearch, topicFilter || undefined, 50);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return res.data as any[];
+      }
       if (topicFilter) {
         const res = await contextService.topicCards(topicFilter, 100);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +64,8 @@ export default function CardBrowserPage() {
     const now = new Date();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, prefer-const
     let result = (allCards ?? []).filter((card: any) => {
-      if (search && !card.concept.toLowerCase().includes(search.toLowerCase())) return false;
+      // Skip client-side concept filter when server-side semantic search is active
+      if (!debouncedSearch.trim() && search && !card.concept.toLowerCase().includes(search.toLowerCase())) return false;
       if (bloomFilter !== '' && (card.bloomState?.currentLevel ?? 0) !== bloomFilter) return false;
       if (statusFilter === 'new' && card.fsrsState && card.fsrsState.state !== 0) return false;
       if (statusFilter === 'learning' && (!card.fsrsState || (card.fsrsState.state !== 1 && card.fsrsState.state !== 3))) return false;
@@ -72,7 +90,7 @@ export default function CardBrowserPage() {
     }
 
     return result;
-  }, [allCards, search, bloomFilter, statusFilter, sort]);
+  }, [allCards, debouncedSearch, search, bloomFilter, statusFilter, sort]);
 
   return (
     <div className="space-y-4">

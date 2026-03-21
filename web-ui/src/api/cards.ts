@@ -7,4 +7,6 @@ export const cardService = {
   update: (id: string, data: UpdateCardInput)   => api.put<Card>(`/cards/${id}`, data),
   delete: (id: string)                          => api.delete(`/cards/${id}`),
   reset:  (id: string)                          => api.post<CardWithState>(`/cards/${id}/reset`),
+  search: (q: string, topicId?: string, limit?: number) =>
+    api.get('/cards/search', { params: { q, topic_id: topicId, limit } }),
 };

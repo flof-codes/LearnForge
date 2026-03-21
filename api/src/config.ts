@@ -8,6 +8,7 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
-  stripePriceId: process.env.STRIPE_PRICE_ID ?? "",
+  stripePriceIdMonthly: process.env.STRIPE_PRICE_ID_MONTHLY ?? "",
+  stripePriceIdAnnual: process.env.STRIPE_PRICE_ID_ANNUAL ?? "",
   appUrl: process.env.APP_URL ?? "http://localhost:5173",
 } as const;
