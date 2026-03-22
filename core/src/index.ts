@@ -61,3 +61,6 @@ export { getTopicContext, getSimilarCards } from "./services/context-service.js"
 
 // Services - Search
 export { searchCards } from "./services/search-service.js";
+
+// Services - Backfill
+export { backfillEmbeddings, type BackfillOptions, type BackfillProgress } from "./services/backfill-service.js";

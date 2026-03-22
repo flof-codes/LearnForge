@@ -76,18 +76,32 @@ describe("Card Search", () => {
     });
   });
 
-  describe("Semantic fallback", () => {
-    it("returns semantic results even when no text match exists", async () => {
+  describe("Relevance filtering", () => {
+    it("does not return irrelevant cards for a nonsense query", async () => {
       const res = await api.get("/cards/search", {
         params: { q: "xyznonexistent" },
       });
       expect(res.status).toBe(200);
-      // Semantic search always returns ranked results (cosine distance ranks all cards)
-      // So even a nonsense query returns results — they just have low scores
       expect(Array.isArray(res.data)).toBe(true);
-      if (res.data.length > 0) {
-        expect(res.data[0].score).toBeDefined();
-      }
+      // With cosine distance threshold, nonsense queries should not return
+      // irrelevant cards — text search finds nothing and semantic search
+      // filters out results beyond the similarity threshold
+      expect(res.data.length).toBe(0);
+    });
+
+    it("does not match on array literal characters in tags", async () => {
+      // Searching for '{' or ',' should not match on PostgreSQL array syntax
+      const resBrace = await api.get("/cards/search", {
+        params: { q: "{" },
+      });
+      expect(resBrace.status).toBe(200);
+      expect(resBrace.data.length).toBe(0);
+
+      const resComma = await api.get("/cards/search", {
+        params: { q: "," },
+      });
+      expect(resComma.status).toBe(200);
+      expect(resComma.data.length).toBe(0);
     });
   });
 

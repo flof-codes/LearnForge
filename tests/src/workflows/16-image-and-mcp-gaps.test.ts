@@ -233,19 +233,18 @@ describe("MCP search_cards Tool", () => {
     expect(card.bloomState).toHaveProperty("highestReached");
   });
 
-  it("returns results even for non-matching query (semantic fallback)", async () => {
+  it("returns empty array for nonsense query (cosine threshold filters irrelevant)", async () => {
     const result = await mcp.callTool("search_cards", {
       query: "zzz_nonexistent_query_xyz",
     });
     expect(result.isError).toBeFalsy();
 
-    // Semantic search always returns ranked results via cosine distance,
-    // even when there's no text match — they just have low scores
+    // With cosine distance threshold, nonsense queries should not return
+    // irrelevant cards — text search finds nothing and semantic search
+    // filters out results beyond the similarity threshold
     const cards = mcp.parseToolResult<any[]>(result);
     expect(Array.isArray(cards)).toBe(true);
-    if (cards.length > 0) {
-      expect(cards[0].score).toBeDefined();
-    }
+    expect(cards.length).toBe(0);
   });
 });
 

@@ -26,7 +26,7 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
     WITH RECURSIVE dummy AS (SELECT 1) ${topicCte}
     SELECT c.id FROM cards c
     ${topicJoin}
-    WHERE (c.concept ILIKE ${"%" + query + "%"} OR c.tags::text ILIKE ${"%" + query + "%"})
+    WHERE (c.concept ILIKE ${"%" + query + "%"} OR array_to_string(c.tags, ' ') ILIKE ${"%" + query + "%"})
     ORDER BY c.updated_at DESC
     LIMIT ${overFetch}
   `);
@@ -43,6 +43,7 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
       SELECT c.id FROM cards c
       ${topicJoin}
       WHERE c.embedding IS NOT NULL
+        AND c.embedding <=> ${vecLiteral}::vector < 0.85
       ORDER BY c.embedding <=> ${vecLiteral}::vector
       LIMIT ${overFetch}
     `);

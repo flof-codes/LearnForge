@@ -53,14 +53,17 @@ export async function getTopicContext(db: Db, userId: string, topicId: string, d
 export async function getSimilarCards(db: Db, userId: string, cardId: string, limit?: number) {
   const maxLimit = limit ?? 15;
 
-  // Check if the source card exists and belongs to user
-  const sourceCheck = await db.execute(sql`
-    SELECT c.id FROM cards c
+  // Check if the source card exists, belongs to user, and has an embedding
+  const sourceCheck = await db.execute<{ id: string; embedding: unknown }>(sql`
+    SELECT c.id, c.embedding FROM cards c
     JOIN topics t ON c.topic_id = t.id
     WHERE c.id = ${cardId} AND t.user_id = ${userId}
   `);
   if (sourceCheck.rows.length === 0) {
     throw new NotFoundError("Card not found");
+  }
+  if (!sourceCheck.rows[0].embedding) {
+    return [];
   }
 
   const result = await db.execute(sql`
