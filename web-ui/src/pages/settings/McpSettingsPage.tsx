@@ -413,7 +413,15 @@ export default function McpSettingsPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Monthly */}
-              <div className="rounded-lg border border-border p-4 bg-bg-primary">
+              <button
+                onClick={() => withdrawalConsent && handleCheckout('monthly')}
+                disabled={checkoutLoadingPlan !== null || !withdrawalConsent}
+                className={`rounded-lg border p-4 bg-bg-primary text-left transition-all ${
+                  withdrawalConsent
+                    ? 'cursor-pointer hover:border-accent-blue/50 hover:bg-bg-surface'
+                    : 'opacity-60 cursor-not-allowed'
+                } ${checkoutLoadingPlan === 'monthly' ? 'border-accent-blue ring-2 ring-accent-blue/20' : 'border-border'}`}
+              >
                 <div className="text-sm font-medium text-text-primary mb-1">
                   {t('app:settings.subscription.monthly.title')}
                 </div>
@@ -426,11 +434,19 @@ export default function McpSettingsPage() {
                   </span>
                 </div>
                 <p className="text-xs text-text-muted">
-                  {t('app:settings.subscription.monthly.billed')}
+                  {checkoutLoadingPlan === 'monthly' ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.monthly.billed')}
                 </p>
-              </div>
+              </button>
               {/* Annual */}
-              <div className="rounded-lg border-2 border-accent-blue/30 p-4 bg-bg-primary">
+              <button
+                onClick={() => withdrawalConsent && handleCheckout('annual')}
+                disabled={checkoutLoadingPlan !== null || !withdrawalConsent}
+                className={`rounded-lg border-2 p-4 bg-bg-primary text-left transition-all ${
+                  withdrawalConsent
+                    ? 'cursor-pointer hover:border-accent-blue/60 hover:bg-bg-surface'
+                    : 'opacity-60 cursor-not-allowed'
+                } ${checkoutLoadingPlan === 'annual' ? 'border-accent-blue ring-2 ring-accent-blue/20' : 'border-accent-blue/30'}`}
+              >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-text-primary">
                     {t('app:settings.subscription.annual.title')}
@@ -448,9 +464,9 @@ export default function McpSettingsPage() {
                   </span>
                 </div>
                 <p className="text-xs text-text-muted">
-                  {t('app:settings.subscription.annual.billed')}
+                  {checkoutLoadingPlan === 'annual' ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.annual.billed')}
                 </p>
-              </div>
+              </button>
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -464,23 +480,6 @@ export default function McpSettingsPage() {
                 {t('legal:billing.withdrawalConsent')}
               </span>
             </label>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <button
-                onClick={() => handleCheckout('monthly')}
-                disabled={checkoutLoadingPlan !== null || !withdrawalConsent}
-                className="w-full py-2.5 bg-bg-primary border border-border text-text-primary rounded-lg font-medium hover:bg-bg-surface transition-colors disabled:opacity-50"
-              >
-                {checkoutLoadingPlan === 'monthly' ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.selectMonthly')}
-              </button>
-              <button
-                onClick={() => handleCheckout('annual')}
-                disabled={checkoutLoadingPlan !== null || !withdrawalConsent}
-                className="w-full py-2.5 bg-accent-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {checkoutLoadingPlan === 'annual' ? t('app:settings.subscription.redirecting') : t('app:settings.subscription.selectAnnual')}
-              </button>
-            </div>
           </>
         )}
 
