@@ -18,9 +18,9 @@ jobs:
       - name: Install dependencies (core, api, mcp)
         run: npm ci -w core -w api -w mcp
 
-      # ── Install web-ui dependencies (npm install — lockfile has macOS-only rollup binaries) ──
+      # ── Install web-ui dependencies (--no-package-lock: root lockfile has macOS-only rollup binaries) ──
       - name: Install dependencies (web-ui)
-        run: npm install -w web-ui --no-audit --no-fund
+        run: npm install -w web-ui --no-package-lock --no-audit --no-fund
 
       # ── Core build (must come first) ──
       - name: Build core
