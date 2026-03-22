@@ -1,19 +1,7 @@
-export class NotFoundError extends Error {
-  readonly statusCode = 404;
-  constructor(message: string) {
-    super(message);
-    this.name = "NotFoundError";
-  }
-}
+// Core errors (NotFoundError, ValidationError) are re-exported from @learnforge/core
+export { NotFoundError, ValidationError } from "@learnforge/core";
 
-export class ValidationError extends Error {
-  readonly statusCode = 400;
-  constructor(message: string) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
-
+// HTTP-specific errors (only used in API)
 export class UnauthorizedError extends Error {
   readonly statusCode = 401;
   constructor(message = "Unauthorized") {

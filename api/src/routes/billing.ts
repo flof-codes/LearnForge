@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { db } from "../db/connection.js";
-import { users } from "../db/schema/index.js";
+import { users } from "@learnforge/core";
 import { config } from "../config.js";
 import { ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { config } from "../config.js";
 import { UnauthorizedError, ForbiddenError } from "../lib/errors.js";
 import { db } from "../db/connection.js";
-import { users } from "../db/schema/index.js";
+import { users } from "@learnforge/core";
 
 const PUBLIC_PATHS = new Set(["/health", "/auth/login", "/auth/register", "/billing/webhook"]);
 

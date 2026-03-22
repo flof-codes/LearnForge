@@ -49,9 +49,10 @@
 
 ## Project Structure
 
-Monorepo with 3 packages — all ESM (`"type": "module"`):
+Monorepo with 4 packages — all ESM (`"type": "module"`):
 
-- `api/` — Fastify 5 REST backend (Drizzle ORM, ts-fsrs, @xenova/transformers)
+- `core/` — Shared package (`@learnforge/core`): DB schema, services, utilities
+- `api/` — Fastify 5 REST backend (thin route handlers calling core services)
 - `web-ui/` — React 19 SPA (React Router 7, TanStack Query 5, Tailwind CSS 4, Vite 7)
 - `mcp/` — MCP server with tutor instructions and card templates (stdio + StreamableHTTP transport)
 
@@ -91,6 +92,10 @@ Docker Compose passes these via `${VAR:-default}` syntax. Dev defaults exist but
 ## Build & Dev Commands
 
 ```bash
+# Core (shared package — must build first)
+cd core
+npm run build        # tsc
+
 # API
 cd api
 npm run dev          # tsx src/index.ts
@@ -137,7 +142,7 @@ npm run test:integration:down  # tear down
 
 - PostgreSQL 16 with pgvector extension
 - Credentials: `learnforge:learnforge@localhost:5432/learnforge`
-- Schema defined in `api/src/db/schema/*.ts` (and copied to `mcp/src/db/schema/`)
+- Schema defined in `core/src/db/schema/*.ts` (single source of truth, used by api and mcp via `@learnforge/core`)
 - Migrations in `api/drizzle/`, config at `api/drizzle.config.ts`
 - First migration SQL must include `CREATE EXTENSION IF NOT EXISTS vector;`
 - Vector columns use Drizzle `customType` (no built-in pgvector support)
@@ -185,8 +190,10 @@ GET /health
 
 ## Architecture Rules
 
-- API and MCP share the same DB schema and services but as **copied code**, not a shared package. Changes to schema must be applied in both `api/src/db/schema/` and `mcp/src/db/schema/`.
-- Same applies to services: `fsrs.ts`, `bloom.ts`, `embeddings.ts` exist in both packages.
+- API and MCP share DB schema, services, and utilities via `@learnforge/core` (npm workspace package). Changes to shared code go in `core/src/`.
+- All service functions in core receive `db: Db` and `userId: string` as first arguments (dependency injection).
+- API routes and MCP tools are thin wrappers: parse input → call core service → return response.
+- Error classes `NotFoundError` and `ValidationError` live in `core/src/lib/errors.ts`. API-specific errors (`UnauthorizedError`, `ForbiddenError`) remain in `api/src/lib/errors.ts`.
 - Card creation always happens in a transaction: insert card + bloom_state + fsrs_state together.
 - Concept changes trigger embedding recomputation.
 - Topic filtering for study/context uses recursive CTEs to include descendant topics.
@@ -200,7 +207,7 @@ GET /health
 - Fastify route type params: `app.get<{ Params: {...}; Querystring: {...}; Body: {...} }>`.
 - MCP tools return `{ content: [{ type: "text", text: JSON.stringify(result, null, 2) }] }`.
 - MCP tools wrap in try/catch and return `{ isError: true }` on failure.
-- Use `node:20-slim` Docker base (not alpine) for ONNX runtime compatibility.
+- Use `node:22-slim` Docker base (not alpine) for ONNX runtime compatibility.
 - drizzle-kit must be invoked via `tsx` due to ESM/CJS incompatibility.
 
 ## Quality Gate (PFLICHT)
@@ -220,18 +227,16 @@ Prüft:
 
 ### Phase 2: Parallele Spezialisten (nach bestandenem Lint Gate)
 
-Alle 3 Agenten gleichzeitig ausführen:
+Alle 2 Agenten gleichzeitig ausführen:
 
 ```
 Use the code-review agent to verify plan completeness and check for security issues.
-Use the sync-checker agent to verify api/ and mcp/ shared code is in sync.
 Use the test-coverage agent to run tests and check coverage.
 ```
 
 | Agent | Prüft | Blocker-Kriterien |
 |-------|-------|-------------------|
 | **code-review** | Plan-Vollständigkeit, Diff-Review, Architektur, Dateigröße, Clean Code, Secrets, SQL-Injection, Input-Validation, Sensitive Logs, Auth | Fehlende Steps, unrelated Changes, jedes Security-Issue |
-| **sync-checker** | api/ vs mcp/ Schema- und Service-Dateien | Plan ändert eine Kopie ohne die andere |
 | **test-coverage** | Integration Tests, Coverage, Test-Abdeckung neuer Features | Failing Tests |
 
 Jeder Agent gibt **PASS / WARN / BLOCKER** zurück.

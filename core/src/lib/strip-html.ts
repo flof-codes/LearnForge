@@ -1,6 +1,5 @@
 /**
  * Zero-dependency HTML stripper for building embedding text.
- * Synced copy of api/src/lib/strip-html.ts
  */
 
 const ENTITY_MAP: Record<string, string> = {

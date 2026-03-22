@@ -14,29 +14,29 @@ jobs:
         with:
           node-version: 22
 
-      # ── API type check ──
-      - name: Install API dependencies
-        run: npm ci
-        working-directory: api
+      # ── Install backend dependencies (lockfile-driven) ──
+      - name: Install dependencies (core, api, mcp)
+        run: npm ci -w core -w api -w mcp
 
+      # ── Install web-ui dependencies (npm install — lockfile has macOS-only rollup binaries) ──
+      - name: Install dependencies (web-ui)
+        run: npm install -w web-ui --no-audit --no-fund
+
+      # ── Core build (must come first) ──
+      - name: Build core
+        run: npm run -w core build
+
+      # ── API type check ──
       - name: TypeScript check (API)
         run: npx tsc --noEmit
         working-directory: api
 
       # ── MCP type check ──
-      - name: Install MCP dependencies
-        run: npm ci
-        working-directory: mcp
-
       - name: TypeScript check (MCP)
         run: npx tsc --noEmit
         working-directory: mcp
 
       # ── Web UI build check ──
-      - name: Install Web UI dependencies
-        run: npm ci
-        working-directory: web-ui
-
       - name: TypeScript & build check (Web UI)
         run: npm run build
         working-directory: web-ui

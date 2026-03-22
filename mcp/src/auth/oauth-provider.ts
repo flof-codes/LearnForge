@@ -7,7 +7,7 @@ import type { OAuthRegisteredClientsStore } from "@modelcontextprotocol/sdk/serv
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { OAuthClientInformationFull, OAuthTokens, OAuthTokenRevocationRequest } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { db } from "../db/connection.js";
-import { users, oauthClients, oauthAuthorizationCodes, oauthTokens } from "../db/schema/index.js";
+import { users, oauthClients, oauthAuthorizationCodes, oauthTokens } from "@learnforge/core";
 import { renderLoginPage } from "./login-page.js";
 
 // Token lifetimes

@@ -28,7 +28,9 @@ services:
         condition: service_healthy
 
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "3333:3000"
     environment:
@@ -50,8 +52,8 @@ services:
 
   web:
     build:
-      context: ./web-ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web-ui/Dockerfile
       args:
         VITE_API_URL: http://localhost:3333
         VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
@@ -66,7 +68,9 @@ services:
     restart: unless-stopped
 
   mcp:
-    build: ./mcp
+    build:
+      context: .
+      dockerfile: mcp/Dockerfile
     ports:
       - "3001:3001"
     environment:

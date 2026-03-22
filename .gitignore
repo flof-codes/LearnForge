@@ -1,12 +1,11 @@
 # Dependencies
 node_modules/
+pnpm-lock.yaml
 
 # Build output
 dist/
 dist-ssr/
-api/dist/
-mcp/dist/
-web-ui/dist/
+*.tsbuildinfo
 
 # Environment
 .env

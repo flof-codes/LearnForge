@@ -8,7 +8,7 @@ import { createWriteStream } from "node:fs";
 import path from "node:path";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/connection.js";
-import { images } from "../db/schema/index.js";
+import { images } from "@learnforge/core";
 import { config } from "../config.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";

@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 WORKDIR /app
 ARG VITE_API_URL=http://localhost:3333
 ARG VITE_DONATION_URL=
@@ -13,15 +13,18 @@ ENV OPERATOR_NAME=${OPERATOR_NAME}
 ENV OPERATOR_ADDRESS=${OPERATOR_ADDRESS}
 ENV OPERATOR_CITY=${OPERATOR_CITY}
 ENV OPERATOR_EMAIL=${OPERATOR_EMAIL}
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+
+COPY package.json ./
+COPY web-ui/package.json web-ui/
+RUN npm install -w web-ui --no-audit --no-fund
+
+COPY web-ui/ web-ui/
+RUN npm run -w web-ui build
 
 # Stage 2: Serve
-FROM node:20-slim
+FROM node:22-slim
 RUN npm install -g serve
 WORKDIR /app
-COPY --from=build /app/dist .
+COPY --from=build /app/web-ui/dist .
 EXPOSE 3000
 CMD ["serve", "-s", ".", "-l", "3000"]

@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { randomBytes, createHash } from "node:crypto";
 import { db } from "../db/connection.js";
-import { users } from "../db/schema/index.js";
+import { users } from "@learnforge/core";
 import { eq } from "drizzle-orm";
 import { getUserId } from "../lib/auth-helpers.js";
 

@@ -16,7 +16,9 @@ services:
       - /var/lib/postgresql/data
 
   test-api:
-    build: ../api
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
     mem_limit: 4g
     ports:
       - "4444:3000"
@@ -42,7 +44,9 @@ services:
         condition: service_healthy
 
   test-mcp:
-    build: ../mcp
+    build:
+      context: ..
+      dockerfile: mcp/Dockerfile
     mem_limit: 4g
     ports:
       - "4445:3001"

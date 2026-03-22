@@ -13,7 +13,7 @@ import type { OAuthMetadata, OAuthProtectedResourceMetadata } from "@modelcontex
 import { eq } from "drizzle-orm";
 import { runMigrations } from "./db/migrate.js";
 import { db } from "./db/connection.js";
-import { users } from "./db/schema/index.js";
+import { users } from "@learnforge/core";
 import { registerTopicTools } from "./tools/topics.js";
 import { registerCardTools } from "./tools/cards.js";
 import { registerReviewTools } from "./tools/reviews.js";

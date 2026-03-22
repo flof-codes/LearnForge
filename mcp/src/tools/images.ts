@@ -5,7 +5,7 @@ import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db/connection.js";
-import { images } from "../db/schema/index.js";
+import { images } from "@learnforge/core";
 import { config } from "../config.js";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB

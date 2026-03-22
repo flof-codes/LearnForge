@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { sql, eq } from "drizzle-orm";
-import { images } from "../db/schema/index.js";
+import { images } from "@learnforge/core";
 import { config } from "../config.js";
 import { getUserId } from "../lib/auth-helpers.js";
 import { extFromMime } from "../lib/image-utils.js";

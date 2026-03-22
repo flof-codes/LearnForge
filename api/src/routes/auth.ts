@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import argon2 from "argon2";
 import { db } from "../db/connection.js";
-import { users } from "../db/schema/index.js";
+import { users } from "@learnforge/core";
 import { and, eq, ne } from "drizzle-orm";
 import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";

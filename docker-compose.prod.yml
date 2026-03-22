@@ -15,7 +15,9 @@ services:
     restart: unless-stopped
 
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "3008:3000"
     environment:
@@ -38,8 +40,8 @@ services:
 
   web:
     build:
-      context: ./web-ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web-ui/Dockerfile
       args:
         VITE_API_URL: "${VITE_API_URL}"
     ports:
@@ -49,7 +51,9 @@ services:
     restart: unless-stopped
 
   mcp:
-    build: ./mcp
+    build:
+      context: .
+      dockerfile: mcp/Dockerfile
     ports:
       - "3009:3001"
     environment:

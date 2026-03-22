@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/*.md
+.git
+.env
+.env.*
+web-ui/dist
+tests/src
+tests/node_modules
+tests/coverage
+data
+.githooks
+.claude
