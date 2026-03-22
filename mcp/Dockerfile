@@ -1,4 +1,4 @@
-FROM node:22-slim AS build
+FROM node:24-slim AS build
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY core/ core/
 COPY mcp/ mcp/
 RUN npm run -w core build && npm run -w mcp build
 
-FROM node:22-slim
+FROM node:24-slim
 
 WORKDIR /app
 ENV NODE_ENV=production

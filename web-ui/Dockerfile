@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:22-slim AS build
+FROM node:24-slim AS build
 WORKDIR /app
 ARG VITE_API_URL=http://localhost:3333
 ARG VITE_DONATION_URL=
@@ -22,7 +22,7 @@ COPY web-ui/ web-ui/
 RUN npm run -w web-ui build
 
 # Stage 2: Serve
-FROM node:22-slim
+FROM node:24-slim
 RUN npm install -g serve
 WORKDIR /app
 COPY --from=build /app/web-ui/dist .

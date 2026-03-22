@@ -207,7 +207,7 @@ GET /health
 - Fastify route type params: `app.get<{ Params: {...}; Querystring: {...}; Body: {...} }>`.
 - MCP tools return `{ content: [{ type: "text", text: JSON.stringify(result, null, 2) }] }`.
 - MCP tools wrap in try/catch and return `{ isError: true }` on failure.
-- Use `node:22-slim` Docker base (not alpine) for ONNX runtime compatibility.
+- Use `node:24-slim` Docker base (not alpine) for ONNX runtime compatibility.
 - drizzle-kit must be invoked via `tsx` due to ESM/CJS incompatibility.
 
 ## Quality Gate (PFLICHT)
