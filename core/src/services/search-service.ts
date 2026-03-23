@@ -43,7 +43,7 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
       SELECT c.id FROM cards c
       ${topicJoin}
       WHERE c.embedding IS NOT NULL
-        AND c.embedding <=> ${vecLiteral}::vector < 0.85
+        AND c.embedding <=> ${vecLiteral}::vector < 0.45
       ORDER BY c.embedding <=> ${vecLiteral}::vector
       LIMIT ${overFetch}
     `);

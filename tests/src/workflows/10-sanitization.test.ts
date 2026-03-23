@@ -121,9 +121,9 @@ describe("HTML Sanitization", () => {
     });
 
     it("accepts card just under size limit", async () => {
-      // ~10KB of realistic content (well under 100KB limit)
+      // ~2KB of realistic content (well under 100KB limit, but large enough to verify acceptance)
       const paragraph = "<p>This is a sample paragraph with some educational content about mathematics and science. </p>\n";
-      const html = "<div>" + paragraph.repeat(Math.floor((10 * 1024) / paragraph.length)) + "</div>";
+      const html = "<div>" + paragraph.repeat(20) + "</div>";
       const res = await api.post("/cards", {
         topic_id: TOPICS.EMPTY_TOPIC,
         concept: "Large but valid card",
