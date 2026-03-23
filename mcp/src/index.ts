@@ -28,7 +28,18 @@ await runMigrations();
 
 // --- Build a fresh McpServer per session ---
 function createServer(userId: string): McpServer {
-  const server = new McpServer({ name: "learnforge", version: "1.0.0" });
+  const server = new McpServer(
+    { name: "learnforge", version: "1.0.0" },
+    {
+      instructions: `LearnForge spaced repetition tutor with Bloom's Taxonomy progression.
+
+Session start: Call get_instructions to load the tutor workflow before doing anything else.
+Study session: get_study_summary → get_study_cards → [question loop with submit_review after each card].
+Card creation: Generate preview → wait for user approval → create_card. Call get_templates for HTML templates.
+Cross-concept questions (Bloom 3+): Use get_similar_cards for context.
+Question presentation: Use ask_user_input_v0 for MCQ. Use optionShuffle array to order options.`,
+    },
+  );
   registerTopicTools(server, userId);
   registerCardTools(server, userId);
   registerReviewTools(server, userId);
