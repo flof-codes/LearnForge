@@ -7,6 +7,18 @@ import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { validateCardHtml } from "../lib/sanitize-card-html.js";
 import { verifyCardOwnership } from "../lib/card-ownership.js";
 
+/** All card columns except `embedding` (internal-only, never exposed to clients). */
+const cardColumns = {
+  id: cards.id,
+  topicId: cards.topicId,
+  concept: cards.concept,
+  frontHtml: cards.frontHtml,
+  backHtml: cards.backHtml,
+  tags: cards.tags,
+  createdAt: cards.createdAt,
+  updatedAt: cards.updatedAt,
+};
+
 export interface CreateCardInput {
   topic_id: string;
   concept: string;
@@ -41,7 +53,7 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
       backHtml: back_html,
       tags: tags ?? [],
       embedding,
-    }).returning();
+    }).returning(cardColumns);
 
     const [bloom] = await tx.insert(bloomState).values({
       cardId: card.id,
@@ -67,7 +79,7 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
 export async function getCard(db: Db, userId: string, cardId: string) {
   await verifyCardOwnership(db, cardId, userId);
 
-  const [card] = await db.select().from(cards).where(eq(cards.id, cardId));
+  const [card] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
   if (!card) throw new NotFoundError("Card not found");
 
   const [bloom] = await db.select().from(bloomState).where(eq(bloomState.cardId, cardId));
@@ -108,7 +120,7 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
   if (topic_id !== undefined) updates.topicId = topic_id;
 
   if (concept !== undefined || front_html !== undefined || back_html !== undefined || tags !== undefined) {
-    const [currentCard] = await db.select().from(cards).where(eq(cards.id, cardId));
+    const [currentCard] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
     if (currentCard) {
       const finalConcept = concept ?? currentCard.concept;
       const finalTags = tags ?? currentCard.tags ?? [];
@@ -118,7 +130,7 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
     }
   }
 
-  const [updated] = await db.update(cards).set(updates).where(eq(cards.id, cardId)).returning();
+  const [updated] = await db.update(cards).set(updates).where(eq(cards.id, cardId)).returning(cardColumns);
   if (!updated) throw new NotFoundError("Card not found");
 
   return updated;
@@ -127,7 +139,7 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
 export async function deleteCard(db: Db, userId: string, cardId: string) {
   await verifyCardOwnership(db, cardId, userId);
 
-  const [deleted] = await db.delete(cards).where(eq(cards.id, cardId)).returning();
+  const [deleted] = await db.delete(cards).where(eq(cards.id, cardId)).returning(cardColumns);
   if (!deleted) throw new NotFoundError("Card not found");
 
   return deleted;
@@ -136,7 +148,7 @@ export async function deleteCard(db: Db, userId: string, cardId: string) {
 export async function resetCard(db: Db, userId: string, cardId: string) {
   await verifyCardOwnership(db, cardId, userId);
 
-  const [card] = await db.select().from(cards).where(eq(cards.id, cardId));
+  const [card] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
   if (!card) throw new NotFoundError("Card not found");
 
   const initialFsrs = createInitialFsrsState();
