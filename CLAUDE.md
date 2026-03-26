@@ -12,9 +12,10 @@
 ## Kartenformat (PFLICHT)
 - Kartenformat und Tutor-Instruktionen werden über den MCP Server bereitgestellt (`mcp/src/tools/skill.ts`)
 - Tools: `get_instructions` (Tutor-Regeln), `get_templates` (HTML-Templates)
-- **Dark Theme** ist Pflicht (bg: #111827, text: #e0e4ef, etc.)
-- Alle CSS-Klassen mit `lf-` Prefix (z.B. `lf-card`, `lf-bloom-tag`, `lf-highlight`)
-- Schlüsselbegriffe in `<span class="lf-highlight">` Tags
+- **Light warm theme** (Pico CSS classless + Inter Font via CDN)
+- Semantisches HTML: `<article>`, `<mark>`, `<blockquote>`, `<details>/<summary>`, `<fieldset>`
+- Bloom-Level via `data-bloom="N"` Attribut
+- Schlüsselbegriffe in `<mark>` Tags
 - Karten sollen **visuell und interaktiv** sein — kein reiner Text
 
 ## Formeln (PFLICHT)
@@ -131,7 +132,7 @@ npm run test:integration:down  # tear down
 ### MCP (API Key)
 - HTTP transport requires `Authorization: Bearer <MCP_API_KEY>` header
 - `/health` endpoint is public
-- Stdio transport (Claude Desktop) has no auth
+- Stdio transport requires `--api-key <key>` argument
 
 ### Web UI
 - `AuthContext` manages JWT token in localStorage

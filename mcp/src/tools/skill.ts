@@ -148,7 +148,7 @@ The front side is a static question prompt — answering happens in chat via \`a
 ### Back Side Rules
 - Always use the visual-explain template (progressive reveal accordion).
 - 2-5 collapsible sections that build understanding step by step.
-- Key terms in \`<span class="lf-highlight">term</span>\`.
+- Key terms in \`<mark>term</mark>\`.
 - Use KaTeX for all formulas — HTML hacks like <sup>/<sub> render inconsistently and break with complex expressions.
 - Diagrams (SVG, bar charts) when concept involves varying values.
 - Optional interactive elements (sliders) for exploration.
@@ -229,7 +229,7 @@ If the user says they don't know or asks for explanation:
 
 ## Visual Style (Quick Reference)
 
-Dark theme. Key colors: bg #111827, text #e0e4ef, accent green #6ee7b7, accent blue #3b82f6. All CSS classes prefixed with \`lf-\`.
+Light warm theme via Pico CSS (classless). Key colors: article bg #fafaf9, accent amber #d97706, accent teal #0d9488. Use semantic HTML — \`<article>\`, \`<mark>\`, \`<blockquote>\`, \`<details>/<summary>\`. Bloom level via \`data-bloom="N"\` attribute.
 
 **Formulas:** Always use KaTeX from CDN (cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/) with \`$$...$$\` delimiters. HTML hacks like <sup>/<sub> render inconsistently and break with complex expressions.
 
@@ -262,357 +262,186 @@ For complete CSS, KaTeX setup, and SVG guidelines, see \`get_templates\`.
 `;
 
 // ---------------------------------------------------------------------------
-// HTML Templates
+// Shared head — CDN links + common CSS prepended by get_templates handler
+// ---------------------------------------------------------------------------
+
+const SHARED_HEAD = `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/picocss/2.1.1/pico.classless.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap">
+<style>
+:root{--pico-font-family:'Inter',sans-serif;--pico-font-size:93.75%}
+html,body{margin:0;padding:0;background:transparent}
+body>main{margin:0;padding:0;max-width:none}
+[data-bloom]{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+[data-bloom="0"]{background:#fef3c7;color:#92400e}
+[data-bloom="1"]{background:#ccfbf1;color:#115e59}
+[data-bloom="2"]{background:#e0e7ff;color:#3730a3}
+[data-bloom="3"]{background:#fce7f3;color:#9d174d}
+[data-bloom="4"]{background:#ede9fe;color:#5b21b6}
+[data-bloom="5"]{background:#fae8ff;color:#86198f}
+article{border:1px solid #e7e5e4;background:#fafaf9}
+blockquote{border-left-color:#d97706}
+button{background:#d97706 !important;border-color:#d97706 !important}
+button:hover{background:#b45309 !important}
+</style>`;
+
+// ---------------------------------------------------------------------------
+// HTML Templates — each stores only template-specific CSS + content
 // ---------------------------------------------------------------------------
 
 const TEMPLATES: Record<string, { description: string; variables: string; html: string }> = {
   mcq: {
-    description: "Multiple choice question — multi-select with letter badges and check button. Front side: user selects all correct answers, clicks Check. Pair with a back side that explains why each option is correct or wrong.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}} (e.g. 'Remember'), {{QUESTION}}, {{CONTEXT}} (optional), {{OPTIONS}} (array of {letter, text, correct}), {{FEEDBACK}}",
-    html: `<div class="lf-card lf-mcq">
-  <style>
-    .lf-card { font-family: 'Segoe UI', system-ui, sans-serif; background: #111827; color: #e0e4ef; padding: 24px; border-radius: 14px; max-width: 650px; }
-    .lf-bloom-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-    .lf-bloom-0 { background: #052e16; color: #6ee7b7; }
-    .lf-bloom-1 { background: #083344; color: #67e8f9; }
-    .lf-bloom-2 { background: #1e1b4b; color: #a5b4fc; }
-    .lf-bloom-3 { background: #312e81; color: #c4b5fd; }
-    .lf-bloom-4 { background: #4c1d95; color: #ddd6fe; }
-    .lf-bloom-5 { background: #581c87; color: #e9d5ff; }
-    .lf-context { font-size: 0.85em; color: #94a3b8; margin-bottom: 14px; padding: 10px 14px; background: #0a0e1a; border-radius: 8px; border-left: 3px solid #3b82f6; }
-    .lf-question { font-size: 1.05em; line-height: 1.6; margin-bottom: 6px; }
-    .lf-hint { font-size: 0.82em; color: #6b7fa8; margin-bottom: 14px; }
-    .lf-opt { padding: 12px 16px; margin: 8px 0; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; background: #1e293b; border: 1px solid #2d3754; }
-    .lf-opt:hover { border-color: #3b82f6; background: #1e3a5f; }
-    .lf-opt .lf-letter { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85em; flex-shrink: 0; background: #2d3754; color: #94a3b8; }
-    .lf-opt .lf-opt-text { font-size: 0.92em; line-height: 1.4; }
-    .lf-opt .lf-check { width: 20px; height: 20px; border-radius: 4px; border: 2px solid #4b5563; margin-left: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75em; transition: all 0.2s; }
-    .lf-opt.lf-selected { border-color: #3b82f6; background: #1e3a5f; }
-    .lf-opt.lf-selected .lf-check { border-color: #3b82f6; background: #3b82f6; color: white; }
-    .lf-opt.lf-correct { border-color: #059669; background: #052e16; }
-    .lf-opt.lf-correct .lf-letter { background: #059669; color: white; }
-    .lf-opt.lf-correct .lf-check { border-color: #059669; background: #059669; color: white; }
-    .lf-opt.lf-wrong { border-color: #dc2626; background: #450a0a; }
-    .lf-opt.lf-wrong .lf-letter { background: #dc2626; color: white; }
-    .lf-opt.lf-wrong .lf-check { border-color: #dc2626; background: #dc2626; color: white; }
-    .lf-opt.lf-missed { border-color: #d97706; background: #451a03; opacity: 0.7; }
-    .lf-opt.lf-missed .lf-letter { background: #d97706; color: white; }
-    .lf-opt.lf-disabled { pointer-events: none; }
-    .lf-check-btn { margin-top: 14px; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9em; font-weight: 600; background: #3b82f6; color: white; transition: all 0.2s; }
-    .lf-check-btn:hover { background: #2563eb; }
-    .lf-check-btn:disabled { opacity: 0.5; cursor: default; }
-    .lf-feedback { margin-top: 14px; padding: 14px 16px; border-radius: 10px; font-size: 0.88em; line-height: 1.6; display: none; }
-    .lf-fb-perfect { display: block; background: #052e16; border: 1px solid #059669; color: #6ee7b7; }
-    .lf-fb-partial { display: block; background: #451a03; border: 1px solid #d97706; color: #fcd34d; }
-    .lf-fb-wrong { display: block; background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; }
-  </style>
-
-  <div class="lf-bloom-tag lf-bloom-{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</div>
-  <!-- Optional: <div class="lf-context">{{CONTEXT}}</div> -->
-  <div class="lf-question">{{QUESTION}}</div>
-  <div class="lf-hint">Select all that apply</div>
-
-  <!-- Replace with actual options -->
-  <div class="lf-opt" onclick="lfMcqToggle(this)" data-correct="true">
-    <div class="lf-letter">A</div>
-    <div class="lf-opt-text">Option A text</div>
-    <div class="lf-check"></div>
-  </div>
-  <div class="lf-opt" onclick="lfMcqToggle(this)" data-correct="false">
-    <div class="lf-letter">B</div>
-    <div class="lf-opt-text">Option B text</div>
-    <div class="lf-check"></div>
-  </div>
-
-  <button class="lf-check-btn" onclick="lfMcqCheck()">Check Answers</button>
-  <div class="lf-feedback" id="lf-mcq-fb"></div>
-
-  <script>
-    function lfMcqToggle(el) {
-      if (el.classList.contains('lf-disabled')) return;
-      el.classList.toggle('lf-selected');
-      el.querySelector('.lf-check').textContent = el.classList.contains('lf-selected') ? '\\u2713' : '';
-    }
-    function lfMcqCheck() {
-      const card = document.querySelector('.lf-mcq');
-      const opts = card.querySelectorAll('.lf-opt');
-      const btn = card.querySelector('.lf-check-btn');
-      btn.disabled = true;
-      btn.textContent = 'Checked';
-      let correct = 0, total = 0, wrong = 0;
-      opts.forEach(o => {
-        o.classList.add('lf-disabled');
-        const isCorrect = o.dataset.correct === 'true';
-        const isSelected = o.classList.contains('lf-selected');
-        if (isCorrect) total++;
-        if (isCorrect && isSelected) { o.classList.add('lf-correct'); correct++; }
-        else if (isCorrect && !isSelected) { o.classList.add('lf-missed'); }
-        else if (!isCorrect && isSelected) { o.classList.add('lf-wrong'); wrong++; }
-      });
-      const fb = card.querySelector('#lf-mcq-fb');
-      if (correct === total && wrong === 0) {
-        fb.className = 'lf-feedback lf-fb-perfect';
-        fb.textContent = '{{FEEDBACK}}';
-      } else if (correct > 0) {
-        fb.className = 'lf-feedback lf-fb-partial';
-        fb.textContent = correct + ' of ' + total + ' correct' + (wrong > 0 ? ', ' + wrong + ' wrong' : '') + '. Flip the card for explanations.';
-      } else {
-        fb.className = 'lf-feedback lf-fb-wrong';
-        fb.textContent = 'None correct. Flip the card for explanations.';
-      }
-    }
-  </script>
-</div>`,
+    description: "Multiple choice question with native checkboxes. Front side: user selects correct answers, clicks Check. Uses <article>, <fieldset>, <label> for semantic structure. Pair with a visual-explain back side.",
+    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}} (e.g. 'Remember'), {{QUESTION}}, {{CONTEXT}} (optional blockquote), {{OPTIONS}} (checkboxes with data-correct), {{FEEDBACK}} (shown on perfect score)",
+    html: `<style>
+fieldset{border:none;padding:0;margin:0 0 8px}
+fieldset label{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border:1px solid #d6d3d1;margin:6px 0;cursor:pointer;transition:all .15s;width:100% !important;max-width:100% !important;background:white}
+fieldset label:hover{border-color:#d97706;background:#fffbeb}
+fieldset label.correct{border-color:#0d9488;background:#ccfbf1}
+fieldset label.wrong{border-color:#e11d48;background:#fff1f2}
+fieldset label.missed{border-color:#d97706;background:#fef3c7;opacity:.7}
+fieldset label.disabled{pointer-events:none}
+.fb{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:.9em;display:none}
+.fb.perfect{display:block;background:#ccfbf1;border:1px solid #0d9488;color:#115e59}
+.fb.partial{display:block;background:#fef3c7;border:1px solid #d97706;color:#92400e}
+.fb.fail{display:block;background:#fff1f2;border:1px solid #e11d48;color:#9f1239}
+</style>
+<article>
+  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
+  <!-- Optional: <blockquote>{{CONTEXT}}</blockquote> -->
+  <p>{{QUESTION}}</p>
+  <small>Select all that apply</small>
+  <fieldset id="opts">
+    <!-- Replace with actual options -->
+    <label><input type="checkbox" data-correct="true"> Option A text</label>
+    <label><input type="checkbox" data-correct="false"> Option B text</label>
+  </fieldset>
+  <button onclick="lfCheck()">Check Answers</button>
+  <div class="fb" id="fb"></div>
+</article>
+<script>
+function lfCheck(){const labels=document.querySelectorAll('#opts label');const btn=document.querySelector('button');btn.disabled=true;btn.textContent='Checked';let correct=0,total=0,wrong=0;labels.forEach(l=>{l.classList.add('disabled');const cb=l.querySelector('input');cb.disabled=true;const isC=cb.dataset.correct==='true';const isS=cb.checked;if(isC)total++;if(isC&&isS){l.classList.add('correct');correct++}else if(isC&&!isS){l.classList.add('missed')}else if(!isC&&isS){l.classList.add('wrong');wrong++}});const fb=document.getElementById('fb');if(correct===total&&wrong===0){fb.className='fb perfect';fb.textContent='{{FEEDBACK}}'}else if(correct>0){fb.className='fb partial';fb.textContent=correct+' of '+total+' correct. Flip the card for explanations.'}else{fb.className='fb fail';fb.textContent='None correct. Flip the card for explanations.'}}
+</script>`,
   },
 
   "open-response": {
-    description: "Framed text input with submit button. Use for Understand+ level front sides where the answer requires explanation.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{CONTEXT}} (optional), {{PLACEHOLDER}}",
-    html: `<div class="lf-card lf-open">
-  <style>
-    .lf-card { font-family: 'Segoe UI', system-ui, sans-serif; background: #111827; color: #e0e4ef; padding: 24px; border-radius: 14px; max-width: 650px; }
-    .lf-bloom-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-    .lf-bloom-0 { background: #052e16; color: #6ee7b7; }
-    .lf-bloom-1 { background: #083344; color: #67e8f9; }
-    .lf-bloom-2 { background: #1e1b4b; color: #a5b4fc; }
-    .lf-bloom-3 { background: #312e81; color: #c4b5fd; }
-    .lf-bloom-4 { background: #4c1d95; color: #ddd6fe; }
-    .lf-bloom-5 { background: #581c87; color: #e9d5ff; }
-    .lf-context { font-size: 0.85em; color: #94a3b8; margin-bottom: 14px; padding: 10px 14px; background: #0a0e1a; border-radius: 8px; border-left: 3px solid #3b82f6; }
-    .lf-question { font-size: 1.05em; line-height: 1.6; margin-bottom: 16px; }
-    .lf-textarea { width: 100%; background: #0f172a; border-radius: 10px; border: 1px solid #2d3754; padding: 14px; font-family: inherit; font-size: 0.92em; color: #e0e4ef; resize: vertical; min-height: 100px; box-sizing: border-box; }
-    .lf-textarea::placeholder { color: #4b5563; }
-    .lf-textarea:focus { outline: none; border-color: #3b82f6; }
-    .lf-submit { margin-top: 12px; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9em; font-weight: 600; background: #3b82f6; color: white; transition: all 0.2s; }
-    .lf-submit:hover { background: #2563eb; }
-    .lf-submit:disabled { opacity: 0.5; cursor: default; }
-    .lf-feedback { margin-top: 14px; padding: 14px 16px; border-radius: 10px; font-size: 0.88em; line-height: 1.6; display: none; }
-    .lf-fb-show { display: block; background: #0f172a; border: 1px solid #1e2940; color: #b0b8d0; }
-  </style>
-
-  <div class="lf-bloom-tag lf-bloom-{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</div>
-  <div class="lf-context">{{CONTEXT}}</div>
-  <div class="lf-question">{{QUESTION}}</div>
-  <textarea class="lf-textarea" id="lf-open-input" placeholder="{{PLACEHOLDER}}"></textarea>
-  <button class="lf-submit" onclick="lfOpenSubmit()">Check Answer</button>
-  <div class="lf-feedback" id="lf-open-fb"></div>
-
-  <script>
-    function lfOpenSubmit() {
-      const input = document.getElementById('lf-open-input');
-      const fb = document.getElementById('lf-open-fb');
-      const btn = document.querySelector('.lf-submit');
-      if (!input.value.trim()) return;
-      btn.disabled = true;
-      btn.textContent = 'Submitted';
-      fb.className = 'lf-feedback lf-fb-show';
-      fb.textContent = 'Your response has been submitted. Claude will evaluate it and provide feedback.';
-    }
-  </script>
-</div>`,
+    description: "Static question prompt for the front side — no interactive elements. The user answers in chat via ask_user_input_v0, not through card HTML. Uses <article> with <blockquote> for context.",
+    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{CONTEXT}} (blockquote text)",
+    html: `<article>
+  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
+  <blockquote>{{CONTEXT}}</blockquote>
+  <p>{{QUESTION}}</p>
+</article>`,
   },
 
   "visual-explain": {
-    description: "Progressive reveal accordion — ALWAYS used for the back side of cards. Structure explanations as 2-5 collapsible sections building understanding step by step.",
-    variables: "{{TITLE}}, {{SECTIONS}} (array of {header, body} — body can contain lf-highlight spans, KaTeX formulas, SVG diagrams)",
-    html: `<div class="lf-card lf-visual">
-  <style>
-    .lf-card { font-family: 'Segoe UI', system-ui, sans-serif; background: #111827; color: #e0e4ef; padding: 24px; border-radius: 14px; max-width: 650px; }
-    .lf-vis-title { font-size: 1.15em; font-weight: 700; margin-bottom: 14px; }
-    .lf-vis-intro { font-size: 0.85em; color: #6b7fa8; margin-bottom: 14px; }
-    .lf-acc-item { margin: 8px 0; border-radius: 10px; overflow: hidden; border: 1px solid #1e2940; }
-    .lf-acc-header { padding: 12px 16px; background: #0f172a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.92em; font-weight: 600; transition: all 0.2s; user-select: none; }
-    .lf-acc-header:hover { background: #1e293b; }
-    .lf-acc-arrow { transition: transform 0.25s; color: #6b7fa8; font-size: 0.8em; }
-    .lf-acc-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s; background: #111827; }
-    .lf-acc-body-inner { padding: 0 16px; }
-    .lf-acc-item.lf-open .lf-acc-body { max-height: 500px; }
-    .lf-acc-item.lf-open .lf-acc-body .lf-acc-body-inner { padding: 14px 16px; }
-    .lf-acc-item.lf-open .lf-acc-arrow { transform: rotate(90deg); }
-    .lf-acc-body p { font-size: 0.88em; color: #b0b8d0; line-height: 1.65; margin: 0; }
-    .lf-acc-body .lf-highlight { color: #6ee7b7; font-weight: 600; }
-    .lf-acc-body .lf-formula { display: inline-block; padding: 2px 8px; background: #0a0e1a; border-radius: 4px; font-family: 'Fira Code', monospace; color: #93c5fd; font-size: 0.9em; }
-    .lf-acc-body svg { width: 100%; max-height: 160px; margin: 10px 0; }
-    .lf-back-label { font-size: 0.72em; color: #4b5563; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .lf-formula-block { text-align: center; margin: 16px 0; padding: 18px; background: #0a0e1a; border-radius: 10px; border: 1px solid #1e2940; }
-    .lf-card .katex { color: #93c5fd; font-size: 1.1em; }
-    .lf-formula-block .katex { font-size: 1.4em; }
-  </style>
-
-  <div class="lf-back-label">Answer / Explanation</div>
-  <div class="lf-vis-title">{{TITLE}}</div>
-  <div class="lf-vis-intro">Click each section to reveal:</div>
-
-  <!-- Replace with topic-specific sections -->
-  <div class="lf-acc-item" onclick="lfToggleAcc(this)">
-    <div class="lf-acc-header"><span>1. Section Title</span><span class="lf-acc-arrow">&#9654;</span></div>
-    <div class="lf-acc-body"><div class="lf-acc-body-inner"><p>Section content with <span class="lf-highlight">key terms</span> highlighted.</p></div></div>
-  </div>
-
-  <script>
-    function lfToggleAcc(item) { item.classList.toggle('lf-open'); }
-  </script>
-</div>`,
+    description: "Progressive reveal accordion — ALWAYS used for the back side of cards. Structure explanations as 2-5 collapsible <details>/<summary> sections. Use <mark> for key terms, KaTeX for formulas.",
+    variables: "{{TITLE}}, {{SECTIONS}} (array of {header, body} — body can contain <mark>terms</mark>, KaTeX $$formulas$$, SVG diagrams)",
+    html: `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+details{margin:10px 0;border:1px solid #e7e5e4;border-radius:12px;background:white;overflow:hidden}
+summary{display:flex;align-items:center;padding:14px 16px;cursor:pointer;font-weight:600;font-size:.95em;list-style:none}
+summary:hover{background:#f5f5f4}
+summary::-webkit-details-marker{display:none}
+details[open] summary{background:#f5f5f4;border-bottom:1px solid #e7e5e4}
+details>div{padding:14px 16px}
+details p{margin:0 0 8px;font-size:.9em;line-height:1.65;color:#44403c}
+details p:last-child{margin-bottom:0}
+.formula-block{text-align:center;margin:12px 0;padding:14px;background:#fefce8;border-radius:10px;border:1px solid #fde68a}
+</style>
+<article>
+  <small>Answer / Explanation</small>
+  <h4>{{TITLE}}</h4>
+  <!-- Replace with topic-specific sections (2-5) -->
+  <details>
+    <summary>1. Section Title</summary>
+    <div><p>Section content with <mark>key terms</mark> highlighted.</p></div>
+  </details>
+  <details>
+    <summary>2. Section Title</summary>
+    <div><p>More content. Use $$formula$$ for math.</p>
+    <div class="formula-block">$$E = mc^2$$</div></div>
+  </details>
+</article>
+<script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:false}]});</script>`,
   },
 
   "label-diagram": {
-    description: "Drag-and-drop label placement on SVG diagrams. Use for Remember level front sides where the concept involves spatial relationships or identifying parts.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{SVG_DIAGRAM}} (inline SVG with foreignObject drop zones), {{LABELS}} (array of {label, text})",
-    html: `<div class="lf-card lf-label">
-  <style>
-    .lf-card { font-family: 'Segoe UI', system-ui, sans-serif; background: #111827; color: #e0e4ef; padding: 24px; border-radius: 14px; max-width: 650px; }
-    .lf-bloom-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-    .lf-bloom-0 { background: #052e16; color: #6ee7b7; }
-    .lf-bloom-1 { background: #083344; color: #67e8f9; }
-    .lf-bloom-2 { background: #1e1b4b; color: #a5b4fc; }
-    .lf-question { font-size: 1.05em; line-height: 1.6; margin-bottom: 16px; }
-    .lf-diagram-area { position: relative; background: #0a0e1a; border-radius: 12px; padding: 16px; border: 1px solid #1e2940; }
-    .lf-diagram-area svg { width: 100%; max-height: 260px; display: block; }
-    .lf-drop-zone { display: inline-flex; align-items: center; justify-content: center; min-width: 90px; min-height: 28px; padding: 4px 10px; border: 2px solid #1e2940; color: #4b5563; background: #0f172a; border-radius: 6px; font-size: 0.8em; transition: all 0.2s; cursor: default; }
-    .lf-drop-zone.lf-drag-over { border-color: #a78bfa; background: rgba(167,139,250,0.08); }
-    .lf-drop-zone.lf-filled { border-color: #8b5cf6; color: #c4b5fd; background: #1e1b4b; font-weight: 600; }
-    .lf-drop-zone.lf-correct { border-color: #059669; color: #6ee7b7; background: #052e16; }
-    .lf-drop-zone.lf-wrong { border-color: #dc2626; color: #fca5a5; background: #450a0a; }
-    .lf-label-bank { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid #1e2940; }
-    .lf-label-chip { padding: 6px 14px; border-radius: 6px; font-size: 0.82em; font-weight: 600; cursor: grab; user-select: none; transition: all 0.15s; background: linear-gradient(135deg, #4338ca, #6366f1); color: white; }
-    .lf-label-chip:active { cursor: grabbing; transform: scale(0.95); opacity: 0.8; }
-    .lf-label-chip.lf-placed { opacity: 0.25; cursor: default; pointer-events: none; }
-    .lf-check-btn { margin-top: 14px; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9em; font-weight: 600; background: #3b82f6; color: white; transition: all 0.2s; }
-    .lf-check-btn:hover { background: #2563eb; }
-    .lf-feedback { margin-top: 14px; padding: 14px 16px; border-radius: 10px; font-size: 0.88em; line-height: 1.6; display: none; }
-    .lf-fb-correct { display: block; background: #052e16; border: 1px solid #059669; color: #6ee7b7; }
-    .lf-fb-partial { display: block; background: #451a03; border: 1px solid #d97706; color: #fcd34d; }
-  </style>
-
-  <div class="lf-bloom-tag lf-bloom-{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</div>
-  <div class="lf-question">{{QUESTION}}</div>
-
-  <div class="lf-diagram-area">
+    description: "Drag-and-drop label placement on SVG diagrams. Uses .dz drop zones in SVG foreignObject and .chip draggable labels. Event delegation on .diagram container handles all drag events.",
+    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{SVG_DIAGRAM}} (inline SVG with foreignObject .dz drop zones), {{LABELS}} (array of {label, text} as .chip spans)",
+    html: `<style>
+.diagram{background:#fffbeb;border-radius:12px;padding:14px;border:1px solid #fde68a;margin-bottom:24px}
+.diagram svg{width:100%;max-height:260px;display:block}
+.dz{display:inline-flex;align-items:center;justify-content:center;min-width:90px;min-height:28px;padding:4px 10px;border:2px dashed #d6d3d1;color:#a8a29e;background:white;border-radius:8px;font-size:.8em;transition:all .15s}
+.dz.over{border-color:#0d9488;background:#f0fdfa}
+.dz.filled{border-style:solid;border-color:#0d9488;color:#115e59;background:#ccfbf1;font-weight:600}
+.dz.correct{border-color:#059669;color:#065f46;background:#dcfce7}
+.dz.wrong{border-color:#e11d48;color:#9f1239;background:#fff1f2}
+.bank{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #e7e5e4}
+.chip{padding:6px 14px;border-radius:8px;font-size:.82em;font-weight:600;cursor:grab;user-select:none;background:#0d9488;color:white;border:none}
+.chip.placed{opacity:.25;cursor:default;pointer-events:none}
+.fb{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:.9em;display:none}
+.fb.correct{display:block;background:#ccfbf1;border:1px solid #0d9488;color:#115e59}
+.fb.partial{display:block;background:#fef3c7;border:1px solid #d97706;color:#92400e}
+</style>
+<article>
+  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
+  <p>{{QUESTION}}</p>
+  <div class="diagram">
     <!-- Replace SVG and drop zones with topic-specific diagram -->
-    <svg viewBox="0 0 460 180" xmlns="http://www.w3.org/2000/svg">
-      <!-- SVG content with foreignObject drop zones using data-answer attributes -->
+    <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- SVG content with foreignObject .dz drop zones using data-answer attributes -->
     </svg>
-    <div class="lf-label-bank">
-      <!-- Label chips with data-label and draggable="true" -->
+    <div class="bank">
+      <!-- .chip spans with data-label and draggable="true" -->
     </div>
   </div>
-
-  <button class="lf-check-btn" onclick="lfCheckLabels()">Check Answers</button>
-  <div class="lf-feedback" id="lf-label-fb"></div>
-
-  <script>
-    function lfDragStart(e) { e.dataTransfer.setData('text/plain', e.target.dataset.label); e.dataTransfer.effectAllowed = 'move'; }
-    function lfDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-    function lfDragEnter(e) { e.preventDefault(); e.target.classList.add('lf-drag-over'); }
-    function lfDragLeave(e) { e.target.classList.remove('lf-drag-over'); }
-    function lfDrop(e) {
-      e.preventDefault();
-      const zone = e.target.closest('.lf-drop-zone');
-      if (!zone || zone.classList.contains('lf-filled')) return;
-      zone.classList.remove('lf-drag-over');
-      const label = e.dataTransfer.getData('text/plain');
-      const chip = document.querySelector('.lf-label-chip[data-label="' + label + '"]');
-      if (!chip || chip.classList.contains('lf-placed')) return;
-      zone.textContent = chip.textContent;
-      zone.dataset.placed = label;
-      zone.classList.add('lf-filled');
-      chip.classList.add('lf-placed');
-      chip.draggable = false;
-    }
-    function lfCheckLabels() {
-      const zones = document.querySelectorAll('.lf-drop-zone');
-      let correct = 0, total = zones.length;
-      zones.forEach(z => {
-        if (z.dataset.placed === z.dataset.answer) { z.classList.add('lf-correct'); correct++; }
-        else if (z.dataset.placed) { z.classList.add('lf-wrong'); }
-      });
-      const fb = document.getElementById('lf-label-fb');
-      fb.className = 'lf-feedback ' + (correct === total ? 'lf-fb-correct' : 'lf-fb-partial');
-      fb.textContent = correct === total ? 'All ' + total + ' labels correct!' : correct + ' of ' + total + ' correct. Review the highlighted zones.';
-    }
-  </script>
-</div>`,
+  <button onclick="lfCheck()">Check Answers</button>
+  <div class="fb" id="fb"></div>
+</article>
+<script>
+document.querySelector('.diagram').addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='move'});
+document.querySelector('.diagram').addEventListener('dragenter',function(e){const z=e.target.closest('.dz');if(z)z.classList.add('over')});
+document.querySelector('.diagram').addEventListener('dragleave',function(e){const z=e.target.closest('.dz');if(z)z.classList.remove('over')});
+document.querySelector('.diagram').addEventListener('drop',function(e){e.preventDefault();const z=e.target.closest('.dz');if(!z||z.classList.contains('filled'))return;z.classList.remove('over');const l=e.dataTransfer.getData('text/plain');const c=document.querySelector('.chip[data-label="'+l+'"]');if(!c||c.classList.contains('placed'))return;z.textContent=c.textContent;z.dataset.placed=l;z.classList.add('filled');c.classList.add('placed');c.draggable=false});
+document.querySelector('.bank').addEventListener('dragstart',function(e){if(e.target.classList.contains('chip')){e.dataTransfer.setData('text/plain',e.target.dataset.label);e.dataTransfer.effectAllowed='move'}});
+function lfCheck(){const zones=document.querySelectorAll('.dz');let c=0,t=zones.length;zones.forEach(z=>{if(z.dataset.placed===z.dataset.answer){z.classList.add('correct');c++}else if(z.dataset.placed)z.classList.add('wrong')});const fb=document.getElementById('fb');fb.className='fb '+(c===t?'correct':'partial');fb.textContent=c===t?'All '+t+' labels correct!':c+' of '+t+' correct. Review the highlighted zones.'}
+</script>`,
   },
 
   slider: {
-    description: "Clean blue sliders for value manipulation. Use for BACK SIDE or Apply+ level Bloom questions. NOT for initial front_html.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{SLIDERS}} (array of {name, label, unit, min, max, default, step?}), {{FORMULA}} (JS function), {{TARGET_VALUE}}, {{TARGET_UNIT}}, {{TARGET_TOLERANCE}}",
-    html: `<div class="lf-card lf-slider">
-  <style>
-    .lf-card { font-family: 'Segoe UI', system-ui, sans-serif; background: #111827; color: #e0e4ef; padding: 24px; border-radius: 14px; max-width: 650px; }
-    .lf-bloom-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-    .lf-bloom-0 { background: #052e16; color: #6ee7b7; }
-    .lf-bloom-1 { background: #083344; color: #67e8f9; }
-    .lf-bloom-2 { background: #1e1b4b; color: #a5b4fc; }
-    .lf-bloom-3 { background: #312e81; color: #c4b5fd; }
-    .lf-bloom-4 { background: #4c1d95; color: #ddd6fe; }
-    .lf-bloom-5 { background: #581c87; color: #e9d5ff; }
-    .lf-question { font-size: 1.05em; line-height: 1.6; margin-bottom: 16px; }
-    .lf-question strong { color: #3b82f6; }
-    .lf-slider-group { margin: 16px 0; }
-    .lf-slider-group label { display: flex; justify-content: space-between; font-size: 0.88em; margin-bottom: 6px; }
-    .lf-slider-group label span:first-child { color: #94a3b8; }
-    .lf-slider-group label span:last-child { font-weight: 700; color: #3b82f6; min-width: 60px; text-align: right; }
-    .lf-slider-group input[type=range] { width: 100%; height: 6px; -webkit-appearance: none; border-radius: 3px; outline: none; background: #1e2940; }
-    .lf-slider-group input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; background: #3b82f6; border: 2px solid #60a5fa; }
-    .lf-result { text-align: center; margin: 20px 0; padding: 18px; border-radius: 12px; background: #0f172a; border: 1px solid #1e2940; }
-    .lf-result-val { font-size: 2.2em; font-weight: 800; color: #3b82f6; }
-    .lf-result-label { font-size: 0.82em; color: #6b7fa8; margin-top: 4px; }
-    .lf-result-target { font-size: 0.85em; margin-top: 10px; padding: 6px 16px; border-radius: 20px; display: inline-block; font-weight: 600; transition: all 0.3s; }
-    .lf-target-hit { background: #052e16; color: #6ee7b7; }
-    .lf-target-close { background: #451a03; color: #fcd34d; }
-    .lf-target-far { background: #450a0a; color: #fca5a5; }
-    .lf-formula { margin-top: 8px; font-family: 'Fira Code', monospace; font-size: 0.82em; color: #6b7fa8; }
-  </style>
-
-  <div class="lf-bloom-tag lf-bloom-{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</div>
-  <div class="lf-question">{{QUESTION}}</div>
-
+    description: "Range input sliders for value manipulation. Use for back side or Apply+ level Bloom questions. NOT for initial front_html. Uses Pico CSS native range styling.",
+    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{SLIDERS}} (array of {name, label, unit, min, max, default, step?}), {{FORMULA_JS}} (JS expression), {{TARGET_VALUE}}, {{RESULT_UNIT}}, {{TARGET_TOLERANCE}}",
+    html: `<style>
+.result{text-align:center;margin:20px 0;padding:18px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a}
+.result-val{font-size:2em;font-weight:800;color:#b45309}
+.result-label{font-size:.82em;color:#78716c;margin-top:4px}
+.result-formula{margin-top:8px;font-family:monospace;font-size:.82em;color:#78716c}
+.target{font-size:.85em;margin-top:10px;padding:6px 16px;border-radius:20px;display:inline-block;font-weight:600;transition:all .3s}
+.target.hit{background:#ccfbf1;color:#115e59}
+.target.close{background:#fef3c7;color:#92400e}
+.target.far{background:#fff1f2;color:#9f1239}
+</style>
+<article>
+  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
+  <p>{{QUESTION}}</p>
   <!-- Replace with topic-specific sliders -->
-  <div class="lf-slider-group">
-    <label><span>Variable</span><span id="lf-sv-variable">0</span></label>
-    <input type="range" min="0" max="100" value="50" step="1" data-name="variable" data-unit="" oninput="lfSliderUpdate()">
+  <label>{{SLIDER_LABEL}} <span id="sv-{{SLIDER_NAME}}">{{SLIDER_DEFAULT}} {{SLIDER_UNIT}}</span>
+    <input type="range" min="{{MIN}}" max="{{MAX}}" value="{{DEFAULT}}" step="{{STEP}}" data-name="{{SLIDER_NAME}}" data-unit="{{SLIDER_UNIT}}" oninput="lfUpdate()">
+  </label>
+  <div class="result">
+    <div class="result-val" id="result-val">0</div>
+    <div class="result-label">{{RESULT_LABEL}}</div>
+    <div class="result-formula">{{FORMULA_DISPLAY}}</div>
+    <div class="target" id="target">Target: {{TARGET_VALUE}} {{RESULT_UNIT}}</div>
   </div>
-
-  <div class="lf-result">
-    <div class="lf-result-val" id="lf-result-val">0</div>
-    <div class="lf-result-label" id="lf-result-label">Result</div>
-    <div class="lf-formula">formula</div>
-    <div class="lf-result-target" id="lf-result-target">Target: 0</div>
-  </div>
-
-  <script>
-    const lfSliderConfig = {
-      formula: (vars) => vars.variable,
-      targetValue: 50,
-      targetTolerance: 2,
-      resultUnit: '',
-      resultLabel: 'Result'
-    };
-    function lfSliderUpdate() {
-      const sliders = document.querySelectorAll('.lf-slider input[type=range]');
-      const vars = {};
-      sliders.forEach(s => {
-        vars[s.dataset.name] = parseFloat(s.value);
-        document.getElementById('lf-sv-' + s.dataset.name).textContent = s.value + ' ' + s.dataset.unit;
-      });
-      const result = lfSliderConfig.formula(vars);
-      document.getElementById('lf-result-val').textContent = result.toFixed(2) + ' ' + lfSliderConfig.resultUnit;
-      const diff = Math.abs(result - lfSliderConfig.targetValue);
-      const target = document.getElementById('lf-result-target');
-      if (diff <= lfSliderConfig.targetTolerance) {
-        target.className = 'lf-result-target lf-target-hit';
-        target.textContent = 'Target reached!';
-      } else if (diff < 0.15 * lfSliderConfig.targetValue) {
-        target.className = 'lf-result-target lf-target-close';
-        target.textContent = 'Getting close... Target: ' + lfSliderConfig.targetValue.toFixed(2) + ' ' + lfSliderConfig.resultUnit;
-      } else {
-        target.className = 'lf-result-target lf-target-far';
-        target.textContent = 'Keep adjusting... Target: ' + lfSliderConfig.targetValue.toFixed(2) + ' ' + lfSliderConfig.resultUnit;
-      }
-    }
-  </script>
-</div>`,
+</article>
+<script>
+const cfg={formula:v=>{{FORMULA_JS}},targetValue:{{TARGET_VALUE}},targetTolerance:{{TARGET_TOLERANCE}},resultUnit:'{{RESULT_UNIT}}'};
+function lfUpdate(){const sliders=document.querySelectorAll('input[type=range]');const vars={};sliders.forEach(s=>{vars[s.dataset.name]=parseFloat(s.value);document.getElementById('sv-'+s.dataset.name).textContent=s.value+' '+s.dataset.unit});const result=cfg.formula(vars);document.getElementById('result-val').textContent=result.toFixed(2)+' '+cfg.resultUnit;const diff=Math.abs(result-cfg.targetValue);const t=document.getElementById('target');if(diff<=cfg.targetTolerance){t.className='target hit';t.textContent='Target reached!'}else if(diff<.15*cfg.targetValue){t.className='target close';t.textContent='Getting close... Target: '+cfg.targetValue.toFixed(2)+' '+cfg.resultUnit}else{t.className='target far';t.textContent='Keep adjusting... Target: '+cfg.targetValue.toFixed(2)+' '+cfg.resultUnit}}
+lfUpdate();
+</script>`,
   },
 };
 
@@ -656,7 +485,7 @@ export function registerSkillTools(server: McpServer) {
           name: template_name,
           description: t.description,
           variables: t.variables,
-          html: t.html,
+          html: SHARED_HEAD + t.html,
         };
         return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
       }
@@ -666,7 +495,7 @@ export function registerSkillTools(server: McpServer) {
         name,
         description: t.description,
         variables: t.variables,
-        html: t.html,
+        html: SHARED_HEAD + t.html,
       }));
       return { content: [{ type: "text" as const, text: JSON.stringify(all, null, 2) }] };
     },
