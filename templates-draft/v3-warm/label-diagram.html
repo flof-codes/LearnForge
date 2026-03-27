@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/picocss/2.1.1/pico.classless.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap">
+<style>
+  :root{--pico-font-family:'Inter',sans-serif;--pico-font-size:93.75%}
+  html,body{margin:0;padding:0;background:transparent}
+  body>main{margin:0;padding:0;max-width:none}
+  [data-bloom]{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  [data-bloom="0"]{background:#fef3c7;color:#92400e}
+  .diagram{border-radius:12px;padding:14px;border:1px solid var(--pico-muted-border-color);margin-bottom:24px}
+  .diagram svg{width:100%;max-height:260px;display:block}
+  .dz{display:inline-flex;align-items:center;justify-content:center;min-width:90px;min-height:28px;padding:4px 10px;border:2px dashed var(--pico-muted-border-color);color:var(--pico-muted-color);border-radius:8px;font-size:.8em;transition:all .15s}
+  .dz.over{border-color:#0d9488;background:rgba(13,148,136,.1)}
+  .dz.filled{border-style:solid;border-color:#0d9488;background:rgba(13,148,136,.12);font-weight:600}
+  .dz.correct{border-color:#059669;background:rgba(5,150,105,.15)}
+  .dz.wrong{border-color:#e11d48;background:rgba(225,29,72,.12)}
+  .bank{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--pico-muted-border-color)}
+  .chip{padding:6px 14px;border-radius:8px;font-size:.82em;font-weight:600;cursor:grab;user-select:none;background:#0d9488;color:white;border:none}
+  .chip.placed{opacity:.25;cursor:default;pointer-events:none}
+  button{background:#d97706 !important;border-color:#d97706 !important}
+  button:hover{background:#b45309 !important}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:.9em;display:none}
+  .fb.correct{display:block;background:rgba(13,148,136,.12);border:1px solid #0d9488}
+  .fb.partial{display:block;background:rgba(217,119,6,.12);border:1px solid #d97706}
+</style>
+</head><body><main>
+<article>
+  <span data-bloom="0">Remember</span>
+  <p>Drag each label to the correct layer of the TCP/IP model.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
+      <rect x="30" y="10" width="400" height="40" rx="8" fill="none" stroke="var(--pico-muted-border-color)"/><text x="80" y="35" fill="var(--pico-muted-color)" font-size="13">Layer 4:</text>
+      <foreignObject x="200" y="16" width="180" height="30"><div xmlns="http://www.w3.org/1999/xhtml" class="dz" data-answer="application">drop here</div></foreignObject>
+      <rect x="30" y="58" width="400" height="40" rx="8" fill="none" stroke="var(--pico-muted-border-color)"/><text x="80" y="83" fill="var(--pico-muted-color)" font-size="13">Layer 3:</text>
+      <foreignObject x="200" y="64" width="180" height="30"><div xmlns="http://www.w3.org/1999/xhtml" class="dz" data-answer="transport">drop here</div></foreignObject>
+      <rect x="30" y="106" width="400" height="40" rx="8" fill="none" stroke="var(--pico-muted-border-color)"/><text x="80" y="131" fill="var(--pico-muted-color)" font-size="13">Layer 2:</text>
+      <foreignObject x="200" y="112" width="180" height="30"><div xmlns="http://www.w3.org/1999/xhtml" class="dz" data-answer="internet">drop here</div></foreignObject>
+      <rect x="30" y="154" width="400" height="40" rx="8" fill="none" stroke="var(--pico-muted-border-color)"/><text x="80" y="179" fill="var(--pico-muted-color)" font-size="13">Layer 1:</text>
+      <foreignObject x="200" y="160" width="180" height="30"><div xmlns="http://www.w3.org/1999/xhtml" class="dz" data-answer="link">drop here</div></foreignObject>
+    </svg>
+    <div class="bank">
+      <span class="chip" draggable="true" data-label="transport">Transport</span>
+      <span class="chip" draggable="true" data-label="application">Application</span>
+      <span class="chip" draggable="true" data-label="link">Link</span>
+      <span class="chip" draggable="true" data-label="internet">Internet</span>
+    </div>
+  </div>
+  <button onclick="lfCheck()">Check Answers</button>
+  <div class="fb" id="fb"></div>
+</article>
+<script>
+document.querySelector('.diagram').addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='move'});
+document.querySelector('.diagram').addEventListener('dragenter',function(e){const z=e.target.closest('.dz');if(z)z.classList.add('over')});
+document.querySelector('.diagram').addEventListener('dragleave',function(e){const z=e.target.closest('.dz');if(z)z.classList.remove('over')});
+document.querySelector('.diagram').addEventListener('drop',function(e){e.preventDefault();const z=e.target.closest('.dz');if(!z||z.classList.contains('filled'))return;z.classList.remove('over');const l=e.dataTransfer.getData('text/plain');const c=document.querySelector('.chip[data-label="'+l+'"]');if(!c||c.classList.contains('placed'))return;z.textContent=c.textContent;z.dataset.placed=l;z.classList.add('filled');c.classList.add('placed');c.draggable=false});
+document.querySelector('.bank').addEventListener('dragstart',function(e){if(e.target.classList.contains('chip')){e.dataTransfer.setData('text/plain',e.target.dataset.label);e.dataTransfer.effectAllowed='move'}});
+function lfCheck(){const zones=document.querySelectorAll('.dz');let c=0,t=zones.length;zones.forEach(z=>{if(z.dataset.placed===z.dataset.answer){z.classList.add('correct');c++}else if(z.dataset.placed)z.classList.add('wrong')});const fb=document.getElementById('fb');fb.className='fb '+(c===t?'correct':'partial');fb.textContent=c===t?'All '+t+' labels correct!':c+' of '+t+' correct. Review the highlighted zones.'}
+</script>
+<script>(function(){function p(){parent.postMessage({type:'lf-resize',height:document.documentElement.scrollHeight},'*')}new ResizeObserver(p).observe(document.documentElement);p()})()</script>
+</main></body></html>

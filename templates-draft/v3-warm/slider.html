@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/picocss/2.1.1/pico.classless.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap">
+<style>
+  :root{--pico-font-family:'Inter',sans-serif;--pico-font-size:93.75%}
+  html,body{margin:0;padding:0;background:transparent}
+  body>main{margin:0;padding:0;max-width:none}
+  [data-bloom]{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  [data-bloom="0"]{background:#fef3c7;color:#92400e}
+  [data-bloom="1"]{background:#ccfbf1;color:#115e59}
+  [data-bloom="2"]{background:#e0e7ff;color:#3730a3}
+  [data-bloom="3"]{background:#fce7f3;color:#9d174d}
+  [data-bloom="4"]{background:#ede9fe;color:#5b21b6}
+  [data-bloom="5"]{background:#fae8ff;color:#86198f}
+  .result{text-align:center;margin:20px 0;padding:18px;border-radius:12px;border:1px solid var(--pico-muted-border-color)}
+  .result-val{font-size:2em;font-weight:800;color:#d97706}
+  .result-label{font-size:.82em;color:var(--pico-muted-color);margin-top:4px}
+  .result-formula{margin-top:8px;font-family:monospace;font-size:.82em;color:var(--pico-muted-color)}
+  .target{font-size:.85em;margin-top:10px;padding:6px 16px;border-radius:20px;display:inline-block;font-weight:600;transition:all .3s}
+  .target.hit{background:rgba(13,148,136,.12);border:1px solid #0d9488}
+  .target.close{background:rgba(217,119,6,.12);border:1px solid #d97706}
+  .target.far{background:rgba(225,29,72,.12);border:1px solid #e11d48}
+</style>
+</head><body><main>
+<article>
+  <span data-bloom="3">Apply</span>
+  <p>Adjust <strong>voltage</strong> and <strong>resistance</strong> to reach the target current using Ohm's Law.</p>
+  <label>Voltage <span id="sv-voltage">12 V</span>
+    <input type="range" min="1" max="48" value="12" step="1" data-name="voltage" data-unit="V" oninput="lfUpdate()">
+  </label>
+  <label>Resistance <span id="sv-resistance">100 &#8486;</span>
+    <input type="range" min="10" max="1000" value="100" step="10" data-name="resistance" data-unit="&#8486;" oninput="lfUpdate()">
+  </label>
+  <div class="result">
+    <div class="result-val" id="result-val">0.12 A</div>
+    <div class="result-label">Current (I)</div>
+    <div class="result-formula">I = V / R</div>
+    <div class="target" id="target">Target: 0.24 A</div>
+  </div>
+</article>
+<script>
+const cfg={formula:v=>v.voltage/v.resistance,targetValue:.24,targetTolerance:.01,resultUnit:'A'};
+function lfUpdate(){const sliders=document.querySelectorAll('input[type=range]');const vars={};sliders.forEach(s=>{vars[s.dataset.name]=parseFloat(s.value);document.getElementById('sv-'+s.dataset.name).textContent=s.value+' '+s.dataset.unit});const result=cfg.formula(vars);document.getElementById('result-val').textContent=result.toFixed(2)+' '+cfg.resultUnit;const diff=Math.abs(result-cfg.targetValue);const t=document.getElementById('target');if(diff<=cfg.targetTolerance){t.className='target hit';t.textContent='Target reached!'}else if(diff<.15*cfg.targetValue){t.className='target close';t.textContent='Getting close... Target: '+cfg.targetValue.toFixed(2)+' '+cfg.resultUnit}else{t.className='target far';t.textContent='Keep adjusting... Target: '+cfg.targetValue.toFixed(2)+' '+cfg.resultUnit}}
+lfUpdate();
+</script>
+<script>(function(){function p(){parent.postMessage({type:'lf-resize',height:document.documentElement.scrollHeight},'*')}new ResizeObserver(p).observe(document.documentElement);p()})()</script>
+</main></body></html>
