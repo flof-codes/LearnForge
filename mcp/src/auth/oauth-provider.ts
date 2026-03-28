@@ -276,7 +276,7 @@ export async function handleLogin(
   const [user] = await db
     .select({ id: users.id, passwordHash: users.passwordHash })
     .from(users)
-    .where(eq(users.email, email));
+    .where(eq(users.email, email.toLowerCase().trim()));
 
   if (!user) {
     return { html: renderLoginPage(session_token, pending.client.client_name, "Invalid email or password") };

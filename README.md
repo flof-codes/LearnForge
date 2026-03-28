@@ -49,7 +49,7 @@ Copy `.env.example` to `.env` at the project root. Docker Compose reads this fil
 | `DATABASE_URL` | API, MCP | No | `postgresql://learnforge:learnforge@localhost:5432/learnforge` | PostgreSQL connection string. Set automatically by Docker Compose. |
 | `PORT` | API, MCP | No | API: `3000`, MCP: `3001` | Server listening port. Set automatically by Docker Compose. |
 | `IMAGE_PATH` | API, MCP | No | Docker: `/data/images`, Local: `~/.learnforge/images` | Directory for uploaded card images. |
-| `MCP_PUBLIC_URL` | MCP | No | `http://localhost:3001` | Public URL of the MCP server (OAuth callbacks, image URLs). |
+| `MCP_PUBLIC_URL` | MCP | No | `http://localhost:3001/mcp` | Public URL of the MCP server (must include `/mcp` path). Used for OAuth endpoints and image URLs. |
 | `VITE_API_URL` | Web UI | No | `http://localhost:3333` | API base URL for the frontend (build-time). |
 
 When running with Docker Compose, only `JWT_SECRET` needs to be set -- all other variables have working defaults. When running services locally (outside Docker), you may also need to set `DATABASE_URL` and `IMAGE_PATH`.
@@ -58,7 +58,7 @@ When running with Docker Compose, only `JWT_SECRET` needs to be set -- all other
 
 - **Web UI / API**: Password login via `POST /auth/login`, returns JWT token. All API routes require `Authorization: Bearer <token>`.
 - **MCP HTTP**: OAuth 2.0 or API key via `Authorization: Bearer <token>`.
-- **MCP stdio**: No auth (local process).
+- **MCP stdio**: API key via `--api-key <key>` argument.
 
 ## Database Backup
 

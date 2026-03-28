@@ -145,7 +145,8 @@ describe("MCP Tools", () => {
       expect(card.bloomState.currentLevel).toBe(0);
       expect(card.fsrsState).toBeDefined();
       expect(card.fsrsState.state).toBe(0);
-      expect(card.embedding).toBeDefined();
+      // Embedding is excluded from responses (internal-only)
+      expect(card.embedding).toBeUndefined();
       createdCardIds.push(card.id);
     });
 
@@ -171,7 +172,6 @@ describe("MCP Tools", () => {
         card_id: cardId,
       });
       const before = mcp.parseToolResult<any>(beforeResult);
-      const origEmbedding = before.embedding;
 
       const updateResult = await mcp.callTool("update_card", {
         card_id: cardId,
@@ -182,7 +182,11 @@ describe("MCP Tools", () => {
       expect(updated.concept).toBe(
         "Completely different quantum mechanics concept",
       );
-      expect(updated.embedding).not.toEqual(origEmbedding);
+      // Embedding is excluded from response but recomputed server-side;
+      // verify update happened by checking updatedAt changed
+      expect(new Date(updated.updatedAt).getTime()).toBeGreaterThan(
+        new Date(before.updatedAt).getTime(),
+      );
     });
 
     it("delete_card removes card", async () => {

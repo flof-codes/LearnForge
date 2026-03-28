@@ -134,11 +134,20 @@ async function warmupEmbeddings(token: string): Promise<void> {
   const card = (await createRes.json()) as { id: string };
   const cardId = card.id;
 
-  // Delete the warmup card
+  // Delete the warmup card via API, then always verify via direct SQL
   await fetch(`${API_URL}/cards/${cardId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  // Belt-and-suspenders: ensure it's gone via direct SQL
+  const client = new pg.Client(DB_CONFIG);
+  await client.connect();
+  try {
+    await client.query(`DELETE FROM cards WHERE id = $1`, [cardId]);
+  } finally {
+    await client.end();
+  }
 
   console.log("  [ok] Embedding model warmed up");
 }
@@ -214,6 +223,32 @@ async function warmupMcpEmbeddings(): Promise<void> {
   console.log("  [ok] MCP embedding model warmed up");
 }
 
+/**
+ * Verify the database has exactly the expected seed data.
+ * Cleans up any stale warmup cards that weren't deleted.
+ */
+async function verifySeedIntegrity(): Promise<void> {
+  const EXPECTED_CARD_COUNT = 12;
+  const client = new pg.Client(DB_CONFIG);
+  await client.connect();
+  try {
+    const { rows } = await client.query("SELECT count(*)::int AS cnt FROM cards");
+    const count = rows[0].cnt;
+    if (count !== EXPECTED_CARD_COUNT) {
+      console.warn(`  [!!] Expected ${EXPECTED_CARD_COUNT} cards, found ${count}. Cleaning up non-seed cards...`);
+      await client.query(
+        `DELETE FROM cards WHERE id NOT LIKE '20000000-%'`,
+      );
+      const { rows: after } = await client.query("SELECT count(*)::int AS cnt FROM cards");
+      console.log(`  [ok] Cleaned up, now ${after[0].cnt} cards`);
+    } else {
+      console.log("  [ok] Seed integrity verified");
+    }
+  } finally {
+    await client.end();
+  }
+}
+
 // ── Vitest Global Setup ────────────────────────────────────────────────────
 
 export async function setup(): Promise<void> {
@@ -248,7 +283,11 @@ export async function setup(): Promise<void> {
   await warmupEmbeddings(token);
   await warmupMcpEmbeddings();
 
-  // 7. Set environment variables for test processes
+  // 7. Verify seed integrity (no stale warmup cards)
+  console.log("\nVerifying seed integrity...");
+  await verifySeedIntegrity();
+
+  // 8. Set environment variables for test processes
   process.env.TEST_API_URL = API_URL;
   process.env.TEST_MCP_URL = MCP_URL;
   process.env.TEST_JWT_TOKEN = token;

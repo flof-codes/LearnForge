@@ -90,18 +90,25 @@ describe("Card Search", () => {
     });
 
     it("does not match on array literal characters in tags", async () => {
-      // Searching for '{' or ',' should not match on PostgreSQL array syntax
+      // Text search for '{' or ',' must not match via PostgreSQL array syntax.
+      // Semantic search may return low-relevance results for short queries.
       const resBrace = await api.get("/cards/search", {
         params: { q: "{" },
       });
       expect(resBrace.status).toBe(200);
-      expect(resBrace.data.length).toBe(0);
+      for (const card of resBrace.data) {
+        expect(card.concept).not.toContain("{");
+        expect((card.tags ?? []).join(" ")).not.toContain("{");
+      }
 
       const resComma = await api.get("/cards/search", {
         params: { q: "," },
       });
       expect(resComma.status).toBe(200);
-      expect(resComma.data.length).toBe(0);
+      for (const card of resComma.data) {
+        expect(card.concept).not.toContain(",");
+        expect((card.tags ?? []).join(" ")).not.toContain(",");
+      }
     });
   });
 

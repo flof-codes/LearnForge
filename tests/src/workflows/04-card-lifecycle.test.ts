@@ -37,9 +37,8 @@ describe("Card Lifecycle", () => {
       expect(res.data.concept).toBe("Test card with all fields");
       expect(res.data.tags).toEqual(["test", "full"]);
 
-      // Embedding should be 1024-dim array
-      expect(Array.isArray(res.data.embedding)).toBe(true);
-      expect(res.data.embedding).toHaveLength(1024);
+      // Embedding is excluded from API responses (internal-only)
+      expect(res.data.embedding).toBeUndefined();
 
       // Bloom state initialized to 0
       expect(res.data.bloomState).toBeDefined();
@@ -64,8 +63,7 @@ describe("Card Lifecycle", () => {
       freshCardIds.push(res.data.id);
 
       expect(res.data.tags).toEqual([]);
-      expect(Array.isArray(res.data.embedding)).toBe(true);
-      expect(res.data.embedding).toHaveLength(1024);
+      expect(res.data.embedding).toBeUndefined();
     });
 
     it("rejects card with invalid topic", async () => {
@@ -100,14 +98,13 @@ describe("Card Lifecycle", () => {
       const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "embed-change");
       freshCardIds.push(card.id);
 
-      const originalEmbedding = card.embedding;
-
       const res = await api.put(`/cards/${card.id}`, {
         concept: "Completely different concept about quantum mechanics",
       });
       expect(res.status).toBe(200);
       expect(res.data.concept).toBe("Completely different concept about quantum mechanics");
-      expect(res.data.embedding).not.toEqual(originalEmbedding);
+      // Embedding is excluded from response but is recomputed server-side
+      expect(res.data.embedding).toBeUndefined();
       expect(new Date(res.data.updatedAt).getTime()).toBeGreaterThan(
         new Date(card.updatedAt).getTime(),
       );
@@ -117,15 +114,13 @@ describe("Card Lifecycle", () => {
       const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "html-embed-change");
       freshCardIds.push(card.id);
 
-      const originalEmbedding = card.embedding;
-
       const res = await api.put(`/cards/${card.id}`, {
         front_html: "<p>Completely different front content about quantum physics</p>",
       });
       expect(res.status).toBe(200);
       expect(res.data.frontHtml).toBe("<p>Completely different front content about quantum physics</p>");
-      // Embedding is now recomputed for any content change, not just concept
-      expect(res.data.embedding).not.toEqual(originalEmbedding);
+      // Embedding is excluded from response but is recomputed server-side
+      expect(res.data.embedding).toBeUndefined();
     });
 
     it("moves card to different topic", async () => {

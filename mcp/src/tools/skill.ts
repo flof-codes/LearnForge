@@ -209,10 +209,30 @@ If the card has 5+ reviews at the same Bloom level and you're struggling to find
   - Create: original, viable, logical proposal?
 
 ### Feedback Style
-- Start with what was correct (even in wrong answers).
-- Be specific about gaps ("you didn't mention the proton gradient").
-- End with a learning nudge for next time.
-- 2-4 sentences. Match tone to rating.
+
+**All ratings — when something was wrong:**
+- Always explain what the correct answer is and WHY it is correct. Don't just say "the answer was B".
+- Be specific about the gap or misconception ("you confused osmosis with diffusion — osmosis specifically involves water moving across a semipermeable membrane").
+- Even at rating 3-4: if part of the answer was off, explain the correct behavior before moving on.
+
+**Rating 3-4 (correct / mostly correct):**
+- Affirm what was good. If a minor point was wrong, briefly clarify.
+- 2-3 sentences. Keep it brief — momentum matters.
+
+**Rating 1-2 (wrong / partially wrong):**
+- Start with what was correct (even in wrong answers, find something).
+- State the correct answer and explain the underlying concept clearly.
+- End with a learning nudge that reframes the concept for retention.
+- 3-6 sentences. Take the space needed to teach.
+
+**Big conceptual miss (rating 1, especially at Bloom 0-1):**
+When the answer reveals a fundamental misunderstanding — not just a slip — render a mini-visualization to make the concept click:
+- Use the Visualizer tool to render a small HTML snippet (diagram, comparison table, annotated flow, or SVG).
+- Follow the same visual style as card templates (Pico CSS classless, Inter font, semantic HTML, KaTeX for formulas).
+- Focus on the ONE key distinction or mechanism the user missed.
+- Example: if the user confuses mitosis and meiosis, render a side-by-side \`<table>\` of their key differences.
+- Example: if the user misidentifies a process flow, render an SVG flow diagram (A → B → C).
+- Keep it compact. The goal is a quick "aha", not a textbook page.
 
 ### "I Don't Know" Responses
 

@@ -44,6 +44,16 @@
 - **Vorteil:** Antwort kommt direkt zurück → Claude kann sofort bewerten und `submit_review` aufrufen
 - Die interaktiven HTML-Karten bleiben als visuelles Lernmaterial auf der **Rückseite** erhalten
 
+## Git Conventions
+- Never include co-authored-by or co-author attribution in git commit messages unless explicitly requested.
+- Keep commit messages short and concise. Do not write multi-paragraph commit messages unless asked.
+
+## Workflow
+- When implementing changes, present a brief plan and wait for user confirmation before making edits — especially for UI changes, multi-file refactors, and commit operations.
+
+## Debugging
+- When debugging issues, investigate the actual error path first rather than guessing at common causes. Don't suggest generic fixes (check Docker logs, restart containers) before understanding the specific problem. Focus diagnosis on the exact symptoms reported.
+
 ---
 
 # Project Technical Reference
@@ -56,6 +66,8 @@ Monorepo with 4 packages — all ESM (`"type": "module"`):
 - `api/` — Fastify 5 REST backend (thin route handlers calling core services)
 - `web-ui/` — React 19 SPA (React Router 7, TanStack Query 5, Tailwind CSS 4, Vite 7)
 - `mcp/` — MCP server with tutor instructions and card templates (stdio + StreamableHTTP transport)
+
+This project uses internationalization (i18n) with DE/EN translations. When modifying user-facing text, update both language files. Translation keys are spread across 25+ components.
 
 ## Running
 

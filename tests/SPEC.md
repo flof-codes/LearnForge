@@ -357,6 +357,32 @@ User profile management endpoints.
 | **Reject short password** | New password < 8 chars → 400 |
 | **Auth required** | Unauthenticated requests → 401 |
 
+### 18. OAuth Flow (`oauth.test.ts`)
+
+Full OAuth 2.0 + PKCE flow against the MCP server.
+
+| Test | What it verifies |
+|------|-----------------|
+| **Protected resource metadata** | GET /.well-known/oauth-protected-resource → resource, authorization_servers, bearer_methods |
+| **Authorization server metadata** | GET /.well-known/oauth-authorization-server → endpoints, response types, grant types, PKCE |
+| **Metadata URLs include /mcp/ path** | All endpoint URLs contain /mcp/ prefix matching Express handlers |
+| **Client registration** | POST /mcp/register → 201 with client_id, redirect_uris |
+| **Registration rejects missing redirect_uris** | POST /mcp/register without redirect_uris → 400 |
+| **Authorize returns login page** | GET /mcp/authorize with PKCE → 200 HTML with session_token and client name |
+| **Login redirects with auth code** | POST /mcp/login with valid credentials → 302 to redirect_uri?code=&state= |
+| **Login wrong password → error page** | POST /mcp/login with bad password → 200 HTML with error message |
+| **Login invalid session → error** | POST /mcp/login with stale session_token → error page |
+| **Login normalizes email** | POST /mcp/login with uppercase/whitespace email → 302 (succeeds) |
+| **Token exchange (PKCE)** | POST /mcp/token with auth code + code_verifier → access + refresh tokens |
+| **Token exchange rejects invalid code** | POST /mcp/token with fake code → 400 |
+| **Token exchange rejects reused code** | Second exchange with same code → 400 |
+| **OAuth token authenticates MCP** | Initialize + tool call with OAuth access token → valid results |
+| **Revoked token rejected** | Revoke access token → MCP call returns 401 |
+| **Token refresh** | POST /mcp/token with refresh_token → new access + refresh tokens |
+| **Old refresh token revoked after use** | Reuse of consumed refresh token → 400 |
+| **Revoke access token** | POST /mcp/revoke → 200 |
+| **Revoke refresh token** | POST /mcp/revoke + subsequent refresh attempt → 400 |
+
 ---
 
 ## Test Helpers
