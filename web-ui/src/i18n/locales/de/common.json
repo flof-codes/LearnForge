@@ -37,7 +37,9 @@
     "email": "E-Mail",
     "password": "Passwort",
     "name": "Name",
-    "passwordHint": "Mindestens 8 Zeichen"
+    "passwordHint": "Mindestens 8 Zeichen",
+    "loginFailed": "Anmeldung fehlgeschlagen",
+    "registrationFailed": "Registrierung fehlgeschlagen"
   },
   "language": {
     "en": "EN",

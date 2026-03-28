@@ -166,6 +166,8 @@ if (isStdio) {
   }
 
   const transports: Record<string, StreamableHTTPServerTransport> = {};
+  const sessionLastActive: Record<string, number> = {};
+  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
   const app = express();
   app.set("trust proxy", 1);
@@ -207,6 +209,7 @@ if (isStdio) {
     const userId = (req as unknown as Record<string, unknown>).userId as string;
     try {
       if (sessionId && transports[sessionId]) {
+        sessionLastActive[sessionId] = Date.now();
         await transports[sessionId].handleRequest(req, res, req.body);
         return;
       }
@@ -214,11 +217,17 @@ if (isStdio) {
       if (isInitializeRequest(req.body)) {
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
-          onsessioninitialized: (sid) => { transports[sid] = transport; },
+          onsessioninitialized: (sid) => {
+            transports[sid] = transport;
+            sessionLastActive[sid] = Date.now();
+          },
         });
         transport.onclose = () => {
           const sid = transport.sessionId;
-          if (sid && transports[sid]) delete transports[sid];
+          if (sid) {
+            delete transports[sid];
+            delete sessionLastActive[sid];
+          }
         };
         const server = createServer(userId);
         await server.connect(transport);
@@ -247,6 +256,7 @@ if (isStdio) {
       res.status(sessionId ? 404 : 400).json({ error: sessionId ? "Session not found" : "Missing session ID." });
       return;
     }
+    sessionLastActive[sessionId] = Date.now();
     await transports[sessionId].handleRequest(req, res);
   });
 
@@ -261,8 +271,20 @@ if (isStdio) {
 
   // --- Cleanup interval ---
   const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-  const cleanupTimer = setInterval(() => {
+  const cleanupTimer = setInterval(async () => {
     cleanupExpiredOAuth().catch((err) => console.error("OAuth cleanup error:", err));
+
+    // Evict stale MCP sessions
+    const now = Date.now();
+    for (const sid of Object.keys(sessionLastActive)) {
+      if (now - sessionLastActive[sid] > SESSION_TTL_MS) {
+        try {
+          await transports[sid]?.close();
+        } catch { /* ignore close errors */ }
+        delete transports[sid];
+        delete sessionLastActive[sid];
+      }
+    }
   }, CLEANUP_INTERVAL_MS);
 
   app.listen(config.port, "0.0.0.0", () => {
@@ -274,6 +296,7 @@ if (isStdio) {
     for (const sid of Object.keys(transports)) {
       await transports[sid].close().catch(() => {});
       delete transports[sid];
+      delete sessionLastActive[sid];
     }
     process.exit(0);
   });

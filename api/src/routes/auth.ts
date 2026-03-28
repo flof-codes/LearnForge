@@ -1,10 +1,14 @@
 import { FastifyInstance } from "fastify";
 import argon2 from "argon2";
+import { unlink } from "node:fs/promises";
+import path from "node:path";
 import { db } from "../db/connection.js";
-import { users } from "@learnforge/core";
+import { users, images } from "@learnforge/core";
 import { and, eq, ne } from "drizzle-orm";
 import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
+import { config } from "../config.js";
+import { extFromMime } from "../lib/image-utils.js";
 
 export default async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: { email: string; password: string } }>("/auth/login", async (request) => {
@@ -170,6 +174,42 @@ export default async function authRoutes(app: FastifyInstance) {
       await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 
       return { success: true };
+    },
+  );
+
+  app.delete<{ Body: { password: string } }>(
+    "/auth/account",
+    async (request, reply) => {
+      const userId = getUserId(request);
+      const { password } = request.body ?? {};
+
+      if (!password) throw new ValidationError("password is required");
+
+      const [user] = await db
+        .select({ passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.id, userId));
+      if (!user) throw new UnauthorizedError("User not found");
+
+      const valid = await argon2.verify(user.passwordHash, password);
+      if (!valid) throw new UnauthorizedError("Invalid password");
+
+      // Collect image files for disk cleanup before cascade deletes them from DB
+      const userImages = await db
+        .select({ id: images.id, mimeType: images.mimeType })
+        .from(images)
+        .where(eq(images.userId, userId));
+
+      // Delete user — CASCADE removes topics, cards, bloom_state, fsrs_state, reviews, images, oauth tokens
+      await db.delete(users).where(eq(users.id, userId));
+
+      // Best-effort cleanup of image files from disk
+      for (const img of userImages) {
+        const filePath = path.join(config.imagePath, `${img.id}${extFromMime(img.mimeType)}`);
+        await unlink(filePath).catch(() => {});
+      }
+
+      return reply.code(204).send();
     },
   );
 }

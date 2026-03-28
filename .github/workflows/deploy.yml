@@ -26,23 +26,75 @@ jobs:
       - name: Build core
         run: npm run -w core build
 
-      # ── API type check ──
+      # ── Type checks ──
       - name: TypeScript check (API)
         run: npx tsc --noEmit
         working-directory: api
 
-      # ── MCP type check ──
       - name: TypeScript check (MCP)
         run: npx tsc --noEmit
         working-directory: mcp
 
-      # ── Web UI build check ──
       - name: TypeScript & build check (Web UI)
         run: npm run build
         working-directory: web-ui
 
-  deploy:
+      # ── Lint checks ──
+      - name: Lint (Core)
+        run: npx eslint .
+        working-directory: core
+
+      - name: Lint (API)
+        run: npx eslint .
+        working-directory: api
+
+      - name: Lint (MCP)
+        run: npx eslint .
+        working-directory: mcp
+
+      - name: Lint (Web UI)
+        run: npx eslint .
+        working-directory: web-ui
+
+  test:
     needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # ── Create .env.test for test-api container (Stripe test keys) ──
+      - name: Create test env file
+        run: |
+          cat > tests/.env.test << 'EOF'
+          STRIPE_SECRET_KEY=
+          STRIPE_PRICE_ID_MONTHLY=
+          STRIPE_PRICE_ID_ANNUAL=
+          STRIPE_WEBHOOK_SECRET=
+          EOF
+
+      # ── Install test runner dependencies ──
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+        working-directory: tests
+
+      # ── Run integration tests (vitest handles docker compose up/down) ──
+      - name: Run integration tests
+        run: npx vitest run --config vitest.config.ts
+        working-directory: tests
+
+      # ── Ensure containers are torn down even on failure ──
+      - name: Cleanup test containers
+        if: always()
+        run: docker compose -f docker-compose.test.yml down --volumes --remove-orphans 2>/dev/null || true
+        working-directory: tests
+
+  deploy:
+    needs: [build, test]
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH

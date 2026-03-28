@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ export default function Sidebar() {
   const { t } = useTranslation('app');
   const { logout } = useAuth();
   const queryClient = useQueryClient();
+  const { pathname } = useLocation();
+  const isStudySession = pathname.startsWith('/dashboard/study/session');
 
   const links = useMemo(() => [
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
@@ -82,13 +84,13 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-bg-secondary shadow-[0_-1px_3px_rgba(0,0,0,0.3)] flex z-50">
+      {/* Mobile bottom tab bar — hidden during study sessions to avoid overlap with rating buttons */}
+      {!isStudySession && <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-bg-secondary shadow-[0_-1px_3px_rgba(0,0,0,0.3)] flex z-50">
         {links.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
-            end={to === '/'}
+            end={to === '/dashboard'}
             className={({ isActive }) =>
               `flex-1 flex flex-col items-center gap-1 py-2 text-xs transition-colors ${
                 isActive ? 'text-accent-blue' : 'text-text-muted'
@@ -117,7 +119,7 @@ export default function Sidebar() {
           <LogOut size={20} />
           <span>{t('nav.logout')}</span>
         </button>
-      </nav>
+      </nav>}
     </>
   );
 }

@@ -79,7 +79,7 @@ export async function getTopic(db: Db, userId: string, topicId: string) {
         WITH RECURSIVE tree AS (SELECT t.id UNION ALL SELECT ch.id FROM topics ch JOIN tree tr ON ch.parent_id = tr.id) SELECT id FROM tree
       ) AND fs.due <= NOW() AND fs.state > 0) as due_count
     FROM topics t
-    WHERE t.parent_id = ${topicId}
+    WHERE t.parent_id = ${topicId} AND t.user_id = ${userId}
   `);
   const children = childResult.rows.map(c => ({
     id: c.id, name: c.name, description: c.description, parentId: c.parent_id, createdAt: c.created_at,

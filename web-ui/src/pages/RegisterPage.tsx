@@ -33,7 +33,7 @@ export default function RegisterPage() {
       navigate('/dashboard', { replace: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Registration failed');
+      setError(err.response?.data?.error ?? t('auth.registrationFailed'));
     } finally {
       setLoading(false);
     }
@@ -64,27 +64,37 @@ export default function RegisterPage() {
         )}
 
         <div className="space-y-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t('auth.name')}
-            autoFocus
-            autoComplete="name"
-            className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
-          />
-
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t('auth.email')}
-            autoComplete="email"
-            className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
-          />
+          <div>
+            <label htmlFor="register-name" className="block text-sm text-text-muted mb-1">{t('auth.name')}</label>
+            <input
+              id="register-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('auth.name')}
+              autoFocus
+              autoComplete="name"
+              className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
+            />
+          </div>
 
           <div>
+            <label htmlFor="register-email" className="block text-sm text-text-muted mb-1">{t('auth.email')}</label>
             <input
+              id="register-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('auth.email')}
+              autoComplete="email"
+              className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="register-password" className="block text-sm text-text-muted mb-1">{t('auth.password')}</label>
+            <input
+              id="register-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

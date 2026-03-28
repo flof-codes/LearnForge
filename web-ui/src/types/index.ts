@@ -142,6 +142,7 @@ export interface StudySummary {
   dueCount: number;
   newCount: number;
   bloomLevels: Record<string, number>;
+  bloomStateMatrix: Record<string, Record<string, number>>;
   accuracy7d: number | null;
 }
 

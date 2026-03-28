@@ -22,6 +22,8 @@ export const authService = {
     api.put<User>('/auth/profile', data),
   changePassword: (data: { current_password: string; new_password: string }) =>
     api.put<{ success: boolean }>('/auth/password', data),
+  deleteAccount: (password: string) =>
+    api.delete('/auth/account', { data: { password } }),
 };
 
 export const billingService = {

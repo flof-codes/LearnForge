@@ -5,21 +5,18 @@ import { useTranslation } from 'react-i18next';
 interface Props {
   cardsReviewed: number;
   ratings: number[];
-  bloomChanges: { from: number; to: number }[];
 }
 
-export default function SessionSummary({ cardsReviewed, ratings, bloomChanges }: Props) {
+export default function SessionSummary({ cardsReviewed, ratings }: Props) {
   const { t } = useTranslation('app');
   const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : '--';
-  const bloomUps = bloomChanges.filter(c => c.to > c.from).length;
-  const bloomDowns = bloomChanges.filter(c => c.to < c.from).length;
 
   return (
     <div className="max-w-md mx-auto text-center space-y-6">
       <Trophy size={48} className="mx-auto text-accent-green" />
       <h2 className="text-2xl font-medium">{t('sessionSummary.title')}</h2>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="bg-bg-secondary rounded-xl border border-border p-5">
           <p className="text-2xl font-light tabular-nums">{cardsReviewed}</p>
           <p className="text-xs text-text-muted">{t('sessionSummary.reviewed')}</p>
@@ -27,11 +24,6 @@ export default function SessionSummary({ cardsReviewed, ratings, bloomChanges }:
         <div className="bg-bg-secondary rounded-xl border border-border p-5">
           <p className="text-2xl font-light tabular-nums">{avgRating}</p>
           <p className="text-xs text-text-muted">{t('sessionSummary.avgRating')}</p>
-        </div>
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
-          <p className="text-2xl font-light tabular-nums text-accent-green">+{bloomUps}</p>
-          <p className="text-xs text-text-muted">{t('sessionSummary.bloomUps')}</p>
-          {bloomDowns > 0 && <p className="text-xs text-danger">-{bloomDowns}</p>}
         </div>
       </div>
 

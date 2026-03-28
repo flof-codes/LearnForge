@@ -33,6 +33,12 @@ services:
       APP_URL: "${APP_URL:-http://localhost:5173}"
     volumes:
       - ./data/images:/data/images
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy
@@ -44,6 +50,11 @@ services:
       dockerfile: web-ui/Dockerfile
       args:
         VITE_API_URL: "${VITE_API_URL}"
+        VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
+        OPERATOR_NAME: "${OPERATOR_NAME:-LearnForge}"
+        OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
+        OPERATOR_CITY: "${OPERATOR_CITY:-Austria}"
+        OPERATOR_EMAIL: "${OPERATOR_EMAIL:-office@learnforge.eu}"
     ports:
       - "8090:3000"
     depends_on:
@@ -63,6 +74,12 @@ services:
       MCP_PUBLIC_URL: "${MCP_PUBLIC_URL}"
     volumes:
       - ./data/images:/data/images
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy

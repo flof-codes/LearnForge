@@ -26,7 +26,7 @@ export default function LoginPage() {
       navigate('/dashboard', { replace: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Login failed');
+      setError(err.response?.data?.error ?? t('auth.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -57,24 +57,32 @@ export default function LoginPage() {
         )}
 
         <div className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t('auth.email')}
-            autoFocus
-            autoComplete="email"
-            className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
-          />
+          <div>
+            <label htmlFor="login-email" className="block text-sm text-text-muted mb-1">{t('auth.email')}</label>
+            <input
+              id="login-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('auth.email')}
+              autoFocus
+              autoComplete="email"
+              className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
+            />
+          </div>
 
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t('auth.password')}
-            autoComplete="current-password"
-            className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
-          />
+          <div>
+            <label htmlFor="login-password" className="block text-sm text-text-muted mb-1">{t('auth.password')}</label>
+            <input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t('auth.password')}
+              autoComplete="current-password"
+              className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue"
+            />
+          </div>
         </div>
 
         <button

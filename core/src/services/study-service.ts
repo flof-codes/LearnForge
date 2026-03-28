@@ -144,6 +144,37 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
     bloomLevels[row.level] = row.count;
   }
 
+  // Bloom × card-state cross-tabulation
+  const matrixResult = await db.execute<{ bloom_level: number; card_state: string; count: number }>(sql`
+    ${topicCte}
+    SELECT
+      COALESCE(bs.current_level, 0) AS bloom_level,
+      CASE
+        WHEN fs.state = 0 THEN 'new'
+        WHEN fs.state = 1 THEN 'learning'
+        WHEN fs.state = 3 THEN 'relearning'
+        WHEN fs.state = 2 AND fs.stability < 21 THEN 'young'
+        WHEN fs.state = 2 AND fs.stability >= 21 THEN 'mature'
+      END AS card_state,
+      COUNT(*)::int AS count
+    FROM cards c
+    JOIN fsrs_state fs ON fs.card_id = c.id
+    LEFT JOIN bloom_state bs ON bs.card_id = c.id
+    ${cardFilter}
+    GROUP BY bloom_level, card_state
+    ORDER BY bloom_level, card_state
+  `);
+
+  const bloomStateMatrix: Record<number, Record<string, number>> = {};
+  for (let i = 0; i <= 5; i++) {
+    bloomStateMatrix[i] = { new: 0, learning: 0, relearning: 0, young: 0, mature: 0 };
+  }
+  for (const row of matrixResult.rows) {
+    if (bloomStateMatrix[row.bloom_level]) {
+      bloomStateMatrix[row.bloom_level][row.card_state] = row.count;
+    }
+  }
+
   // Accuracy over last 7 days
   const accuracyResult = await db.execute<{ accuracy: number | null }>(sql`
     ${topicCte}
@@ -169,6 +200,7 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
     dueCount: due_count,
     newCount: new_count,
     bloomLevels,
+    bloomStateMatrix,
     accuracy7d: accuracy7d !== null ? Math.round(accuracy7d * 100) / 100 : null,
   };
 }

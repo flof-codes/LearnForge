@@ -50,6 +50,18 @@ export function buildApp() {
     return reply.status(500).send({ error: "Internal server error" });
   });
 
+  // Validate UUID route params (e.g. :id, :card_id) before handlers run
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  app.addHook("preHandler", async (request) => {
+    const params = request.params as Record<string, string> | undefined;
+    if (!params) return;
+    for (const [key, value] of Object.entries(params)) {
+      if (key.toLowerCase().includes("id") && !UUID_RE.test(value)) {
+        throw new ValidationError(`Invalid UUID: ${key}`);
+      }
+    }
+  });
+
   app.register(authRoutes);
   app.register(topicRoutes);
   app.register(cardRoutes);

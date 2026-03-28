@@ -9,7 +9,6 @@ import BloomBadge from '../../components/BloomBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import InteractiveCard from './InteractiveCard';
 import SessionSummary from './SessionSummary';
-import { BLOOM_COLORS } from '../../types';
 import type { DueCard } from '../../types';
 
 export default function StudySessionPage() {
@@ -23,8 +22,7 @@ export default function StudySessionPage() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ratings, setRatings] = useState<number[]>([]);
-  const [bloomChanges, setBloomChanges] = useState<{ from: number; to: number }[]>([]);
-  const [feedback, setFeedback] = useState<{ bloomFrom: number; bloomTo: number; nextDue: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ nextDue: string } | null>(null);
   const [feedbackTimer, setFeedbackTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [done, setDone] = useState(false);
 
@@ -44,7 +42,7 @@ export default function StudySessionPage() {
         card_id: currentCard.id,
         bloom_level: currentCard.bloomState.currentLevel,
         rating,
-        question_text: 'Manual review',
+        question_text: t('study.manualReview'),
         skip_bloom: true,
         modality: 'web',
       },
@@ -52,13 +50,7 @@ export default function StudySessionPage() {
         onSuccess: (data) => {
           setRatings(prev => [...prev, rating]);
 
-          const bloomFrom = currentCard.bloomState.currentLevel;
-          const bloomTo = data.bloomState.currentLevel;
-          setBloomChanges(prev => [...prev, { from: bloomFrom, to: bloomTo }]);
-
           setFeedback({
-            bloomFrom,
-            bloomTo,
             nextDue: data.fsrsState.due,
           });
 
@@ -104,7 +96,7 @@ export default function StudySessionPage() {
   }
 
   if (done) {
-    return <SessionSummary cardsReviewed={ratings.length} ratings={ratings} bloomChanges={bloomChanges} />;
+    return <SessionSummary cardsReviewed={ratings.length} ratings={ratings} />;
   }
 
   return (
@@ -160,14 +152,6 @@ export default function StudySessionPage() {
             }
           }}
         >
-          {feedback.bloomFrom !== feedback.bloomTo && (
-            <p className="text-sm font-medium">
-              {t('study.bloomChange', {
-                from: t(BLOOM_COLORS[feedback.bloomFrom]?.labelKey ?? 'bloom.remember'),
-                to: t(BLOOM_COLORS[feedback.bloomTo]?.labelKey ?? 'bloom.remember'),
-              })}
-            </p>
-          )}
           <p className="text-xs text-text-muted">
             {t('study.nextReview', { date: new Date(feedback.nextDue).toLocaleDateString() })}
           </p>

@@ -16,7 +16,7 @@ export default function TopicBreadcrumb({ topicId }: Props) {
         <span key={topic.id} className="flex items-center gap-1.5">
           {i > 0 && <span className="text-text-muted/50">&rarr;</span>}
           <Link
-            to={`/topics/${topic.id}`}
+            to={`/dashboard/topics/${topic.id}`}
             className="hover:text-accent-blue transition-colors"
           >
             {topic.name}

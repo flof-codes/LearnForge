@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { createCard, getCard, updateCard, deleteCard, resetCard, searchCards } from "@learnforge/core";
+import { createCard, getCard, updateCard, deleteCard, resetCard, searchCards, ValidationError } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function cardRoutes(app: FastifyInstance) {
@@ -17,8 +17,9 @@ export default async function cardRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { q?: string; topic_id?: string; limit?: string } }>("/cards/search", async (req) => {
     const userId = getUserId(req);
     const { q, topic_id, limit: limitStr } = req.query;
+    if (!q) throw new ValidationError("q is required");
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-    return searchCards(db, userId, q!, topic_id, limit);
+    return searchCards(db, userId, q, topic_id, limit);
   });
 
   // GET /cards/:id — single card with bloom_state, fsrs_state, and reviews

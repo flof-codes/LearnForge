@@ -49,6 +49,7 @@
     "days": "Tage",
     "cardStates": "Kartenstatus",
     "bloomDistribution": "Bloom-Level-Verteilung",
+    "cardProgress": "Kartenfortschritt",
     "startStudy": "Lernen starten",
     "createCard": "Karte erstellen",
     "browseTopics": "Themen durchsuchen",
@@ -77,7 +78,8 @@
     "viewDetails": "Kartendetails anzeigen",
     "bloomChange": "Bloom: {{from}} \u2192 {{to}}",
     "nextReview": "N\u00e4chste Wiederholung: {{date}}",
-    "clickToContinue": "Klicken zum Fortfahren"
+    "clickToContinue": "Klicken zum Fortfahren",
+    "manualReview": "Manuelle Wiederholung"
   },
   "sessionSummary": {
     "title": "Sitzung abgeschlossen",
@@ -298,6 +300,15 @@
       "step5": "Du wirst weitergeleitet, um dich mit deinen LearnForge-Zugangsdaten anzumelden",
       "step6": "Klicke in einer Unterhaltung auf den <bold>+</bold>-Button, w\u00e4hle <bold>Connectors</bold> und aktiviere LearnForge",
       "note": "Authentifizierung \u00fcber OAuth 2.0 \u2014 kein API-Schl\u00fcssel n\u00f6tig. Funktioniert mit jedem Claude-Plan, auch dem kostenlosen."
+    },
+    "deleteAccount": {
+      "title": "Konto l\u00f6schen",
+      "description": "Dein Konto und alle Daten (Themen, Karten, Reviews, Bilder) werden dauerhaft gel\u00f6scht. Dies kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
+      "passwordLabel": "Gib dein Passwort zur Best\u00e4tigung ein",
+      "button": "Mein Konto l\u00f6schen",
+      "deleting": "L\u00f6schen...",
+      "confirmTitle": "Konto l\u00f6schen?",
+      "confirmMessage": "Alle deine Themen, Karten, Reviews und Bilder werden dauerhaft gel\u00f6scht. Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden."
     }
   },
   "subscriptionBanner": {
@@ -325,7 +336,51 @@
     "noTopicsFound": "Keine Themen gefunden"
   },
   "confirmModal": {
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "confirm": "Best\u00e4tigen"
+  },
+  "onboarding": {
+    "welcomeTitle": "Willkommen bei LearnForge",
+    "welcomeDescription": "Erstelle dein erstes Thema und deine erste Lernkarte in unter einer Minute. Wir f\u00fchren dich durch jeden Schritt.",
+    "getStarted": "Los geht's",
+    "skip": "Jetzt \u00fcberspringen",
+    "chooseTitle": "Wie m\u00f6chtest du starten?",
+    "chooseDescription": "Verbinde Claude f\u00fcr KI-gest\u00fctztes Lernen oder erstelle deine erste Karte manuell.",
+    "claudeOption": "Mit Claude verbinden",
+    "claudeOptionRecommended": "Empfohlen",
+    "claudeOptionDesc": "Claude erstellt visuell ansprechende Karten, f\u00fchrt adaptive Lernsitzungen durch und verfolgt deinen Lernfortschritt.",
+    "manualOption": "Manuell erstellen",
+    "manualOptionDesc": "Schreibe eine einfache Frage & Antwort. Du kannst Claude sp\u00e4ter in den Einstellungen verbinden.",
+    "claudeSetupTitle": "Mit Claude verbinden",
+    "claudeSetupDesc": "F\u00fcge LearnForge als Connector in Claude hinzu. Das dauert nur eine Minute.",
+    "claudeStep1": "\u00d6ffne <1>claude.ai</1> und gehe zu <bold>Settings \u2192 Connectors</bold>",
+    "claudeStep2": "Klicke auf <bold>Add custom connector</bold>",
+    "claudeStep3": "F\u00fcge diese URL ein:",
+    "claudeStep4": "Melde dich mit deinen LearnForge-Zugangsdaten an \u2014 fertig!",
+    "claudeNote": "Kein API-Schl\u00fcssel n\u00f6tig \u2014 Authentifizierung erfolgt automatisch \u00fcber OAuth.",
+    "claudeOtherAi": "Du nutzt ein anderes KI-Tool? Erstelle einen API-Schl\u00fcssel in den Einstellungen.",
+    "claudeConnected": "Verbunden \u2014 Weiter",
+    "doneClaudeTitle": "Alles bereit!",
+    "doneClaudeDesc": "\u00d6ffne Claude und probiere:",
+    "doneClaudePrompt": "Erstelle ein Thema \u00fcber [dein Fach] mit ein paar Lernkarten",
+    "doneClaudeGoToSettings": "Zu den Einstellungen",
+    "topicTitle": "Erstelle dein erstes Thema",
+    "topicDescription": "Themen organisieren deine Lernkarten. Beginne mit einem Fach, das du lernen m\u00f6chtest.",
+    "createAndContinue": "Erstellen & Weiter",
+    "cardTitle": "Erstelle deine erste Karte",
+    "cardDescription": "Schreibe eine einfache Frage und Antwort. Detailliertere Karten kannst du sp\u00e4ter erstellen.",
+    "conceptLabel": "Konzept",
+    "conceptPlaceholder": "z.B. Photosynthese",
+    "questionLabel": "Frage",
+    "questionPlaceholder": "z.B. Was ist die Hauptfunktion der Photosynthese?",
+    "answerLabel": "Antwort",
+    "answerPlaceholder": "z.B. Die Photosynthese wandelt Lichtenergie in chemische Energie (Glucose) um, unter Verwendung von Kohlendioxid und Wasser.",
+    "createCardAndFinish": "Karte erstellen & Fertig",
+    "doneTitle": "Alles bereit!",
+    "doneDescription": "Dein erstes Thema und deine erste Karte sind fertig. Starte eine Lernsitzung oder erkunde das Dashboard.",
+    "doneConnectTip": "Tipp: Verbinde Claude in den Einstellungen f\u00fcr KI-gest\u00fctzte Kartenerstellung.",
+    "startStudying": "Lernen starten",
+    "goToDashboard": "Zum Dashboard"
   },
   "common": {
     "back": "Zur\u00fcck",

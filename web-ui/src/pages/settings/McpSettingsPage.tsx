@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Key, Copy, Check, AlertTriangle, Trash2, Globe, Sun, Moon, MonitorSmartphone, CreditCard, CheckCircle, XCircle, Heart, Download, User } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { authService, billingService } from '../../api/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-
+import ConfirmModal from '../../components/ConfirmModal';
 import LanguageSwitcher from '../../components/public/LanguageSwitcher';
 
 function computeTrialDays(trialEndsAt: string | undefined | null): number {
@@ -17,7 +17,7 @@ function computeTrialDays(trialEndsAt: string | undefined | null): number {
 
 export default function McpSettingsPage() {
   const queryClient = useQueryClient();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -48,6 +48,25 @@ export default function McpSettingsPage() {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Delete account state
+  const navigate = useNavigate();
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => authService.deleteAccount(deletePassword),
+    onSuccess: () => {
+      logout();
+      navigate('/login', { replace: true });
+    },
+    onError: (error: Error) => {
+      setShowDeleteConfirm(false);
+      const axErr = error as import('axios').AxiosError<{ error?: string }>;
+      setDeleteError(axErr.response?.data?.error || error.message);
+    },
+  });
 
   const successParam = searchParams.get('success');
   const canceledParam = searchParams.get('canceled');
@@ -97,8 +116,8 @@ export default function McpSettingsPage() {
       setProfileMessage({ type: 'success', text: t('app:settings.profile.saved') });
     },
     onError: (error: Error) => {
-      const axErr = error as import('axios').AxiosError<{ message?: string }>;
-      setProfileMessage({ type: 'error', text: axErr.response?.data?.message || error.message });
+      const axErr = error as import('axios').AxiosError<{ error?: string }>;
+      setProfileMessage({ type: 'error', text: axErr.response?.data?.error || error.message });
     },
   });
 
@@ -112,8 +131,8 @@ export default function McpSettingsPage() {
       setPwMessage({ type: 'success', text: t('app:settings.profile.passwordChanged') });
     },
     onError: (error: Error) => {
-      const axErr = error as import('axios').AxiosError<{ message?: string }>;
-      setPwMessage({ type: 'error', text: axErr.response?.data?.message || error.message });
+      const axErr = error as import('axios').AxiosError<{ error?: string }>;
+      setPwMessage({ type: 'error', text: axErr.response?.data?.error || error.message });
     },
   });
 
@@ -621,6 +640,52 @@ export default function McpSettingsPage() {
           </div>
         </section>
       )}
+
+      {/* Delete Account */}
+      <section className="bg-bg-secondary rounded-xl border border-danger/30 p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Trash2 size={20} className="text-danger" />
+          <h2 className="text-lg font-medium text-danger">{t('app:settings.deleteAccount.title')}</h2>
+        </div>
+        <p className="text-text-muted text-sm">
+          {t('app:settings.deleteAccount.description')}
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="delete-password" className="block text-sm text-text-muted mb-1">
+              {t('app:settings.deleteAccount.passwordLabel')}
+            </label>
+            <input
+              id="delete-password"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(null); }}
+              className="w-full px-4 py-2.5 bg-bg-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-danger"
+              autoComplete="current-password"
+            />
+          </div>
+          {deleteError && (
+            <p className="text-sm text-danger">{deleteError}</p>
+          )}
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={!deletePassword || deleteMutation.isPending}
+            className="w-full py-2.5 bg-danger text-white rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {deleteMutation.isPending ? t('app:settings.deleteAccount.deleting') : t('app:settings.deleteAccount.button')}
+          </button>
+        </div>
+      </section>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title={t('app:settings.deleteAccount.confirmTitle')}
+        message={t('app:settings.deleteAccount.confirmMessage')}
+        confirmLabel={t('app:settings.deleteAccount.button')}
+        danger
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
 
     </div>
   );

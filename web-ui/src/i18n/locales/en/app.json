@@ -49,6 +49,7 @@
     "days": "days",
     "cardStates": "Card States",
     "bloomDistribution": "Bloom Level Distribution",
+    "cardProgress": "Card Progress",
     "startStudy": "Start Study",
     "createCard": "Create Card",
     "browseTopics": "Browse Topics",
@@ -77,7 +78,8 @@
     "viewDetails": "View card details",
     "bloomChange": "Bloom: {{from}} \u2192 {{to}}",
     "nextReview": "Next review: {{date}}",
-    "clickToContinue": "Click to continue"
+    "clickToContinue": "Click to continue",
+    "manualReview": "Manual review"
   },
   "sessionSummary": {
     "title": "Session Complete",
@@ -298,6 +300,15 @@
       "step5": "You will be redirected to sign in with your LearnForge credentials",
       "step6": "In a conversation, click the <bold>+</bold> button, select <bold>Connectors</bold>, and toggle LearnForge on",
       "note": "Authentication uses OAuth 2.0 \u2014 no API key needed. Works on any Claude plan, including the free tier."
+    },
+    "deleteAccount": {
+      "title": "Delete Account",
+      "description": "Permanently delete your account and all data (topics, cards, reviews, images). This cannot be undone.",
+      "passwordLabel": "Enter your password to confirm",
+      "button": "Delete my account",
+      "deleting": "Deleting...",
+      "confirmTitle": "Delete your account?",
+      "confirmMessage": "All your topics, cards, reviews, and images will be permanently deleted. This action cannot be undone."
     }
   },
   "subscriptionBanner": {
@@ -325,7 +336,51 @@
     "noTopicsFound": "No topics found"
   },
   "confirmModal": {
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "onboarding": {
+    "welcomeTitle": "Welcome to LearnForge",
+    "welcomeDescription": "Create your first topic and flashcard in under a minute. We'll guide you through each step.",
+    "getStarted": "Get Started",
+    "skip": "Skip for now",
+    "chooseTitle": "How do you want to get started?",
+    "chooseDescription": "You can connect Claude for AI-powered learning or create your first card manually.",
+    "claudeOption": "Connect with Claude",
+    "claudeOptionRecommended": "Recommended",
+    "claudeOptionDesc": "Claude creates rich visual cards, runs adaptive study sessions, and tracks your learning progress.",
+    "manualOption": "Create manually",
+    "manualOptionDesc": "Write a simple question & answer card. You can connect Claude later in Settings.",
+    "claudeSetupTitle": "Connect with Claude",
+    "claudeSetupDesc": "Add LearnForge as a connector in Claude. It only takes a minute.",
+    "claudeStep1": "Open <1>claude.ai</1> and go to <bold>Settings \u2192 Connectors</bold>",
+    "claudeStep2": "Click <bold>Add custom connector</bold>",
+    "claudeStep3": "Paste this URL:",
+    "claudeStep4": "Sign in with your LearnForge credentials \u2014 done!",
+    "claudeNote": "No API key needed \u2014 authentication is automatic via OAuth.",
+    "claudeOtherAi": "Using another AI tool? Generate an API key in Settings.",
+    "claudeConnected": "I've connected \u2014 Continue",
+    "doneClaudeTitle": "You're All Set!",
+    "doneClaudeDesc": "Open Claude and try asking:",
+    "doneClaudePrompt": "Create a topic about [your subject] with a few flashcards",
+    "doneClaudeGoToSettings": "Go to Settings",
+    "topicTitle": "Create Your First Topic",
+    "topicDescription": "Topics organize your flashcards. Start with one subject you want to learn.",
+    "createAndContinue": "Create & Continue",
+    "cardTitle": "Create Your First Card",
+    "cardDescription": "Write a simple question and answer. You can create more detailed cards later.",
+    "conceptLabel": "Concept",
+    "conceptPlaceholder": "e.g. Photosynthesis",
+    "questionLabel": "Question",
+    "questionPlaceholder": "e.g. What is the primary function of photosynthesis?",
+    "answerLabel": "Answer",
+    "answerPlaceholder": "e.g. Photosynthesis converts light energy into chemical energy (glucose), using carbon dioxide and water.",
+    "createCardAndFinish": "Create Card & Finish",
+    "doneTitle": "You're All Set!",
+    "doneDescription": "Your first topic and card are ready. Start a study session or explore the dashboard.",
+    "doneConnectTip": "Tip: Connect Claude in Settings for AI-powered card creation.",
+    "startStudying": "Start Studying",
+    "goToDashboard": "Go to Dashboard"
   },
   "common": {
     "back": "Back",

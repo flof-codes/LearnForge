@@ -20,6 +20,8 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
   const { card_id, bloom_level, rating, question_text, skip_bloom, modality: rawModality, answer_expected, user_answer } = input;
 
   if (!card_id) throw new ValidationError("card_id is required");
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(card_id)) throw new ValidationError("card_id must be a valid UUID");
   if (bloom_level === undefined || bloom_level < 0 || bloom_level > 5) {
     throw new ValidationError("bloom_level must be between 0 and 5");
   }

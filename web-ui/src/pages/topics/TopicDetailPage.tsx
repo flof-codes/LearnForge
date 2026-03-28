@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Pencil, Trash2, Plus, FolderTree } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTopic, useDeleteTopic } from '../../hooks/useTopics';
+import { useStudySummary } from '../../hooks/useStudy';
 import { contextService } from '../../api/context';
 import { useQuery } from '@tanstack/react-query';
 import EditTopicModal from './EditTopicModal';
@@ -11,6 +12,7 @@ import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import DueForecastChart from '../../components/DueForecastChart';
+import BloomStateChart from '../../components/BloomStateChart';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
 
 type CardFilter = 'all' | 'new' | 'learning' | 'due';
@@ -39,6 +41,8 @@ export default function TopicDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [filter, setFilter] = useState<CardFilter>('all');
   const [sort, setSort] = useState<CardSort>('newest');
+
+  const { data: studySummary } = useStudySummary(id);
 
   const { data: contextData } = useQuery({
     queryKey: ['context', 'topic', id],
@@ -153,6 +157,9 @@ export default function TopicDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Bloom × Card State */}
+      {studySummary?.bloomStateMatrix && <BloomStateChart matrix={studySummary.bloomStateMatrix} />}
 
       {/* Due Forecast */}
       <DueForecastChart topicId={id} />

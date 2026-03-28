@@ -9,7 +9,7 @@ export interface BloomTransitionResult {
  * Rules:
  * - rating >= 3 (Good/Easy) at current_level → advance to min(current+1, 5)
  * - rating >= 3 below current_level → no change (restores confidence)
- * - rating <= 2 (Again/Hard) → drop to max(review_level - 1, 0)
+ * - rating <= 2 (Again/Hard) → drop to max(current_level - 1, 0)
  * - highest_reached is updated if current exceeds it
  */
 export function computeBloomTransition(

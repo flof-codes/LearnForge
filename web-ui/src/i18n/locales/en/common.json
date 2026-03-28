@@ -37,7 +37,9 @@
     "email": "Email",
     "password": "Password",
     "name": "Name",
-    "passwordHint": "At least 8 characters"
+    "passwordHint": "At least 8 characters",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed"
   },
   "language": {
     "en": "EN",
