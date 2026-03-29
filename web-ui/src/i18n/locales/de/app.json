@@ -15,6 +15,14 @@
     "evaluate": "Bewerten",
     "create": "Erschaffen"
   },
+  "bloomDesc": {
+    "0": "Fakten und Definitionen abrufen",
+    "1": "Konzepte in eigenen Worten erklären",
+    "2": "Wissen in neuen Situationen anwenden",
+    "3": "Vergleichen, gegenüberstellen und Muster erkennen",
+    "4": "Entscheidungen beurteilen und begründen",
+    "5": "Etwas Neues entwerfen und aufbauen"
+  },
   "fsrs": {
     "new": "Neu",
     "learning": "Lernend",
@@ -29,6 +37,14 @@
     "young": "Jung",
     "mature": "Reif",
     "recall": "Abrufen"
+  },
+  "cardStateDesc": {
+    "new": "Noch nie abgefragt — wartet auf erste Lernsitzung",
+    "learning": "Wird zum ersten Mal gelernt",
+    "relearning": "Wurde vergessen — zurück zu kurzen Intervallen",
+    "recall": "Gelernt und zur Wiederholung eingeplant",
+    "young": "Richtig beantwortet, aber Intervalle noch unter 21 Tagen",
+    "mature": "Stabiles Wissen — Intervalle von 21+ Tagen"
   },
   "ratings": {
     "again": "Nochmal",

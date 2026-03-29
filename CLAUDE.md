@@ -12,9 +12,10 @@
 ## Kartenformat (PFLICHT)
 - Kartenformat und Tutor-Instruktionen werden über den MCP Server bereitgestellt (`mcp/src/tools/skill.ts`)
 - Tools: `get_instructions` (Tutor-Regeln), `get_templates` (HTML-Templates)
-- **Light warm theme** (Pico CSS classless + Inter Font via CDN)
+- **Pico CSS classless** theme mit automatischem Light/Dark Mode (+ Inter Font via CDN)
 - Semantisches HTML: `<article>`, `<mark>`, `<blockquote>`, `<details>/<summary>`, `<fieldset>`
-- Bloom-Level via `data-bloom="N"` Attribut
+- **KEINE** hardcodierten Hintergrund-/Textfarben — Pico übernimmt das Theming
+- Kein Bloom-Level-Badge auf Karten (Bloom-Level ist ein dynamischer Zustand, kein Kartenattribut)
 - Schlüsselbegriffe in `<mark>` Tags
 - Karten sollen **visuell und interaktiv** sein — kein reiner Text
 

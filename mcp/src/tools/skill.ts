@@ -250,7 +250,7 @@ If the user says they don't know or asks for explanation:
 
 ## Visual Style (Quick Reference)
 
-Light warm theme via Pico CSS (classless). Key colors: article bg #fafaf9, accent amber #d97706, accent teal #0d9488. Use semantic HTML — \`<article>\`, \`<mark>\`, \`<blockquote>\`, \`<details>/<summary>\`. Bloom level via \`data-bloom="N"\` attribute.
+Pico CSS classless theme with automatic light/dark mode support. Accent colors: amber #d97706, teal #0d9488. Use semantic HTML — \`<article>\`, \`<mark>\`, \`<blockquote>\`, \`<details>/<summary>\`. Do NOT hardcode surface or text colors — let Pico handle theming. No bloom badge on cards (bloom level is a dynamic state, not a card property).
 
 **Formulas:** Always use KaTeX from CDN (cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/) with \`$$...$$\` delimiters. HTML hacks like <sup>/<sub> render inconsistently and break with complex expressions.
 
@@ -292,14 +292,6 @@ const SHARED_HEAD = `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/a
 :root{--pico-font-family:'Inter',sans-serif;--pico-font-size:93.75%}
 html,body{margin:0;padding:0;background:transparent}
 body>main{margin:0;padding:0;max-width:none}
-[data-bloom]{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-[data-bloom="0"]{background:#fef3c7;color:#92400e}
-[data-bloom="1"]{background:#ccfbf1;color:#115e59}
-[data-bloom="2"]{background:#e0e7ff;color:#3730a3}
-[data-bloom="3"]{background:#fce7f3;color:#9d174d}
-[data-bloom="4"]{background:#ede9fe;color:#5b21b6}
-[data-bloom="5"]{background:#fae8ff;color:#86198f}
-article{border:1px solid #e7e5e4;background:#fafaf9}
 blockquote{border-left-color:#d97706}
 button{background:#d97706 !important;border-color:#d97706 !important}
 button:hover{background:#b45309 !important}
@@ -312,10 +304,10 @@ button:hover{background:#b45309 !important}
 const TEMPLATES: Record<string, { description: string; variables: string; html: string }> = {
   mcq: {
     description: "Multiple choice question with native checkboxes. Front side: user selects correct answers, clicks Check. Uses <article>, <fieldset>, <label> for semantic structure. Pair with a visual-explain back side.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}} (e.g. 'Remember'), {{QUESTION}}, {{CONTEXT}} (optional blockquote), {{OPTIONS}} (checkboxes with data-correct), {{FEEDBACK}} (shown on perfect score)",
+    variables: "{{QUESTION}}, {{CONTEXT}} (optional blockquote), {{OPTIONS}} (checkboxes with data-correct), {{FEEDBACK}} (shown on perfect score)",
     html: `<style>
 fieldset{border:none;padding:0;margin:0 0 8px}
-fieldset label{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border:1px solid #d6d3d1;margin:6px 0;cursor:pointer;transition:all .15s;width:100% !important;max-width:100% !important;background:white}
+fieldset label{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border:1px solid #d6d3d1;margin:6px 0;cursor:pointer;transition:all .15s;width:100% !important;max-width:100% !important}
 fieldset label:hover{border-color:#d97706;background:#fffbeb}
 fieldset label.correct{border-color:#0d9488;background:#ccfbf1}
 fieldset label.wrong{border-color:#e11d48;background:#fff1f2}
@@ -327,7 +319,6 @@ fieldset label.disabled{pointer-events:none}
 .fb.fail{display:block;background:#fff1f2;border:1px solid #e11d48;color:#9f1239}
 </style>
 <article>
-  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
   <!-- Optional: <blockquote>{{CONTEXT}}</blockquote> -->
   <p>{{QUESTION}}</p>
   <small>Select all that apply</small>
@@ -346,9 +337,8 @@ function lfCheck(){const labels=document.querySelectorAll('#opts label');const b
 
   "open-response": {
     description: "Static question prompt for the front side — no interactive elements. The user answers in chat via ask_user_input_v0, not through card HTML. Uses <article> with <blockquote> for context.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{CONTEXT}} (blockquote text)",
+    variables: "{{QUESTION}}, {{CONTEXT}} (blockquote text)",
     html: `<article>
-  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
   <blockquote>{{CONTEXT}}</blockquote>
   <p>{{QUESTION}}</p>
 </article>`,
@@ -361,13 +351,11 @@ function lfCheck(){const labels=document.querySelectorAll('#opts label');const b
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
-details{margin:10px 0;border:1px solid #e7e5e4;border-radius:12px;background:white;overflow:hidden}
+details{margin:10px 0;border-radius:12px;overflow:hidden}
 summary{display:flex;align-items:center;padding:14px 16px;cursor:pointer;font-weight:600;font-size:.95em;list-style:none}
-summary:hover{background:#f5f5f4}
 summary::-webkit-details-marker{display:none}
-details[open] summary{background:#f5f5f4;border-bottom:1px solid #e7e5e4}
 details>div{padding:14px 16px}
-details p{margin:0 0 8px;font-size:.9em;line-height:1.65;color:#44403c}
+details p{margin:0 0 8px;font-size:.9em;line-height:1.65}
 details p:last-child{margin-bottom:0}
 .formula-block{text-align:center;margin:12px 0;padding:14px;background:#fefce8;border-radius:10px;border:1px solid #fde68a}
 </style>
@@ -390,11 +378,11 @@ details p:last-child{margin-bottom:0}
 
   "label-diagram": {
     description: "Drag-and-drop label placement on SVG diagrams. Uses .dz drop zones in SVG foreignObject and .chip draggable labels. Event delegation on .diagram container handles all drag events.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{SVG_DIAGRAM}} (inline SVG with foreignObject .dz drop zones), {{LABELS}} (array of {label, text} as .chip spans)",
+    variables: "{{QUESTION}}, {{SVG_DIAGRAM}} (inline SVG with foreignObject .dz drop zones), {{LABELS}} (array of {label, text} as .chip spans)",
     html: `<style>
 .diagram{background:#fffbeb;border-radius:12px;padding:14px;border:1px solid #fde68a;margin-bottom:24px}
 .diagram svg{width:100%;max-height:260px;display:block}
-.dz{display:inline-flex;align-items:center;justify-content:center;min-width:90px;min-height:28px;padding:4px 10px;border:2px dashed #d6d3d1;color:#a8a29e;background:white;border-radius:8px;font-size:.8em;transition:all .15s}
+.dz{display:inline-flex;align-items:center;justify-content:center;min-width:90px;min-height:28px;padding:4px 10px;border:2px dashed #d6d3d1;color:#a8a29e;border-radius:8px;font-size:.8em;transition:all .15s}
 .dz.over{border-color:#0d9488;background:#f0fdfa}
 .dz.filled{border-style:solid;border-color:#0d9488;color:#115e59;background:#ccfbf1;font-weight:600}
 .dz.correct{border-color:#059669;color:#065f46;background:#dcfce7}
@@ -407,7 +395,6 @@ details p:last-child{margin-bottom:0}
 .fb.partial{display:block;background:#fef3c7;border:1px solid #d97706;color:#92400e}
 </style>
 <article>
-  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
   <p>{{QUESTION}}</p>
   <div class="diagram">
     <!-- Replace SVG and drop zones with topic-specific diagram -->
@@ -433,7 +420,7 @@ function lfCheck(){const zones=document.querySelectorAll('.dz');let c=0,t=zones.
 
   slider: {
     description: "Range input sliders for value manipulation. Use for back side or Apply+ level Bloom questions. NOT for initial front_html. Uses Pico CSS native range styling.",
-    variables: "{{BLOOM_LEVEL}} (0-5), {{BLOOM_TAG}}, {{QUESTION}}, {{SLIDERS}} (array of {name, label, unit, min, max, default, step?}), {{FORMULA_JS}} (JS expression), {{TARGET_VALUE}}, {{RESULT_UNIT}}, {{TARGET_TOLERANCE}}",
+    variables: "{{QUESTION}}, {{SLIDERS}} (array of {name, label, unit, min, max, default, step?}), {{FORMULA_JS}} (JS expression), {{TARGET_VALUE}}, {{RESULT_UNIT}}, {{TARGET_TOLERANCE}}",
     html: `<style>
 .result{text-align:center;margin:20px 0;padding:18px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a}
 .result-val{font-size:2em;font-weight:800;color:#b45309}
@@ -445,7 +432,6 @@ function lfCheck(){const zones=document.querySelectorAll('.dz');let c=0,t=zones.
 .target.far{background:#fff1f2;color:#9f1239}
 </style>
 <article>
-  <span data-bloom="{{BLOOM_LEVEL}}">{{BLOOM_TAG}}</span>
   <p>{{QUESTION}}</p>
   <!-- Replace with topic-specific sliders -->
   <label>{{SLIDER_LABEL}} <span id="sv-{{SLIDER_NAME}}">{{SLIDER_DEFAULT}} {{SLIDER_UNIT}}</span>

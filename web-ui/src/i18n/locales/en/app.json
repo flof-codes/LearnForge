@@ -15,6 +15,14 @@
     "evaluate": "Evaluate",
     "create": "Create"
   },
+  "bloomDesc": {
+    "0": "Recall facts and definitions",
+    "1": "Explain concepts in your own words",
+    "2": "Use knowledge in new situations",
+    "3": "Compare, contrast, and find patterns",
+    "4": "Judge and justify decisions",
+    "5": "Design and build something new"
+  },
   "fsrs": {
     "new": "New",
     "learning": "Learning",
@@ -29,6 +37,14 @@
     "young": "Young",
     "mature": "Mature",
     "recall": "Recall"
+  },
+  "cardStateDesc": {
+    "new": "Never reviewed — waiting for first study session",
+    "learning": "Being learned for the first time",
+    "relearning": "Was forgotten — back to short intervals",
+    "recall": "Learned and scheduled for future recall",
+    "young": "Correct answers, but intervals still under 21 days",
+    "mature": "Stable knowledge — intervals of 21+ days"
   },
   "ratings": {
     "again": "Again",
