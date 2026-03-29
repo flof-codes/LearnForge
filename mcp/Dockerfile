@@ -12,7 +12,7 @@ RUN npm ci --ignore-scripts && npm rebuild argon2 sharp
 
 COPY core/ core/
 COPY mcp/ mcp/
-RUN npm run -w core build && npm run -w mcp build
+RUN npm run -w core build && npm run -w mcp build && mkdir -p mcp/node_modules
 
 FROM node:24-slim
 

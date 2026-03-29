@@ -153,6 +153,7 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
         WHEN fs.state = 0 THEN 'new'
         WHEN fs.state = 1 THEN 'learning'
         WHEN fs.state = 3 THEN 'relearning'
+        WHEN fs.state = 2 AND fs.due <= NOW() THEN 'recall'
         WHEN fs.state = 2 AND fs.stability < 21 THEN 'young'
         WHEN fs.state = 2 AND fs.stability >= 21 THEN 'mature'
       END AS card_state,
@@ -167,7 +168,7 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
 
   const bloomStateMatrix: Record<number, Record<string, number>> = {};
   for (let i = 0; i <= 5; i++) {
-    bloomStateMatrix[i] = { new: 0, learning: 0, relearning: 0, young: 0, mature: 0 };
+    bloomStateMatrix[i] = { new: 0, learning: 0, relearning: 0, recall: 0, young: 0, mature: 0 };
   }
   for (const row of matrixResult.rows) {
     if (bloomStateMatrix[row.bloom_level]) {

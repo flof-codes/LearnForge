@@ -12,7 +12,7 @@ RUN npm ci --ignore-scripts && npm rebuild argon2 sharp
 
 COPY core/ core/
 COPY api/ api/
-RUN npm run -w core build && npm run -w api build
+RUN npm run -w core build && npm run -w api build && mkdir -p api/node_modules
 
 FROM node:24-slim
 

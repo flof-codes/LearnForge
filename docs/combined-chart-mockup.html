@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Combined Chart Mockups</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #f8f6f2; color: #2c2c2c; padding: 40px; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 32px; }
+  h2 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 16px; }
+  .card { background: #fff; border: 1px solid #e5e2db; border-radius: 12px; padding: 24px; margin-bottom: 40px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Option A */
+  .stacked-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .stacked-label { font-size: 12px; width: 80px; text-align: right; flex-shrink: 0; }
+  .stacked-bar-track { flex: 1; height: 22px; background: #f0ede8; border-radius: 11px; overflow: hidden; display: flex; }
+  .stacked-bar-track > div { height: 100%; transition: width 0.4s; }
+  .stacked-count { font-size: 11px; color: #888; width: 28px; text-align: right; flex-shrink: 0; }
+
+  /* Option B */
+  .heatmap { display: grid; gap: 3px; }
+  .heatmap-header { font-size: 10px; color: #888; text-align: center; padding: 4px; font-weight: 500; }
+  .heatmap-row-label { font-size: 12px; text-align: right; padding-right: 8px; display: flex; align-items: center; justify-content: flex-end; }
+  .heatmap-cell { border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; min-height: 36px; transition: transform 0.15s; }
+  .heatmap-cell:hover { transform: scale(1.08); }
+</style>
+</head>
+<body>
+
+<h1>Combined Card States + Bloom — Mockups</h1>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- OPTION A: Stacked horizontal bars          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card">
+  <h2>Option A — Stacked Bars (Bloom × Card State)</h2>
+
+  <div id="stacked-chart"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#56d364"></div> Remember</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#58c4dc"></div> Understand</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b9cf0"></div> Apply</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#b0a4e0"></div> Analyze</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c8b8f0"></div> Evaluate</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d4b8f0"></div> Create</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- OPTION B: Heatmap grid                     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card">
+  <h2>Option B — Heatmap Grid (Bloom × Card State)</h2>
+
+  <div id="heatmap-chart"></div>
+</div>
+
+<script>
+// ── Dummy data: matrix[cardState][bloomLevel] = count ──
+// Rows = card states, segments = bloom levels
+const DATA = [
+  // [Remember, Understand, Apply, Analyze, Evaluate, Create]
+  { label: 'New',         color: '#58a6ff', counts: [12, 8, 6, 4, 3, 2] },
+  { label: 'Learning',    color: '#d29922', counts: [ 5, 7, 4, 3, 2, 1] },
+  { label: 'Relearning',  color: '#f85149', counts: [ 2, 1, 3, 1, 0, 0] },
+  { label: 'Young',       color: '#56d364', counts: [18,14, 8, 5, 2, 1] },
+  { label: 'Mature',      color: '#bc8cff', counts: [30,20,10, 4, 1, 0] },
+];
+
+const BLOOM_COLORS = ['#56d364', '#58c4dc', '#8b9cf0', '#b0a4e0', '#c8b8f0', '#d4b8f0'];
+const BLOOM_LABELS = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'];
+const maxRow = Math.max(...DATA.map(r => r.counts.reduce((a, b) => a + b, 0)));
+
+// ── Option A: Stacked bars ──
+const stackedEl = document.getElementById('stacked-chart');
+DATA.forEach(row => {
+  const total = row.counts.reduce((a, b) => a + b, 0);
+  const barSegments = row.counts.map((c, i) => {
+    const pct = total > 0 ? (c / maxRow) * 100 : 0;
+    return c > 0 ? `<div style="width:${pct}%;background:${BLOOM_COLORS[i]}" title="${BLOOM_LABELS[i]}: ${c}"></div>` : '';
+  }).join('');
+
+  stackedEl.innerHTML += `
+    <div class="stacked-row">
+      <span class="stacked-label" style="color:${row.color}">${row.label}</span>
+      <div class="stacked-bar-track">${barSegments}</div>
+      <span class="stacked-count">${total}</span>
+    </div>`;
+});
+
+// ── Option B: Heatmap ──
+const heatmapEl = document.getElementById('heatmap-chart');
+const allCounts = DATA.flatMap(r => r.counts);
+const maxCount = Math.max(...allCounts);
+
+// grid: 7 columns (label + 6 bloom levels), 6 rows (header + 5 states)
+heatmapEl.style.gridTemplateColumns = '80px repeat(6, 1fr)';
+
+// header row
+heatmapEl.innerHTML = '<div></div>' + BLOOM_LABELS.map((s, i) => `<div class="heatmap-header" style="color:${BLOOM_COLORS[i]}">${s}</div>`).join('');
+
+DATA.forEach(row => {
+  heatmapEl.innerHTML += `<div class="heatmap-row-label" style="color:${row.color}">${row.label}</div>`;
+  row.counts.forEach((c, i) => {
+    const opacity = maxCount > 0 ? 0.12 + (c / maxCount) * 0.88 : 0;
+    const textColor = opacity > 0.5 ? '#fff' : '#555';
+    heatmapEl.innerHTML += `<div class="heatmap-cell" style="background:${BLOOM_COLORS[i]};opacity:${c === 0 ? 0.08 : opacity};color:${textColor}">${c > 0 ? c : ''}</div>`;
+  });
+});
+heatmapEl.classList.add('heatmap');
+</script>
+
+</body>
+</html>

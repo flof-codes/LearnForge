@@ -87,14 +87,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Topic Distribution */}
-      {topics && topics.length > 0 && <TopicPieChart topics={topics} />}
-
       {/* Due Forecast */}
       <DueForecastChart />
 
       {/* Bloom × Card State */}
       {summary?.bloomStateMatrix && <BloomStateChart matrix={summary.bloomStateMatrix} />}
+
+      {/* Topic Distribution */}
+      {topics && topics.length > 0 && <TopicPieChart topics={topics} />}
 
 
       {/* Quick actions */}

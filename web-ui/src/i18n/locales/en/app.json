@@ -27,7 +27,8 @@
     "learning": "Learning",
     "relearning": "Relearning",
     "young": "Young",
-    "mature": "Mature"
+    "mature": "Mature",
+    "recall": "Recall"
   },
   "ratings": {
     "again": "Again",
