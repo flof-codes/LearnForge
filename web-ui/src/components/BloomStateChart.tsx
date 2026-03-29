@@ -28,6 +28,10 @@ export default function BloomStateChart({ matrix, title }: Props) {
   const maxRow = Math.max(...rowTotals, 1);
   const totalCards = rowTotals.reduce((a, b) => a + b, 0);
 
+  const stateTotals = Object.fromEntries(
+    STATE_KEYS.map(k => [k, levels.reduce((sum, l) => sum + ((matrix[String(l)] ?? {})[k] ?? 0), 0)])
+  );
+
   if (totalCards === 0) return null;
 
   return (
@@ -66,10 +70,10 @@ export default function BloomStateChart({ matrix, title }: Props) {
         })}
       </div>
       <div className="flex flex-wrap gap-x-5 gap-y-1 mt-4">
-        {STATE_KEYS.map(state => (
+        {STATE_KEYS.filter(state => stateTotals[state] > 0).map(state => (
           <div key={state} className="flex items-center gap-2 text-xs text-text-muted">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STATE_COLORS[state] }} />
-            <span>{t(`cardStates.${state}`)}</span>
+            <span>{t(`cardStates.${state}`)} {stateTotals[state]}</span>
           </div>
         ))}
       </div>
