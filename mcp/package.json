@@ -4,14 +4,15 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js"
     },
     "./http": {
       "types": "./dist/http.d.ts",
-      "default": "./dist/http.js"
+      "import": "./dist/http.js"
     }
   },
   "scripts": {
