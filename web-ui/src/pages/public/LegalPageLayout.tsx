@@ -16,9 +16,17 @@ export default function LegalPageLayout({ title, lastUpdated, slug, children }: 
     <>
       <Helmet>
         <html lang={i18n.language} />
-        <title>{title} — LearnForge</title>
+        <title>{`${title} — LearnForge`}</title>
         {description && <meta name="description" content={description} />}
         <link rel="canonical" href={`https://learnforge.eu/${slug}`} />
+        <meta property="og:title" content={`${title} — LearnForge`} />
+        {description && <meta property="og:description" content={description} />}
+        <meta property="og:url" content={`https://learnforge.eu/${slug}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="LearnForge" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`${title} — LearnForge`} />
+        {description && <meta name="twitter:description" content={description} />}
       </Helmet>
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-semibold text-text-primary mb-2">{title}</h1>

@@ -60,7 +60,7 @@ export default function LandingPage() {
     <>
       <Helmet>
         <html lang={i18n.language} />
-        <title>LearnForge — {t('meta.title')}</title>
+        <title>{`LearnForge — ${t('meta.title')}`}</title>
         <meta name="description" content={t('meta.description')} />
         <link rel="canonical" href="https://learnforge.eu/" />
         {/* Open Graph */}

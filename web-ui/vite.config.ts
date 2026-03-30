@@ -2,11 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   envPrefix: ['VITE_', 'OPERATOR_'],
   plugins: [react(), tailwindcss()],
   build: {
-    rollupOptions: {
+    rollupOptions: isSsrBuild ? {} : {
       output: {
         manualChunks: {
           codemirror: ['codemirror', '@codemirror/lang-html', '@codemirror/theme-one-dark', '@codemirror/state', '@codemirror/view'],
@@ -15,4 +15,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

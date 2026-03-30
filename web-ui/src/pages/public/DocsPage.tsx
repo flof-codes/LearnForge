@@ -5,15 +5,25 @@ import { Zap, Link as LinkIcon, GraduationCap, Sparkles, Pencil, FolderTree, Mai
 
 export default function DocsPage() {
   const { t, i18n } = useTranslation('legal');
-  const mcpUrl = `${window.location.origin}/mcp`;
+  const mcpUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/mcp`
+    : 'https://learnforge.eu/mcp';
 
   return (
     <>
       <Helmet>
         <html lang={i18n.language} />
-        <title>{t('docs.title')} — LearnForge</title>
+        <title>{`${t('docs.title')} — LearnForge`}</title>
         <meta name="description" content={t('meta.docsDescription', { defaultValue: '' })} />
         <link rel="canonical" href="https://learnforge.eu/docs" />
+        <meta property="og:title" content={`${t('docs.title')} — LearnForge`} />
+        <meta property="og:description" content={t('meta.docsDescription', { defaultValue: '' })} />
+        <meta property="og:url" content="https://learnforge.eu/docs" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="LearnForge" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`${t('docs.title')} — LearnForge`} />
+        <meta name="twitter:description" content={t('meta.docsDescription', { defaultValue: '' })} />
       </Helmet>
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-semibold text-text-primary mb-2">{t('docs.title')}</h1>

@@ -19,7 +19,7 @@ COPY web-ui/package.json web-ui/
 RUN npm install -w web-ui --no-audit --no-fund
 
 COPY web-ui/ web-ui/
-RUN npm run -w web-ui build
+RUN npm run -w web-ui build && rm -rf web-ui/dist/server
 
 # Stage 2: Serve
 FROM node:24-slim

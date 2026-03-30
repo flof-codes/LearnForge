@@ -16,6 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const STORAGE_KEY = 'learnforge_token';
+const isBrowser = typeof window !== 'undefined';
 
 async function fetchUser(
   setUser: (u: User | null) => void,
@@ -33,9 +34,9 @@ async function fetchUser(
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
+  const [token, setToken] = useState<string | null>(() => isBrowser ? localStorage.getItem(STORAGE_KEY) : null);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(!!localStorage.getItem(STORAGE_KEY));
+  const [isLoading, setIsLoading] = useState(isBrowser ? !!localStorage.getItem(STORAGE_KEY) : false);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -54,13 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const login = useCallback((newToken: string) => {
-    localStorage.setItem(STORAGE_KEY, newToken);
+    if (isBrowser) localStorage.setItem(STORAGE_KEY, newToken);
     setIsLoading(true);
     setToken(newToken);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    if (isBrowser) localStorage.removeItem(STORAGE_KEY);
     setToken(null);
     setUser(null);
     setIsLoading(false);
