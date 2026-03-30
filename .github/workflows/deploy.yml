@@ -107,6 +107,6 @@ jobs:
           ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
             cd /opt/learnforge &&
             GIT_SSH_COMMAND="ssh -i /home/github_deploy/.ssh/github_learnforge_access -o StrictHostKeyChecking=no" git pull origin main &&
-            sudo docker compose -f docker-compose.prod.yml down &&
+            sudo docker compose -f docker-compose.prod.yml down --remove-orphans &&
             sudo docker compose -f docker-compose.prod.yml up --build -d
           '
