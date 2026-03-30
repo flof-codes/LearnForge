@@ -4,6 +4,12 @@ import { stripHtml } from "../lib/strip-html.js";
 let pipeline: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let pipelinePromise: Promise<any> | null = null;
+let disableEmbeddingsLogged = false;
+
+function embeddingsDisabled(): boolean {
+  const value = process.env.LEARNFORGE_DISABLE_EMBEDDINGS;
+  return value === "1" || value === "true";
+}
 
 async function getEmbeddingPipeline() {
   if (pipeline) return pipeline;
@@ -25,6 +31,14 @@ export function buildEmbeddingText(concept: string, tags: string[], frontHtml: s
 }
 
 export async function computeEmbedding(text: string): Promise<number[] | null> {
+  if (embeddingsDisabled()) {
+    if (!disableEmbeddingsLogged) {
+      console.warn("[embeddings] Disabled via LEARNFORGE_DISABLE_EMBEDDINGS");
+      disableEmbeddingsLogged = true;
+    }
+    return null;
+  }
+
   try {
     const extractor = await getEmbeddingPipeline();
     const output = await extractor(text, { pooling: "mean", normalize: true });

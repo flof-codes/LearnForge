@@ -6,7 +6,7 @@ import type { OAuthServerProvider, AuthorizationParams } from "@modelcontextprot
 import type { OAuthRegisteredClientsStore } from "@modelcontextprotocol/sdk/server/auth/clients.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { OAuthClientInformationFull, OAuthTokens, OAuthTokenRevocationRequest } from "@modelcontextprotocol/sdk/shared/auth.js";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { users, oauthClients, oauthAuthorizationCodes, oauthTokens } from "@learnforge/core";
 import { renderLoginPage } from "./login-page.js";
 
@@ -37,14 +37,16 @@ const pendingSessions = new Map<string, PendingAuth>();
 // --- Clients store ---
 
 class LearnForgeClientsStore implements OAuthRegisteredClientsStore {
+  constructor(private db: Db) {}
+
   async getClient(clientId: string): Promise<OAuthClientInformationFull | undefined> {
-    const [row] = await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId));
+    const [row] = await this.db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId));
     if (!row) return undefined;
     return this.rowToClientInfo(row);
   }
 
   async registerClient(client: OAuthClientInformationFull): Promise<OAuthClientInformationFull> {
-    await db.insert(oauthClients).values({
+    await this.db.insert(oauthClients).values({
       clientId: client.client_id,
       clientSecret: client.client_secret ?? null,
       clientSecretExpiresAt: client.client_secret_expires_at ?? null,
@@ -80,7 +82,11 @@ class LearnForgeClientsStore implements OAuthRegisteredClientsStore {
 // --- OAuth Server Provider ---
 
 export class LearnForgeOAuthProvider implements OAuthServerProvider {
-  readonly clientsStore = new LearnForgeClientsStore();
+  readonly clientsStore: LearnForgeClientsStore;
+
+  constructor(private db: Db) {
+    this.clientsStore = new LearnForgeClientsStore(db);
+  }
 
   async authorize(
     client: OAuthClientInformationFull,
@@ -103,7 +109,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     _client: OAuthClientInformationFull,
     authorizationCode: string,
   ): Promise<string> {
-    const [row] = await db
+    const [row] = await this.db
       .select({ codeChallenge: oauthAuthorizationCodes.codeChallenge })
       .from(oauthAuthorizationCodes)
       .where(eq(oauthAuthorizationCodes.code, authorizationCode));
@@ -119,7 +125,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     _redirectUri?: string,
     _resource?: URL,
   ): Promise<OAuthTokens> {
-    const [codeRow] = await db
+    const [codeRow] = await this.db
       .select()
       .from(oauthAuthorizationCodes)
       .where(eq(oauthAuthorizationCodes.code, authorizationCode));
@@ -129,14 +135,14 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     if (codeRow.expiresAt < new Date()) throw new Error("Authorization code expired");
 
     // Delete used code
-    await db.delete(oauthAuthorizationCodes).where(eq(oauthAuthorizationCodes.code, authorizationCode));
+    await this.db.delete(oauthAuthorizationCodes).where(eq(oauthAuthorizationCodes.code, authorizationCode));
 
     // Generate tokens
     const accessTokenRaw = generateToken();
     const refreshTokenRaw = generateToken();
     const now = new Date();
 
-    await db.insert(oauthTokens).values([
+    await this.db.insert(oauthTokens).values([
       {
         token: sha256(accessTokenRaw),
         tokenType: "access",
@@ -173,7 +179,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     _resource?: URL,
   ): Promise<OAuthTokens> {
     const hash = sha256(refreshToken);
-    const [row] = await db.select().from(oauthTokens).where(eq(oauthTokens.token, hash));
+    const [row] = await this.db.select().from(oauthTokens).where(eq(oauthTokens.token, hash));
 
     if (!row) throw new Error("Invalid refresh token");
     if (row.tokenType !== "refresh") throw new Error("Not a refresh token");
@@ -182,7 +188,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     if (row.expiresAt < new Date()) throw new Error("Refresh token expired");
 
     // Revoke old refresh token
-    await db.update(oauthTokens).set({ revokedAt: new Date() }).where(eq(oauthTokens.token, hash));
+    await this.db.update(oauthTokens).set({ revokedAt: new Date() }).where(eq(oauthTokens.token, hash));
 
     // Issue new pair
     const accessTokenRaw = generateToken();
@@ -190,7 +196,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     const now = new Date();
     const finalScopes = scopes ?? row.scopes ?? [];
 
-    await db.insert(oauthTokens).values([
+    await this.db.insert(oauthTokens).values([
       {
         token: sha256(accessTokenRaw),
         tokenType: "access",
@@ -222,7 +228,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const hash = sha256(token);
-    const [row] = await db.select().from(oauthTokens).where(eq(oauthTokens.token, hash));
+    const [row] = await this.db.select().from(oauthTokens).where(eq(oauthTokens.token, hash));
 
     if (!row) throw new Error("Invalid access token");
     if (row.tokenType !== "access") throw new Error("Not an access token");
@@ -244,7 +250,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
     request: OAuthTokenRevocationRequest,
   ): Promise<void> {
     const hash = sha256(request.token);
-    await db
+    await this.db
       .update(oauthTokens)
       .set({ revokedAt: new Date() })
       .where(eq(oauthTokens.token, hash));
@@ -254,6 +260,7 @@ export class LearnForgeOAuthProvider implements OAuthServerProvider {
 // --- Login handler (called from POST /mcp/login) ---
 
 export async function handleLogin(
+  db: Db,
   body: { session_token?: string; email?: string; password?: string },
 ): Promise<{ redirect: string } | { html: string }> {
   const { session_token, email, password } = body;
@@ -322,7 +329,7 @@ export async function handleLogin(
 
 // --- Cleanup (call periodically) ---
 
-export async function cleanupExpiredOAuth(): Promise<void> {
+export async function cleanupExpiredOAuth(db: Db): Promise<void> {
   const now = new Date();
   const gracePeriod = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 

@@ -33,6 +33,7 @@ services:
       dockerfile: api/Dockerfile
     ports:
       - "3333:3000"
+      - "3001:3001"
     environment:
       DATABASE_URL: postgresql://learnforge:learnforge@db:5432/learnforge
       PORT: "3000"
@@ -44,6 +45,8 @@ services:
       STRIPE_PRICE_ID_MONTHLY: "${STRIPE_PRICE_ID_MONTHLY:-}"
       STRIPE_PRICE_ID_ANNUAL: "${STRIPE_PRICE_ID_ANNUAL:-}"
       APP_URL: "${APP_URL:-http://localhost:5173}"
+      MCP_PORT: "3001"
+      MCP_PUBLIC_URL: "http://localhost:3001/mcp"
     volumes:
       - ./data/images:/data/images
     depends_on:
@@ -66,23 +69,6 @@ services:
     depends_on:
       - api
     restart: unless-stopped
-
-  mcp:
-    build:
-      context: .
-      dockerfile: mcp/Dockerfile
-    ports:
-      - "3001:3001"
-    environment:
-      DATABASE_URL: postgresql://learnforge:learnforge@db:5432/learnforge
-      PORT: "3001"
-      IMAGE_PATH: /data/images
-      MCP_PUBLIC_URL: "http://localhost:3001/mcp"
-    volumes:
-      - ./data/images:/data/images
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
   pg_data:

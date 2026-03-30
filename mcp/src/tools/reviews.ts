@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { submitReview } from "@learnforge/core";
 
-export function registerReviewTools(server: McpServer, userId: string) {
+export function registerReviewTools(server: McpServer, db: Db, userId: string) {
   server.tool(
     "submit_review",
     "Submit a review for a card, updating FSRS scheduling and Bloom's taxonomy state. The modality parameter affects interval scheduling: 'chat' (AI open question, 1.2x interval), 'web' (self-rating, 0.95x), 'mcq' (AI multiple choice, 1.05x).",

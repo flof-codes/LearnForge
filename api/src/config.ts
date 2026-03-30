@@ -11,4 +11,6 @@ export const config = {
   stripePriceIdMonthly: process.env.STRIPE_PRICE_ID_MONTHLY ?? "",
   stripePriceIdAnnual: process.env.STRIPE_PRICE_ID_ANNUAL ?? "",
   appUrl: process.env.APP_URL ?? "http://localhost:5173",
+  mcpPort: parseInt(process.env.MCP_PORT ?? "3001", 10),
+  mcpPublicUrl: process.env.MCP_PUBLIC_URL ?? "http://localhost:3001/mcp",
 } as const;

@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { listTopics, getTopicTree, createTopic, updateTopic, deleteTopic } from "@learnforge/core";
 
-export function registerTopicTools(server: McpServer, userId: string) {
+export function registerTopicTools(server: McpServer, db: Db, userId: string) {
   // ── list_topics ──────────────────────────────────────────────────────
   server.tool(
     "list_topics",

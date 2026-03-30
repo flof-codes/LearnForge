@@ -40,7 +40,7 @@ describe("MCP Image Tools", () => {
 
   it("upload_image succeeds with a valid file from shared volume", async () => {
     // The setup.ts creates placeholder PNGs in the shared test-images volume.
-    // Both test-api and test-mcp mount this volume at /data/images.
+    // The test-api container mounts this volume at /data/images.
     // We use the existing placeholder file as the source.
     const filePath = "/data/images/30000000-0000-0000-0000-000000000002.png";
 

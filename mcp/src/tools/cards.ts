@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { createCard, getCard, updateCard, deleteCard } from "@learnforge/core";
 
-export function registerCardTools(server: McpServer, userId: string) {
+export function registerCardTools(server: McpServer, db: Db, userId: string) {
   // ── create_card ──────────────────────────────────────────────────────
   server.tool(
     "create_card",

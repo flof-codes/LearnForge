@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { getTopicContext, getSimilarCards, searchCards } from "@learnforge/core";
 
-export function registerContextTools(server: McpServer, userId: string) {
+export function registerContextTools(server: McpServer, db: Db, userId: string) {
   server.tool(
     "get_topic_context",
     "Get all cards for a topic and its descendants (recursive). Returns card concept, tags, bloom state, and review history.",

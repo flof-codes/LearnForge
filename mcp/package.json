@@ -4,6 +4,10 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./http": "./dist/http.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",

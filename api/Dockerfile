@@ -11,8 +11,10 @@ RUN apt-get update && apt-get install -y python3 make g++ --no-install-recommend
 RUN npm ci --ignore-scripts && npm rebuild argon2 sharp
 
 COPY core/ core/
+COPY mcp/ mcp/
 COPY api/ api/
-RUN npm run -w core build && npm run -w api build && mkdir -p api/node_modules
+RUN npm run -w core build && npm run -w mcp build && npm run -w api build \
+    && mkdir -p api/node_modules mcp/node_modules
 
 FROM node:24-slim
 
@@ -23,6 +25,9 @@ COPY --from=build /app/package.json package.json
 COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/core/package.json core/package.json
 COPY --from=build /app/core/dist core/dist
+COPY --from=build /app/mcp/package.json mcp/package.json
+COPY --from=build /app/mcp/node_modules mcp/node_modules
+COPY --from=build /app/mcp/dist mcp/dist
 COPY --from=build /app/api/package.json api/package.json
 COPY --from=build /app/api/node_modules api/node_modules
 COPY --from=build /app/api/dist api/dist
@@ -30,6 +35,6 @@ COPY --from=build /app/api/drizzle api/drizzle
 
 RUN mkdir -p /data/images
 
-EXPOSE 3000
+EXPOSE 3000 3001
 WORKDIR /app/api
 CMD ["node", "dist/index.js"]

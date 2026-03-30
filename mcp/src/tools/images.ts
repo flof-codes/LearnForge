@@ -4,9 +4,8 @@ import { randomUUID } from "node:crypto";
 import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { eq, sql } from "drizzle-orm";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { images } from "@learnforge/core";
-import { config } from "../config.js";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -30,7 +29,7 @@ function mimeToExt(mime: string): string {
   return map[mime] ?? "";
 }
 
-export function registerImageTools(server: McpServer, userId: string) {
+export function registerImageTools(server: McpServer, db: Db, userId: string, imagePath: string) {
   server.tool(
     "upload_image",
     "Upload an image from a local file path. Supports png, jpg, jpeg, gif, webp, and svg.",
@@ -54,7 +53,7 @@ export function registerImageTools(server: McpServer, userId: string) {
         // Restrict file reads to allowed directories to prevent arbitrary file exfiltration
         const resolved = path.resolve(file_path);
         const allowedPrefixes = [
-          path.resolve(config.imagePath),
+          path.resolve(imagePath),
           path.resolve(process.env.HOME ?? "/nonexistent"),
           "/tmp",
         ];
@@ -85,11 +84,11 @@ export function registerImageTools(server: McpServer, userId: string) {
           };
         }
 
-        await mkdir(config.imagePath, { recursive: true });
+        await mkdir(imagePath, { recursive: true });
 
         const fileId = randomUUID();
         const storedFilename = `${fileId}${ext}`;
-        const destPath = path.join(config.imagePath, storedFilename);
+        const destPath = path.join(imagePath, storedFilename);
         await writeFile(destPath, fileData);
 
         const [row] = await db
@@ -139,7 +138,7 @@ export function registerImageTools(server: McpServer, userId: string) {
 
         await db.delete(images).where(eq(images.id, image_id));
 
-        const filePath = path.join(config.imagePath, `${row.id}${mimeToExt(row.mimeType)}`);
+        const filePath = path.join(imagePath, `${row.id}${mimeToExt(row.mimeType)}`);
         await unlink(filePath).catch(() => {});
 
         return { content: [{ type: "text" as const, text: JSON.stringify({ deleted: image_id }, null, 2) }] };

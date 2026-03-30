@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { db } from "../db/connection.js";
+import type { Db } from "@learnforge/core";
 import { getStudyCards, getStudySummary, getDueForecast } from "@learnforge/core";
 
-export function registerStudyTools(server: McpServer, userId: string) {
+export function registerStudyTools(server: McpServer, db: Db, userId: string) {
   server.tool(
     "get_study_cards",
     "Get cards ready to study (new + due for review), optionally filtered by topic (includes descendants)",

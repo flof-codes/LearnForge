@@ -153,77 +153,6 @@ async function warmupEmbeddings(token: string): Promise<void> {
 }
 
 /**
- * Warmup: trigger embedding model download in the MCP container.
- * The API and MCP containers are separate processes, so each needs its own
- * model loaded. A search_cards call forces computeEmbedding(query).
- */
-async function warmupMcpEmbeddings(): Promise<void> {
-  console.log("  [..] Warming up MCP embedding model...");
-
-  const MCP_API_KEY = "test-mcp-api-key-0099";
-  const headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json, text/event-stream",
-    Authorization: `Bearer ${MCP_API_KEY}`,
-  };
-
-  // 1. Initialize MCP session
-  const initRes = await fetch(`${MCP_URL}/mcp`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: 1,
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-03-26",
-        capabilities: {},
-        clientInfo: { name: "warmup", version: "1.0.0" },
-      },
-    }),
-  });
-
-  if (!initRes.ok) {
-    console.warn(`  [!!] MCP warmup init failed: ${initRes.status}`);
-    return;
-  }
-
-  const sessionId = initRes.headers.get("mcp-session-id");
-
-  // 2. Call search_cards to trigger model download
-  const searchRes = await fetch(`${MCP_URL}/mcp`, {
-    method: "POST",
-    headers: {
-      ...headers,
-      ...(sessionId ? { "mcp-session-id": sessionId } : {}),
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: 2,
-      method: "tools/call",
-      params: { name: "search_cards", arguments: { query: "warmup" } },
-    }),
-  });
-
-  if (!searchRes.ok) {
-    console.warn(`  [!!] MCP warmup search failed: ${searchRes.status}`);
-  }
-
-  // 3. Close session
-  if (sessionId) {
-    await fetch(`${MCP_URL}/mcp`, {
-      method: "DELETE",
-      headers: {
-        ...headers,
-        "mcp-session-id": sessionId,
-      },
-    });
-  }
-
-  console.log("  [ok] MCP embedding model warmed up");
-}
-
-/**
  * Verify the database has exactly the expected seed data.
  * Cleans up any stale warmup cards that weren't deleted.
  */
@@ -278,10 +207,9 @@ export async function setup(): Promise<void> {
   console.log("\nCreating placeholder images...");
   await createPlaceholderImages();
 
-  // 6. Warmup embedding models (API + MCP containers)
+  // 6. Warmup embedding model (single container serves both API + MCP)
   console.log("\nWarming up embeddings...");
   await warmupEmbeddings(token);
-  await warmupMcpEmbeddings();
 
   // 7. Verify seed integrity (no stale warmup cards)
   console.log("\nVerifying seed integrity...");

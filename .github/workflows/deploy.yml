@@ -26,6 +26,10 @@ jobs:
       - name: Build core
         run: npm run -w core build
 
+      # ── MCP build (needed by API via project reference) ──
+      - name: Build MCP
+        run: npm run -w mcp build
+
       # ── Type checks ──
       - name: TypeScript check (API)
         run: npx tsc --noEmit

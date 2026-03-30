@@ -20,6 +20,7 @@ services:
       dockerfile: api/Dockerfile
     ports:
       - "3008:3000"
+      - "3009:3001"
     environment:
       DATABASE_URL: "postgresql://learnforge:${DB_PASSWORD:-learnforge}@db:5432/learnforge"
       PORT: "3000"
@@ -31,6 +32,8 @@ services:
       STRIPE_PRICE_ID_MONTHLY: "${STRIPE_PRICE_ID_MONTHLY:-}"
       STRIPE_PRICE_ID_ANNUAL: "${STRIPE_PRICE_ID_ANNUAL:-}"
       APP_URL: "${APP_URL:-http://localhost:5173}"
+      MCP_PORT: "3001"
+      MCP_PUBLIC_URL: "${MCP_PUBLIC_URL}"
     volumes:
       - ./data/images:/data/images
     healthcheck:
@@ -59,30 +62,6 @@ services:
       - "8090:3000"
     depends_on:
       - api
-    restart: unless-stopped
-
-  mcp:
-    build:
-      context: .
-      dockerfile: mcp/Dockerfile
-    ports:
-      - "3009:3001"
-    environment:
-      DATABASE_URL: "postgresql://learnforge:${DB_PASSWORD:-learnforge}@db:5432/learnforge"
-      PORT: "3001"
-      IMAGE_PATH: /data/images
-      MCP_PUBLIC_URL: "${MCP_PUBLIC_URL}"
-    volumes:
-      - ./data/images:/data/images
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:

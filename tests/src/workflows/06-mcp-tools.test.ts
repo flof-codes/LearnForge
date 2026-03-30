@@ -354,7 +354,7 @@ describe("MCP Tools", () => {
       const template = mcp.parseToolResult<any>(result);
 
       expect(template.name).toBe("mcq");
-      expect(template.html).toContain("data-bloom");
+      expect(template.html).toContain("fieldset");
     });
   });
 
