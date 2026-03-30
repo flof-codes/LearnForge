@@ -18,24 +18,16 @@ jobs:
       - name: Install dependencies (core, api, mcp)
         run: npm ci -w core -w api -w mcp
 
-      # ── Core build (must come first) ──
-      - name: Build core
-        run: npm run -w core build
-
-      # ── MCP build (needed by API via project reference) ──
-      - name: Build MCP
-        run: npm run -w mcp build
-
-      # ── Backend type checks (before web-ui install, which modifies node_modules) ──
-      - name: TypeScript check (API)
-        run: npx tsc --noEmit
+      # ── Build & type check backend (tsc -b resolves project references) ──
+      - name: Build & check (API → core + MCP)
+        run: npx tsc -b --force
         working-directory: api
 
       - name: TypeScript check (MCP)
         run: npx tsc --noEmit
         working-directory: mcp
 
-      # ── Backend lint checks ──
+      # ── Lint checks (backend) ──
       - name: Lint (Core)
         run: npx eslint .
         working-directory: core
@@ -48,7 +40,7 @@ jobs:
         run: npx eslint .
         working-directory: mcp
 
-      # ── Install web-ui dependencies (--no-package-lock: root lockfile has macOS-only rollup binaries) ──
+      # ── Install web-ui dependencies (npm install: root lockfile has macOS-only rollup binaries) ──
       - name: Install dependencies (web-ui)
         run: npm install -w web-ui --no-package-lock --no-audit --no-fund
 
