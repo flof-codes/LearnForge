@@ -81,7 +81,7 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
             y={cy - 6}
             textAnchor="middle"
             dominantBaseline="central"
-            className="fill-text"
+            className="fill-current text-text-primary"
             style={{ fontSize: '28px', fontWeight: 300 }}
           >
             {totalCards}
@@ -91,7 +91,7 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
             y={cy + 16}
             textAnchor="middle"
             dominantBaseline="central"
-            className="fill-text-muted"
+            className="fill-current text-text-muted"
             style={{ fontSize: '11px' }}
           >
             {t('topicPieChart.cards')}
