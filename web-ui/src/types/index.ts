@@ -159,8 +159,9 @@ export interface StudyStats {
     new: number;
     learning: number;
     relearning: number;
-    young: number;
-    mature: number;
+    shortTerm: number;
+    midTerm: number;
+    longTerm: number;
   };
 }
 

@@ -154,8 +154,9 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
         WHEN fs.state = 1 THEN 'learning'
         WHEN fs.state = 3 THEN 'relearning'
         WHEN fs.state = 2 AND fs.due <= NOW() THEN 'recall'
-        WHEN fs.state = 2 AND fs.stability < 21 THEN 'young'
-        WHEN fs.state = 2 AND fs.stability >= 21 THEN 'mature'
+        WHEN fs.state = 2 AND fs.stability < 21 THEN 'shortTerm'
+        WHEN fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90 THEN 'midTerm'
+        WHEN fs.state = 2 AND fs.stability >= 90 THEN 'longTerm'
       END AS card_state,
       COUNT(*)::int AS count
     FROM cards c
@@ -168,7 +169,7 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
 
   const bloomStateMatrix: Record<number, Record<string, number>> = {};
   for (let i = 0; i <= 5; i++) {
-    bloomStateMatrix[i] = { new: 0, learning: 0, relearning: 0, recall: 0, young: 0, mature: 0 };
+    bloomStateMatrix[i] = { new: 0, learning: 0, relearning: 0, recall: 0, shortTerm: 0, midTerm: 0, longTerm: 0 };
   }
   for (const row of matrixResult.rows) {
     if (bloomStateMatrix[row.bloom_level]) {
@@ -312,15 +313,16 @@ export async function getStudyStats(db: Db, userId: string, topicId?: string) {
   // Card state counts + due
   const statesResult = await db.execute<{
     new_count: number; learning_count: number; relearning_count: number;
-    young_count: number; mature_count: number; due_count: number;
+    short_term_count: number; mid_term_count: number; long_term_count: number; due_count: number;
   }>(sql`
     ${topicCte}
     SELECT
       COUNT(*) FILTER (WHERE fs.state = 0)::int AS new_count,
       COUNT(*) FILTER (WHERE fs.state = 1)::int AS learning_count,
       COUNT(*) FILTER (WHERE fs.state = 3)::int AS relearning_count,
-      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS young_count,
-      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21)::int AS mature_count,
+      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS short_term_count,
+      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90)::int AS mid_term_count,
+      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 90)::int AS long_term_count,
       COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0)::int AS due_count
     FROM cards c
     JOIN fsrs_state fs ON fs.card_id = c.id
@@ -448,7 +450,7 @@ export async function getStudyStats(db: Db, userId: string, topicId?: string) {
 
   const states = statesResult.rows[0] ?? {
     new_count: 0, learning_count: 0, relearning_count: 0,
-    young_count: 0, mature_count: 0, due_count: 0,
+    short_term_count: 0, mid_term_count: 0, long_term_count: 0, due_count: 0,
   };
   const counts = reviewsResult.rows[0] ?? {
     reviews_today: 0, reviews_30d: 0, reviews_365d: 0,
@@ -467,8 +469,9 @@ export async function getStudyStats(db: Db, userId: string, topicId?: string) {
       new: states.new_count,
       learning: states.learning_count,
       relearning: states.relearning_count,
-      young: states.young_count,
-      mature: states.mature_count,
+      shortTerm: states.short_term_count,
+      midTerm: states.mid_term_count,
+      longTerm: states.long_term_count,
     },
   };
 }

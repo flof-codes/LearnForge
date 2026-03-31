@@ -34,8 +34,9 @@
     "new": "Neu",
     "learning": "Lernend",
     "relearning": "Neu lernen",
-    "young": "Jung",
-    "mature": "Reif",
+    "shortTerm": "Kurzzeit",
+    "midTerm": "Mittelzeit",
+    "longTerm": "Langzeit",
     "recall": "Abrufen"
   },
   "cardStateDesc": {
@@ -43,8 +44,9 @@
     "learning": "Wird zum ersten Mal gelernt",
     "relearning": "Wurde vergessen — zurück zu kurzen Intervallen",
     "recall": "Gelernt und zur Wiederholung eingeplant",
-    "young": "Richtig beantwortet, aber Intervalle noch unter 21 Tagen",
-    "mature": "Stabiles Wissen — Intervalle von 21+ Tagen"
+    "shortTerm": "Tage bis Wochen abrufbar — braucht noch regelmäßige Wiederholung",
+    "midTerm": "Wochen bis Monate abrufbar — solides Gedächtnis im Aufbau",
+    "longTerm": "3+ Monate abrufbar — tief verankertes Wissen"
   },
   "ratings": {
     "again": "Nochmal",

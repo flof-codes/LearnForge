@@ -194,8 +194,8 @@ INSERT INTO fsrs_state (card_id, stability, difficulty, due, last_review, reps, 
   -- Relearning card (state=3): lapsed
   ('20000000-0000-0000-0000-000000000007', 2.8,  7.2,  NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '1 day',  3, 1, 3),
 
-  -- Review (mature): high stability, far future due
-  ('20000000-0000-0000-0000-000000000008', 45.0, 3.5,  NOW() + INTERVAL '30 days',    NOW() - INTERVAL '10 days', 6, 0, 2),
+  -- Review (long-term): high stability, far future due
+  ('20000000-0000-0000-0000-000000000008', 95.0, 3.5,  NOW() + INTERVAL '30 days',    NOW() - INTERVAL '10 days', 6, 0, 2),
 
   -- Bio New cards
   ('20000000-0000-0000-0000-000000000009', 0,    0,    NOW() - INTERVAL '1 hour',  NULL,                          0, 0, 0),

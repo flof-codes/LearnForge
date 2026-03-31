@@ -2,15 +2,16 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BLOOM_COLORS } from '../types';
 
-const STATE_KEYS = ['new', 'learning', 'relearning', 'recall', 'young', 'mature'] as const;
+const STATE_KEYS = ['new', 'learning', 'relearning', 'recall', 'shortTerm', 'midTerm', 'longTerm'] as const;
 
 const STATE_COLORS: Record<string, string> = {
   new:         '#DBEAFE',
   learning:    '#60A5FA',
   relearning:  '#2563EB',
   recall:      '#1E3A8A',
-  young:       '#6EE7B7',
-  mature:      '#059669',
+  shortTerm:   '#6EE7B7',
+  midTerm:     '#34D399',
+  longTerm:    '#059669',
 };
 
 function Tip({ children, text, align = 'center', className }: { children: ReactNode; text: string; align?: 'left' | 'center'; className?: string }) {

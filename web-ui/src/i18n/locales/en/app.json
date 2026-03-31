@@ -34,8 +34,9 @@
     "new": "New",
     "learning": "Learning",
     "relearning": "Relearning",
-    "young": "Young",
-    "mature": "Mature",
+    "shortTerm": "Short-term",
+    "midTerm": "Mid-term",
+    "longTerm": "Long-term",
     "recall": "Recall"
   },
   "cardStateDesc": {
@@ -43,8 +44,9 @@
     "learning": "Being learned for the first time",
     "relearning": "Was forgotten — back to short intervals",
     "recall": "Learned and scheduled for future recall",
-    "young": "Correct answers, but intervals still under 21 days",
-    "mature": "Stable knowledge — intervals of 21+ days"
+    "shortTerm": "Retained for days to weeks — still needs regular reinforcement",
+    "midTerm": "Retained for weeks to months — building solid memory",
+    "longTerm": "Retained for 3+ months — deeply consolidated knowledge"
   },
   "ratings": {
     "again": "Again",

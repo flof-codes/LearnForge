@@ -132,12 +132,14 @@ describe("Study Flow", () => {
       expect(typeof res.data.cardsCreatedToday).toBe("number");
     });
 
-    it("classifies mature vs young review cards", async () => {
+    it("classifies short-term, mid-term and long-term review cards", async () => {
       const res = await api.get("/study/stats");
-      // Card 8 (stability=45) should be mature (stability >= 21)
-      // Card 5 (stability=15.2) should be young (stability < 21)
-      expect(res.data.cardStates.mature).toBeGreaterThanOrEqual(1);
-      expect(res.data.cardStates.young).toBeGreaterThanOrEqual(1);
+      // Card 5 (stability=15.2) → short-term (< 21)
+      // Card 6 (stability=22.5) → mid-term (21–89)
+      // Card 8 (stability=95.0) → long-term (>= 90)
+      expect(res.data.cardStates.shortTerm).toBeGreaterThanOrEqual(1);
+      expect(res.data.cardStates.midTerm).toBeGreaterThanOrEqual(1);
+      expect(res.data.cardStates.longTerm).toBeGreaterThanOrEqual(1);
     });
   });
 
