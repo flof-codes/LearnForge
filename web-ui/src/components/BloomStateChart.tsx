@@ -113,7 +113,7 @@ export default function BloomStateChart({ matrix, title }: Props) {
           return (
             <div key={level} className="flex items-center gap-3">
               <Tip text={t(`bloomDesc.${level}`)} align="left" className="w-20 flex-shrink-0">
-                <span className="text-xs text-right block cursor-default" style={{ color: color.text }}>
+                <span className="text-xs text-right block cursor-default text-text-primary">
                   {t(color.labelKey)}
                 </span>
               </Tip>
