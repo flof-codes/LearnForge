@@ -350,7 +350,9 @@
   "topicSelector": {
     "selectTopic": "Select topic...",
     "searchTopics": "Search topics...",
-    "noTopicsFound": "No topics found"
+    "noTopicsFound": "No topics found",
+    "noneRoot": "None (root level)",
+    "loadingChildren": "Loading..."
   },
   "confirmModal": {
     "cancel": "Cancel",

@@ -21,10 +21,8 @@ RUN npm install -w web-ui --no-audit --no-fund
 COPY web-ui/ web-ui/
 RUN npm run -w web-ui build && rm -rf web-ui/dist/server
 
-# Stage 2: Serve
-FROM node:24-slim
-RUN npm install -g serve
-WORKDIR /app
-COPY --from=build /app/web-ui/dist .
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+COPY web-ui/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/web-ui/dist /usr/share/nginx/html
 EXPOSE 3000
-CMD ["serve", "-s", ".", "-l", "3000"]

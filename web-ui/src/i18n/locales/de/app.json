@@ -350,7 +350,9 @@
   "topicSelector": {
     "selectTopic": "Thema ausw\u00e4hlen...",
     "searchTopics": "Themen suchen...",
-    "noTopicsFound": "Keine Themen gefunden"
+    "noTopicsFound": "Keine Themen gefunden",
+    "noneRoot": "Keines (Stammebene)",
+    "loadingChildren": "Laden..."
   },
   "confirmModal": {
     "cancel": "Abbrechen",

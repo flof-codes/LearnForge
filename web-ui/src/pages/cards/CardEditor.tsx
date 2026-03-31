@@ -91,7 +91,7 @@ export default function CardEditor({ initialData, onSubmit, isPending }: Props) 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-6">
       {/* Left column - form fields */}
-      <div className="flex-[3] space-y-4">
+      <div className="flex-[3] min-w-0 space-y-4">
         <div>
           <label className="block text-sm text-text-muted mb-1">{t('cardEditor.concept')}</label>
           <textarea
@@ -134,7 +134,7 @@ export default function CardEditor({ initialData, onSubmit, isPending }: Props) 
       </div>
 
       {/* Right column - live preview */}
-      <div className="flex-[2] space-y-3">
+      <div className="flex-[2] min-w-0 space-y-3">
         <div className="flex items-center gap-2">
           <label className="text-sm text-text-muted">{t('cardEditor.preview')}</label>
           <div className="flex rounded-lg overflow-hidden border border-border">
