@@ -222,7 +222,7 @@ export default function OnboardingWizard() {
                 <button
                   onClick={handleCopyUrl}
                   className="shrink-0 p-2.5 bg-bg-primary border border-border rounded-lg hover:bg-bg-surface transition-colors"
-                  title="Copy"
+                  title={t('settings.apiKey.copyToClipboard')}
                 >
                   {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-text-muted" />}
                 </button>

@@ -75,6 +75,72 @@ describe("Card Lifecycle", () => {
       });
       expect(res.status).toBeGreaterThanOrEqual(400);
     });
+
+    it("rejects missing topic_id", async () => {
+      const res = await api.post("/cards", {
+        concept: "No topic",
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/topic_id/i);
+    });
+
+    it("rejects empty concept", async () => {
+      const res = await api.post("/cards", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "",
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/concept/i);
+    });
+
+    it("rejects missing concept field", async () => {
+      const res = await api.post("/cards", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/concept/i);
+    });
+
+    it("rejects empty front_html", async () => {
+      const res = await api.post("/cards", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Valid concept",
+        front_html: "",
+        back_html: "<p>A</p>",
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/front_html/i);
+    });
+
+    it("rejects empty back_html", async () => {
+      const res = await api.post("/cards", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Valid concept",
+        front_html: "<p>Q</p>",
+        back_html: "",
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/back_html/i);
+    });
+
+    it("accepts empty tags array", async () => {
+      const res = await api.post("/cards", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Card with empty tags",
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+        tags: [],
+      });
+      expect(res.status).toBe(201);
+      freshCardIds.push(res.data.id);
+      expect(res.data.tags).toEqual([]);
+    });
   });
 
   describe("Read", () => {

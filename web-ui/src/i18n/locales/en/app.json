@@ -403,6 +403,13 @@
     "startStudying": "Start Studying",
     "goToDashboard": "Go to Dashboard"
   },
+  "errors": {
+    "createCardFailed": "Failed to create card. Please try again.",
+    "updateCardFailed": "Failed to save changes. Please try again.",
+    "deleteCardFailed": "Failed to delete card. Please try again.",
+    "resetCardFailed": "Failed to reset card progress. Please try again.",
+    "deleteTopicFailed": "Failed to delete topic. Please try again."
+  },
   "common": {
     "back": "Back",
     "loading": "Loading..."

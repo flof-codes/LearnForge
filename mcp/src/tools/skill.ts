@@ -269,6 +269,7 @@ For complete CSS, KaTeX setup, and SVG guidelines, see \`get_templates\`.
 | Get card | get_card | card_id |
 | Update card | update_card | card_id, + partial fields |
 | Delete card | delete_card | card_id |
+| Reset card | reset_card | card_id |
 | List topics | list_topics | — |
 | Create topic | create_topic | name, description?, parent_id? |
 | Topic tree | get_topic_tree | topic_id |

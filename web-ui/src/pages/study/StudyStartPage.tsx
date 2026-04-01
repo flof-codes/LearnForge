@@ -6,13 +6,14 @@ import { useTopics } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
 import { BLOOM_COLORS } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorFallback from '../../components/ErrorFallback';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
 
 export default function StudyStartPage() {
   const { t } = useTranslation('app');
   const [topicId, setTopicId] = useState('');
-  const { data: topics } = useTopics();
-  const { data: summary, isLoading } = useStudySummary(topicId || undefined);
+  const { data: topics, isError: topicsError, error: topicsErr, refetch: refetchTopics } = useTopics();
+  const { data: summary, isLoading, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useStudySummary(topicId || undefined);
   const navigate = useNavigate();
 
   const handleStart = () => {
@@ -22,6 +23,11 @@ export default function StudyStartPage() {
   };
 
   if (isLoading) return <LoadingSpinner />;
+
+  if (summaryError || topicsError) {
+    const err = summaryErr || topicsErr;
+    return <ErrorFallback message={(err as Error).message} onReset={() => { refetchSummary(); refetchTopics(); }} />;
+  }
 
   const totalBloom = summary ? Object.values(summary.bloomLevels).reduce((a, b) => a + b, 0) : 0;
 

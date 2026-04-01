@@ -1,7 +1,9 @@
 import { Sun, Moon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ThemeSwitcher() {
+  const { t } = useTranslation('app');
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
@@ -13,7 +15,7 @@ export default function ThemeSwitcher() {
             ? 'bg-accent-blue/15 text-accent-blue font-medium'
             : 'text-text-muted hover:text-text-primary'
         }`}
-        title="Light"
+        title={t('settings.theme.light')}
       >
         <Sun size={12} />
       </button>
@@ -24,7 +26,7 @@ export default function ThemeSwitcher() {
             ? 'bg-accent-blue/15 text-accent-blue font-medium'
             : 'text-text-muted hover:text-text-primary'
         }`}
-        title="Dark"
+        title={t('settings.theme.dark')}
       >
         <Moon size={12} />
       </button>

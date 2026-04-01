@@ -13,6 +13,7 @@ interface Props {
   initialData?: CardWithState;
   onSubmit: (data: CreateCardInput | UpdateCardInput) => void;
   isPending?: boolean;
+  onDirty?: () => void;
 }
 
 function useCodeMirror(initialValue: string, onChange: (value: string) => void) {
@@ -47,7 +48,7 @@ function useCodeMirror(initialValue: string, onChange: (value: string) => void) 
   return containerRef;
 }
 
-export default function CardEditor({ initialData, onSubmit, isPending }: Props) {
+export default function CardEditor({ initialData, onSubmit, isPending, onDirty }: Props) {
   const { t } = useTranslation('app');
   const [concept, setConcept] = useState(initialData?.concept ?? '');
   const [topicId, setTopicId] = useState(initialData?.topicId ?? '');
@@ -96,7 +97,7 @@ export default function CardEditor({ initialData, onSubmit, isPending }: Props) 
           <label className="block text-sm text-text-muted mb-1">{t('cardEditor.concept')}</label>
           <textarea
             value={concept}
-            onChange={e => setConcept(e.target.value)}
+            onChange={e => { setConcept(e.target.value); onDirty?.(); }}
             className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-text-primary text-sm focus:outline-none focus:border-accent-blue resize-none"
             rows={2}
             placeholder={t('cardEditor.conceptPlaceholder')}

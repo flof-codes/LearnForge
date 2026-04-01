@@ -1,6 +1,6 @@
 import { stripHtml } from "../lib/strip-html.js";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xenova/transformers has no exported Pipeline type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @huggingface/transformers has no exported Pipeline type
 let pipeline: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let pipelinePromise: Promise<any> | null = null;
@@ -16,7 +16,7 @@ async function getEmbeddingPipeline() {
   if (pipelinePromise) return pipelinePromise;
 
   pipelinePromise = (async () => {
-    const { pipeline: createPipeline } = await import("@xenova/transformers");
+    const { pipeline: createPipeline } = await import("@huggingface/transformers");
     pipeline = await createPipeline("feature-extraction", "Xenova/bge-m3");
     return pipeline;
   })();

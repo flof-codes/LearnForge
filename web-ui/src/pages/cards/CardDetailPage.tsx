@@ -8,6 +8,7 @@ import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { extractErrorMessage } from '../../utils/extractErrorMessage';
 import { FSRS_STATE_LABELS, BLOOM_COLORS } from '../../types';
 
 interface LocationState {
@@ -27,6 +28,7 @@ export default function CardDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const cardIds = state.cardIds ?? [];
   const currentIdx = cardIds.indexOf(id!);
@@ -39,11 +41,19 @@ export default function CardDetailPage() {
   if (!card) return <p className="text-text-muted">{t('cardDetail.notFound')}</p>;
 
   const handleDelete = () => {
-    deleteCard.mutate(id!, { onSuccess: () => navigate('/dashboard/cards/browse') });
+    setError(null);
+    deleteCard.mutate(id!, {
+      onSuccess: () => navigate('/dashboard/cards/browse'),
+      onError: (err) => { setDeleteOpen(false); setError(extractErrorMessage(err) || t('errors.deleteCardFailed')); },
+    });
   };
 
   const handleReset = () => {
-    resetCard.mutate(id!, { onSuccess: () => setResetOpen(false) });
+    setError(null);
+    resetCard.mutate(id!, {
+      onSuccess: () => setResetOpen(false),
+      onError: (err) => { setResetOpen(false); setError(extractErrorMessage(err) || t('errors.resetCardFailed')); },
+    });
   };
 
   const goToCard = (targetId: string) => {
@@ -56,6 +66,12 @@ export default function CardDetailPage() {
   return (
     <div className="space-y-6">
       <TopicBreadcrumb topicId={card.topicId} />
+
+      {error && (
+        <div className="rounded-lg px-3 py-2 text-sm bg-red-900/20 text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Top bar: back + prev/next + actions */}
       <div className="flex items-center justify-between">

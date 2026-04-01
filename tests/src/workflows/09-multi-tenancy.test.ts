@@ -105,6 +105,47 @@ describe("Multi-Tenancy Isolation", () => {
       const check = await userBApi.get(`/cards/${userBCardId}`);
       expect(check.status).toBe(200);
     });
+
+    it("User A cannot update User B's card", async () => {
+      const res = await userAApi.put(`/cards/${userBCardId}`, {
+        concept: "Hijacked by User A",
+      });
+      expect(res.status).toBe(404);
+
+      // Verify card is unchanged for User B
+      const check = await userBApi.get(`/cards/${userBCardId}`);
+      expect(check.status).toBe(200);
+      expect(check.data.concept).toBe("User B card");
+      expect(check.data.frontHtml).toBe("<p>B front</p>");
+      expect(check.data.backHtml).toBe("<p>B back</p>");
+    });
+
+    it("User A cannot reset User B's card", async () => {
+      // First, submit a review as User B to advance bloom state
+      const reviewRes = await userBApi.post("/reviews", {
+        card_id: userBCardId,
+        bloom_level: 1,
+        rating: 3,
+        question_text: "Cross-user reset test setup",
+      });
+      expect(reviewRes.status).toBe(201);
+
+      // Verify User B's card now has a review and advanced state
+      const before = await userBApi.get(`/cards/${userBCardId}`);
+      expect(before.status).toBe(200);
+      expect(before.data.reviews.length).toBeGreaterThan(0);
+
+      // User A tries to reset User B's card
+      const res = await userAApi.post(`/cards/${userBCardId}/reset`, {});
+      expect(res.status).toBe(404);
+
+      // Verify User B's card state is unchanged
+      const after = await userBApi.get(`/cards/${userBCardId}`);
+      expect(after.status).toBe(200);
+      expect(after.data.reviews.length).toBe(before.data.reviews.length);
+      expect(after.data.bloomState.currentLevel).toBe(before.data.bloomState.currentLevel);
+      expect(after.data.fsrsState.reps).toBe(before.data.fsrsState.reps);
+    });
   });
 
   describe("Study", () => {

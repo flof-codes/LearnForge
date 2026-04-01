@@ -11,9 +11,11 @@ import ConfirmModal from '../../components/ConfirmModal';
 import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorFallback from '../../components/ErrorFallback';
 import DueForecastChart from '../../components/DueForecastChart';
 import BloomStateChart from '../../components/BloomStateChart';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
+import { extractErrorMessage } from '../../utils/extractErrorMessage';
 
 type CardFilter = 'all' | 'new' | 'learning' | 'due';
 type CardSort = 'newest' | 'oldest' | 'updated' | 'studied';
@@ -35,10 +37,11 @@ export default function TopicDetailPage() {
   const { t } = useTranslation('app');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: topic, isLoading } = useTopic(id!);
+  const { data: topic, isLoading, isError, error, refetch } = useTopic(id!);
   const deleteTopic = useDeleteTopic();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [filter, setFilter] = useState<CardFilter>('all');
   const [sort, setSort] = useState<CardSort>('newest');
 
@@ -83,10 +86,15 @@ export default function TopicDetailPage() {
   }, [allCards, filter, sort]);
 
   if (isLoading) return <LoadingSpinner />;
+  if (isError) return <ErrorFallback message={(error as Error).message} onReset={() => refetch()} />;
   if (!topic) return <p className="text-text-muted">{t('topics.notFound')}</p>;
 
   const handleDelete = () => {
-    deleteTopic.mutate(id!, { onSuccess: () => navigate('/dashboard/topics') });
+    setDeleteError(null);
+    deleteTopic.mutate(id!, {
+      onSuccess: () => navigate('/dashboard/topics'),
+      onError: (err) => { setDeleteOpen(false); setDeleteError(extractErrorMessage(err) || t('errors.deleteTopicFailed')); },
+    });
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,6 +141,12 @@ export default function TopicDetailPage() {
           </button>
         </div>
       </div>
+
+      {deleteError && (
+        <div className="rounded-lg px-3 py-2 text-sm bg-red-900/20 text-red-400">
+          {deleteError}
+        </div>
+      )}
 
       {/* Subtopics */}
       {topic.children && topic.children.length > 0 && (

@@ -42,7 +42,7 @@ export function registerStudyTools(server: McpServer, db: Db, userId: string) {
 
   server.tool(
     "get_study_summary",
-    "Get a study session summary with total cards, due count, Bloom level distribution, and 7-day accuracy",
+    "Get a study session summary with total cards, due count, Bloom level distribution, 7-day accuracy, and streak info (review streak, creation streak)",
     {
       topic_id: z.string().uuid().optional(),
     },

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Db } from "@learnforge/core";
-import { createCard, getCard, updateCard, deleteCard } from "@learnforge/core";
+import { createCard, getCard, updateCard, deleteCard, resetCard } from "@learnforge/core";
 
 export function registerCardTools(server: McpServer, db: Db, userId: string) {
   // ── create_card ──────────────────────────────────────────────────────
@@ -74,6 +74,22 @@ export function registerCardTools(server: McpServer, db: Db, userId: string) {
       try {
         const deleted = await deleteCard(db, userId, card_id);
         return { content: [{ type: "text" as const, text: `Deleted card "${deleted.concept}" (${deleted.id})` }] };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };
+      }
+    }
+  );
+
+  // ── reset_card ─────────────────────────────────────────────────────
+  server.tool(
+    "reset_card",
+    "Reset a card to initial state: Bloom level 0, fresh FSRS scheduling, all reviews deleted. Use when the user wants to start over with a card.",
+    { card_id: z.string().uuid() },
+    async ({ card_id }) => {
+      try {
+        const result = await resetCard(db, userId, card_id);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };

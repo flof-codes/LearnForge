@@ -54,3 +54,6 @@ tests/coverage/
 .claude/tasks/
 .claude/teams/
 templates-draft/
+
+# Agent team tickets (local only)
+tickets/

@@ -57,6 +57,13 @@
       "when": 1774051200002,
       "tag": "0007_bge_m3_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774051200003,
+      "tag": "0008_performance_indexes",
+      "breakpoints": true
     }
   ]
 }

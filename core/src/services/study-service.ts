@@ -197,6 +197,81 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
 
   const accuracy7d = accuracyResult.rows[0]?.accuracy ?? null;
 
+  // Distinct review dates for streak calculation
+  const streakDaysQuery = topicId
+    ? sql`
+        ${topicCte}
+        SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d
+        FROM reviews r
+        JOIN cards c ON c.id = r.card_id
+        WHERE c.topic_id IN (SELECT id FROM topic_tree)
+          AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        ORDER BY d DESC
+      `
+    : sql`
+        SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d
+        FROM reviews r
+        JOIN cards c ON c.id = r.card_id
+        JOIN topics t ON c.topic_id = t.id
+        WHERE t.user_id = ${userId}
+          AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        ORDER BY d DESC
+      `;
+  const streakDaysResult = await db.execute<{ d: string }>(streakDaysQuery);
+
+  // Distinct creation dates for creation streak
+  const creationDaysQuery = topicId
+    ? sql`
+        ${topicCte}
+        SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
+        FROM cards c
+        WHERE c.topic_id IN (SELECT id FROM topic_tree)
+          AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        ORDER BY d DESC
+      `
+    : sql`
+        SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
+        FROM cards c
+        JOIN topics t ON c.topic_id = t.id
+        WHERE t.user_id = ${userId}
+          AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        ORDER BY d DESC
+      `;
+  const creationDaysResult = await db.execute<{ d: string }>(creationDaysQuery);
+
+  // Calculate streaks
+  const reviewDates = new Set(streakDaysResult.rows.map(r => String(r.d).slice(0, 10)));
+  const creationDates = new Set(creationDaysResult.rows.map(r => String(r.d).slice(0, 10)));
+  const today = new Date();
+
+  let streak = 0;
+  for (let i = 0; i < 366; i++) {
+    const check = new Date(today);
+    check.setDate(today.getDate() - i);
+    const dateStr = check.toISOString().slice(0, 10);
+    if (reviewDates.has(dateStr)) {
+      streak++;
+    } else if (i === 0) {
+      continue; // today has no review yet, check from yesterday
+    } else {
+      break;
+    }
+  }
+
+  let creationStreak = 0;
+  for (let i = 0; i < 366; i++) {
+    const check = new Date(today);
+    check.setDate(today.getDate() - i);
+    const dateStr = check.toISOString().slice(0, 10);
+    if (creationDates.has(dateStr)) {
+      creationStreak++;
+    } else if (i === 0) {
+      continue; // today has no creation yet, check from yesterday
+    } else {
+      break;
+    }
+  }
+
   return {
     totalCards: total_cards,
     dueCount: due_count,
@@ -204,6 +279,8 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
     bloomLevels,
     bloomStateMatrix,
     accuracy7d: accuracy7d !== null ? Math.round(accuracy7d * 100) / 100 : null,
+    streak,
+    creationStreak,
   };
 }
 

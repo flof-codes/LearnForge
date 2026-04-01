@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useStudySummary, useStudyStats } from '../hooks/useStudy';
 import { useTopics } from '../hooks/useTopics';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorFallback from '../components/ErrorFallback';
 import DueForecastChart from '../components/DueForecastChart';
 import TopicPieChart from '../components/TopicPieChart';
 import BloomStateChart from '../components/BloomStateChart';
@@ -12,11 +13,16 @@ import OnboardingWizard from '../components/OnboardingWizard';
 
 export default function Dashboard() {
   const { t } = useTranslation('app');
-  const { data: summary, isLoading: summaryLoading } = useStudySummary();
-  const { data: stats, isLoading: statsLoading } = useStudyStats();
-  const { data: topics, isLoading: topicsLoading } = useTopics();
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useStudySummary();
+  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useStudyStats();
+  const { data: topics, isLoading: topicsLoading, isError: topicsError, error: topicsErr, refetch: refetchTopics } = useTopics();
 
   if (summaryLoading || statsLoading || topicsLoading) return <LoadingSpinner />;
+
+  if (summaryError || statsError || topicsError) {
+    const err = summaryErr || statsErr || topicsErr;
+    return <ErrorFallback message={(err as Error).message} onReset={() => { refetchSummary(); refetchStats(); refetchTopics(); }} />;
+  }
 
   const isEmpty = summary?.totalCards === 0 && (!topics || topics.length === 0);
   if (isEmpty) {
