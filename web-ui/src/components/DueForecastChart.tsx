@@ -6,6 +6,51 @@ interface DueForecastChartProps {
   topicId?: string;
 }
 
+function ForecastBar({ bucket, pct }: { bucket: { date: string; label: string; count: number }; pct: number }) {
+  const [show, setShow] = useState(false);
+  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const onEnter = () => {
+    const id = setTimeout(() => setShow(true), 200);
+    setTimer(id);
+  };
+  const onLeave = () => {
+    if (timer) clearTimeout(timer);
+    setTimer(null);
+    setShow(false);
+  };
+
+  return (
+    <div
+      className="flex-1 flex flex-col justify-end h-full relative"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      onClick={() => setShow(prev => !prev)}
+      tabIndex={bucket.count > 0 ? 0 : undefined}
+      role={bucket.count > 0 ? 'button' : undefined}
+    >
+      <div
+        className="w-full rounded-t transition-all duration-300"
+        style={{
+          height: `${Math.max(pct, bucket.count > 0 ? 2 : 0)}%`,
+          backgroundColor: '#58a6ff',
+          minHeight: bucket.count > 0 ? '2px' : '0px',
+        }}
+      />
+      {bucket.count > 0 && show && (
+        <div className="pointer-events-none absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10">
+          <div className="bg-bg-surface border border-border rounded px-2 py-1 text-xs whitespace-nowrap shadow-lg">
+            <span className="text-text-muted">{bucket.label}:</span>{' '}
+            <span className="tabular-nums font-medium">{bucket.count}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DueForecastChart({ topicId }: DueForecastChartProps) {
   const { t } = useTranslation('app');
   const [range, setRange] = useState<'month' | 'year'>('month');
@@ -58,28 +103,7 @@ export default function DueForecastChart({ topicId }: DueForecastChartProps) {
           {data.buckets.map(bucket => {
             const pct = maxCount > 0 ? (bucket.count / maxCount) * 100 : 0;
             return (
-              <div
-                key={bucket.date}
-                className="flex-1 flex flex-col justify-end h-full group relative"
-              >
-                <div
-                  className="w-full rounded-t transition-all duration-300"
-                  style={{
-                    height: `${Math.max(pct, bucket.count > 0 ? 2 : 0)}%`,
-                    backgroundColor: '#58a6ff',
-                    minHeight: bucket.count > 0 ? '2px' : '0px',
-                  }}
-                />
-                {/* Tooltip */}
-                {bucket.count > 0 && (
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10">
-                    <div className="bg-bg-surface border border-border rounded px-2 py-1 text-xs whitespace-nowrap shadow-lg">
-                      <span className="text-text-muted">{bucket.label}:</span>{' '}
-                      <span className="tabular-nums font-medium">{bucket.count}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ForecastBar key={bucket.date} bucket={bucket} pct={pct} />
             );
           })}
         </div>

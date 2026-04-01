@@ -75,6 +75,7 @@ When the user wants to study ("quiz me", "let's learn", etc.):
       3. Then ask the next question in chat text (the user types their answer as a normal message).
 
       \`submit_review\` params (same for both flows):
+      - \`bloom_level\`: **must be the card's \`bloomState.currentLevel\` from \`get_study_cards\`** — the level you generated the question for. Bloom advancement only triggers when this matches the card's current DB state; a wrong value silently skips the transition. In long sessions or after context compression, re-read the card's bloom state before submitting if unsure.
       - \`question_text\`: the **exact, complete question** as shown to the user — including all MCQ options with letters (e.g. "Which of the following... A) option1 B) option2 C) option3 (Select all that apply)")
       - \`answer_expected\`: the correct/ideal answer (e.g. "A, C" for MCQ, or a full text answer for open response)
       - \`user_answer\`: the user's actual answer (e.g. "B, D" for MCQ, or the text they provided for open response)
@@ -309,7 +310,7 @@ const TEMPLATES: Record<string, { description: string; variables: string; html: 
     html: `<style>
 fieldset{border:none;padding:0;margin:0 0 8px}
 fieldset label{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border:1px solid #d6d3d1;margin:6px 0;cursor:pointer;transition:all .15s;width:100% !important;max-width:100% !important}
-fieldset label:hover{border-color:#d97706;background:#fffbeb}
+fieldset label:hover,fieldset label:focus-within{border-color:#d97706;background:#fffbeb}
 fieldset label.correct{border-color:#0d9488;background:#ccfbf1}
 fieldset label.wrong{border-color:#e11d48;background:#fff1f2}
 fieldset label.missed{border-color:#d97706;background:#fef3c7;opacity:.7}

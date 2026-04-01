@@ -10,7 +10,7 @@ const STATE_COLORS: Record<string, string> = {
   relearning:  '#2563EB',
   recall:      '#1E3A8A',
   shortTerm:   '#6EE7B7',
-  midTerm:     '#34D399',
+  midTerm:     '#22C68D',
   longTerm:    '#059669',
 };
 
@@ -33,7 +33,16 @@ function Tip({ children, text, align = 'center', className }: { children: ReactN
     : 'left-1/2 -translate-x-1/2';
 
   return (
-    <div className={`relative ${className ?? ''}`} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+    <div
+      className={`relative ${className ?? ''}`}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      onClick={() => setShow(prev => !prev)}
+      tabIndex={0}
+      role="button"
+    >
       {children}
       {show && (
         <span className={`pointer-events-none absolute bottom-full ${posClass} mb-1.5 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-[11px] text-white z-10`}>
@@ -64,6 +73,11 @@ function BarSegment({ text, style }: { text: string; style: React.CSSProperties 
       style={style}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      onClick={() => setShow(prev => !prev)}
+      tabIndex={0}
+      role="button"
     >
       {show && (
         <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-[11px] text-white z-10">

@@ -373,128 +373,135 @@ export async function getDueForecast(db: Db, userId: string, topicId?: string, r
 }
 
 export async function getStudyStats(db: Db, userId: string, topicId?: string) {
-  const topicCte = topicId
+  // Query 1: Card states + review volumes + cards created today (shared CTE)
+  const statsQuery = topicId
     ? sql`
         WITH RECURSIVE topic_tree AS (
           SELECT id FROM topics WHERE id = ${topicId}::uuid AND user_id = ${userId}
           UNION ALL
           SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
+        ),
+        card_stats AS (
+          SELECT
+            COUNT(*) FILTER (WHERE fs.state = 0)::int AS new_count,
+            COUNT(*) FILTER (WHERE fs.state = 1)::int AS learning_count,
+            COUNT(*) FILTER (WHERE fs.state = 3)::int AS relearning_count,
+            COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS short_term_count,
+            COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90)::int AS mid_term_count,
+            COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 90)::int AS long_term_count,
+            COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0)::int AS due_count,
+            COUNT(*) FILTER (WHERE c.created_at::date = CURRENT_DATE)::int AS cards_created_today
+          FROM cards c
+          JOIN fsrs_state fs ON fs.card_id = c.id
+          WHERE c.topic_id IN (SELECT id FROM topic_tree)
+        ),
+        review_stats AS (
+          SELECT
+            COUNT(*) FILTER (WHERE r.reviewed_at::date = CURRENT_DATE)::int AS reviews_today,
+            COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '30 days')::int AS reviews_30d,
+            COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '365 days')::int AS reviews_365d
+          FROM reviews r
+          JOIN cards c ON c.id = r.card_id
+          WHERE c.topic_id IN (SELECT id FROM topic_tree)
         )
+        SELECT * FROM card_stats CROSS JOIN review_stats
       `
-    : sql``;
+    : sql`
+        WITH card_stats AS (
+          SELECT
+            COUNT(*) FILTER (WHERE fs.state = 0)::int AS new_count,
+            COUNT(*) FILTER (WHERE fs.state = 1)::int AS learning_count,
+            COUNT(*) FILTER (WHERE fs.state = 3)::int AS relearning_count,
+            COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS short_term_count,
+            COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90)::int AS mid_term_count,
+            COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 90)::int AS long_term_count,
+            COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0)::int AS due_count,
+            COUNT(*) FILTER (WHERE c.created_at::date = CURRENT_DATE)::int AS cards_created_today
+          FROM cards c
+          JOIN fsrs_state fs ON fs.card_id = c.id
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+        ),
+        review_stats AS (
+          SELECT
+            COUNT(*) FILTER (WHERE r.reviewed_at::date = CURRENT_DATE)::int AS reviews_today,
+            COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '30 days')::int AS reviews_30d,
+            COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '365 days')::int AS reviews_365d
+          FROM reviews r
+          JOIN cards c ON c.id = r.card_id
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+        )
+        SELECT * FROM card_stats CROSS JOIN review_stats
+      `;
 
-  const cardFilter = topicId
-    ? sql`WHERE c.topic_id IN (SELECT id FROM topic_tree)`
-    : sql`JOIN topics t ON c.topic_id = t.id WHERE t.user_id = ${userId}`;
-
-  // Card state counts + due
-  const statesResult = await db.execute<{
+  const statsResult = await db.execute<{
     new_count: number; learning_count: number; relearning_count: number;
-    short_term_count: number; mid_term_count: number; long_term_count: number; due_count: number;
-  }>(sql`
-    ${topicCte}
-    SELECT
-      COUNT(*) FILTER (WHERE fs.state = 0)::int AS new_count,
-      COUNT(*) FILTER (WHERE fs.state = 1)::int AS learning_count,
-      COUNT(*) FILTER (WHERE fs.state = 3)::int AS relearning_count,
-      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS short_term_count,
-      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90)::int AS mid_term_count,
-      COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 90)::int AS long_term_count,
-      COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0)::int AS due_count
-    FROM cards c
-    JOIN fsrs_state fs ON fs.card_id = c.id
-    ${cardFilter}
-  `);
-
-  // Review volume
-  const reviewsQuery = topicId
-    ? sql`
-        ${topicCte}
-        SELECT
-          COUNT(*) FILTER (WHERE r.reviewed_at::date = CURRENT_DATE)::int AS reviews_today,
-          COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '30 days')::int AS reviews_30d,
-          COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '365 days')::int AS reviews_365d
-        FROM reviews r
-        JOIN cards c ON c.id = r.card_id
-        WHERE c.topic_id IN (SELECT id FROM topic_tree)
-      `
-    : sql`
-        SELECT
-          COUNT(*) FILTER (WHERE r.reviewed_at::date = CURRENT_DATE)::int AS reviews_today,
-          COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '30 days')::int AS reviews_30d,
-          COUNT(*) FILTER (WHERE r.reviewed_at >= NOW() - INTERVAL '365 days')::int AS reviews_365d
-        FROM reviews r
-        JOIN cards c ON c.id = r.card_id
-        JOIN topics t ON c.topic_id = t.id
-        WHERE t.user_id = ${userId}
-      `;
-
-  const reviewsResult = await db.execute<{
+    short_term_count: number; mid_term_count: number; long_term_count: number;
+    due_count: number; cards_created_today: number;
     reviews_today: number; reviews_30d: number; reviews_365d: number;
-  }>(reviewsQuery);
+  }>(statsQuery);
 
-  // Distinct review dates for streak calculation
-  const daysQuery = topicId
+  // Query 2: Streak dates — review + creation dates in one query (shared CTE)
+  const streakQuery = topicId
     ? sql`
-        ${topicCte}
-        SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d
-        FROM reviews r
-        JOIN cards c ON c.id = r.card_id
-        WHERE c.topic_id IN (SELECT id FROM topic_tree)
-          AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        WITH RECURSIVE topic_tree AS (
+          SELECT id FROM topics WHERE id = ${topicId}::uuid AND user_id = ${userId}
+          UNION ALL
+          SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
+        ),
+        review_dates AS (
+          SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d, 'review' AS source
+          FROM reviews r
+          JOIN cards c ON c.id = r.card_id
+          WHERE c.topic_id IN (SELECT id FROM topic_tree)
+            AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        ),
+        creation_dates AS (
+          SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d, 'creation' AS source
+          FROM cards c
+          WHERE c.topic_id IN (SELECT id FROM topic_tree)
+            AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        )
+        SELECT d, source FROM review_dates
+        UNION ALL
+        SELECT d, source FROM creation_dates
         ORDER BY d DESC
       `
     : sql`
-        SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d
-        FROM reviews r
-        JOIN cards c ON c.id = r.card_id
-        JOIN topics t ON c.topic_id = t.id
-        WHERE t.user_id = ${userId}
-          AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        WITH review_dates AS (
+          SELECT DISTINCT (r.reviewed_at AT TIME ZONE 'UTC')::date AS d, 'review' AS source
+          FROM reviews r
+          JOIN cards c ON c.id = r.card_id
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+            AND (r.reviewed_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        ),
+        creation_dates AS (
+          SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d, 'creation' AS source
+          FROM cards c
+          JOIN topics t ON c.topic_id = t.id
+          WHERE t.user_id = ${userId}
+            AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
+        )
+        SELECT d, source FROM review_dates
+        UNION ALL
+        SELECT d, source FROM creation_dates
         ORDER BY d DESC
       `;
 
-  const daysResult = await db.execute<{ d: string }>(daysQuery);
+  const streakResult = await db.execute<{ d: string; source: string }>(streakQuery);
 
-  // Distinct creation dates for creation streak
-  const creationDaysQuery = topicId
-    ? sql`
-        ${topicCte}
-        SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
-        FROM cards c
-        WHERE c.topic_id IN (SELECT id FROM topic_tree)
-          AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
-        ORDER BY d DESC
-      `
-    : sql`
-        SELECT DISTINCT (c.created_at AT TIME ZONE 'UTC')::date AS d
-        FROM cards c
-        JOIN topics t ON c.topic_id = t.id
-        WHERE t.user_id = ${userId}
-          AND (c.created_at AT TIME ZONE 'UTC')::date >= CURRENT_DATE - 365
-        ORDER BY d DESC
-      `;
-  const creationDaysResult = await db.execute<{ d: string }>(creationDaysQuery);
-
-  // Cards created today
-  const createdTodayQuery = topicId
-    ? sql`
-        ${topicCte}
-        SELECT COUNT(*)::int AS n FROM cards c
-        WHERE c.topic_id IN (SELECT id FROM topic_tree)
-          AND c.created_at::date = CURRENT_DATE
-      `
-    : sql`
-        SELECT COUNT(*)::int AS n FROM cards c
-        JOIN topics t ON c.topic_id = t.id
-        WHERE t.user_id = ${userId}
-          AND c.created_at::date = CURRENT_DATE
-      `;
-  const createdTodayResult = await db.execute<{ n: number }>(createdTodayQuery);
+  // Split streak dates by source
+  const reviewDates = new Set<string>();
+  const creationDates = new Set<string>();
+  for (const row of streakResult.rows) {
+    const dateStr = String(row.d).slice(0, 10);
+    if (row.source === 'review') reviewDates.add(dateStr);
+    else creationDates.add(dateStr);
+  }
 
   // Calculate streaks in application code
-  const reviewDates = new Set(daysResult.rows.map(r => String(r.d).slice(0, 10)));
-  const creationDates = new Set(creationDaysResult.rows.map(r => String(r.d).slice(0, 10)));
   const today = new Date();
 
   let streak = 0;
@@ -525,30 +532,29 @@ export async function getStudyStats(db: Db, userId: string, topicId?: string) {
     }
   }
 
-  const states = statesResult.rows[0] ?? {
+  const row = statsResult.rows[0] ?? {
     new_count: 0, learning_count: 0, relearning_count: 0,
-    short_term_count: 0, mid_term_count: 0, long_term_count: 0, due_count: 0,
-  };
-  const counts = reviewsResult.rows[0] ?? {
+    short_term_count: 0, mid_term_count: 0, long_term_count: 0,
+    due_count: 0, cards_created_today: 0,
     reviews_today: 0, reviews_30d: 0, reviews_365d: 0,
   };
 
   return {
     streak,
     creationStreak,
-    reviewsToday: counts.reviews_today,
-    cardsCreatedToday: createdTodayResult.rows[0]?.n ?? 0,
-    averagePerDay: Math.round((counts.reviews_30d / 30) * 10) / 10,
-    averagePerMonth: Math.round((counts.reviews_365d / 12) * 10) / 10,
-    averagePerYear: counts.reviews_365d,
-    dueCount: states.due_count,
+    reviewsToday: row.reviews_today,
+    cardsCreatedToday: row.cards_created_today,
+    averagePerDay: Math.round((row.reviews_30d / 30) * 10) / 10,
+    averagePerMonth: Math.round((row.reviews_365d / 12) * 10) / 10,
+    averagePerYear: row.reviews_365d,
+    dueCount: row.due_count,
     cardStates: {
-      new: states.new_count,
-      learning: states.learning_count,
-      relearning: states.relearning_count,
-      shortTerm: states.short_term_count,
-      midTerm: states.mid_term_count,
-      longTerm: states.long_term_count,
+      new: row.new_count,
+      learning: row.learning_count,
+      relearning: row.relearning_count,
+      shortTerm: row.short_term_count,
+      midTerm: row.mid_term_count,
+      longTerm: row.long_term_count,
     },
   };
 }

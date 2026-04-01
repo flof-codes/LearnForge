@@ -1,9 +1,10 @@
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
-import { reviews, fsrsState, bloomState } from "../db/schema/index.js";
+import { reviews, fsrsState, bloomState, users } from "../db/schema/index.js";
 import { processReview, applyModalityMultiplier, isValidModality, type FsrsDbState, type StudyModality } from "./fsrs.js";
 import { computeBloomTransition } from "./bloom.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { optimizeUserParams } from "./fsrs-optimizer.js";
 
 export interface SubmitReviewInput {
   card_id: string;
@@ -54,7 +55,14 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
       userAnswer: user_answer,
     }).returning();
 
-    // 2. Read current fsrs_state → process → update
+    // 2. Load user's FSRS params (if optimized)
+    const [user] = await tx
+      .select({ fsrsParams: users.fsrsParams })
+      .from(users)
+      .where(eq(users.id, userId));
+    const userParams = user?.fsrsParams as { w: number[] } | null;
+
+    // 3. Read current fsrs_state → process → update
     const [currentFsrs] = await tx
       .select()
       .from(fsrsState)
@@ -73,6 +81,7 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
         state: currentFsrs.state,
       } as FsrsDbState,
       rating as 1 | 2 | 3 | 4,
+      userParams,
     );
 
     const updatedFsrs = applyModalityMultiplier(rawFsrs, modality);
@@ -91,7 +100,7 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
       .where(eq(fsrsState.cardId, card_id))
       .returning();
 
-    // 3. Read current bloom_state → compute transition → update (skip for manual reviews)
+    // 4. Read current bloom_state → compute transition → update (skip for manual reviews)
     const [currentBloom] = await tx
       .select()
       .from(bloomState)
@@ -121,6 +130,28 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
 
     return { review, fsrsState: savedFsrs, bloomState: savedBloom };
   });
+
+  // After successful transaction: increment optimization counter and check trigger
+  const [updated] = await db
+    .update(users)
+    .set({ reviewsSinceOptimization: sql`${users.reviewsSinceOptimization} + 1` })
+    .where(eq(users.id, userId))
+    .returning({ counter: users.reviewsSinceOptimization });
+
+  if (updated && updated.counter >= 100) {
+    // Check total review count to avoid optimizing on too little data
+    const totalResult = await db.execute<{ count: string }>(sql`
+      SELECT COUNT(*)::text AS count FROM reviews r
+      JOIN cards c ON c.id = r.card_id
+      JOIN topics t ON c.topic_id = t.id
+      WHERE t.user_id = ${userId}
+    `);
+    const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
+    if (totalReviews >= 500) {
+      // Fire-and-forget — don't block the review response
+      optimizeUserParams(db, userId).catch(() => {});
+    }
+  }
 
   return result;
 }

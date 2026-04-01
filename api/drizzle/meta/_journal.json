@@ -64,6 +64,13 @@
       "when": 1774051200003,
       "tag": "0008_performance_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774051200004,
+      "tag": "0009_fsrs_user_params",
+      "breakpoints": true
     }
   ]
 }

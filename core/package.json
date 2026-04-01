@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
+    "@open-spaced-repetition/binding": "^0.3.0",
     "drizzle-orm": "^0.38.4",
     "pg": "^8.13.1",
     "ts-fsrs": "^4.6.0"

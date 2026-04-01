@@ -30,7 +30,20 @@ export default async function topicRoutes(app: FastifyInstance) {
   });
 
   // POST /topics
-  app.post<{ Body: { name: string; description?: string; parentId?: string } }>("/topics", async (req, reply) => {
+  app.post<{ Body: { name: string; description?: string; parentId?: string } }>("/topics", {
+    schema: {
+      body: {
+        type: "object",
+        required: ["name"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+          description: { type: "string" },
+          parentId: { type: "string", format: "uuid" },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const userId = getUserId(req);
     const result = await createTopic(db, userId, req.body);
     reply.status(201);
@@ -38,7 +51,19 @@ export default async function topicRoutes(app: FastifyInstance) {
   });
 
   // PUT /topics/:id
-  app.put<{ Params: { id: string }; Body: { name?: string; description?: string; parentId?: string } }>("/topics/:id", async (req) => {
+  app.put<{ Params: { id: string }; Body: { name?: string; description?: string; parentId?: string | null } }>("/topics/:id", {
+    schema: {
+      body: {
+        type: "object",
+        properties: {
+          name: { type: "string", minLength: 1 },
+          description: { type: "string" },
+          parentId: { type: ["string", "null"], format: "uuid" },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req) => {
     const userId = getUserId(req);
     return updateTopic(db, userId, req.params.id, req.body);
   });

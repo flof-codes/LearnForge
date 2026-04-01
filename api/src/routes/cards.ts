@@ -6,7 +6,22 @@ import { getUserId } from "../lib/auth-helpers.js";
 export default async function cardRoutes(app: FastifyInstance) {
 
   // POST /cards — create a new card with bloom + fsrs state
-  app.post<{ Body: { topic_id: string; concept: string; front_html: string; back_html: string; tags?: string[] } }>("/cards", async (req, reply) => {
+  app.post<{ Body: { topic_id: string; concept: string; front_html: string; back_html: string; tags?: string[] } }>("/cards", {
+    schema: {
+      body: {
+        type: "object",
+        required: ["topic_id", "concept", "front_html", "back_html"],
+        properties: {
+          topic_id: { type: "string", format: "uuid" },
+          concept: { type: "string", minLength: 1 },
+          front_html: { type: "string", minLength: 1 },
+          back_html: { type: "string", minLength: 1 },
+          tags: { type: "array", items: { type: "string" } },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const userId = getUserId(req);
     const result = await createCard(db, userId, req.body);
     reply.status(201);
@@ -29,7 +44,21 @@ export default async function cardRoutes(app: FastifyInstance) {
   });
 
   // PUT /cards/:id — update card content
-  app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string } }>("/cards/:id", async (req) => {
+  app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string } }>("/cards/:id", {
+    schema: {
+      body: {
+        type: "object",
+        properties: {
+          topic_id: { type: "string", format: "uuid" },
+          concept: { type: "string", minLength: 1 },
+          front_html: { type: "string", minLength: 1 },
+          back_html: { type: "string", minLength: 1 },
+          tags: { type: "array", items: { type: "string" } },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req) => {
     const userId = getUserId(req);
     return updateCard(db, userId, req.params.id, req.body);
   });

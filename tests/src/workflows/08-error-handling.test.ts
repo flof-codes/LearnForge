@@ -136,6 +136,53 @@ describe("Error Handling", () => {
       });
       expect(res.status).toBeGreaterThanOrEqual(400);
     });
+
+    it("error when reviewing a just-deleted card", async () => {
+      const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "delete-then-review");
+      // Don't track in freshCardIds — we're deleting manually
+
+      const deleteRes = await api.delete(`/cards/${card.id}`);
+      expect(deleteRes.status).toBe(204);
+
+      const res = await api.post("/reviews", {
+        card_id: card.id,
+        bloom_level: 0,
+        rating: 3,
+        question_text: "Review after deletion",
+      });
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status).toBeLessThan(500);
+    });
+  });
+
+  describe("Review After Reset", () => {
+    it("review after card reset starts from fresh bloom 0", async () => {
+      const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "reset-then-review");
+      freshCardIds.push(card.id);
+
+      // Advance bloom with a review
+      const firstReview = await submitReview(api, card.id, 0, 4);
+      expect(firstReview.bloomState.currentLevel).toBe(1);
+
+      // Reset the card
+      const resetRes = await api.post(`/cards/${card.id}/reset`, {});
+      expect(resetRes.status).toBe(200);
+      expect(resetRes.data.bloomState.currentLevel).toBe(0);
+      expect(resetRes.data.bloomState.highestReached).toBe(0);
+      expect(resetRes.data.reviews).toEqual([]);
+
+      // Verify via GET that state is fresh
+      const getRes = await api.get(`/cards/${card.id}`);
+      expect(getRes.status).toBe(200);
+      expect(getRes.data.bloomState.currentLevel).toBe(0);
+      expect(getRes.data.fsrsState.state).toBe(0);
+      expect(getRes.data.fsrsState.reps).toBe(0);
+
+      // Submit a new review — should succeed and advance from bloom 0
+      const postResetReview = await submitReview(api, card.id, 0, 3);
+      expect(postResetReview.bloomState.currentLevel).toBe(1);
+      expect(postResetReview.fsrsState.reps).toBe(1);
+    });
   });
 
   describe("Concurrency", () => {

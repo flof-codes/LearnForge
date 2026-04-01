@@ -94,8 +94,9 @@ export default function CardEditor({ initialData, onSubmit, isPending, onDirty }
       {/* Left column - form fields */}
       <div className="flex-[3] min-w-0 space-y-4">
         <div>
-          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.concept')}</label>
+          <label htmlFor="card-concept" className="block text-sm text-text-muted mb-1">{t('cardEditor.concept')}</label>
           <textarea
+            id="card-concept"
             value={concept}
             onChange={e => { setConcept(e.target.value); onDirty?.(); }}
             className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-text-primary text-sm focus:outline-none focus:border-accent-blue resize-none"
@@ -105,25 +106,25 @@ export default function CardEditor({ initialData, onSubmit, isPending, onDirty }
           />
         </div>
 
-        <div>
-          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.topic')}</label>
+        <label className="block">
+          <span className="block text-sm text-text-muted mb-1">{t('cardEditor.topic')}</span>
           <TopicSelector value={topicId} onChange={setTopicId} />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.frontHtml')}</label>
+        <label className="block">
+          <span className="block text-sm text-text-muted mb-1">{t('cardEditor.frontHtml')}</span>
           <div className="rounded-lg border border-border overflow-hidden" ref={frontEditorRef} />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.backHtml')}</label>
+        <label className="block">
+          <span className="block text-sm text-text-muted mb-1">{t('cardEditor.backHtml')}</span>
           <div className="rounded-lg border border-border overflow-hidden" ref={backEditorRef} />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-sm text-text-muted mb-1">{t('cardEditor.tags')}</label>
+        <label className="block">
+          <span className="block text-sm text-text-muted mb-1">{t('cardEditor.tags')}</span>
           <TagInput tags={tags} onChange={setTags} />
-        </div>
+        </label>
 
         <button
           type="submit"

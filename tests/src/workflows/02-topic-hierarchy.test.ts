@@ -196,4 +196,33 @@ describe("Topic Hierarchy", () => {
       await api.delete(`/topics/${childRes.data.id}`);
     });
   });
+
+  describe("Validation", () => {
+    it("rejects creating topic with missing name", async () => {
+      const res = await api.post("/topics", { description: "No name given" });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/name/i);
+    });
+
+    it("rejects creating topic with empty name", async () => {
+      const res = await api.post("/topics", { name: "" });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/name/i);
+    });
+
+    it("rejects updating non-existent topic", async () => {
+      const res = await api.put("/topics/ffffffff-ffff-ffff-ffff-ffffffffffff", {
+        name: "Ghost Topic",
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it("rejects creating topic with non-existent parentId", async () => {
+      const res = await api.post("/topics", {
+        name: "Bad Parent",
+        parentId: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      });
+      expect(res.status).toBeGreaterThanOrEqual(400);
+    });
+  });
 });

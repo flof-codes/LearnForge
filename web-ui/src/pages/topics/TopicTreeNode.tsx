@@ -62,17 +62,17 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
           )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={(e) => { e.stopPropagation(); onCreate(topic.id); }} className="p-1 text-text-muted hover:text-accent-green" title={t('topics.addChild')}>
+        <div className="flex items-center gap-1 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <button onClick={(e) => { e.stopPropagation(); onCreate(topic.id); }} className="p-2 text-text-muted hover:text-accent-green" title={t('topics.addChild')}>
             <Plus size={14} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onEdit(topic); }} className="p-1 text-text-muted hover:text-accent-blue" title={t('topics.edit')}>
+          <button onClick={(e) => { e.stopPropagation(); onEdit(topic); }} className="p-2 text-text-muted hover:text-accent-blue" title={t('topics.edit')}>
             <Pencil size={14} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(topic); }}
             disabled={topic.cardCount > 0}
-            className="p-1 text-text-muted hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-muted"
+            className="p-2 text-text-muted hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-muted"
             title={topic.cardCount > 0 ? t('topics.deleteCardFirst', { count: topic.cardCount }) : t('topics.delete')}
           >
             <Trash2 size={14} />

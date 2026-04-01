@@ -77,16 +77,61 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
 }
 
 export async function getCard(db: Db, userId: string, cardId: string) {
-  await verifyCardOwnership(db, cardId, userId);
+  // Single JOIN: card + ownership check + bloom + fsrs (replaces 4 sequential queries)
+  const [row] = await db
+    .select({
+      id: cards.id,
+      topicId: cards.topicId,
+      concept: cards.concept,
+      frontHtml: cards.frontHtml,
+      backHtml: cards.backHtml,
+      tags: cards.tags,
+      createdAt: cards.createdAt,
+      updatedAt: cards.updatedAt,
+      bloomCardId: bloomState.cardId,
+      bloomCurrentLevel: bloomState.currentLevel,
+      bloomHighestReached: bloomState.highestReached,
+      bloomUpdatedAt: bloomState.updatedAt,
+      fsrsCardId: fsrsState.cardId,
+      fsrsStability: fsrsState.stability,
+      fsrsDifficulty: fsrsState.difficulty,
+      fsrsDue: fsrsState.due,
+      fsrsLastReview: fsrsState.lastReview,
+      fsrsReps: fsrsState.reps,
+      fsrsLapses: fsrsState.lapses,
+      fsrsState: fsrsState.state,
+    })
+    .from(cards)
+    .innerJoin(topics, eq(cards.topicId, topics.id))
+    .leftJoin(bloomState, eq(bloomState.cardId, cards.id))
+    .leftJoin(fsrsState, eq(fsrsState.cardId, cards.id))
+    .where(and(eq(cards.id, cardId), eq(topics.userId, userId)));
 
-  const [card] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
-  if (!card) throw new NotFoundError("Card not found");
+  if (!row) throw new NotFoundError("Card not found");
 
-  const [bloom] = await db.select().from(bloomState).where(eq(bloomState.cardId, cardId));
-  const [fsrs] = await db.select().from(fsrsState).where(eq(fsrsState.cardId, cardId));
+  const bloom = row.bloomCardId != null
+    ? { cardId: row.bloomCardId, currentLevel: row.bloomCurrentLevel!, highestReached: row.bloomHighestReached!, updatedAt: row.bloomUpdatedAt! }
+    : null;
+
+  const fsrs = row.fsrsCardId != null
+    ? { cardId: row.fsrsCardId, stability: row.fsrsStability!, difficulty: row.fsrsDifficulty!, due: row.fsrsDue!, lastReview: row.fsrsLastReview, reps: row.fsrsReps!, lapses: row.fsrsLapses!, state: row.fsrsState! }
+    : null;
+
   const cardReviews = await db.select().from(reviews).where(eq(reviews.cardId, cardId));
 
-  return { ...card, bloomState: bloom ?? null, fsrsState: fsrs ?? null, reviews: cardReviews };
+  return {
+    id: row.id,
+    topicId: row.topicId,
+    concept: row.concept,
+    frontHtml: row.frontHtml,
+    backHtml: row.backHtml,
+    tags: row.tags,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    bloomState: bloom,
+    fsrsState: fsrs,
+    reviews: cardReviews,
+  };
 }
 
 export interface UpdateCardInput {

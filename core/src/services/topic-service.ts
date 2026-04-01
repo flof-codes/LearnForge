@@ -167,7 +167,7 @@ export async function createTopic(db: Db, userId: string, input: CreateTopicInpu
 export interface UpdateTopicInput {
   name?: string;
   description?: string;
-  parentId?: string;
+  parentId?: string | null;
 }
 
 export async function updateTopic(db: Db, userId: string, topicId: string, input: UpdateTopicInput) {

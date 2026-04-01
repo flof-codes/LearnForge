@@ -22,6 +22,7 @@ export {
   type FsrsDbState,
   type StudyModality,
 } from "./services/fsrs.js";
+export { optimizeUserParams } from "./services/fsrs-optimizer.js";
 
 // Services - Embeddings
 export { computeEmbedding, buildEmbeddingText } from "./services/embeddings.js";

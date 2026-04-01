@@ -107,6 +107,19 @@ export default async function authRoutes(app: FastifyInstance) {
 
   app.put<{ Body: { name?: string; email?: string; current_password?: string } }>(
     "/auth/profile",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            email: { type: "string" },
+            current_password: { type: "string" },
+          },
+          additionalProperties: false,
+        },
+      },
+    },
     async (request) => {
       const userId = getUserId(request);
       const { name, email, current_password } = request.body ?? {};
@@ -152,6 +165,19 @@ export default async function authRoutes(app: FastifyInstance) {
 
   app.put<{ Body: { current_password: string; new_password: string } }>(
     "/auth/password",
+    {
+      schema: {
+        body: {
+          type: "object",
+          required: ["current_password", "new_password"],
+          properties: {
+            current_password: { type: "string", minLength: 1 },
+            new_password: { type: "string", minLength: 8 },
+          },
+          additionalProperties: false,
+        },
+      },
+    },
     async (request) => {
       const userId = getUserId(request);
       const { current_password, new_password } = request.body ?? {};

@@ -39,8 +39,9 @@ export default function StudyStartPage() {
       {/* Topic selector */}
       <div className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
         <div>
-          <label className="block text-sm text-text-muted mb-1">{t('study.topic')}</label>
+          <label htmlFor="study-topic" className="block text-sm text-text-muted mb-1">{t('study.topic')}</label>
           <select
+            id="study-topic"
             value={topicId}
             onChange={e => setTopicId(e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"

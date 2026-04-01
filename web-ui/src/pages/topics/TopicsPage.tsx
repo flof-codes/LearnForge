@@ -7,11 +7,12 @@ import CreateTopicModal from './CreateTopicModal';
 import EditTopicModal from './EditTopicModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorFallback from '../../components/ErrorFallback';
 import type { Topic } from '../../types';
 
 export default function TopicsPage() {
   const { t } = useTranslation('app');
-  const { data: topics, isLoading } = useTopics();
+  const { data: topics, isLoading, isError, error, refetch } = useTopics();
   const deleteTopic = useDeleteTopic();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -30,6 +31,7 @@ export default function TopicsPage() {
   };
 
   if (isLoading) return <LoadingSpinner />;
+  if (isError) return <ErrorFallback message={(error as Error).message} onReset={() => refetch()} />;
 
   return (
     <div className="space-y-4">

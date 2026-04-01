@@ -262,8 +262,9 @@ export default function McpSettingsPage() {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.name')}</label>
+            <label htmlFor="profile-name" className="block text-sm text-text-muted mb-1">{t('app:settings.profile.name')}</label>
             <input
+              id="profile-name"
               type="text"
               value={profileName}
               onChange={e => setProfileName(e.target.value)}
@@ -271,8 +272,9 @@ export default function McpSettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.email')}</label>
+            <label htmlFor="profile-email" className="block text-sm text-text-muted mb-1">{t('app:settings.profile.email')}</label>
             <input
+              id="profile-email"
               type="email"
               value={profileEmail}
               onChange={e => setProfileEmail(e.target.value)}
@@ -281,11 +283,12 @@ export default function McpSettingsPage() {
           </div>
           {emailChanged && (
             <div>
-              <label className="block text-sm text-text-muted mb-1">
+              <label htmlFor="profile-email-password" className="block text-sm text-text-muted mb-1">
                 {t('app:settings.profile.currentPassword')}
                 <span className="ml-2 text-xs text-text-muted">({t('app:settings.profile.currentPasswordHint')})</span>
               </label>
               <input
+                id="profile-email-password"
                 type="password"
                 value={emailPassword}
                 onChange={e => setEmailPassword(e.target.value)}
@@ -322,8 +325,9 @@ export default function McpSettingsPage() {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.currentPassword')}</label>
+            <label htmlFor="pw-current" className="block text-sm text-text-muted mb-1">{t('app:settings.profile.currentPassword')}</label>
             <input
+              id="pw-current"
               type="password"
               value={currentPw}
               onChange={e => setCurrentPw(e.target.value)}
@@ -331,11 +335,12 @@ export default function McpSettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm text-text-muted mb-1">
+            <label htmlFor="pw-new" className="block text-sm text-text-muted mb-1">
               {t('app:settings.profile.newPassword')}
               <span className="ml-2 text-xs text-text-muted">({t('app:settings.profile.newPasswordHint')})</span>
             </label>
             <input
+              id="pw-new"
               type="password"
               value={newPw}
               onChange={e => setNewPw(e.target.value)}
@@ -343,8 +348,9 @@ export default function McpSettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm text-text-muted mb-1">{t('app:settings.profile.confirmPassword')}</label>
+            <label htmlFor="pw-confirm" className="block text-sm text-text-muted mb-1">{t('app:settings.profile.confirmPassword')}</label>
             <input
+              id="pw-confirm"
               type="password"
               value={confirmPw}
               onChange={e => setConfirmPw(e.target.value)}

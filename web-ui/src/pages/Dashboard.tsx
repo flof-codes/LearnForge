@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Plus, Layers, Flame, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const { data: summary, isLoading: summaryLoading, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useStudySummary();
   const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useStudyStats();
   const { data: topics, isLoading: topicsLoading, isError: topicsError, error: topicsErr, refetch: refetchTopics } = useTopics();
+  const [wizardDismissed, setWizardDismissed] = useState(() => localStorage.getItem('learnforge-wizard-dismissed') === '1');
 
   if (summaryLoading || statsLoading || topicsLoading) return <LoadingSpinner />;
 
@@ -25,8 +27,8 @@ export default function Dashboard() {
   }
 
   const isEmpty = summary?.totalCards === 0 && (!topics || topics.length === 0);
-  if (isEmpty) {
-    return <OnboardingWizard />;
+  if (isEmpty && !wizardDismissed) {
+    return <OnboardingWizard onSkip={() => { localStorage.setItem('learnforge-wizard-dismissed', '1'); setWizardDismissed(true); }} />;
   }
 
 

@@ -359,11 +359,21 @@ describe("MCP Tools", () => {
   });
 
   describe("Error Handling", () => {
-    it("get_card with invalid UUID returns error", async () => {
+    /** Extract error text and verify no stack traces leak through. */
+    function getErrorText(result: { content: Array<{ type: string; text?: string }> }): string {
+      const text = result.content.find((c) => c.type === "text")?.text ?? "";
+      // MCP errors should never expose raw stack traces
+      expect(text).not.toMatch(/^\s+at\s+/m);
+      expect(text).not.toContain("node_modules");
+      return text;
+    }
+
+    it("get_card with non-existent UUID returns error", async () => {
       const result = await mcp.callTool("get_card", {
         card_id: "00000000-0000-0000-0000-000000000099",
       });
       expect(result.isError).toBe(true);
+      getErrorText(result);
     });
 
     it("delete_topic with cards returns error", async () => {
@@ -372,8 +382,94 @@ describe("MCP Tools", () => {
       });
       expect(result.isError).toBe(true);
 
-      const text = result.content.find((c) => c.type === "text")?.text ?? "";
+      const text = getErrorText(result);
       expect(text).toMatch(/card/i);
+    });
+
+    it("create_card with missing concept returns error", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+      });
+      expect(result.isError).toBe(true);
+      const text = getErrorText(result);
+      expect(text).toMatch(/concept/i);
+    });
+
+    it("create_card with missing front_html returns error", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Test concept",
+        back_html: "<p>A</p>",
+      });
+      expect(result.isError).toBe(true);
+      const text = getErrorText(result);
+      expect(text).toMatch(/front_html/i);
+    });
+
+    it("create_card with non-existent topic_id returns error", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        concept: "Orphan card",
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+      });
+      expect(result.isError).toBe(true);
+      getErrorText(result);
+    });
+
+    it("submit_review with rating 0 returns error", async () => {
+      const result = await mcp.callTool("submit_review", {
+        card_id: CARDS.NEW_ADDITION,
+        bloom_level: 0,
+        rating: 0,
+        question_text: "Invalid rating test",
+      });
+      expect(result.isError).toBe(true);
+      const text = getErrorText(result);
+      expect(text).toMatch(/rating/i);
+    });
+
+    it("submit_review with rating 5 returns error", async () => {
+      const result = await mcp.callTool("submit_review", {
+        card_id: CARDS.NEW_ADDITION,
+        bloom_level: 0,
+        rating: 5,
+        question_text: "Invalid rating test",
+      });
+      expect(result.isError).toBe(true);
+      const text = getErrorText(result);
+      expect(text).toMatch(/rating/i);
+    });
+
+    it("submit_review with non-existent card_id returns error", async () => {
+      const result = await mcp.callTool("submit_review", {
+        card_id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        bloom_level: 0,
+        rating: 3,
+        question_text: "Ghost card test",
+      });
+      expect(result.isError).toBe(true);
+      getErrorText(result);
+    });
+
+    it("update_card with non-existent card_id returns error", async () => {
+      const result = await mcp.callTool("update_card", {
+        card_id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        concept: "Updated ghost",
+      });
+      expect(result.isError).toBe(true);
+      getErrorText(result);
+    });
+
+    it("create_topic with empty name returns error", async () => {
+      const result = await mcp.callTool("create_topic", {
+        name: "",
+      });
+      expect(result.isError).toBe(true);
+      const text = getErrorText(result);
+      expect(text).toMatch(/name/i);
     });
   });
 

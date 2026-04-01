@@ -25,7 +25,11 @@ function getSteps(path: Path): Step[] {
   return ['welcome', 'choose'];
 }
 
-export default function OnboardingWizard() {
+interface OnboardingWizardProps {
+  onSkip: () => void;
+}
+
+export default function OnboardingWizard({ onSkip }: OnboardingWizardProps) {
   const { t } = useTranslation('app');
   const navigate = useNavigate();
   const createTopic = useCreateTopic();
@@ -147,12 +151,18 @@ export default function OnboardingWizard() {
                 <h2 className="text-xl font-medium">{t('onboarding.welcomeTitle')}</h2>
                 <p className="text-sm text-text-muted">{t('onboarding.welcomeDescription')}</p>
               </div>
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-3">
                 <button
                   onClick={() => setStep('choose')}
                   className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
                 >
                   {t('onboarding.getStarted')} <ArrowRight size={16} />
+                </button>
+                <button
+                  onClick={onSkip}
+                  className="text-sm text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {t('onboarding.skip')}
                 </button>
               </div>
             </>
@@ -258,8 +268,9 @@ export default function OnboardingWizard() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-text-muted mb-1">{t('topics.name')}</label>
+                  <label htmlFor="onboarding-topic-name" className="block text-sm text-text-muted mb-1">{t('topics.name')}</label>
                   <input
+                    id="onboarding-topic-name"
                     type="text"
                     value={topicName}
                     onChange={(e) => setTopicName(e.target.value)}
@@ -269,8 +280,9 @@ export default function OnboardingWizard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-text-muted mb-1">{t('topics.descriptionOptional')}</label>
+                  <label htmlFor="onboarding-topic-description" className="block text-sm text-text-muted mb-1">{t('topics.descriptionOptional')}</label>
                   <input
+                    id="onboarding-topic-description"
                     type="text"
                     value={topicDescription}
                     onChange={(e) => setTopicDescription(e.target.value)}
@@ -308,8 +320,9 @@ export default function OnboardingWizard() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-text-muted mb-1">{t('onboarding.conceptLabel')}</label>
+                  <label htmlFor="onboarding-concept" className="block text-sm text-text-muted mb-1">{t('onboarding.conceptLabel')}</label>
                   <input
+                    id="onboarding-concept"
                     type="text"
                     value={concept}
                     onChange={(e) => setConcept(e.target.value)}
@@ -319,8 +332,9 @@ export default function OnboardingWizard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-text-muted mb-1">{t('onboarding.questionLabel')}</label>
+                  <label htmlFor="onboarding-question" className="block text-sm text-text-muted mb-1">{t('onboarding.questionLabel')}</label>
                   <textarea
+                    id="onboarding-question"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     placeholder={t('onboarding.questionPlaceholder')}
@@ -329,8 +343,9 @@ export default function OnboardingWizard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-text-muted mb-1">{t('onboarding.answerLabel')}</label>
+                  <label htmlFor="onboarding-answer" className="block text-sm text-text-muted mb-1">{t('onboarding.answerLabel')}</label>
                   <textarea
+                    id="onboarding-answer"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
                     placeholder={t('onboarding.answerPlaceholder')}

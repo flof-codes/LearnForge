@@ -32,7 +32,7 @@ export default function CardCreatorPage() {
       </button>
       <h1 className="text-2xl font-medium">{t('cardEditor.createTitle')}</h1>
       {error && (
-        <div className="rounded-lg px-3 py-2 text-sm bg-red-900/20 text-red-400">
+        <div className="rounded-lg px-3 py-2 text-sm bg-danger/15 text-danger">
           {error}
         </div>
       )}

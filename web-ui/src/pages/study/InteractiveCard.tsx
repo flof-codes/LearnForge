@@ -21,9 +21,12 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
     setFlipped(false); // eslint-disable-line react-hooks/set-state-in-effect
   }, [card.id]);
 
-  // Space key to flip
+  // Space/G key to flip (skip interactive elements so scroll still works)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
       if (e.code === 'Space' || e.key.toLowerCase() === 'g') {
         e.preventDefault();
         setFlipped(prev => !prev);
@@ -36,7 +39,7 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
   return (
     <>
       {/* Card */}
-      <div className="bg-bg-secondary rounded-xl border border-border p-6 relative pb-16">
+      <div className="bg-bg-secondary rounded-xl border border-border p-6 relative pb-16 overflow-y-auto max-h-[calc(100vh-12rem)]">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             {flipped ? t('study.back') : t('study.front')}

@@ -9,6 +9,7 @@ import { contextService } from '../../api/context';
 import { useQuery } from '@tanstack/react-query';
 import CardGrid from './CardGrid';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorFallback from '../../components/ErrorFallback';
 import { BLOOM_COLORS } from '../../types';
 
 type StatusFilter = 'all' | 'new' | 'learning' | 'due';
@@ -31,11 +32,11 @@ export default function CardBrowserPage() {
   const [bloomFilter, setBloomFilter] = useState<number | ''>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<CardSort>('newest');
-  const { data: topics } = useTopics();
+  const { data: topics, isError: topicsError, error: topicsErr, refetch: refetchTopics } = useTopics();
   const { data: summary } = useStudySummary();
 
   // Fetch all cards via context endpoint for the selected topic, or use a broad fetch
-  const { data: allCards, isLoading } = useQuery({
+  const { data: allCards, isLoading, isError: cardsError, error: cardsErr, refetch: refetchCards } = useQuery({
     queryKey: ['cards', 'browse', topicFilter, debouncedSearch],
     queryFn: async () => {
       // Semantic search when there is a search query
@@ -91,6 +92,11 @@ export default function CardBrowserPage() {
 
     return result;
   }, [allCards, debouncedSearch, search, bloomFilter, statusFilter, sort]);
+
+  if (topicsError || cardsError) {
+    const err = topicsErr || cardsErr;
+    return <ErrorFallback message={(err as Error).message} onReset={() => { refetchTopics(); refetchCards(); }} />;
+  }
 
   return (
     <div className="space-y-4">

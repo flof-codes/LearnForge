@@ -143,7 +143,7 @@ export default function TopicDetailPage() {
       </div>
 
       {deleteError && (
-        <div className="rounded-lg px-3 py-2 text-sm bg-red-900/20 text-red-400">
+        <div className="rounded-lg px-3 py-2 text-sm bg-danger/15 text-danger">
           {deleteError}
         </div>
       )}

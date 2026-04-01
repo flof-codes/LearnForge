@@ -1,7 +1,6 @@
 import { fsrs, createEmptyCard, generatorParameters, type Card, type Grade, State } from "ts-fsrs";
 
-const params = generatorParameters();
-const f = fsrs(params);
+const defaultFsrs = fsrs(generatorParameters());
 
 export interface FsrsDbState {
   stability: number;
@@ -65,8 +64,13 @@ export function applyModalityMultiplier(
 export function processReview(
   currentState: FsrsDbState,
   rating: Grade,
+  userParams?: { w: number[] } | null,
 ): FsrsDbState {
   const now = new Date();
+
+  const f = userParams?.w
+    ? fsrs(generatorParameters({ w: userParams.w }))
+    : defaultFsrs;
 
   // Reconstruct ts-fsrs Card from our persisted state
   const card: Card = {
