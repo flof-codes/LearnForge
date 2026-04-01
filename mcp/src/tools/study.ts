@@ -9,11 +9,11 @@ export function registerStudyTools(server: McpServer, db: Db, userId: string) {
     "Get cards ready to study (new + due for review), optionally filtered by topic (includes descendants)",
     {
       topic_id: z.string().uuid().optional(),
-      limit: z.number().int().min(1).max(100).default(10).optional(),
+      limit: z.number().int().min(1).max(100).default(5).optional(),
     },
     async ({ topic_id, limit }) => {
       try {
-        const cards = await getStudyCards(db, userId, topic_id, limit ?? 10);
+        const cards = await getStudyCards(db, userId, topic_id, limit ?? 5);
         return { content: [{ type: "text" as const, text: JSON.stringify(cards, null, 2) }] };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
