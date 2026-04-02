@@ -6,6 +6,7 @@ import { createInitialFsrsState } from "./fsrs.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { validateCardHtml } from "../lib/sanitize-card-html.js";
 import { verifyCardOwnership } from "../lib/card-ownership.js";
+import { validateClozeData, renderClozeHtml, type ClozeData } from "../lib/cloze-parser.js";
 
 /** All card columns except `embedding` (internal-only, never exposed to clients). */
 const cardColumns = {
@@ -15,6 +16,8 @@ const cardColumns = {
   frontHtml: cards.frontHtml,
   backHtml: cards.backHtml,
   tags: cards.tags,
+  cardType: cards.cardType,
+  clozeData: cards.clozeData,
   createdAt: cards.createdAt,
   updatedAt: cards.updatedAt,
 };
@@ -22,26 +25,49 @@ const cardColumns = {
 export interface CreateCardInput {
   topic_id: string;
   concept: string;
-  front_html: string;
-  back_html: string;
+  front_html?: string;
+  back_html?: string;
   tags?: string[];
+  card_type?: "standard" | "cloze";
+  cloze_data?: ClozeData;
 }
 
 export async function createCard(db: Db, userId: string, input: CreateCardInput) {
-  const { topic_id, concept, front_html, back_html, tags } = input;
+  const { topic_id, concept, tags, card_type, cloze_data } = input;
+  let { front_html, back_html } = input;
 
   if (!topic_id) throw new ValidationError("topic_id is required");
   if (!concept) throw new ValidationError("concept is required");
-  if (!front_html) throw new ValidationError("front_html is required");
-  if (!back_html) throw new ValidationError("back_html is required");
-  validateCardHtml(front_html, "front_html");
-  validateCardHtml(back_html, "back_html");
+
+  const cardType = card_type ?? "standard";
+
+  // Cross-validate card_type and cloze_data
+  if (cardType === "cloze" && !cloze_data) {
+    throw new ValidationError("cloze_data is required for cloze cards");
+  }
+  if (cloze_data && cardType !== "cloze") {
+    throw new ValidationError("cloze_data can only be provided for cloze cards");
+  }
+
+  if (cardType === "cloze") {
+    if (!validateClozeData(cloze_data)) {
+      throw new ValidationError("Invalid cloze_data structure");
+    }
+    const rendered = renderClozeHtml(cloze_data);
+    front_html = rendered.frontHtml;
+    back_html = rendered.backHtml;
+  } else {
+    if (!front_html) throw new ValidationError("front_html is required");
+    if (!back_html) throw new ValidationError("back_html is required");
+    validateCardHtml(front_html, "front_html");
+    validateCardHtml(back_html, "back_html");
+  }
 
   // Verify topic belongs to user
   const [topic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topic_id), eq(topics.userId, userId)));
   if (!topic) throw new NotFoundError("Topic not found");
 
-  const embeddingText = buildEmbeddingText(concept, tags ?? [], front_html, back_html);
+  const embeddingText = buildEmbeddingText(concept, tags ?? [], front_html!, back_html!);
   const embedding = await computeEmbedding(embeddingText);
   const initialFsrs = createInitialFsrsState();
 
@@ -49,9 +75,11 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
     const [card] = await tx.insert(cards).values({
       topicId: topic_id,
       concept,
-      frontHtml: front_html,
-      backHtml: back_html,
+      frontHtml: front_html!,
+      backHtml: back_html!,
       tags: tags ?? [],
+      cardType,
+      clozeData: cloze_data ?? null,
       embedding,
     }).returning(cardColumns);
 
@@ -86,6 +114,8 @@ export async function getCard(db: Db, userId: string, cardId: string) {
       frontHtml: cards.frontHtml,
       backHtml: cards.backHtml,
       tags: cards.tags,
+      cardType: cards.cardType,
+      clozeData: cards.clozeData,
       createdAt: cards.createdAt,
       updatedAt: cards.updatedAt,
       bloomCardId: bloomState.cardId,
@@ -126,6 +156,8 @@ export async function getCard(db: Db, userId: string, cardId: string) {
     frontHtml: row.frontHtml,
     backHtml: row.backHtml,
     tags: row.tags,
+    cardType: row.cardType,
+    clozeData: row.clozeData,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     bloomState: bloom,
@@ -140,10 +172,12 @@ export interface UpdateCardInput {
   back_html?: string;
   tags?: string[];
   topic_id?: string;
+  cloze_data?: ClozeData;
 }
 
 export async function updateCard(db: Db, userId: string, cardId: string, input: UpdateCardInput) {
-  const { concept, front_html, back_html, tags, topic_id } = input;
+  const { concept, tags, topic_id, cloze_data } = input;
+  let { front_html, back_html } = input;
 
   await verifyCardOwnership(db, cardId, userId);
 
@@ -153,8 +187,27 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
     if (!newTopic) throw new NotFoundError("Topic not found");
   }
 
-  if (front_html !== undefined) validateCardHtml(front_html, "front_html");
-  if (back_html !== undefined) validateCardHtml(back_html, "back_html");
+  // Fetch current card to check card type when cloze_data is provided
+  const [currentCard] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
+  if (!currentCard) throw new NotFoundError("Card not found");
+
+  // Handle cloze_data updates
+  if (cloze_data !== undefined) {
+    if (currentCard.cardType !== "cloze") {
+      throw new ValidationError("cloze_data can only be updated on cloze cards");
+    }
+    if (!validateClozeData(cloze_data)) {
+      throw new ValidationError("Invalid cloze_data structure");
+    }
+    const rendered = renderClozeHtml(cloze_data);
+    front_html = rendered.frontHtml;
+    back_html = rendered.backHtml;
+  }
+
+  if (currentCard.cardType !== "cloze") {
+    if (front_html !== undefined) validateCardHtml(front_html, "front_html");
+    if (back_html !== undefined) validateCardHtml(back_html, "back_html");
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle .set() partial update
   const updates: Record<string, any> = {};
@@ -163,16 +216,14 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
   if (back_html !== undefined) updates.backHtml = back_html;
   if (tags !== undefined) updates.tags = tags;
   if (topic_id !== undefined) updates.topicId = topic_id;
+  if (cloze_data !== undefined) updates.clozeData = cloze_data;
 
   if (concept !== undefined || front_html !== undefined || back_html !== undefined || tags !== undefined) {
-    const [currentCard] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
-    if (currentCard) {
-      const finalConcept = concept ?? currentCard.concept;
-      const finalTags = tags ?? currentCard.tags ?? [];
-      const finalFront = front_html ?? currentCard.frontHtml;
-      const finalBack = back_html ?? currentCard.backHtml;
-      updates.embedding = await computeEmbedding(buildEmbeddingText(finalConcept, finalTags, finalFront, finalBack));
-    }
+    const finalConcept = concept ?? currentCard.concept;
+    const finalTags = tags ?? currentCard.tags ?? [];
+    const finalFront = front_html ?? currentCard.frontHtml;
+    const finalBack = back_html ?? currentCard.backHtml;
+    updates.embedding = await computeEmbedding(buildEmbeddingText(finalConcept, finalTags, finalFront, finalBack));
   }
 
   const [updated] = await db.update(cards).set(updates).where(eq(cards.id, cardId)).returning(cardColumns);

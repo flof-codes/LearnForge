@@ -160,6 +160,104 @@ After all due cards are reviewed: summarize (cards reviewed, accuracy, Bloom cha
 
 ---
 
+## Cloze Card Study Flow
+
+<cloze_study_flow>
+When a card has \`cardType === "cloze"\`, use this flow instead of the standard per-card flow. The key difference: questions are dynamically generated from \`clozeData\` at review time, not from \`frontHtml\`.
+
+### Design Principles
+- **Dynamic generation, not pre-storage.** AI generates varied formulations at review time. \`clozeData.deletions[].answer\` is the immutable ground truth for answer evaluation.
+- **Web UI stays at Bloom 0.** Only the AI tutor can generate varied formulations. The stored \`frontHtml\` is the Bloom-0 version.
+- **MCQ at Bloom 0-1** (modality \`"mcq"\`, 1.05x interval). **Typed input at Bloom 2+** (modality \`"chat"\`, 1.2x interval).
+
+### Cloze Bloom Progression
+
+| Level | Name | Format | Interaction | Details |
+|-------|------|--------|-------------|---------|
+| 0 | Remember | Cloze MCQ, original sentence + hints | \`ask_user_input_v0\`, 4 options, single-select | Use \`clozeData.sourceText\` verbatim. Show hint as \`[hint]\` or \`[...]\` if no hint. Distractors from **different categories**. |
+| 1 | Understand | Cloze MCQ, no hints, harder distractors | \`ask_user_input_v0\`, 4 options, single-select | Same \`sourceText\`, always show \`[...]\` (hide hints). Distractors from the **same functional category**. |
+| 2 | Apply | Open cloze, AI-rephrased sentence | Chat typed input | AI generates a NEW sentence where the same answer fits the blank, using a different context/angle. User must recall, not recognize. |
+| 3 | Analyze | Cloze fill-in + comparison follow-up | Chat typed input | Two-part: (1) fill the blank, (2) explain a distinction using \`get_similar_cards\` context. Rating based on both parts. |
+| 4 | Evaluate | Cloze fill-in + claim evaluation | Chat typed input | Two-part: (1) fill the blank, (2) evaluate whether the surrounding claim is valid/accurate. Rating based on both parts. |
+| 5 | Create | User writes new cloze sentence | Chat typed input | User creates a novel sentence where the card's answer is the only correct fill-in. AI evaluates for accuracy, unambiguous blank, and novel context. |
+
+### Multi-Cloze Rotation
+- **Bloom 0-2:** Test ONE deletion per review, rotating. Infer which deletions were already tested from \`reviews[].answerExpected\`.
+- **Bloom 3+:** Up to 2 deletions if they are related (e.g., c1 and c2 are parts of the same concept).
+
+### Cloze Plateau
+Cards with simple factual content typically plateau at Bloom 3-4. Do NOT force progression to Bloom 5 unless the concept genuinely supports creative application. Recognize when a card has reached its natural ceiling.
+
+### Concrete Example: Cloze MCQ Session (Bloom 0)
+
+\`\`\`
+CARD: cardType="cloze", bloomState.currentLevel=0
+  clozeData = {
+    sourceText: "The {{c1::mitochondria::organelle}} is the {{c2::powerhouse}} of the cell",
+    deletions: [
+      { index: 1, answer: "mitochondria", hint: "organelle" },
+      { index: 2, answer: "powerhouse", hint: null }
+    ]
+  }
+
+  Step 1: Pick deletion to test (c1, rotating). Build sentence:
+    "The [organelle] is the powerhouse of the cell"
+  Step 2: Generate 3 distractors from DIFFERENT categories:
+    ribosome, nucleus, lysosome (not chloroplast — save for Bloom 1)
+  Step 3: Present as single-select MCQ, apply optionShuffle
+
+  YOUR OUTPUT:
+    "Fill in the blank:
+     The [organelle] is the ___powerhouse___ of the cell.
+     Which term completes the blank?"
+  TOOL CALLS:
+    → ask_user_input_v0({ options: ["mitochondria", "ribosome", "nucleus", "lysosome"] })
+
+USER SELECTS: "mitochondria" — correct
+
+  Evaluate: correct → rating 3
+  YOUR OUTPUT: "Correct! The mitochondria is the organelle..."
+  TOOL CALLS:
+    1. submit_review({
+         card_id: "...",
+         bloom_level: 0,
+         rating: 3,
+         question_text: "The [organelle] is the powerhouse of the cell. A) mitochondria B) ribosome C) nucleus D) lysosome",
+         answer_expected: "mitochondria",
+         user_answer: "mitochondria",
+         modality: "mcq"
+       })
+\`\`\`
+
+### Two-Part Interaction (Bloom 3-4)
+
+At Bloom 3-4, the cloze blank anchors the question, but the follow-up tests the actual Bloom level. **Correct blank alone is never rating 3+.**
+
+\`\`\`
+Bloom 3 (Analyze) example:
+  Part 1: "In cellular respiration, [...] produces most of the ATP."
+  User answers: "oxidative phosphorylation" — correct
+  Part 2 (follow-up using get_similar_cards):
+    "How does this differ from substrate-level phosphorylation in terms
+     of ATP yield and location within the cell?"
+  User explains → evaluate both parts for final rating.
+
+Bloom 4 (Evaluate) example:
+  Part 1: "[...] is considered the rate-limiting enzyme in glycolysis."
+  User answers: "phosphofructokinase" — correct
+  Part 2 (claim evaluation):
+    "The statement implies glycolysis has a single bottleneck. Is this
+     accurate, or are there conditions where other steps become limiting?"
+  User evaluates → rating based on both parts.
+\`\`\`
+
+### After Incorrect Varied Formulation (Bloom 2+)
+When the user fails a rephrased question, connect back to the original:
+"This is the same concept from your card. The answer is [X]. Recognizing it in different contexts shows deeper understanding."
+</cloze_study_flow>
+
+---
+
 ## Card Creation Flow
 
 <card_creation_rules>
@@ -185,6 +283,25 @@ The front side is a static question prompt — answering happens in chat via \`a
 - Diagrams (SVG, bar charts) when concept involves varying values.
 - Optional interactive elements (sliders) for exploration.
 - For MCQ cards: structure the back as one accordion section per option. Each section header shows the option letter + text. Each body explains WHY it is correct or wrong, with key terms highlighted.
+
+### Cloze Card Creation Rules
+- **When to use cloze:** factual recall, definitions, key terminology, fill-in-the-blank, vocabulary.
+- **When NOT to use cloze:** conceptual understanding, process explanations, comparisons (use standard cards).
+- Use the \`cloze_source\` param with \`{{c1::answer::hint}}\` syntax. No \`front_html\`/\`back_html\` needed — core auto-renders them.
+- 1-4 deletions per card. More = split into multiple cards.
+- Deletions must test *meaningful* units, not trivial words (articles, prepositions).
+- Each deletion must be unambiguous in context — only one correct answer fits.
+- \`concept\` field = full undeleted sentence (for embedding quality).
+
+Example:
+\`\`\`
+create_card({
+  topic_id: "...",
+  concept: "The mitochondria is the powerhouse of the cell, producing ATP via oxidative phosphorylation.",
+  cloze_source: "The {{c1::mitochondria::organelle}} is the {{c2::powerhouse}} of the cell, producing {{c3::ATP}} via oxidative phosphorylation.",
+  tags: ["biology", "cell-organelles"]
+})
+\`\`\`
 </card_creation_rules>
 
 ---
@@ -203,6 +320,7 @@ The front side is a static question prompt — answering happens in chat via \`a
 - For levels 3+: use \`get_similar_cards\` to craft cross-concept questions.
 - Not every card reaches level 5. Recognize when a concept plateaus.
 - The MCP server handles Bloom transitions: correct (rating ≥ 3) → move up; wrong (rating ≤ 2) → move down. FSRS handles scheduling independently.
+- **Cloze cards** follow a separate Bloom progression (see Cloze Card Study Flow above). They stay in cloze format at every level with progressively varied formulations. Cloze cards typically plateau at Bloom 3-4.
 
 ### Question Variety Strategies
 
@@ -239,6 +357,11 @@ If the card has 5+ reviews at the same Bloom level and you're struggling to find
   - Analyze: valid connections, 2+ comparison points?
   - Evaluate: justified judgment with evidence?
   - Create: original, viable, logical proposal?
+- **Cloze (by Bloom level):** Always evaluate against \`clozeData.deletions[].answer\` as ground truth.
+  - Bloom 0-1 (MCQ): Deterministic — correct option = rating 3-4, wrong = rating 1.
+  - Bloom 2 (typed): Exact match = 3-4. Correct synonym/abbreviation = 3. Conceptually correct but wrong term = 2. Wrong = 1.
+  - Bloom 3-4 (two-part): Rating 4 = blank correct + excellent follow-up. Rating 3 = blank correct + adequate follow-up. Rating 2 = blank correct but weak follow-up, OR blank wrong but follow-up shows understanding. Rating 1 = both wrong or follow-up missing.
+  - Bloom 5 (user creates cloze): Rating 3+ if factually accurate, unambiguous blank, and novel context.
 
 ### Feedback Style
 
@@ -296,7 +419,7 @@ For complete CSS, KaTeX setup, and SVG guidelines, see \`get_templates\`.
 | Study summary | get_study_summary | topic_id? |
 | Due cards | get_study_cards | topic_id?, limit? |
 | Submit review | submit_review | card_id, bloom_level, rating, question_text, modality?, answer_expected? |
-| Create card | create_card | topic_id, concept, front_html, back_html, tags? |
+| Create card | create_card | topic_id, concept, front_html?, back_html?, tags?, cloze_source? |
 | Get card | get_card | card_id |
 | Update card | update_card | card_id, + partial fields |
 | Delete card | delete_card | card_id |
@@ -482,6 +605,30 @@ function lfUpdate(){const sliders=document.querySelectorAll('input[type=range]')
 lfUpdate();
 </script>`,
   },
+
+  cloze: {
+    description: "Reference template for cloze cards. HTML is auto-generated by core via cloze_source — do not fill in manually. Shows the structure the user sees in web UI. Front: blanks as [hint] or [...]. Back: answers revealed with <mark>. Click blanks to reveal individually.",
+    variables: "{{SOURCE_TEXT}} (original sentence with cloze markers), {{DELETIONS}} (array of {index, answer, hint})",
+    html: `<style>
+.cloze-blank{display:inline;padding:2px 8px;border-radius:6px;border:2px dashed #d97706;color:#92400e;font-weight:600;cursor:pointer;transition:all .15s}
+.cloze-blank:hover{background:#fffbeb;border-color:#b45309}
+.cloze-blank.revealed{border-style:solid;border-color:#0d9488;color:#115e59;background:#ccfbf1;cursor:default}
+</style>
+<!-- FRONT (auto-generated by renderClozeHtml) -->
+<article>
+  <p>The <span class="cloze-blank" data-answer="mitochondria">[organelle]</span> is the <span class="cloze-blank" data-answer="powerhouse">[...]</span> of the cell.</p>
+</article>
+<script>
+document.querySelectorAll('.cloze-blank').forEach(function(el){el.addEventListener('click',function(){if(!el.classList.contains('revealed')){el.textContent=el.dataset.answer;el.classList.add('revealed')}})});
+</script>
+
+<!-- BACK (auto-generated by renderClozeHtml) -->
+<!--
+<article>
+  <p>The <mark>mitochondria</mark> is the <mark>powerhouse</mark> of the cell.</p>
+</article>
+-->`,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -502,13 +649,13 @@ export function registerSkillTools(server: McpServer) {
 
   server.tool(
     "get_templates",
-    "Get HTML card templates for LearnForge. Returns template HTML with variable placeholders, CSS, and JS. Use when creating or updating cards. Pass a template_name to get one specific template, or omit to get all five.",
+    "Get HTML card templates for LearnForge. Returns template HTML with variable placeholders, CSS, and JS. Use when creating or updating cards. Pass a template_name to get one specific template, or omit to get all six.",
     {
       template_name: z
-        .enum(["mcq", "open-response", "visual-explain", "label-diagram", "slider"])
+        .enum(["mcq", "open-response", "visual-explain", "label-diagram", "slider", "cloze"])
         .optional()
         .describe(
-          "Specific template to retrieve. Options: mcq, open-response, visual-explain, label-diagram, slider. Omit to get all templates.",
+          "Specific template to retrieve. Options: mcq, open-response, visual-explain, label-diagram, slider, cloze. Omit to get all templates.",
         ),
     },
     async ({ template_name }) => {

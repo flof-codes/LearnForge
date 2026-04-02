@@ -16,6 +16,8 @@ let userAApi: AxiosInstance;
 let userBApi: AxiosInstance;
 let userBTopicId: string;
 let userBCardId: string;
+let userAClozeCardId: string;
+let userBClozeCardId: string;
 
 beforeAll(async () => {
   // User A — the main test user (owns all seed data)
@@ -47,9 +49,44 @@ beforeAll(async () => {
     tags: ["user-b"],
   });
   userBCardId = cardRes.data.id;
+
+  // Create cloze cards for both users
+  const clozeDataA = {
+    deletions: [
+      { index: 1, answer: "mitochondria", hint: "organelle" },
+      { index: 2, answer: "powerhouse", hint: null },
+    ],
+    sourceText: "{{c1::mitochondria::organelle}} is the {{c2::powerhouse}} of the cell.",
+  };
+
+  const userAClozeRes = await userAApi.post("/cards", {
+    topic_id: TOPICS.EMPTY_TOPIC,
+    concept: "User A cloze card",
+    card_type: "cloze",
+    cloze_data: clozeDataA,
+  });
+  userAClozeCardId = userAClozeRes.data.id;
+
+  const userBClozeRes = await userBApi.post("/cards", {
+    topic_id: userBTopicId,
+    concept: "User B cloze card",
+    card_type: "cloze",
+    cloze_data: {
+      deletions: [{ index: 1, answer: "ribosome", hint: "protein" }],
+      sourceText: "The {{c1::ribosome::protein}} synthesizes proteins.",
+    },
+  });
+  userBClozeCardId = userBClozeRes.data.id;
 });
 
 afterAll(async () => {
+  // Clean up cloze cards first
+  if (userAClozeCardId) {
+    await userAApi.delete(`/cards/${userAClozeCardId}`);
+  }
+  if (userBClozeCardId) {
+    await userBApi.delete(`/cards/${userBClozeCardId}`);
+  }
   // Clean up User B's data
   if (userBCardId) {
     await userBApi.delete(`/cards/${userBCardId}`);
@@ -162,7 +199,7 @@ describe("Multi-Tenancy Isolation", () => {
     it("User B summary shows only their own cards", async () => {
       const res = await userBApi.get("/study/summary");
       expect(res.status).toBe(200);
-      expect(res.data.totalCards).toBe(1); // only the one card we created
+      expect(res.data.totalCards).toBe(2); // 1 standard card + 1 cloze card created in beforeAll
     });
   });
 
@@ -183,6 +220,63 @@ describe("Multi-Tenancy Isolation", () => {
       const res = await userBApi.get(`/context/topic/${TOPICS.MATHEMATICS}`);
       expect(res.status).toBe(200);
       expect(res.data).toHaveLength(0);
+    });
+  });
+
+  describe("Cloze Card Isolation", () => {
+    it("User A cannot read User B's cloze card", async () => {
+      const res = await userAApi.get(`/cards/${userBClozeCardId}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("User B cannot read User A's cloze card", async () => {
+      const res = await userBApi.get(`/cards/${userAClozeCardId}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("User A cannot update User B's cloze card", async () => {
+      const res = await userAApi.put(`/cards/${userBClozeCardId}`, {
+        concept: "Hijacked cloze",
+      });
+      expect(res.status).toBe(404);
+
+      // Verify unchanged for User B
+      const check = await userBApi.get(`/cards/${userBClozeCardId}`);
+      expect(check.status).toBe(200);
+      expect(check.data.concept).toBe("User B cloze card");
+      expect(check.data.cardType).toBe("cloze");
+    });
+
+    it("User A cannot delete User B's cloze card", async () => {
+      const res = await userAApi.delete(`/cards/${userBClozeCardId}`);
+      expect(res.status).toBe(404);
+
+      // Still exists for User B
+      const check = await userBApi.get(`/cards/${userBClozeCardId}`);
+      expect(check.status).toBe(200);
+    });
+
+    it("User B's study queue excludes User A's cloze cards", async () => {
+      const res = await userBApi.get("/study/due", { params: { limit: 100 } });
+      expect(res.status).toBe(200);
+
+      const ids = res.data.map((c: any) => c.id);
+      expect(ids).not.toContain(userAClozeCardId);
+      // User B's cloze card should be present
+      expect(ids).toContain(userBClozeCardId);
+    });
+
+    it("both users can independently create cloze cards", async () => {
+      // Verify both cloze cards exist for their respective owners
+      const resA = await userAApi.get(`/cards/${userAClozeCardId}`);
+      expect(resA.status).toBe(200);
+      expect(resA.data.cardType).toBe("cloze");
+      expect(resA.data.clozeData).toBeDefined();
+
+      const resB = await userBApi.get(`/cards/${userBClozeCardId}`);
+      expect(resB.status).toBe(200);
+      expect(resB.data.cardType).toBe("cloze");
+      expect(resB.data.clozeData).toBeDefined();
     });
   });
 

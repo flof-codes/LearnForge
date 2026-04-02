@@ -109,6 +109,49 @@ describe("Study Flow", () => {
         res.data.accuracy7d === null || typeof res.data.accuracy7d === "number",
       ).toBe(true);
     });
+
+    it("returns bloomStateMatrix with correct structure", async () => {
+      const res = await api.get("/study/summary");
+      expect(res.status).toBe(200);
+      const { bloomStateMatrix } = res.data;
+      expect(bloomStateMatrix).toBeDefined();
+
+      // Matrix should have keys for bloom levels that have cards
+      const stateKeys = ["new", "learning", "relearning", "recall", "shortTerm", "midTerm", "longTerm"];
+      for (const level of Object.keys(bloomStateMatrix)) {
+        const row = bloomStateMatrix[level];
+        for (const key of stateKeys) {
+          expect(typeof row[key]).toBe("number");
+        }
+      }
+
+      // Total cards across all bloom levels should equal totalCards
+      let totalFromMatrix = 0;
+      for (const level of Object.keys(bloomStateMatrix)) {
+        const row = bloomStateMatrix[level];
+        for (const key of stateKeys) {
+          totalFromMatrix += row[key];
+        }
+      }
+      expect(totalFromMatrix).toBe(SEED.totalCards);
+    });
+
+    it("returns streak fields as numbers", async () => {
+      const res = await api.get("/study/summary");
+      expect(res.status).toBe(200);
+      expect(typeof res.data.streak).toBe("number");
+      expect(typeof res.data.creationStreak).toBe("number");
+    });
+
+    it("returns zeroes for empty topic summary", async () => {
+      const res = await api.get("/study/summary", {
+        params: { topic_id: TOPICS.EMPTY_TOPIC },
+      });
+      expect(res.status).toBe(200);
+      expect(res.data.totalCards).toBe(0);
+      expect(res.data.dueCount).toBe(0);
+      expect(res.data.newCount).toBe(0);
+    });
   });
 
   describe("Study Stats", () => {
@@ -140,6 +183,52 @@ describe("Study Flow", () => {
       expect(res.data.cardStates.shortTerm).toBeGreaterThanOrEqual(1);
       expect(res.data.cardStates.midTerm).toBeGreaterThanOrEqual(1);
       expect(res.data.cardStates.longTerm).toBeGreaterThanOrEqual(1);
+    });
+
+    it("filters stats by topic_id", async () => {
+      const res = await api.get("/study/stats", {
+        params: { topic_id: TOPICS.MATHEMATICS },
+      });
+      expect(res.status).toBe(200);
+
+      const { cardStates } = res.data;
+      // Math tree has 8 cards: 2 new, 2 learning (Alg cards 3,4), 1 relearning (card 7), 3 review (cards 5,6,8)
+      const total = cardStates.new + cardStates.learning + cardStates.relearning +
+        cardStates.shortTerm + cardStates.midTerm + cardStates.longTerm;
+      expect(total).toBe(SEED.mathTreeCards);
+    });
+
+    it("returns zeroes for empty topic", async () => {
+      const res = await api.get("/study/stats", {
+        params: { topic_id: TOPICS.EMPTY_TOPIC },
+      });
+      expect(res.status).toBe(200);
+
+      const { cardStates } = res.data;
+      expect(cardStates.new).toBe(0);
+      expect(cardStates.learning).toBe(0);
+      expect(cardStates.relearning).toBe(0);
+      expect(res.data.dueCount).toBe(0);
+    });
+
+    it("returns zeroes for non-existent topic", async () => {
+      const res = await api.get("/study/stats", {
+        params: { topic_id: "00000000-0000-0000-0000-000000000099" },
+      });
+      expect(res.status).toBe(200);
+
+      const { cardStates } = res.data;
+      expect(cardStates.new).toBe(0);
+      expect(cardStates.learning).toBe(0);
+      expect(res.data.dueCount).toBe(0);
+    });
+
+    it("response shape includes activity metrics", async () => {
+      const res = await api.get("/study/stats");
+      expect(res.status).toBe(200);
+      expect(typeof res.data.reviewsToday).toBe("number");
+      expect(typeof res.data.averagePerDay).toBe("number");
+      expect(typeof res.data.averagePerMonth).toBe("number");
     });
   });
 

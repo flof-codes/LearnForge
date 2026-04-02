@@ -24,6 +24,23 @@ const TINY_PNG = Buffer.from(
   "base64",
 );
 
+// Minimal MP3 frame (MPEG1 Layer3 128kbps 44100Hz — sync word + padded frame)
+const TINY_MP3 = (() => {
+  const frame = Buffer.alloc(417);
+  frame[0] = 0xFF; frame[1] = 0xFB; frame[2] = 0x90; frame[3] = 0x00;
+  return frame;
+})();
+
+// Minimal OGG page (capture pattern + header)
+const TINY_OGG = (() => {
+  const buf = Buffer.alloc(28);
+  buf.write("OggS", 0);
+  buf.writeUInt8(0, 4);
+  buf.writeUInt8(2, 5);
+  buf.writeUInt32LE(1, 14);
+  return buf;
+})();
+
 /**
  * Poll a URL until it returns 200 or timeout is reached.
  */
@@ -100,7 +117,21 @@ async function createPlaceholderImages(): Promise<void> {
       { cwd: testsDir, stdio: "pipe" },
     );
   }
-  console.log("  [ok] Placeholder images created");
+
+  // Audio placeholder files for MCP audio upload tests
+  const mp3Base64 = TINY_MP3.toString("base64");
+  const oggBase64 = TINY_OGG.toString("base64");
+
+  execSync(
+    `docker compose -f docker-compose.test.yml exec -T test-api node -e "require('fs').writeFileSync('/data/images/test-audio-placeholder.mp3', Buffer.from('${mp3Base64}', 'base64'))"`,
+    { cwd: testsDir, stdio: "pipe" },
+  );
+  execSync(
+    `docker compose -f docker-compose.test.yml exec -T test-api node -e "require('fs').writeFileSync('/data/images/test-audio-placeholder.ogg', Buffer.from('${oggBase64}', 'base64'))"`,
+    { cwd: testsDir, stdio: "pipe" },
+  );
+
+  console.log("  [ok] Placeholder images and audio files created");
 }
 
 /**

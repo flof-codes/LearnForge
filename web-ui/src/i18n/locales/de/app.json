@@ -290,7 +290,7 @@
     },
     "export": {
       "title": "Daten exportieren",
-      "description": "Lade alle deine Themen, Karten, den Wiederholungsverlauf und Bilder als ZIP-Datei herunter.",
+      "description": "Lade alle deine Themen, Karten, den Wiederholungsverlauf und Medien-Dateien als ZIP-Datei herunter.",
       "exporting": "Export wird vorbereitet...",
       "button": "Export herunterladen (.zip)",
       "failed": "Datenexport fehlgeschlagen. Bitte versuche es erneut."
@@ -322,12 +322,12 @@
     },
     "deleteAccount": {
       "title": "Konto l\u00f6schen",
-      "description": "Dein Konto und alle Daten (Themen, Karten, Reviews, Bilder) werden dauerhaft gel\u00f6scht. Dies kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
+      "description": "Dein Konto und alle Daten (Themen, Karten, Reviews, Medien-Dateien) werden dauerhaft gel\u00f6scht. Dies kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
       "passwordLabel": "Gib dein Passwort zur Best\u00e4tigung ein",
       "button": "Mein Konto l\u00f6schen",
       "deleting": "L\u00f6schen...",
       "confirmTitle": "Konto l\u00f6schen?",
-      "confirmMessage": "Alle deine Themen, Karten, Reviews und Bilder werden dauerhaft gel\u00f6scht. Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden."
+      "confirmMessage": "Alle deine Themen, Karten, Reviews und Medien-Dateien werden dauerhaft gel\u00f6scht. Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden."
     }
   },
   "subscriptionBanner": {

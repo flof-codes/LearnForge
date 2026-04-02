@@ -43,6 +43,41 @@ export async function deleteFreshCard(
 }
 
 /**
+ * Create a fresh cloze card via the API for testing purposes.
+ * Returns the full card response (id, bloomState, fsrsState, clozeData, etc.).
+ */
+export async function createFreshClozeCard(
+  api: AxiosInstance,
+  topicId: string,
+  conceptSuffix?: string,
+): Promise<Record<string, any>> {
+  counter++;
+  const suffix = conceptSuffix ?? `cloze-${counter}-${Date.now()}`;
+
+  const res = await api.post("/cards", {
+    topic_id: topicId,
+    concept: `Cloze test ${suffix}`,
+    card_type: "cloze",
+    cloze_data: {
+      deletions: [
+        { index: 1, answer: "mitochondria", hint: "organelle" },
+        { index: 2, answer: "powerhouse", hint: null },
+      ],
+      sourceText:
+        "{{c1::mitochondria::organelle}} is the {{c2::powerhouse}} of the cell.",
+    },
+  });
+
+  if (res.status !== 201) {
+    throw new Error(
+      `Failed to create fresh cloze card: ${res.status} ${JSON.stringify(res.data)}`,
+    );
+  }
+
+  return res.data;
+}
+
+/**
  * Submit a review for a card. Returns the review response.
  */
 export async function submitReview(

@@ -39,7 +39,7 @@
     "storageTitle": "4. Data Storage",
     "storageText": "Your data is stored on a self-hosted server located in Austria. Data is not transferred to third countries. An exception is payment processing via Stripe (headquartered in the USA), which is carried out on the basis of the EU Commission's adequacy decision (EU-US Data Privacy Framework, Art. 45 GDPR).",
     "retentionTitle": "5. Data Retention",
-    "retentionText": "Your personal data is stored as long as your account exists. Server logs are retained for a maximum of 30 days. When you delete your account, all your data (profile, topics, cards, reviews, images) is permanently and irreversibly deleted. Tax-relevant records (e.g. billing data) are retained for 7 years in accordance with § 132 BAO.",
+    "retentionText": "Your personal data is stored as long as your account exists. Server logs are retained for a maximum of 30 days. When you delete your account, all your data (profile, topics, cards, reviews, media files) is permanently and irreversibly deleted. Tax-relevant records (e.g. billing data) are retained for 7 years in accordance with § 132 BAO.",
     "rightsTitle": "6. Your Rights",
     "rightsIntro": "Under the GDPR, you have the following rights:",
     "rightAccess": "Right of access (Art. 15 GDPR): You can request information about the personal data we store about you.",
@@ -236,7 +236,7 @@
       "cap1": "Edit cards — change the question, update the answer, or move a card to a different topic",
       "cap2": "Delete cards you no longer need",
       "cap3": "View your due forecast — see how many reviews are coming up by day or month",
-      "cap4": "Upload images to cards for visual learning and diagrams"
+      "cap4": "Upload images and audio to cards for visual learning and diagrams"
     },
     "topics": {
       "title": "Manage Topics",

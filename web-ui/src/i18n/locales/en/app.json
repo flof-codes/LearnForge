@@ -290,7 +290,7 @@
     },
     "export": {
       "title": "Export Data",
-      "description": "Download all your topics, cards, review history, and images as a ZIP file.",
+      "description": "Download all your topics, cards, review history, and media files as a ZIP file.",
       "exporting": "Preparing export...",
       "button": "Download Export (.zip)",
       "failed": "Failed to export data. Please try again."
@@ -322,12 +322,12 @@
     },
     "deleteAccount": {
       "title": "Delete Account",
-      "description": "Permanently delete your account and all data (topics, cards, reviews, images). This cannot be undone.",
+      "description": "Permanently delete your account and all data (topics, cards, reviews, media files). This cannot be undone.",
       "passwordLabel": "Enter your password to confirm",
       "button": "Delete my account",
       "deleting": "Deleting...",
       "confirmTitle": "Delete your account?",
-      "confirmMessage": "All your topics, cards, reviews, and images will be permanently deleted. This action cannot be undone."
+      "confirmMessage": "All your topics, cards, reviews, and media files will be permanently deleted. This action cannot be undone."
     }
   },
   "subscriptionBanner": {

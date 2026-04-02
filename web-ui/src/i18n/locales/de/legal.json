@@ -39,7 +39,7 @@
     "storageTitle": "4. Datenspeicherung",
     "storageText": "Deine Daten werden auf einem selbst betriebenen Server in Österreich gespeichert. Es erfolgt keine Übermittlung in Drittstaaten. Eine Ausnahme bildet die Zahlungsabwicklung über Stripe (Sitz in den USA), die auf Grundlage des Angemessenheitsbeschlusses der EU-Kommission (EU-US Data Privacy Framework, Art. 45 DSGVO) erfolgt.",
     "retentionTitle": "5. Speicherdauer",
-    "retentionText": "Deine personenbezogenen Daten werden gespeichert, solange dein Konto besteht. Server-Logs werden maximal 30 Tage aufbewahrt. Bei Löschung deines Kontos werden alle deine Daten (Profil, Themen, Karten, Wiederholungen, Bilder) dauerhaft und unwiderruflich gelöscht. Steuerlich relevante Unterlagen (z. B. Rechnungsdaten) werden gemäß § 132 BAO für 7 Jahre aufbewahrt.",
+    "retentionText": "Deine personenbezogenen Daten werden gespeichert, solange dein Konto besteht. Server-Logs werden maximal 30 Tage aufbewahrt. Bei Löschung deines Kontos werden alle deine Daten (Profil, Themen, Karten, Wiederholungen, Medien-Dateien) dauerhaft und unwiderruflich gelöscht. Steuerlich relevante Unterlagen (z. B. Rechnungsdaten) werden gemäß § 132 BAO für 7 Jahre aufbewahrt.",
     "rightsTitle": "6. Deine Rechte",
     "rightsIntro": "Nach der DSGVO hast du folgende Rechte:",
     "rightAccess": "Auskunftsrecht (Art. 15 DSGVO): Du kannst Auskunft über die bei uns gespeicherten personenbezogenen Daten verlangen.",
@@ -236,7 +236,7 @@
       "cap1": "Karten bearbeiten — Frage ändern, Antwort aktualisieren oder eine Karte in ein anderes Thema verschieben",
       "cap2": "Karten löschen, die du nicht mehr brauchst",
       "cap3": "Lernprognose ansehen — sieh dir an, wie viele Wiederholungen in den nächsten Tagen oder Monaten anstehen",
-      "cap4": "Bilder zu Karten hochladen für visuelles Lernen und Diagramme"
+      "cap4": "Bilder und Audio zu Karten hochladen für visuelles Lernen und Diagramme"
     },
     "topics": {
       "title": "Themen verwalten",

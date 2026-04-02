@@ -1,14 +1,22 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { AxiosInstance } from "axios";
 import axios from "axios";
 import { login, getApi } from "../helpers/api-client.js";
 import { TOPICS, CARDS, TEST_CONFIG } from "../helpers/fixtures.js";
+import { deleteFreshCard } from "../helpers/fresh-card.js";
 
 let api: AxiosInstance;
+const freshCardIds: string[] = [];
 
 beforeAll(async () => {
   await login();
   api = getApi();
+});
+
+afterAll(async () => {
+  for (const id of freshCardIds) {
+    await deleteFreshCard(api, id);
+  }
 });
 
 describe("Card Search", () => {
@@ -109,6 +117,57 @@ describe("Card Search", () => {
         expect(card.concept).not.toContain(",");
         expect((card.tags ?? []).join(" ")).not.toContain(",");
       }
+    });
+  });
+
+  describe("Cloze card search", () => {
+    let clozeCardId: string;
+
+    beforeAll(async () => {
+      const res = await api.post("/cards", {
+        topic_id: TOPICS.BIOLOGY,
+        concept: "Cloze searchable mitochondria energy",
+        card_type: "cloze",
+        cloze_data: {
+          deletions: [
+            { index: 1, answer: "mitochondria", hint: "organelle" },
+          ],
+          sourceText: "The {{c1::mitochondria::organelle}} produces ATP.",
+        },
+        tags: ["cloze-search-test", "biology"],
+      });
+      clozeCardId = res.data.id;
+      freshCardIds.push(clozeCardId);
+    });
+
+    it("finds cloze card by concept keyword", async () => {
+      const res = await api.get("/cards/search", {
+        params: { q: "mitochondria energy" },
+      });
+      expect(res.status).toBe(200);
+      const ids = res.data.map((c: any) => c.id);
+      expect(ids).toContain(clozeCardId);
+    });
+
+    it("finds cloze card by tag", async () => {
+      const res = await api.get("/cards/search", {
+        params: { q: "cloze-search-test" },
+      });
+      expect(res.status).toBe(200);
+      const ids = res.data.map((c: any) => c.id);
+      expect(ids).toContain(clozeCardId);
+    });
+
+    it("cloze search result has standard search fields", async () => {
+      const res = await api.get("/cards/search", {
+        params: { q: "cloze searchable mitochondria" },
+      });
+      expect(res.status).toBe(200);
+      const clozeResult = res.data.find((c: any) => c.id === clozeCardId);
+      expect(clozeResult).toBeDefined();
+      expect(clozeResult.concept).toContain("Cloze searchable");
+      expect(clozeResult.score).toBeDefined();
+      expect(typeof clozeResult.score).toBe("number");
     });
   });
 

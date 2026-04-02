@@ -140,6 +140,54 @@ describe("MCP Image Tools", () => {
     const text = result.content.find((c) => c.type === "text")?.text ?? "";
     expect(text).toMatch(/not found/i);
   });
+
+  it("upload_image accepts .mp3 audio file", async () => {
+    const filePath = "/data/images/test-audio-placeholder.mp3";
+
+    const result = await mcp.callTool("upload_image", {
+      file_path: filePath,
+    });
+
+    expect(result.isError).toBeFalsy();
+    const image = mcp.parseToolResult<{
+      id: string;
+      filename: string;
+      mimeType: string;
+      cardId: string | null;
+    }>(result);
+
+    expect(image.id).toBeDefined();
+    expect(image.mimeType).toBe("audio/mpeg");
+    expect(image.filename).toBe("test-audio-placeholder.mp3");
+    expect(image.cardId).toBeNull();
+
+    // Cleanup
+    await mcp.callTool("delete_image", { image_id: image.id });
+  });
+
+  it("upload_image accepts .ogg audio file", async () => {
+    const filePath = "/data/images/test-audio-placeholder.ogg";
+
+    const result = await mcp.callTool("upload_image", {
+      file_path: filePath,
+    });
+
+    expect(result.isError).toBeFalsy();
+    const image = mcp.parseToolResult<{
+      id: string;
+      filename: string;
+      mimeType: string;
+      cardId: string | null;
+    }>(result);
+
+    expect(image.id).toBeDefined();
+    expect(image.mimeType).toBe("audio/ogg");
+    expect(image.filename).toBe("test-audio-placeholder.ogg");
+    expect(image.cardId).toBeNull();
+
+    // Cleanup
+    await mcp.callTool("delete_image", { image_id: image.id });
+  });
 });
 
 // ── MCP submit_review with modalities ───────────────────────────────────────

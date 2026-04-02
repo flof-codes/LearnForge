@@ -12,6 +12,7 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
           SELECT t.id FROM topics t JOIN topic_tree tt ON t.parent_id = tt.id
         )
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
+               c.card_type, c.cloze_data,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state,
                bs.current_level, bs.highest_reached
         FROM cards c
@@ -24,6 +25,7 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
       `
     : sql`
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
+               c.card_type, c.cloze_data,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state,
                bs.current_level, bs.highest_reached
         FROM cards c
@@ -39,6 +41,7 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
   const result = await db.execute<{
     id: string; concept: string; front_html: string; back_html: string;
     topic_id: string; tags: string[] | null;
+    card_type: string; cloze_data: unknown;
     stability: number; difficulty: number; due: string; reps: number; lapses: number; state: number;
     current_level: number | null; highest_reached: number | null;
   }>(topicFilter);
@@ -80,6 +83,8 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
     backHtml: row.back_html,
     topicId: row.topic_id,
     tags: row.tags ?? [],
+    cardType: row.card_type,
+    clozeData: row.cloze_data,
     bloomState: {
       currentLevel: row.current_level ?? 0,
       highestReached: row.highest_reached ?? 0,

@@ -5,6 +5,9 @@ export function extFromMime(mime: string): string {
     "image/gif": ".gif",
     "image/webp": ".webp",
     "image/svg+xml": ".svg",
+    "audio/mpeg": ".mp3",
+    "audio/wav": ".wav",
+    "audio/ogg": ".ogg",
   };
   return map[mime] ?? "";
 }

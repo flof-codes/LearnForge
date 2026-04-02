@@ -212,6 +212,105 @@ describe("MCP Tools", () => {
     });
   });
 
+  describe("Cloze Cards", () => {
+    it("create_card with cloze_source convenience param succeeds", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "MCP cloze test card",
+        cloze_source:
+          "{{c1::mitochondria::organelle}} is the {{c2::powerhouse}} of the cell.",
+      });
+      expect(result.isError).toBeFalsy();
+
+      const card = mcp.parseToolResult<any>(result);
+      expect(card.id).toBeDefined();
+      expect(card.cardType).toBe("cloze");
+      expect(card.clozeData).toBeDefined();
+      expect(card.clozeData.deletions).toHaveLength(2);
+      expect(card.clozeData.sourceText).toContain("{{c1::");
+      expect(card.bloomState.currentLevel).toBe(0);
+      expect(card.fsrsState.state).toBe(0);
+      // Auto-rendered HTML
+      expect(card.frontHtml).toContain("[organelle]");
+      expect(card.backHtml).toContain("<mark>");
+      createdCardIds.push(card.id);
+    });
+
+    it("get_card returns cloze fields", async () => {
+      const clozeCardId = createdCardIds[createdCardIds.length - 1];
+      const result = await mcp.callTool("get_card", {
+        card_id: clozeCardId,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const card = mcp.parseToolResult<any>(result);
+      expect(card.cardType).toBe("cloze");
+      expect(card.clozeData).toBeDefined();
+      expect(card.clozeData.deletions).toHaveLength(2);
+      expect(card.frontHtml).toContain("[organelle]");
+      expect(card.backHtml).toContain("<mark>");
+    });
+
+    it("get_study_cards returns cloze cards with proper shape", async () => {
+      const result = await mcp.callTool("get_study_cards", { limit: 100 });
+      const cards = mcp.parseToolResult<any[]>(result);
+
+      const clozeCards = cards.filter((c: any) => c.cardType === "cloze");
+      expect(clozeCards.length).toBeGreaterThan(0);
+
+      for (const card of clozeCards) {
+        expect(card.clozeData).toBeDefined();
+        expect(card.clozeData.deletions).toBeDefined();
+        expect(card.clozeData.sourceText).toBeDefined();
+      }
+    });
+
+    it("submit_review works for cloze cards", async () => {
+      const clozeCardId = createdCardIds[createdCardIds.length - 1];
+      const reviewResult = await mcp.callTool("submit_review", {
+        card_id: clozeCardId,
+        bloom_level: 0,
+        rating: 3,
+        question_text: "MCP cloze review test",
+      });
+      expect(reviewResult.isError).toBeFalsy();
+
+      const review = mcp.parseToolResult<any>(reviewResult);
+      expect(review.review.rating).toBe(3);
+      expect(review.fsrsState.reps).toBeGreaterThan(0);
+      expect(review.bloomState.currentLevel).toBe(1);
+    });
+
+    it("create_card with invalid cloze_source returns error", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Invalid cloze source",
+        cloze_source: "No cloze syntax here at all.",
+      });
+      expect(result.isError).toBe(true);
+    });
+
+    it("create_card rejects cloze_source with front_html/back_html", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Both params",
+        cloze_source: "{{c1::test}}",
+        front_html: "<p>Q</p>",
+        back_html: "<p>A</p>",
+      });
+      expect(result.isError).toBe(true);
+    });
+
+    it("create_card with card_type cloze but no cloze_source returns error", async () => {
+      const result = await mcp.callTool("create_card", {
+        topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "Missing cloze source",
+        card_type: "cloze",
+      });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("Study", () => {
     it("get_study_cards returns due cards", async () => {
       const result = await mcp.callTool("get_study_cards", { limit: 50 });
@@ -332,13 +431,14 @@ describe("MCP Tools", () => {
       const result = await mcp.callTool("get_templates", {});
       const templates = mcp.parseToolResult<any[]>(result);
 
-      expect(templates.length).toBe(5);
+      expect(templates.length).toBe(6);
       const names = templates.map((t: any) => t.name);
       expect(names).toContain("mcq");
       expect(names).toContain("open-response");
       expect(names).toContain("visual-explain");
       expect(names).toContain("label-diagram");
       expect(names).toContain("slider");
+      expect(names).toContain("cloze");
 
       for (const t of templates) {
         expect(t.description).toBeTruthy();

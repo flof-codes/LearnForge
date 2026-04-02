@@ -10,6 +10,15 @@ export { stripHtml } from "./lib/strip-html.js";
 export { validateCardHtml } from "./lib/sanitize-card-html.js";
 export { verifyCardOwnership } from "./lib/card-ownership.js";
 
+// Cloze Parser
+export {
+  parseClozeText,
+  renderClozeHtml,
+  validateClozeData,
+  type ClozeData,
+  type ClozeDeletion,
+} from "./lib/cloze-parser.js";
+
 // Services - Bloom
 export { computeBloomTransition, type BloomTransitionResult } from "./services/bloom.js";
 

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, customType } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, timestamp, jsonb, customType } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { topics } from "./topics.js";
 
@@ -21,6 +21,8 @@ export const cards = pgTable("cards", {
   frontHtml: text("front_html").notNull(),
   backHtml: text("back_html").notNull(),
   tags: text("tags").array().default([]),
+  cardType: varchar("card_type", { length: 20 }).notNull().default("standard"),
+  clozeData: jsonb("cloze_data"),
   embedding: vector("embedding"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),

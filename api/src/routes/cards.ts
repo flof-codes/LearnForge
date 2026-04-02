@@ -1,22 +1,24 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { createCard, getCard, updateCard, deleteCard, resetCard, searchCards, ValidationError } from "@learnforge/core";
+import { createCard, getCard, updateCard, deleteCard, resetCard, searchCards, ValidationError, type ClozeData } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function cardRoutes(app: FastifyInstance) {
 
   // POST /cards — create a new card with bloom + fsrs state
-  app.post<{ Body: { topic_id: string; concept: string; front_html: string; back_html: string; tags?: string[] } }>("/cards", {
+  app.post<{ Body: { topic_id: string; concept: string; front_html?: string; back_html?: string; tags?: string[]; card_type?: "standard" | "cloze"; cloze_data?: ClozeData } }>("/cards", {
     schema: {
       body: {
         type: "object",
-        required: ["topic_id", "concept", "front_html", "back_html"],
+        required: ["topic_id", "concept"],
         properties: {
           topic_id: { type: "string", format: "uuid" },
           concept: { type: "string", minLength: 1 },
           front_html: { type: "string", minLength: 1 },
           back_html: { type: "string", minLength: 1 },
           tags: { type: "array", items: { type: "string" } },
+          card_type: { type: "string", enum: ["standard", "cloze"] },
+          cloze_data: { type: "object" },
         },
         additionalProperties: false,
       },
@@ -44,7 +46,7 @@ export default async function cardRoutes(app: FastifyInstance) {
   });
 
   // PUT /cards/:id — update card content
-  app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string } }>("/cards/:id", {
+  app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string; cloze_data?: ClozeData } }>("/cards/:id", {
     schema: {
       body: {
         type: "object",
@@ -54,6 +56,7 @@ export default async function cardRoutes(app: FastifyInstance) {
           front_html: { type: "string", minLength: 1 },
           back_html: { type: "string", minLength: 1 },
           tags: { type: "array", items: { type: "string" } },
+          cloze_data: { type: "object" },
         },
         additionalProperties: false,
       },

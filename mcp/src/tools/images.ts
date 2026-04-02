@@ -16,6 +16,9 @@ const EXT_TO_MIME: Record<string, string> = {
   ".gif": "image/gif",
   ".webp": "image/webp",
   ".svg": "image/svg+xml",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
 };
 
 function mimeToExt(mime: string): string {
@@ -25,6 +28,9 @@ function mimeToExt(mime: string): string {
     "image/gif": ".gif",
     "image/webp": ".webp",
     "image/svg+xml": ".svg",
+    "audio/mpeg": ".mp3",
+    "audio/wav": ".wav",
+    "audio/ogg": ".ogg",
   };
   return map[mime] ?? "";
 }
@@ -32,7 +38,7 @@ function mimeToExt(mime: string): string {
 export function registerImageTools(server: McpServer, db: Db, userId: string, imagePath: string) {
   server.tool(
     "upload_image",
-    "Upload an image from a local file path. Supports png, jpg, jpeg, gif, webp, and svg.",
+    "Upload an image or audio file from a local file path. Supports png, jpg, jpeg, gif, webp, svg, mp3, wav, and ogg.",
     {
       file_path: z.string().describe("Absolute path to the image file on disk"),
       card_id: z.string().uuid().optional().describe("Optional card ID to associate the image with"),

@@ -71,6 +71,13 @@
       "when": 1774051200004,
       "tag": "0009_fsrs_user_params",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775064782658,
+      "tag": "0010_cloze_card_type",
+      "breakpoints": true
     }
   ]
 }
