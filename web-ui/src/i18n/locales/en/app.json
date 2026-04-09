@@ -161,7 +161,10 @@
     "resetConfirm": "Reset",
     "deleteTitle": "Delete Card",
     "deleteMessage": "This will permanently delete this card and all its review history.",
-    "deleteConfirm": "Delete"
+    "deleteConfirm": "Delete",
+    "deleteReviewTitle": "Delete Review",
+    "deleteReviewMessage": "This review will be permanently deleted. The card's scheduling state will be recalculated from remaining reviews.",
+    "deleteReviewConfirm": "Delete"
   },
   "cardEditor": {
     "createTitle": "Create Card",
@@ -407,6 +410,7 @@
     "createCardFailed": "Failed to create card. Please try again.",
     "updateCardFailed": "Failed to save changes. Please try again.",
     "deleteCardFailed": "Failed to delete card. Please try again.",
+    "deleteReviewFailed": "Failed to delete review. Please try again.",
     "resetCardFailed": "Failed to reset card progress. Please try again.",
     "deleteTopicFailed": "Failed to delete topic. Please try again."
   },

@@ -12,3 +12,14 @@ export const useSubmitReview = () => {
     },
   });
 };
+
+export const useDeleteReview = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => reviewService.delete(id).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cards'] });
+      qc.invalidateQueries({ queryKey: ['study'] });
+    },
+  });
+};

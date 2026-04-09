@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCard, useDeleteCard, useResetCard } from '../../hooks/useCards';
+import { useDeleteReview } from '../../hooks/useReviews';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
@@ -25,8 +26,10 @@ export default function CardDetailPage() {
   const { data: card, isLoading } = useCard(id!);
   const deleteCard = useDeleteCard();
   const resetCard = useResetCard();
+  const deleteReview = useDeleteReview();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +56,15 @@ export default function CardDetailPage() {
     resetCard.mutate(id!, {
       onSuccess: () => setResetOpen(false),
       onError: (err) => { setResetOpen(false); setError(extractErrorMessage(err) || t('errors.resetCardFailed')); },
+    });
+  };
+
+  const handleDeleteReview = () => {
+    if (!deleteReviewId) return;
+    setError(null);
+    deleteReview.mutate(deleteReviewId, {
+      onSuccess: () => setDeleteReviewId(null),
+      onError: (err) => { setDeleteReviewId(null); setError(extractErrorMessage(err) || t('errors.deleteReviewFailed')); },
     });
   };
 
@@ -184,6 +196,7 @@ export default function CardDetailPage() {
                   <th className="text-left py-2 pr-4">{t('cardDetail.rating')}</th>
                   <th className="text-left py-2 pr-4">{t('cardDetail.question')}</th>
                   <th className="text-left py-2">{t('cardDetail.answer')}</th>
+                  <th className="py-2 w-8"></th>
                 </tr>
               </thead>
               <tbody>
@@ -209,6 +222,15 @@ export default function CardDetailPage() {
                       </td>
                       <td className={`py-2 text-text-muted ${isExpanded ? 'whitespace-pre-wrap break-words' : 'truncate max-w-[200px]'}`}>
                         {review.userAnswer ?? '\u2014'}
+                      </td>
+                      <td className="py-2 text-right">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteReviewId(review.id); }}
+                          className="p-1 rounded text-text-muted hover:text-danger transition-colors"
+                          title={t('cardDetail.deleteReviewTitle')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -237,6 +259,16 @@ export default function CardDetailPage() {
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}
+      />
+
+      <ConfirmModal
+        open={deleteReviewId !== null}
+        title={t('cardDetail.deleteReviewTitle')}
+        message={t('cardDetail.deleteReviewMessage')}
+        confirmLabel={t('cardDetail.deleteReviewConfirm')}
+        danger
+        onConfirm={handleDeleteReview}
+        onCancel={() => setDeleteReviewId(null)}
       />
     </div>
   );

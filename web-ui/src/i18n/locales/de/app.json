@@ -161,7 +161,10 @@
     "resetConfirm": "Zur\u00fccksetzen",
     "deleteTitle": "Karte l\u00f6schen",
     "deleteMessage": "Dies l\u00f6scht diese Karte und ihren gesamten Wiederholungsverlauf unwiderruflich.",
-    "deleteConfirm": "L\u00f6schen"
+    "deleteConfirm": "L\u00f6schen",
+    "deleteReviewTitle": "Wiederholung l\u00f6schen",
+    "deleteReviewMessage": "Diese Wiederholung wird unwiderruflich gel\u00f6scht. Der Planungsstatus der Karte wird aus den verbleibenden Wiederholungen neu berechnet.",
+    "deleteReviewConfirm": "L\u00f6schen"
   },
   "cardEditor": {
     "createTitle": "Karte erstellen",
@@ -407,6 +410,7 @@
     "createCardFailed": "Karte konnte nicht erstellt werden. Bitte versuche es erneut.",
     "updateCardFailed": "\u00c4nderungen konnten nicht gespeichert werden. Bitte versuche es erneut.",
     "deleteCardFailed": "Karte konnte nicht gel\u00f6scht werden. Bitte versuche es erneut.",
+    "deleteReviewFailed": "Wiederholung konnte nicht gel\u00f6scht werden. Bitte versuche es erneut.",
     "resetCardFailed": "Kartenfortschritt konnte nicht zur\u00fcckgesetzt werden. Bitte versuche es erneut.",
     "deleteTopicFailed": "Thema konnte nicht gel\u00f6scht werden. Bitte versuche es erneut."
   },
