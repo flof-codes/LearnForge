@@ -31,127 +31,203 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
   }
   if (!question_text) throw new ValidationError("question_text is required");
 
-  // Verify card belongs to user
-  const ownershipCheck = await db.execute<{ id: string }>(sql`
-    SELECT c.id FROM cards c
-    JOIN topics t ON c.topic_id = t.id
-    WHERE c.id = ${card_id} AND t.user_id = ${userId}
-  `);
-  if (ownershipCheck.rows.length === 0) throw new NotFoundError("Card not found");
-
   const modality: StudyModality = (rawModality && isValidModality(rawModality))
     ? rawModality
     : "web";
 
   const result = await db.transaction(async (tx) => {
-    // 1. Insert review record
-    const [review] = await tx.insert(reviews).values({
-      cardId: card_id,
-      bloomLevel: bloom_level,
-      rating,
-      questionText: question_text,
-      modality,
-      answerExpected: answer_expected,
-      userAnswer: user_answer,
-    }).returning();
+    // 1. Single query: verify ownership + load user params + FSRS state + Bloom state
+    const stateRows = await tx.execute<{
+      fsrs_params: unknown;
+      stability: number;
+      difficulty: number;
+      due: Date;
+      last_review: Date | null;
+      reps: number;
+      lapses: number;
+      state: number;
+      current_level: number;
+      highest_reached: number;
+    }>(sql`
+      SELECT
+        u.fsrs_params,
+        fs.stability, fs.difficulty, fs.due, fs.last_review, fs.reps, fs.lapses, fs.state,
+        bs.current_level, bs.highest_reached
+      FROM cards c
+      JOIN topics t ON c.topic_id = t.id
+      JOIN users u ON u.id = t.user_id
+      JOIN fsrs_state fs ON fs.card_id = c.id
+      JOIN bloom_state bs ON bs.card_id = c.id
+      WHERE c.id = ${card_id} AND t.user_id = ${userId}
+    `);
+    if (stateRows.rows.length === 0) throw new NotFoundError("Card not found");
+    const s = stateRows.rows[0];
 
-    // 2. Load user's FSRS params (if optimized)
-    const [user] = await tx
-      .select({ fsrsParams: users.fsrsParams })
-      .from(users)
-      .where(eq(users.id, userId));
-    const userParams = user?.fsrsParams as { w: number[] } | null;
-
-    // 3. Read current fsrs_state → process → update
-    const [currentFsrs] = await tx
-      .select()
-      .from(fsrsState)
-      .where(eq(fsrsState.cardId, card_id));
-
-    if (!currentFsrs) throw new NotFoundError("Card not found");
-
+    // 2. Compute FSRS + Bloom transitions (in-memory, no DB)
+    const userParams = s.fsrs_params as { w: number[] } | null;
     const rawFsrs = processReview(
       {
-        stability: currentFsrs.stability,
-        difficulty: currentFsrs.difficulty,
-        due: currentFsrs.due,
-        lastReview: currentFsrs.lastReview,
-        reps: currentFsrs.reps,
-        lapses: currentFsrs.lapses,
-        state: currentFsrs.state,
+        stability: s.stability,
+        difficulty: s.difficulty,
+        due: s.due,
+        lastReview: s.last_review,
+        reps: s.reps,
+        lapses: s.lapses,
+        state: s.state,
       } as FsrsDbState,
       rating as 1 | 2 | 3 | 4,
       userParams,
     );
-
     const updatedFsrs = applyModalityMultiplier(rawFsrs, modality);
 
-    const [savedFsrs] = await tx
-      .update(fsrsState)
-      .set({
-        stability: updatedFsrs.stability,
-        difficulty: updatedFsrs.difficulty,
-        due: updatedFsrs.due,
-        lastReview: updatedFsrs.lastReview,
-        reps: updatedFsrs.reps,
-        lapses: updatedFsrs.lapses,
-        state: updatedFsrs.state,
-      })
-      .where(eq(fsrsState.cardId, card_id))
-      .returning();
+    const updatedBloom = skip_bloom
+      ? null
+      : computeBloomTransition(rating, bloom_level, s.current_level, s.highest_reached);
 
-    // 4. Read current bloom_state → compute transition → update (skip for manual reviews)
-    const [currentBloom] = await tx
-      .select()
-      .from(bloomState)
-      .where(eq(bloomState.cardId, card_id));
-
-    if (!currentBloom) throw new NotFoundError("Card not found");
-
-    if (skip_bloom) {
-      return { review, fsrsState: savedFsrs, bloomState: currentBloom };
+    // 3. Single CTE: INSERT review + UPDATE fsrs_state + UPDATE bloom_state
+    if (updatedBloom) {
+      const cteRows = await tx.execute<{
+        r_id: string; r_card_id: string; r_bloom_level: number; r_rating: number;
+        r_question_text: string; r_modality: string; r_answer_expected: string | null;
+        r_user_answer: string | null; r_reviewed_at: Date;
+        fs_stability: number; fs_difficulty: number; fs_due: Date;
+        fs_last_review: Date | null; fs_reps: number; fs_lapses: number; fs_state: number;
+        bs_current_level: number; bs_highest_reached: number;
+      }>(sql`
+        WITH ins_review AS (
+          INSERT INTO reviews (card_id, bloom_level, rating, question_text, modality, answer_expected, user_answer)
+          VALUES (${card_id}, ${bloom_level}, ${rating}, ${question_text}, ${modality}, ${answer_expected ?? null}, ${user_answer ?? null})
+          RETURNING *
+        ), upd_fsrs AS (
+          UPDATE fsrs_state SET
+            stability = ${updatedFsrs.stability},
+            difficulty = ${updatedFsrs.difficulty},
+            due = ${updatedFsrs.due},
+            last_review = ${updatedFsrs.lastReview},
+            reps = ${updatedFsrs.reps},
+            lapses = ${updatedFsrs.lapses},
+            state = ${updatedFsrs.state}
+          WHERE card_id = ${card_id}
+          RETURNING *
+        ), upd_bloom AS (
+          UPDATE bloom_state SET
+            current_level = ${updatedBloom.currentLevel},
+            highest_reached = ${updatedBloom.highestReached},
+            updated_at = NOW()
+          WHERE card_id = ${card_id}
+          RETURNING *
+        )
+        SELECT
+          ins_review.id AS r_id, ins_review.card_id AS r_card_id,
+          ins_review.bloom_level AS r_bloom_level, ins_review.rating AS r_rating,
+          ins_review.question_text AS r_question_text, ins_review.modality AS r_modality,
+          ins_review.answer_expected AS r_answer_expected, ins_review.user_answer AS r_user_answer,
+          ins_review.reviewed_at AS r_reviewed_at,
+          upd_fsrs.stability AS fs_stability, upd_fsrs.difficulty AS fs_difficulty,
+          upd_fsrs.due AS fs_due, upd_fsrs.last_review AS fs_last_review,
+          upd_fsrs.reps AS fs_reps, upd_fsrs.lapses AS fs_lapses, upd_fsrs.state AS fs_state,
+          upd_bloom.current_level AS bs_current_level, upd_bloom.highest_reached AS bs_highest_reached
+        FROM ins_review, upd_fsrs, upd_bloom
+      `);
+      const row = cteRows.rows[0];
+      return {
+        review: {
+          id: row.r_id, cardId: row.r_card_id, bloomLevel: row.r_bloom_level,
+          rating: row.r_rating, questionText: row.r_question_text, modality: row.r_modality,
+          answerExpected: row.r_answer_expected, userAnswer: row.r_user_answer,
+          reviewedAt: row.r_reviewed_at,
+        },
+        fsrsState: {
+          cardId: card_id, stability: row.fs_stability, difficulty: row.fs_difficulty,
+          due: row.fs_due, lastReview: row.fs_last_review, reps: row.fs_reps,
+          lapses: row.fs_lapses, state: row.fs_state,
+        },
+        bloomState: {
+          cardId: card_id, currentLevel: row.bs_current_level,
+          highestReached: row.bs_highest_reached,
+        },
+      };
     }
 
-    const updatedBloom = computeBloomTransition(
-      rating,
-      bloom_level,
-      currentBloom.currentLevel,
-      currentBloom.highestReached,
-    );
-
-    const [savedBloom] = await tx
-      .update(bloomState)
-      .set({
-        currentLevel: updatedBloom.currentLevel,
-        highestReached: updatedBloom.highestReached,
-      })
-      .where(eq(bloomState.cardId, card_id))
-      .returning();
-
-    return { review, fsrsState: savedFsrs, bloomState: savedBloom };
+    // skip_bloom path: INSERT review + UPDATE fsrs only
+    const cteRows = await tx.execute<{
+      r_id: string; r_card_id: string; r_bloom_level: number; r_rating: number;
+      r_question_text: string; r_modality: string; r_answer_expected: string | null;
+      r_user_answer: string | null; r_reviewed_at: Date;
+      fs_stability: number; fs_difficulty: number; fs_due: Date;
+      fs_last_review: Date | null; fs_reps: number; fs_lapses: number; fs_state: number;
+    }>(sql`
+      WITH ins_review AS (
+        INSERT INTO reviews (card_id, bloom_level, rating, question_text, modality, answer_expected, user_answer)
+        VALUES (${card_id}, ${bloom_level}, ${rating}, ${question_text}, ${modality}, ${answer_expected ?? null}, ${user_answer ?? null})
+        RETURNING *
+      ), upd_fsrs AS (
+        UPDATE fsrs_state SET
+          stability = ${updatedFsrs.stability},
+          difficulty = ${updatedFsrs.difficulty},
+          due = ${updatedFsrs.due},
+          last_review = ${updatedFsrs.lastReview},
+          reps = ${updatedFsrs.reps},
+          lapses = ${updatedFsrs.lapses},
+          state = ${updatedFsrs.state}
+        WHERE card_id = ${card_id}
+        RETURNING *
+      )
+      SELECT
+        ins_review.id AS r_id, ins_review.card_id AS r_card_id,
+        ins_review.bloom_level AS r_bloom_level, ins_review.rating AS r_rating,
+        ins_review.question_text AS r_question_text, ins_review.modality AS r_modality,
+        ins_review.answer_expected AS r_answer_expected, ins_review.user_answer AS r_user_answer,
+        ins_review.reviewed_at AS r_reviewed_at,
+        upd_fsrs.stability AS fs_stability, upd_fsrs.difficulty AS fs_difficulty,
+        upd_fsrs.due AS fs_due, upd_fsrs.last_review AS fs_last_review,
+        upd_fsrs.reps AS fs_reps, upd_fsrs.lapses AS fs_lapses, upd_fsrs.state AS fs_state
+      FROM ins_review, upd_fsrs
+    `);
+    const row = cteRows.rows[0];
+    return {
+      review: {
+        id: row.r_id, cardId: row.r_card_id, bloomLevel: row.r_bloom_level,
+        rating: row.r_rating, questionText: row.r_question_text, modality: row.r_modality,
+        answerExpected: row.r_answer_expected, userAnswer: row.r_user_answer,
+        reviewedAt: row.r_reviewed_at,
+      },
+      fsrsState: {
+        cardId: card_id, stability: row.fs_stability, difficulty: row.fs_difficulty,
+        due: row.fs_due, lastReview: row.fs_last_review, reps: row.fs_reps,
+        lapses: row.fs_lapses, state: row.fs_state,
+      },
+      bloomState: {
+        cardId: card_id, currentLevel: s.current_level,
+        highestReached: s.highest_reached,
+      },
+    };
   });
 
-  // After successful transaction: increment optimization counter and check trigger
-  const [updated] = await db
-    .update(users)
-    .set({ reviewsSinceOptimization: sql`${users.reviewsSinceOptimization} + 1` })
-    .where(eq(users.id, userId))
-    .returning({ counter: users.reviewsSinceOptimization });
-
-  if (updated && updated.counter >= 100) {
-    // Check total review count to avoid optimizing on too little data
-    const totalResult = await db.execute<{ count: string }>(sql`
-      SELECT COUNT(*)::text AS count FROM reviews r
-      JOIN cards c ON c.id = r.card_id
-      JOIN topics t ON c.topic_id = t.id
-      WHERE t.user_id = ${userId}
-    `);
-    const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
-    if (totalReviews >= 500) {
-      // Fire-and-forget — don't block the review response
-      optimizeUserParams(db, userId).catch(() => {});
-    }
-  }
+  // Defer optimizer check so it never blocks or crashes the review response.
+  // setImmediate ensures the MCP/HTTP response is flushed first.
+  setImmediate(() => {
+    db.update(users)
+      .set({ reviewsSinceOptimization: sql`${users.reviewsSinceOptimization} + 1` })
+      .where(eq(users.id, userId))
+      .returning({ counter: users.reviewsSinceOptimization })
+      .then(([updated]) => {
+        if (updated && updated.counter >= 100) {
+          return db.execute<{ count: string }>(sql`
+            SELECT COUNT(*)::text AS count FROM reviews r
+            JOIN cards c ON c.id = r.card_id
+            JOIN topics t ON c.topic_id = t.id
+            WHERE t.user_id = ${userId}
+          `).then((totalResult) => {
+            const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
+            if (totalReviews >= 500) {
+              return optimizeUserParams(db, userId);
+            }
+          });
+        }
+      })
+      .catch((err) => console.error("FSRS optimization trigger failed:", err));
+  });
 
   return result;
 }
