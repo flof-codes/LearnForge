@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Db } from "@learnforge/core";
-import { submitReview } from "@learnforge/core";
+import { submitReview, deleteReview } from "@learnforge/core";
 
 export function registerReviewTools(server: McpServer, db: Db, userId: string) {
   server.tool(
@@ -23,6 +23,23 @@ export function registerReviewTools(server: McpServer, db: Db, userId: string) {
           modality: modality ?? "chat",
           answer_expected, user_answer,
         });
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };
+      }
+    },
+  );
+
+  server.tool(
+    "delete_review",
+    "Delete a single review by ID. Only reviews from today or yesterday can be deleted. FSRS scheduling and Bloom state are recalculated from the remaining review history.",
+    {
+      review_id: z.string().uuid().describe("The UUID of the review to delete"),
+    },
+    async ({ review_id }) => {
+      try {
+        const result = await deleteReview(db, userId, review_id, { restrictToRecent: true });
         return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

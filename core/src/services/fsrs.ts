@@ -65,8 +65,9 @@ export function processReview(
   currentState: FsrsDbState,
   rating: Grade,
   userParams?: { w: number[] } | null,
+  now?: Date,
 ): FsrsDbState {
-  const now = new Date();
+  now = now ?? new Date();
 
   const f = userParams?.w
     ? fsrs(generatorParameters({ w: userParams.w }))

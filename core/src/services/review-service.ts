@@ -1,7 +1,7 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, asc } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import { reviews, fsrsState, bloomState, users } from "../db/schema/index.js";
-import { processReview, applyModalityMultiplier, isValidModality, type FsrsDbState, type StudyModality } from "./fsrs.js";
+import { processReview, applyModalityMultiplier, createInitialFsrsState, isValidModality, type FsrsDbState, type StudyModality } from "./fsrs.js";
 import { computeBloomTransition } from "./bloom.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { optimizeUserParams } from "./fsrs-optimizer.js";
@@ -152,6 +152,134 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
       optimizeUserParams(db, userId).catch(() => {});
     }
   }
+
+  return result;
+}
+
+export interface DeleteReviewOptions {
+  restrictToRecent?: boolean;
+}
+
+export async function deleteReview(
+  db: Db,
+  userId: string,
+  reviewId: string,
+  opts?: DeleteReviewOptions,
+) {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!reviewId || !UUID_RE.test(reviewId)) {
+    throw new ValidationError("review_id must be a valid UUID");
+  }
+
+  // Fetch review + verify ownership via card → topic → user
+  const rows = await db.execute<{
+    id: string;
+    card_id: string;
+    bloom_level: number;
+    rating: number;
+    modality: string;
+    reviewed_at: string;
+  }>(sql`
+    SELECT r.id, r.card_id, r.bloom_level, r.rating, r.modality, r.reviewed_at
+    FROM reviews r
+    JOIN cards c ON c.id = r.card_id
+    JOIN topics t ON c.topic_id = t.id
+    WHERE r.id = ${reviewId} AND t.user_id = ${userId}
+  `);
+  if (rows.rows.length === 0) throw new NotFoundError("Review not found");
+
+  const review = rows.rows[0];
+
+  // Time guard: only today/yesterday if restricted
+  if (opts?.restrictToRecent) {
+    const reviewedAt = new Date(review.reviewed_at);
+    const startOfYesterday = new Date();
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    startOfYesterday.setHours(0, 0, 0, 0);
+
+    if (reviewedAt < startOfYesterday) {
+      throw new ValidationError("Only reviews from today or yesterday can be deleted");
+    }
+  }
+
+  const cardId = review.card_id;
+
+  const result = await db.transaction(async (tx) => {
+    // Delete the target review
+    await tx.delete(reviews).where(eq(reviews.id, reviewId));
+
+    // Fetch remaining reviews for replay, ordered chronologically
+    const remainingReviews = await tx
+      .select({
+        rating: reviews.rating,
+        bloomLevel: reviews.bloomLevel,
+        modality: reviews.modality,
+        reviewedAt: reviews.reviewedAt,
+      })
+      .from(reviews)
+      .where(eq(reviews.cardId, cardId))
+      .orderBy(asc(reviews.reviewedAt));
+
+    // Load user FSRS params
+    const [user] = await tx
+      .select({ fsrsParams: users.fsrsParams })
+      .from(users)
+      .where(eq(users.id, userId));
+    const userParams = user?.fsrsParams as { w: number[] } | null;
+
+    // Replay from initial state
+    let currentFsrs: FsrsDbState = createInitialFsrsState();
+    let currentBloom = { currentLevel: 0, highestReached: 0 };
+
+    for (const r of remainingReviews) {
+      const modality: StudyModality = isValidModality(r.modality) ? r.modality : "web";
+      const rawFsrs = processReview(
+        currentFsrs,
+        r.rating as 1 | 2 | 3 | 4,
+        userParams,
+        r.reviewedAt,
+      );
+      currentFsrs = applyModalityMultiplier(rawFsrs, modality);
+      currentBloom = computeBloomTransition(
+        r.rating,
+        r.bloomLevel,
+        currentBloom.currentLevel,
+        currentBloom.highestReached,
+      );
+    }
+
+    // Write final states
+    const [savedFsrs] = await tx
+      .update(fsrsState)
+      .set({
+        stability: currentFsrs.stability,
+        difficulty: currentFsrs.difficulty,
+        due: currentFsrs.due,
+        lastReview: currentFsrs.lastReview,
+        reps: currentFsrs.reps,
+        lapses: currentFsrs.lapses,
+        state: currentFsrs.state,
+      })
+      .where(eq(fsrsState.cardId, cardId))
+      .returning();
+
+    const [savedBloom] = await tx
+      .update(bloomState)
+      .set({
+        currentLevel: currentBloom.currentLevel,
+        highestReached: currentBloom.highestReached,
+      })
+      .where(eq(bloomState.cardId, cardId))
+      .returning();
+
+    return {
+      deletedReviewId: reviewId,
+      cardId,
+      remainingReviews: remainingReviews.length,
+      fsrsState: savedFsrs,
+      bloomState: savedBloom,
+    };
+  });
 
   return result;
 }

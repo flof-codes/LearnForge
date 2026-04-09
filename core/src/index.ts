@@ -48,7 +48,7 @@ export {
 } from "./services/card-service.js";
 
 // Services - Review
-export { submitReview, type SubmitReviewInput } from "./services/review-service.js";
+export { submitReview, deleteReview, type SubmitReviewInput, type DeleteReviewOptions } from "./services/review-service.js";
 
 // Services - Study
 export { getStudyCards, getStudySummary, getDueForecast, getStudyStats } from "./services/study-service.js";

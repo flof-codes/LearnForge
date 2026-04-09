@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { submitReview } from "@learnforge/core";
+import { submitReview, deleteReview } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function reviewRoutes(app: FastifyInstance) {
@@ -30,6 +30,25 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const userId = getUserId(req);
     const result = await submitReview(db, userId, req.body);
     reply.status(201);
+    return result;
+  });
+
+  // DELETE /reviews/:id — delete a single review and recalculate card state
+  app.delete<{
+    Params: { id: string };
+  }>("/reviews/:id", {
+    schema: {
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+        },
+      },
+    },
+  }, async (req) => {
+    const userId = getUserId(req);
+    const result = await deleteReview(db, userId, req.params.id);
     return result;
   });
 }
