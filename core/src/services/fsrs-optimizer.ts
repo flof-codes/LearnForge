@@ -37,20 +37,27 @@ export async function optimizeUserParams(db: Db, userId: string): Promise<void> 
     cardReviews.set(row.card_id, list);
   }
 
-  // Build FSRSBindingItems — one per card with 2+ reviews
+  // Build FSRSBindingItems — one per card with 2+ reviews AND at least one non-zero delta.
+  // fsrs-rs panics (non-unwinding → SIGABRT) if any item has all-zero deltas, so we filter
+  // them here. Cards whose entire history fits in a single study session carry no temporal
+  // signal for the optimizer anyway.
   const items: InstanceType<typeof FSRSBindingItem>[] = [];
   for (const [, reviews] of cardReviews) {
-    if (reviews.length < 2) continue; // need at least 2 reviews for meaningful data
+    if (reviews.length < 2) continue;
 
-    const bindingReviews = reviews.map((r, i) => {
-      const deltaT = i === 0
+    const deltas = reviews.map((r, i) =>
+      i === 0
         ? 0
         : Math.max(0, Math.round(
             (r.reviewedAt.getTime() - reviews[i - 1].reviewedAt.getTime()) / (1000 * 60 * 60 * 24)
-          ));
-      // Clamp rating to 1-4 (FSRS valid range)
+          ))
+    );
+
+    if (!deltas.some((d) => d > 0)) continue;
+
+    const bindingReviews = reviews.map((r, i) => {
       const rating = Math.max(1, Math.min(4, r.rating));
-      return new FSRSBindingReview(rating, deltaT);
+      return new FSRSBindingReview(rating, deltas[i]);
     });
 
     items.push(new FSRSBindingItem(bindingReviews));

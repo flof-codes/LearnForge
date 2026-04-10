@@ -1,0 +1,170 @@
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import type { AxiosInstance } from "axios";
+import pg from "pg";
+import { login, getApi } from "../helpers/api-client.js";
+import { USERS, TEST_CONFIG } from "../helpers/fixtures.js";
+
+// Regression test for the FSRS optimizer panic bug.
+//
+// Before the fix, passing an FSRSBindingItem with all-zero deltaT values to
+// `@open-spaced-repetition/binding`'s `computeParameters` caused fsrs-rs to
+// panic at dataset.rs:60 with "at least one review with delta_t > 0 is
+// required". The panic is non-unwinding across the N-API boundary, so Rust
+// called abort() on the whole Node process. Every review that triggered the
+// optimizer took the API down via SIGABRT (exit code 134). Docker restarted
+// the container; the next review reproduced the crash.
+//
+// This test seeds a dataset that would have triggered the panic (10 cards
+// with multi-day review histories that satisfy the optimizer's >= 10 items
+// guard, plus one card with 3 reviews all within the same minute — the exact
+// shape that produces all-zero deltas), crosses the 100/500 trigger
+// thresholds with a single POST /reviews, and asserts that the API remains
+// responsive and the optimizer completes cleanly.
+
+const FSRS_TOPIC_ID = "10000000-0000-0000-0000-000000000099";
+const FSRS_CARD_PREFIX = "29000000-0000-0000-0000-0000000000";
+
+const DB_CONFIG = {
+  host: "localhost",
+  port: TEST_CONFIG.dbPort,
+  user: TEST_CONFIG.dbUser,
+  password: TEST_CONFIG.dbPassword,
+  database: TEST_CONFIG.dbName,
+};
+
+let api: AxiosInstance;
+let db: pg.Client;
+
+beforeAll(async () => {
+  await login();
+  api = getApi();
+
+  db = new pg.Client(DB_CONFIG);
+  await db.connect();
+
+  // Clean slate in case a prior run left data behind
+  await db.query(`DELETE FROM topics WHERE id = $1`, [FSRS_TOPIC_ID]);
+
+  // Topic owned by the test user
+  await db.query(
+    `INSERT INTO topics (id, name, user_id) VALUES ($1, 'FSRS Optimizer Test', $2)`,
+    [FSRS_TOPIC_ID, USERS.TEST_USER],
+  );
+
+  // 10 cards with multi-day review histories (passes the delta filter).
+  // Each card gets 50 reviews spaced one day apart → deltaT = 1 on every
+  // non-first review → plenty of temporal signal for the optimizer.
+  for (let i = 0; i < 10; i++) {
+    const cardId = `${FSRS_CARD_PREFIX}${String(i).padStart(2, "0")}`;
+    await db.query(
+      `INSERT INTO cards (id, topic_id, concept, front_html, back_html)
+       VALUES ($1, $2, $3, '<p>q</p>', '<p>a</p>')`,
+      [cardId, FSRS_TOPIC_ID, `Optimizer seed card ${i}`],
+    );
+    await db.query(`INSERT INTO fsrs_state (card_id) VALUES ($1)`, [cardId]);
+    await db.query(`INSERT INTO bloom_state (card_id) VALUES ($1)`, [cardId]);
+
+    // 50 reviews, one per day, going back 50 days
+    const baseTime = Date.now() - 50 * 86_400_000;
+    for (let j = 0; j < 50; j++) {
+      const reviewedAt = new Date(baseTime + j * 86_400_000);
+      await db.query(
+        `INSERT INTO reviews (card_id, bloom_level, rating, question_text, modality, reviewed_at)
+         VALUES ($1, 0, 3, 'seed-multiday', 'web', $2)`,
+        [cardId, reviewedAt],
+      );
+    }
+  }
+
+  // One card with 3 reviews all within the same minute. Without the delta
+  // filter, this card produces an FSRSBindingItem with all-zero deltaT values,
+  // which made fsrs-rs panic and SIGABRT the whole process. With the fix, this
+  // card is skipped during item construction in fsrs-optimizer.ts.
+  const panicCardId = `${FSRS_CARD_PREFIX}99`;
+  await db.query(
+    `INSERT INTO cards (id, topic_id, concept, front_html, back_html)
+     VALUES ($1, $2, 'Panic shape: all-same-minute reviews', '<p>q</p>', '<p>a</p>')`,
+    [panicCardId, FSRS_TOPIC_ID],
+  );
+  await db.query(`INSERT INTO fsrs_state (card_id) VALUES ($1)`, [panicCardId]);
+  await db.query(`INSERT INTO bloom_state (card_id) VALUES ($1)`, [panicCardId]);
+
+  const panicBase = Date.now() - 86_400_000;
+  for (let k = 0; k < 3; k++) {
+    await db.query(
+      `INSERT INTO reviews (card_id, bloom_level, rating, question_text, modality, reviewed_at)
+       VALUES ($1, 0, 3, 'seed-same-minute', 'web', $2)`,
+      [panicCardId, new Date(panicBase + k * 60_000)],
+    );
+  }
+});
+
+afterAll(async () => {
+  // Cascade-delete the topic (takes cards, fsrs_state, bloom_state, reviews with it)
+  await db.query(`DELETE FROM topics WHERE id = $1`, [FSRS_TOPIC_ID]);
+  // Reset user state so downstream test runs aren't polluted
+  await db.query(
+    `UPDATE users SET fsrs_params = NULL, reviews_since_optimization = 0 WHERE id = $1`,
+    [USERS.TEST_USER],
+  );
+  await db.end();
+});
+
+describe("FSRS Optimizer (regression: SIGABRT on all-zero deltas)", () => {
+  it("survives a review that triggers the optimizer on data containing all-same-minute cards", async () => {
+    // Prime the counter to 99 so exactly one more review crosses the trigger threshold (>= 100)
+    await db.query(
+      `UPDATE users SET reviews_since_optimization = 99 WHERE id = $1`,
+      [USERS.TEST_USER],
+    );
+
+    // Any card in the seeded multi-day set works — we just need the POST /reviews
+    // call itself, the review content is irrelevant.
+    const targetCard = `${FSRS_CARD_PREFIX}00`;
+
+    const postRes = await api.post("/reviews", {
+      card_id: targetCard,
+      bloom_level: 0,
+      rating: 3,
+      question_text: "optimizer trigger regression",
+      modality: "web",
+      skip_bloom: true,
+    });
+    expect(postRes.status).toBe(201);
+
+    // Process must still be alive immediately after the response. Before the fix
+    // this was already a coin flip depending on scheduling.
+    const health = await api.get("/health");
+    expect(health.status).toBe(200);
+
+    // Optimizer is fire-and-forget. Poll the counter until it resets to 0
+    // (success signal) while continuously verifying /health stays 200 (no crash).
+    // If the optimizer SIGABRTs the process, /health goes to connection-refused
+    // long before the timeout fires.
+    const start = Date.now();
+    const timeoutMs = 15_000;
+    let counter = 99;
+
+    while (Date.now() - start < timeoutMs) {
+      const healthProbe = await api.get("/health");
+      expect(healthProbe.status).toBe(200);
+
+      const row = await db.query<{ reviews_since_optimization: number }>(
+        `SELECT reviews_since_optimization FROM users WHERE id = $1`,
+        [USERS.TEST_USER],
+      );
+      counter = row.rows[0].reviews_since_optimization;
+      if (counter === 0) break;
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+
+    expect(counter).toBe(0); // optimizer actually ran and reset the counter
+
+    const userState = await db.query<{ fsrs_params: unknown }>(
+      `SELECT fsrs_params FROM users WHERE id = $1`,
+      [USERS.TEST_USER],
+    );
+    expect(userState.rows[0].fsrs_params).not.toBeNull(); // optimized params persisted
+  });
+});

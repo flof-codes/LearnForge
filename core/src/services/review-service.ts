@@ -222,7 +222,9 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
       `);
       const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
       if (totalReviews >= 500) {
-        optimizeUserParams(db, userId).catch(() => {});
+        optimizeUserParams(db, userId).catch((err) =>
+          console.error("FSRS optimization failed:", err),
+        );
       }
     }
   } catch (err) {
