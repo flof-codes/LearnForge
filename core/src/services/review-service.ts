@@ -204,30 +204,30 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
     };
   });
 
-  // Defer optimizer check so it never blocks or crashes the review response.
-  // setImmediate ensures the MCP/HTTP response is flushed first.
-  setImmediate(() => {
-    db.update(users)
+  // Optimization trigger: increment counter, check if re-optimization needed.
+  // Wrapped in try/catch so failures never affect the review response.
+  try {
+    const [updated] = await db
+      .update(users)
       .set({ reviewsSinceOptimization: sql`${users.reviewsSinceOptimization} + 1` })
       .where(eq(users.id, userId))
-      .returning({ counter: users.reviewsSinceOptimization })
-      .then(([updated]) => {
-        if (updated && updated.counter >= 100) {
-          return db.execute<{ count: string }>(sql`
-            SELECT COUNT(*)::text AS count FROM reviews r
-            JOIN cards c ON c.id = r.card_id
-            JOIN topics t ON c.topic_id = t.id
-            WHERE t.user_id = ${userId}
-          `).then((totalResult) => {
-            const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
-            if (totalReviews >= 500) {
-              return optimizeUserParams(db, userId);
-            }
-          });
-        }
-      })
-      .catch((err) => console.error("FSRS optimization trigger failed:", err));
-  });
+      .returning({ counter: users.reviewsSinceOptimization });
+
+    if (updated && updated.counter >= 100) {
+      const totalResult = await db.execute<{ count: string }>(sql`
+        SELECT COUNT(*)::text AS count FROM reviews r
+        JOIN cards c ON c.id = r.card_id
+        JOIN topics t ON c.topic_id = t.id
+        WHERE t.user_id = ${userId}
+      `);
+      const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
+      if (totalReviews >= 500) {
+        optimizeUserParams(db, userId).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.error("FSRS optimization trigger failed:", err);
+  }
 
   return result;
 }
