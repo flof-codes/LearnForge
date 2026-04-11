@@ -4,7 +4,6 @@ import { reviews, fsrsState, bloomState, users } from "../db/schema/index.js";
 import { processReview, applyModalityMultiplier, createInitialFsrsState, isValidModality, type FsrsDbState, type StudyModality } from "./fsrs.js";
 import { computeBloomTransition } from "./bloom.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
-import { optimizeUserParams } from "./fsrs-optimizer.js";
 
 export interface SubmitReviewInput {
   card_id: string;
@@ -204,31 +203,21 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
     };
   });
 
-  // Optimization trigger: increment counter, check if re-optimization needed.
-  // Wrapped in try/catch so failures never affect the review response.
+  // Optimizer call path disabled — see docs/fsrs-optimizer-sigill-incident.md.
+  // The @open-spaced-repetition/binding prebuilt native addon requires AVX2/FMA/BMI2,
+  // which the production host (Ivy Bridge, 2013) does not have. First call into
+  // computeParameters hit an unsupported instruction and the kernel delivered SIGILL,
+  // killing the entire Node process (API + MCP). No JS handler could catch it.
+  //
+  // Counter is still incremented so state is preserved for when the optimizer is
+  // re-enabled (rebuild from source / move to modern host / fork-based isolation).
   try {
-    const [updated] = await db
+    await db
       .update(users)
       .set({ reviewsSinceOptimization: sql`${users.reviewsSinceOptimization} + 1` })
-      .where(eq(users.id, userId))
-      .returning({ counter: users.reviewsSinceOptimization });
-
-    if (updated && updated.counter >= 100) {
-      const totalResult = await db.execute<{ count: string }>(sql`
-        SELECT COUNT(*)::text AS count FROM reviews r
-        JOIN cards c ON c.id = r.card_id
-        JOIN topics t ON c.topic_id = t.id
-        WHERE t.user_id = ${userId}
-      `);
-      const totalReviews = parseInt(totalResult.rows[0]?.count ?? "0", 10);
-      if (totalReviews >= 500) {
-        optimizeUserParams(db, userId).catch((err) =>
-          console.error("FSRS optimization failed:", err),
-        );
-      }
-    }
+      .where(eq(users.id, userId));
   } catch (err) {
-    console.error("FSRS optimization trigger failed:", err);
+    console.error("FSRS optimization counter update failed:", err);
   }
 
   return result;

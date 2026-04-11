@@ -4,6 +4,16 @@ import pg from "pg";
 import { login, getApi } from "../helpers/api-client.js";
 import { USERS, TEST_CONFIG } from "../helpers/fixtures.js";
 
+// DISABLED via filename suffix (`.test.ts.disabled`) so vitest does not discover it.
+// Rename back to `.test.ts` to re-enable.
+//
+// The FSRS optimizer call path is currently disabled in submitReview because of a
+// SIGILL incident — the prebuilt @open-spaced-repetition/binding native addon
+// requires AVX2/FMA CPU features the production host lacks.
+// See docs/fsrs-optimizer-sigill-incident.md for the full write-up.
+//
+// -----------------------------------------------------------------------------
+//
 // Regression test for the FSRS optimizer panic bug.
 //
 // Before the fix, passing an FSRSBindingItem with all-zero deltaT values to
