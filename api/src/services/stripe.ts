@@ -18,6 +18,24 @@ export async function createStripeCustomer(email: string, name: string): Promise
   return customer.id;
 }
 
+export async function deleteStripeCustomer(customerId: string): Promise<void> {
+  try {
+    await getStripe().customers.del(customerId);
+  } catch (err) {
+    if (err instanceof Stripe.errors.StripeError && err.code === "resource_missing") {
+      return;
+    }
+    throw err;
+  }
+}
+
+export async function updateStripeCustomer(
+  customerId: string,
+  fields: { email?: string; name?: string },
+): Promise<void> {
+  await getStripe().customers.update(customerId, fields);
+}
+
 export async function createCheckoutSession({
   customerId,
   priceId,

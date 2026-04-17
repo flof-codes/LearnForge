@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { users } from "@learnforge/core";
 import { config } from "../config.js";
-import { ValidationError } from "../lib/errors.js";
+import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
 import {
   createStripeCustomer,
@@ -22,14 +22,6 @@ export default async function billingRoutes(app: FastifyInstance) {
       throw new ValidationError("Invalid plan. Must be 'monthly' or 'annual'");
     }
 
-    const priceId = plan === "monthly"
-      ? config.stripePriceIdMonthly
-      : config.stripePriceIdAnnual;
-
-    if (!priceId) {
-      throw new ValidationError("Subscription plan not configured");
-    }
-
     const [user] = await db
       .select({
         id: users.id,
@@ -40,9 +32,18 @@ export default async function billingRoutes(app: FastifyInstance) {
       })
       .from(users)
       .where(eq(users.id, userId));
+    if (!user) throw new UnauthorizedError("User not found");
 
     if (user.subscriptionStatus === "active") {
       throw new ValidationError("You already have an active subscription");
+    }
+
+    const priceId = plan === "monthly"
+      ? config.stripePriceIdMonthly
+      : config.stripePriceIdAnnual;
+
+    if (!priceId) {
+      throw new ValidationError("Subscription plan not configured");
     }
 
     let customerId = user.stripeCustomerId;
@@ -81,6 +82,7 @@ export default async function billingRoutes(app: FastifyInstance) {
       .select({ stripeCustomerId: users.stripeCustomerId })
       .from(users)
       .where(eq(users.id, userId));
+    if (!user) throw new UnauthorizedError("User not found");
 
     if (!user.stripeCustomerId) {
       throw new ValidationError("No billing account found");

@@ -9,6 +9,7 @@ import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
 import { config } from "../config.js";
 import { extFromMime } from "../lib/image-utils.js";
+import { deleteStripeCustomer, updateStripeCustomer } from "../services/stripe.js";
 
 export default async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: { email: string; password: string } }>("/auth/login", async (request) => {
@@ -126,6 +127,15 @@ export default async function authRoutes(app: FastifyInstance) {
 
       if (!name && !email) throw new ValidationError("name or email is required");
 
+      const [currentUser] = await db
+        .select({
+          passwordHash: users.passwordHash,
+          stripeCustomerId: users.stripeCustomerId,
+        })
+        .from(users)
+        .where(eq(users.id, userId));
+      if (!currentUser) throw new UnauthorizedError("User not found");
+
       const updateFields: Record<string, string> = {};
 
       if (name !== undefined) {
@@ -136,12 +146,6 @@ export default async function authRoutes(app: FastifyInstance) {
 
       if (email !== undefined) {
         if (!current_password) throw new ValidationError("current_password is required to change email");
-
-        const [currentUser] = await db
-          .select({ passwordHash: users.passwordHash })
-          .from(users)
-          .where(eq(users.id, userId));
-        if (!currentUser) throw new UnauthorizedError("User not found");
 
         const valid = await argon2.verify(currentUser.passwordHash, current_password);
         if (!valid) throw new UnauthorizedError("Invalid password");
@@ -158,6 +162,22 @@ export default async function authRoutes(app: FastifyInstance) {
       }
 
       await db.update(users).set(updateFields).where(eq(users.id, userId));
+
+      // Keep Stripe customer in sync. Best-effort: failures here must not fail the
+      // primary profile update — they'll be reconciled manually or on next change.
+      if (
+        currentUser.stripeCustomerId &&
+        (updateFields.email !== undefined || updateFields.name !== undefined)
+      ) {
+        try {
+          await updateStripeCustomer(currentUser.stripeCustomerId, {
+            email: updateFields.email,
+            name: updateFields.name,
+          });
+        } catch (err) {
+          request.log.error(err, "Stripe customer sync failed during profile update");
+        }
+      }
 
       return getUserProfile(userId);
     },
@@ -212,7 +232,7 @@ export default async function authRoutes(app: FastifyInstance) {
       if (!password) throw new ValidationError("password is required");
 
       const [user] = await db
-        .select({ passwordHash: users.passwordHash })
+        .select({ passwordHash: users.passwordHash, stripeCustomerId: users.stripeCustomerId })
         .from(users)
         .where(eq(users.id, userId));
       if (!user) throw new UnauthorizedError("User not found");
@@ -225,6 +245,17 @@ export default async function authRoutes(app: FastifyInstance) {
         .select({ id: images.id, mimeType: images.mimeType })
         .from(images)
         .where(eq(images.userId, userId));
+
+      // Stripe cleanup first — customers.del() cancels all subscriptions. If this fails,
+      // we log and proceed so the local account still deletes, but retries remain safe
+      // because deleteStripeCustomer is idempotent on resource_missing.
+      if (user.stripeCustomerId) {
+        try {
+          await deleteStripeCustomer(user.stripeCustomerId);
+        } catch (err) {
+          request.log.error(err, "Stripe customer deletion failed during account deletion");
+        }
+      }
 
       // Delete user — CASCADE removes topics, cards, bloom_state, fsrs_state, reviews, images, oauth tokens
       await db.delete(users).where(eq(users.id, userId));

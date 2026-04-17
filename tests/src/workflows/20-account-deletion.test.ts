@@ -201,6 +201,51 @@ describe("Account Deletion", () => {
     });
   });
 
+  describe("Stale JWT After Deletion", () => {
+    it("billing endpoints return 401 (not 500) for a stale token after account deletion", async () => {
+      const user = await registerFreshUser("stale-billing");
+
+      const deleteRes = await user.api.delete("/auth/account", {
+        data: { password: user.password },
+      });
+      expect(deleteRes.status).toBe(204);
+
+      // Stale JWT is still cryptographically valid but user row is gone.
+      // /billing/* is exempt from the subscription DB check, so handlers must
+      // guard against the missing user row themselves.
+      const portalRes = await user.api.post("/billing/portal", {});
+      expect(portalRes.status).toBe(401);
+
+      const checkoutRes = await user.api.post("/billing/checkout", {
+        plan: "monthly",
+      });
+      expect(checkoutRes.status).toBe(401);
+    });
+  });
+
+  describe("Profile Update Without Stripe Customer", () => {
+    it("name+email update succeeds for a user that never entered the billing flow", async () => {
+      const user = await registerFreshUser("profile-nostripe");
+
+      const newName = `Updated Name ${Date.now()}`;
+      const res = await user.api.put("/auth/profile", {
+        name: newName,
+        email: `updated-${Date.now()}@test.dev`,
+        current_password: user.password,
+      });
+      expect(res.status).toBe(200);
+      expect(res.data.name).toBe(newName);
+      expect(res.data.hasStripeCustomer).toBe(false);
+
+      // Cleanup
+      const me = await user.api.get("/auth/me");
+      await user.api.delete("/auth/account", {
+        data: { password: user.password },
+      });
+      expect(me.status).toBe(200);
+    });
+  });
+
   describe("Multi-Tenancy Isolation", () => {
     it("deleting User X does not affect seeded test user data", async () => {
       // Snapshot seeded test user's data before deletion
