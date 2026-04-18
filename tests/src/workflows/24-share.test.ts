@@ -25,13 +25,42 @@ beforeAll(async () => {
   userBApi = await loginAs(TEST_CONFIG.otherEmail, TEST_CONFIG.otherPassword);
 });
 
-afterAll(async () => {
-  // Best-effort cleanup — tests create their own topics; recipients' trees are created via accept.
-  for (const id of [...createdTopicIdsA].reverse()) {
-    await userAApi.delete(`/topics/${id}`).catch(() => {});
+async function collectSubtreeIds(api: AxiosInstance, rootId: string): Promise<string[]> {
+  const ids: string[] = [];
+  async function walk(id: string): Promise<void> {
+    const detail = await api.get(`/topics/${id}`);
+    if (detail.status !== 200) return;
+    for (const child of detail.data.children ?? []) {
+      await walk(child.id);
+    }
+    ids.push(id); // post-order: leaves first
   }
-  for (const id of [...createdTopicIdsB].reverse()) {
-    await userBApi.delete(`/topics/${id}`).catch(() => {});
+  await walk(rootId);
+  return ids;
+}
+
+async function deleteTopicTree(api: AxiosInstance, rootId: string): Promise<void> {
+  const topicIds = await collectSubtreeIds(api, rootId);
+  // Delete all cards under the subtree first (depth=0 = only this topic's direct cards)
+  for (const tid of topicIds) {
+    const cardsRes = await api.get(`/context/topic/${tid}?depth=0`);
+    if (cardsRes.status !== 200) continue;
+    for (const card of cardsRes.data as { id: string }[]) {
+      await api.delete(`/cards/${card.id}`).catch(() => {});
+    }
+  }
+  // Then delete topics leaves-first
+  for (const tid of topicIds) {
+    await api.delete(`/topics/${tid}`).catch(() => {});
+  }
+}
+
+afterAll(async () => {
+  for (const id of createdTopicIdsA) {
+    await deleteTopicTree(userAApi, id);
+  }
+  for (const id of createdTopicIdsB) {
+    await deleteTopicTree(userBApi, id);
   }
 });
 
