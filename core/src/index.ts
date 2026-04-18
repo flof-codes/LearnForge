@@ -9,6 +9,11 @@ export { NotFoundError, ValidationError } from "./lib/errors.js";
 export { stripHtml } from "./lib/strip-html.js";
 export { validateCardHtml } from "./lib/sanitize-card-html.js";
 export { verifyCardOwnership } from "./lib/card-ownership.js";
+export {
+  checkSubscriptionAccess,
+  type SubscriptionState,
+  type SubscriptionCheck,
+} from "./lib/subscription-gate.js";
 
 // Cloze Parser
 export {

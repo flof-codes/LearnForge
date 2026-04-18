@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { eq } from "drizzle-orm";
 import { runMigrations } from "./db/migrate.js";
 import { db } from "./db/connection.js";
-import { users } from "@learnforge/core";
+import { users, checkSubscriptionAccess } from "@learnforge/core";
 import { registerTopicTools } from "./tools/topics.js";
 import { registerCardTools } from "./tools/cards.js";
 import { registerReviewTools } from "./tools/reviews.js";
@@ -33,12 +33,7 @@ async function checkSubscription(userId: string): Promise<void> {
 
   if (!user) throw new Error("User not found");
 
-  const now = new Date();
-  const trialActive = user.trialEndsAt > now;
-  const subscriptionActive = user.subscriptionStatus === "active" &&
-    user.subscriptionCurrentPeriodEnd != null && user.subscriptionCurrentPeriodEnd > now;
-
-  if (!trialActive && !subscriptionActive) {
+  if (!checkSubscriptionAccess(user).isActive) {
     throw new Error("Subscription expired. Please subscribe at learnforge.eu to continue using MCP tools.");
   }
 }

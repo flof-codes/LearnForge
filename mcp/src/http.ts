@@ -11,7 +11,7 @@ import { metadataHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/
 import type { OAuthMetadata, OAuthProtectedResourceMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { eq } from "drizzle-orm";
 import type { Db } from "@learnforge/core";
-import { users } from "@learnforge/core";
+import { users, checkSubscriptionAccess } from "@learnforge/core";
 import { registerTopicTools } from "./tools/topics.js";
 import { registerCardTools } from "./tools/cards.js";
 import { registerReviewTools } from "./tools/reviews.js";
@@ -72,12 +72,7 @@ Question presentation: Use ask_user_input_v0 for MCQ. Use optionShuffle array to
 
     if (!user) throw new Error("User not found");
 
-    const now = new Date();
-    const trialActive = user.trialEndsAt > now;
-    const subscriptionActive = user.subscriptionStatus === "active" &&
-      user.subscriptionCurrentPeriodEnd != null && user.subscriptionCurrentPeriodEnd > now;
-
-    if (!trialActive && !subscriptionActive) {
+    if (!checkSubscriptionAccess(user).isActive) {
       throw new Error("Subscription expired. Please subscribe at learnforge.eu to continue using MCP tools.");
     }
   }

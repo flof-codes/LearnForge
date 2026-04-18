@@ -3,7 +3,7 @@ import argon2 from "argon2";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 import { db } from "../db/connection.js";
-import { users, images } from "@learnforge/core";
+import { users, images, checkSubscriptionAccess } from "@learnforge/core";
 import { and, eq, ne } from "drizzle-orm";
 import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
@@ -81,13 +81,7 @@ export default async function authRoutes(app: FastifyInstance) {
       .where(eq(users.id, userId));
     if (!user) throw new UnauthorizedError("User not found");
 
-    const now = new Date();
-    const trialActive = user.trialEndsAt > now;
-    const subscriptionActive =
-      user.subscriptionStatus === "active" &&
-      user.subscriptionCurrentPeriodEnd != null &&
-      user.subscriptionCurrentPeriodEnd > now;
-    const isFree = user.subscriptionStatus === "free";
+    const access = checkSubscriptionAccess(user);
 
     return {
       id: user.id,
@@ -97,10 +91,10 @@ export default async function authRoutes(app: FastifyInstance) {
       createdAt: user.createdAt,
       trialEndsAt: user.trialEndsAt,
       subscriptionStatus: user.subscriptionStatus,
-      hasActiveSubscription: !!subscriptionActive,
-      hasActiveTrial: trialActive,
-      isFree,
-      isActive: trialActive || !!subscriptionActive || isFree,
+      hasActiveSubscription: access.hasActiveSubscription,
+      hasActiveTrial: access.hasActiveTrial,
+      isFree: access.isFree,
+      isActive: access.isActive,
       hasStripeCustomer: !!user.stripeCustomerId,
     };
   }

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { config } from "../config.js";
 import { UnauthorizedError, ForbiddenError } from "../lib/errors.js";
 import { db } from "../db/connection.js";
-import { users } from "@learnforge/core";
+import { users, checkSubscriptionAccess } from "@learnforge/core";
 
 const PUBLIC_PATHS = new Set(["/health", "/auth/login", "/auth/register", "/billing/webhook"]);
 
@@ -50,15 +50,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
     if (!user) return;
 
-    const now = new Date();
-    const trialActive = user.trialEndsAt > now;
-    const subscriptionActive =
-      user.subscriptionStatus === "active" &&
-      user.subscriptionCurrentPeriodEnd != null &&
-      user.subscriptionCurrentPeriodEnd > now;
-    const freeAccount = user.subscriptionStatus === "free";
-
-    if (!trialActive && !subscriptionActive && !freeAccount) {
+    if (!checkSubscriptionAccess(user).isActive) {
       throw new ForbiddenError(
         "Your trial has expired. Please subscribe to continue creating and editing content.",
       );
