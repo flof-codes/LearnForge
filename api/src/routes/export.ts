@@ -1,10 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { sql, eq } from "drizzle-orm";
-import { images } from "@learnforge/core";
+import { images, extFromMime } from "@learnforge/core";
 import { config } from "../config.js";
 import { getUserId } from "../lib/auth-helpers.js";
-import { extFromMime } from "../lib/image-utils.js";
 import archiver from "archiver";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";

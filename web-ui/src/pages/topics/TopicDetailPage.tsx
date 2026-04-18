@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Pencil, Trash2, Plus, FolderTree } from 'lucide-react';
+import { Pencil, Trash2, Plus, FolderTree, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTopic, useDeleteTopic } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
 import { contextService } from '../../api/context';
 import { useQuery } from '@tanstack/react-query';
 import EditTopicModal from './EditTopicModal';
+import ShareTopicModal from './ShareTopicModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
@@ -40,6 +41,7 @@ export default function TopicDetailPage() {
   const { data: topic, isLoading, isError, error, refetch } = useTopic(id!);
   const deleteTopic = useDeleteTopic();
   const [editOpen, setEditOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [filter, setFilter] = useState<CardFilter>('all');
@@ -128,6 +130,13 @@ export default function TopicDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShareOpen(true)}
+            className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors"
+            title={t('shares.buttonTitle')}
+          >
+            <Share2 size={16} />
+          </button>
           <button onClick={() => setEditOpen(true)} className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors">
             <Pencil size={16} />
           </button>
@@ -257,6 +266,7 @@ export default function TopicDetailPage() {
 
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <EditTopicModal open={editOpen} topic={topic as any} onClose={() => setEditOpen(false)} />
+      <ShareTopicModal open={shareOpen} topicId={id!} topicName={topic.name} onClose={() => setShareOpen(false)} />
       <ConfirmModal
         open={deleteOpen}
         title={t('topics.deleteTitle')}

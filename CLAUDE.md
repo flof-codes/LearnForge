@@ -182,6 +182,8 @@ POST /reviews
 GET /study/due?topic_id=&limit= GET /study/summary?topic_id=
 GET /context/topic/:id?depth=   GET /context/similar/:card_id?limit=
 POST /images                    GET/DELETE /images/:id
+POST/GET /shares                DELETE /shares/:id
+GET /shares/preview/:token      POST /shares/accept/:token
 GET /health
 ```
 
@@ -213,6 +215,7 @@ GET /health
 - Topic filtering for study/context uses recursive CTEs to include descendant topics.
 - Image files stored on disk at `IMAGE_PATH` (container: `/data/images`, MCP local: `~/.learnforge/images`).
 - FSRS intervals are adjusted by study modality: chat (1.2x), web (0.95x), mcq (1.05x).
+- Topic sharing is **copy-only**: `acceptShareLink` deep-copies topic tree + cards into recipient's account with fresh bloom/fsrs state. Image files are copied on disk (new UUID filenames, independent DB rows). Revoking a link blocks new imports; already-imported copies remain untouched. Link tokens are 24-byte url-safe random.
 
 ## Conventions
 

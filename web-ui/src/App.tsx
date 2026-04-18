@@ -23,6 +23,7 @@ import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
 import AGBPage from './pages/public/AGBPage';
 import DocsPage from './pages/public/DocsPage';
+import SharePage from './pages/SharePage';
 
 function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -54,6 +55,9 @@ export function AppRoutes() {
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+
+      {/* Public share accept page */}
+      <Route path="/share/:token" element={<SharePage />} />
 
       {/* Authenticated app */}
       <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

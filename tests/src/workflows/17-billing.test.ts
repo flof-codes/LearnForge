@@ -20,7 +20,11 @@ if (existsSync(envTestPath)) {
   }
 }
 
-const STRIPE_CONFIGURED = !!process.env.STRIPE_SECRET_KEY;
+const STRIPE_CONFIGURED =
+  !!process.env.STRIPE_SECRET_KEY &&
+  !process.env.STRIPE_SECRET_KEY.endsWith("...") &&
+  !!process.env.STRIPE_PRICE_ID_MONTHLY &&
+  !process.env.STRIPE_PRICE_ID_MONTHLY.endsWith("...");
 
 let api: AxiosInstance;
 

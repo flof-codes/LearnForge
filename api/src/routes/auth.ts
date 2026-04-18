@@ -3,12 +3,11 @@ import argon2 from "argon2";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 import { db } from "../db/connection.js";
-import { users, images, checkSubscriptionAccess } from "@learnforge/core";
+import { users, images, checkSubscriptionAccess, extFromMime } from "@learnforge/core";
 import { and, eq, ne } from "drizzle-orm";
 import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
 import { config } from "../config.js";
-import { extFromMime } from "../lib/image-utils.js";
 import { deleteStripeCustomer, updateStripeCustomer } from "../services/stripe.js";
 
 export default async function authRoutes(app: FastifyInstance) {

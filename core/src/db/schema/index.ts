@@ -6,3 +6,4 @@ export { fsrsState, fsrsStateRelations } from "./fsrsState.js";
 export { reviews, reviewsRelations } from "./reviews.js";
 export { images, imagesRelations } from "./images.js";
 export { oauthClients, oauthAuthorizationCodes, oauthTokens } from "./oauth.js";
+export { shareLinks, shareLinksRelations } from "./shareLinks.js";

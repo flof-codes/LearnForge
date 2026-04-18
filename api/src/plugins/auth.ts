@@ -8,6 +8,7 @@ import { db } from "../db/connection.js";
 import { users, checkSubscriptionAccess } from "@learnforge/core";
 
 const PUBLIC_PATHS = new Set(["/health", "/auth/login", "/auth/register", "/billing/webhook"]);
+const PUBLIC_PREFIXES = ["/shares/preview/"];
 
 const SUBSCRIPTION_EXEMPT_PREFIXES = ["/auth/", "/billing/", "/health"];
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -21,6 +22,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
   app.addHook("onRequest", async (request: FastifyRequest, _reply: FastifyReply) => {
     const path = request.url.split("?")[0];
     if (PUBLIC_PATHS.has(path)) return;
+    if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
     if (request.method === "OPTIONS") return;
 
     try {
@@ -33,6 +35,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
   app.addHook("onRequest", async (request: FastifyRequest, _reply: FastifyReply) => {
     const path = request.url.split("?")[0];
     if (PUBLIC_PATHS.has(path)) return;
+    if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
     if (SUBSCRIPTION_EXEMPT_PREFIXES.some((p) => path.startsWith(p))) return;
     if (READ_METHODS.has(request.method)) return;
 

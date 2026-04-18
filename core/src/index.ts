@@ -79,3 +79,17 @@ export { searchCards } from "./services/search-service.js";
 
 // Services - Backfill
 export { backfillEmbeddings, type BackfillOptions, type BackfillProgress } from "./services/backfill-service.js";
+
+// Services - Shares
+export {
+  createShareLink,
+  listShareLinks,
+  revokeShareLink,
+  getSharePreview,
+  acceptShareLink,
+  type SharePreview,
+  type AcceptShareOptions,
+} from "./services/shares.js";
+
+// Image utils
+export { extFromMime } from "./lib/image-utils.js";
