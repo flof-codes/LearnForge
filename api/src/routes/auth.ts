@@ -70,6 +70,7 @@ export default async function authRoutes(app: FastifyInstance) {
         id: users.id,
         email: users.email,
         name: users.name,
+        role: users.role,
         createdAt: users.createdAt,
         trialEndsAt: users.trialEndsAt,
         subscriptionStatus: users.subscriptionStatus,
@@ -86,17 +87,20 @@ export default async function authRoutes(app: FastifyInstance) {
       user.subscriptionStatus === "active" &&
       user.subscriptionCurrentPeriodEnd != null &&
       user.subscriptionCurrentPeriodEnd > now;
+    const isFree = user.subscriptionStatus === "free";
 
     return {
       id: user.id,
       email: user.email,
       name: user.name,
+      role: user.role,
       createdAt: user.createdAt,
       trialEndsAt: user.trialEndsAt,
       subscriptionStatus: user.subscriptionStatus,
       hasActiveSubscription: !!subscriptionActive,
       hasActiveTrial: trialActive,
-      isActive: trialActive || !!subscriptionActive,
+      isFree,
+      isActive: trialActive || !!subscriptionActive || isFree,
       hasStripeCustomer: !!user.stripeCustomerId,
     };
   }

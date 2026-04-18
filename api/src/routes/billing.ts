@@ -37,6 +37,9 @@ export default async function billingRoutes(app: FastifyInstance) {
     if (user.subscriptionStatus === "active") {
       throw new ValidationError("You already have an active subscription");
     }
+    if (user.subscriptionStatus === "free") {
+      throw new ValidationError("Your account has complimentary free access; no subscription needed");
+    }
 
     const priceId = plan === "monthly"
       ? config.stripePriceIdMonthly

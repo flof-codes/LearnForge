@@ -56,8 +56,9 @@ export default fp(async function authPlugin(app: FastifyInstance) {
       user.subscriptionStatus === "active" &&
       user.subscriptionCurrentPeriodEnd != null &&
       user.subscriptionCurrentPeriodEnd > now;
+    const freeAccount = user.subscriptionStatus === "free";
 
-    if (!trialActive && !subscriptionActive) {
+    if (!trialActive && !subscriptionActive && !freeAccount) {
       throw new ForbiddenError(
         "Your trial has expired. Please subscribe to continue creating and editing content.",
       );

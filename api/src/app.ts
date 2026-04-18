@@ -13,6 +13,7 @@ import imageRoutes from "./routes/images.js";
 import mcpKeyRoutes from "./routes/mcp-keys.js";
 import billingRoutes from "./routes/billing.js";
 import exportRoutes from "./routes/export.js";
+import adminRoutes from "./routes/admin.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
 
 export function buildApp() {
@@ -72,6 +73,7 @@ export function buildApp() {
   app.register(mcpKeyRoutes);
   app.register(billingRoutes);
   app.register(exportRoutes);
+  app.register(adminRoutes);
 
   app.get("/health", async () => ({ status: "ok" }));
 

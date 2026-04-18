@@ -17,6 +17,7 @@ import CardEditorPage from './pages/cards/CardEditorPage';
 import StudyStartPage from './pages/study/StudyStartPage';
 import StudySessionPage from './pages/study/StudySessionPage';
 import McpSettingsPage from './pages/settings/McpSettingsPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import LandingPage from './pages/public/LandingPage';
 import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
@@ -27,6 +28,12 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return children;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
 }
 
 export function AppRoutes() {
@@ -62,6 +69,7 @@ export function AppRoutes() {
         <Route path="settings" element={<McpSettingsPage />} />
         <Route path="settings/mcp" element={<Navigate to="/dashboard/settings" replace />} />
         <Route path="settings/billing" element={<Navigate to="/dashboard/settings" replace />} />
+        <Route path="admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
       </Route>
 
       {/* Legacy redirects for bookmarked URLs */}

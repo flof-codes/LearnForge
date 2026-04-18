@@ -206,13 +206,58 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  role: 'user' | 'admin';
   createdAt: string;
   trialEndsAt: string;
   subscriptionStatus: string | null;
   hasActiveSubscription: boolean;
   hasActiveTrial: boolean;
+  isFree: boolean;
   isActive: boolean;
   hasStripeCustomer: boolean;
+}
+
+// --- Admin ---
+export interface AdminStats {
+  totalUsers: number;
+  statusBreakdown: { status: string; count: number }[];
+  billable: {
+    active: number;
+    trialing: number;
+    pastDue: number;
+    freeAdmin: number;
+    totalBillable: number;
+  };
+  freeTrial: {
+    trialActive: number;
+    trialExpired: number;
+    totalFree: number;
+  };
+  activity: {
+    usersWithCards: number;
+    usersWithReviews: number;
+  };
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  subscriptionStatus: string | null;
+  subscriptionCurrentPeriodEnd: string | null;
+  trialEndsAt: string;
+  createdAt: string;
+  hasStripeCustomer: boolean;
+  cardCount: number;
+  reviewCount: number;
+}
+
+export interface AdminUsersResponse {
+  total: number;
+  limit: number;
+  offset: number;
+  users: AdminUser[];
 }
 
 // --- MCP Key ---

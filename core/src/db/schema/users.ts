@@ -5,6 +5,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }).unique().notNull(),
   passwordHash: text("password_hash").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
+  role: varchar("role", { length: 20 }).notNull().default("user"),
   mcpApiKeyHash: varchar("mcp_api_key_hash", { length: 64 }),
   mcpApiKeyCreatedAt: timestamp("mcp_api_key_created_at", { withTimezone: true }),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }).notNull(),

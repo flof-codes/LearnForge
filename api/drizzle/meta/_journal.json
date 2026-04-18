@@ -78,6 +78,13 @@
       "when": 1775064782658,
       "tag": "0010_cloze_card_type",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1776460572006,
+      "tag": "0011_user_role",
+      "breakpoints": true
     }
   ]
 }

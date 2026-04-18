@@ -1,24 +1,31 @@
 import { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LogoIcon from './public/LogoIcon';
 
 export default function Sidebar() {
   const { t } = useTranslation('app');
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const isStudySession = pathname.startsWith('/dashboard/study/session');
+  const isAdmin = user?.role === 'admin';
 
-  const links = useMemo(() => [
-    { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-    { to: '/dashboard/topics', icon: FolderTree, label: t('nav.topics') },
-    { to: '/dashboard/cards/browse', icon: Layers, label: t('nav.cards') },
-    { to: '/dashboard/study', icon: GraduationCap, label: t('nav.study') },
-  ], [t]);
+  const links = useMemo(() => {
+    const base = [
+      { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
+      { to: '/dashboard/topics', icon: FolderTree, label: t('nav.topics') },
+      { to: '/dashboard/cards/browse', icon: Layers, label: t('nav.cards') },
+      { to: '/dashboard/study', icon: GraduationCap, label: t('nav.study') },
+    ];
+    if (isAdmin) {
+      base.push({ to: '/dashboard/admin', icon: Shield, label: t('nav.admin') });
+    }
+    return base;
+  }, [t, isAdmin]);
 
   const handleLogout = () => {
     queryClient.clear();

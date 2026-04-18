@@ -5,7 +5,65 @@
     "cards": "Cards",
     "study": "Study",
     "settings": "Settings",
+    "admin": "Admin",
     "logout": "Logout"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "stats": {
+      "totalUsers": "Total Users",
+      "active": "Active",
+      "trialing": "Trialing",
+      "pastDue": "Past Due",
+      "freeAdmin": "Free (Admin)",
+      "billableTotal": "Billable Total",
+      "trialActive": "Trial Active",
+      "trialExpired": "Trial Expired",
+      "totalFree": "Free / Trial Total",
+      "usersWithCards": "Users With Cards",
+      "usersWithReviews": "Users With Reviews"
+    },
+    "sections": {
+      "billable": "Paying / Billable Users",
+      "freeTrial": "Free / Trial Users",
+      "activity": "Activity",
+      "statusBreakdown": "Status Breakdown"
+    },
+    "users": {
+      "title": "Users",
+      "searchPlaceholder": "Search by email or name...",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "cards": "Cards",
+      "reviews": "Reviews",
+      "created": "Joined",
+      "actions": "Actions",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "grantFree": "Grant Free",
+      "revokeFree": "Revoke Free",
+      "cannotRevokeAdmin": "Cannot revoke free access from an admin",
+      "noMatches": "No users found.",
+      "pageOf": "Page {{current}} of {{total}} ({{count}} users)",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "status": {
+      "free": "Free (Admin)",
+      "active": "Active",
+      "trialing": "Trialing",
+      "pastDue": "Past Due",
+      "canceled": "Canceled",
+      "trial": "Trial",
+      "expired": "Expired"
+    },
+    "confirm": {
+      "grantTitle": "Grant free account?",
+      "grantMessage": "This will give {{email}} unlimited free access. You can revoke it at any time.",
+      "revokeTitle": "Revoke free account?",
+      "revokeMessage": "This will remove free access from {{email}} and give them a fresh 30-day trial. They will be blocked when the trial expires unless they subscribe."
+    }
   },
   "bloom": {
     "remember": "Remember",

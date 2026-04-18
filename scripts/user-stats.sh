@@ -40,6 +40,7 @@ SELECT
   COUNT(*) FILTER (WHERE subscription_status = 'active') AS "Active",
   COUNT(*) FILTER (WHERE subscription_status = 'trialing') AS "Trialing",
   COUNT(*) FILTER (WHERE subscription_status = 'past_due') AS "Past Due",
+  COUNT(*) FILTER (WHERE subscription_status = 'free') AS "Free (Admin)",
   COUNT(*) FILTER (WHERE subscription_status IN ('active', 'trialing', 'past_due')) AS "Total Billable"
 FROM users
 WHERE password_hash != '$invalid$';
@@ -52,7 +53,7 @@ SELECT
   COUNT(*) AS "Total Free"
 FROM users
 WHERE password_hash != '$invalid$'
-  AND (subscription_status IS NULL OR subscription_status NOT IN ('active', 'trialing', 'past_due'));
+  AND (subscription_status IS NULL OR subscription_status NOT IN ('active', 'trialing', 'past_due', 'free'));
 
 \echo ''
 \echo '--- Activity ---'

@@ -5,7 +5,65 @@
     "cards": "Karten",
     "study": "Lernen",
     "settings": "Einstellungen",
+    "admin": "Admin",
     "logout": "Abmelden"
+  },
+  "admin": {
+    "title": "Admin-Dashboard",
+    "stats": {
+      "totalUsers": "Nutzer gesamt",
+      "active": "Aktiv",
+      "trialing": "Testphase",
+      "pastDue": "Überfällig",
+      "freeAdmin": "Frei (Admin)",
+      "billableTotal": "Zahlungspflichtig gesamt",
+      "trialActive": "Testphase aktiv",
+      "trialExpired": "Testphase abgelaufen",
+      "totalFree": "Kostenlos / Testphase gesamt",
+      "usersWithCards": "Nutzer mit Karten",
+      "usersWithReviews": "Nutzer mit Reviews"
+    },
+    "sections": {
+      "billable": "Zahlende / Zahlungspflichtige Nutzer",
+      "freeTrial": "Kostenlose / Testphasen-Nutzer",
+      "activity": "Aktivität",
+      "statusBreakdown": "Status-Aufschlüsselung"
+    },
+    "users": {
+      "title": "Nutzer",
+      "searchPlaceholder": "Nach E-Mail oder Name suchen...",
+      "email": "E-Mail",
+      "role": "Rolle",
+      "status": "Status",
+      "cards": "Karten",
+      "reviews": "Reviews",
+      "created": "Beigetreten",
+      "actions": "Aktionen",
+      "roleAdmin": "Admin",
+      "roleUser": "Nutzer",
+      "grantFree": "Frei vergeben",
+      "revokeFree": "Frei entziehen",
+      "cannotRevokeAdmin": "Einem Admin kann der Frei-Zugang nicht entzogen werden",
+      "noMatches": "Keine Nutzer gefunden.",
+      "pageOf": "Seite {{current}} von {{total}} ({{count}} Nutzer)",
+      "prev": "Zurück",
+      "next": "Weiter"
+    },
+    "status": {
+      "free": "Frei (Admin)",
+      "active": "Aktiv",
+      "trialing": "Testphase",
+      "pastDue": "Überfällig",
+      "canceled": "Gekündigt",
+      "trial": "Testphase",
+      "expired": "Abgelaufen"
+    },
+    "confirm": {
+      "grantTitle": "Kostenlosen Zugang vergeben?",
+      "grantMessage": "Dies gibt {{email}} unbegrenzten kostenlosen Zugang. Du kannst es jederzeit widerrufen.",
+      "revokeTitle": "Kostenlosen Zugang widerrufen?",
+      "revokeMessage": "Dies entzieht {{email}} den kostenlosen Zugang und startet eine neue 30-tägige Testphase. Nach Ablauf wird der Nutzer blockiert, sofern kein Abonnement abgeschlossen wird."
+    }
   },
   "bloom": {
     "remember": "Erinnern",
