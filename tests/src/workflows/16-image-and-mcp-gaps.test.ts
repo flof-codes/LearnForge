@@ -164,18 +164,22 @@ describe("MCP search_cards Tool", () => {
     const result = await mcp.callTool("search_cards", { query: "slope" });
     expect(result.isError).toBeFalsy();
 
-    const cards = mcp.parseToolResult<
-      Array<{
+    const { cards, total, hasMore } = mcp.parseToolResult<{
+      cards: Array<{
         id: string;
         concept: string;
         tags: string[];
         topicId: string;
         score: number;
         bloomState: { currentLevel: number | null; highestReached: number | null };
-      }>
-    >(result);
+      }>;
+      total: number;
+      hasMore: boolean;
+    }>(result);
 
     expect(cards.length).toBeGreaterThan(0);
+    expect(typeof total).toBe("number");
+    expect(typeof hasMore).toBe("boolean");
 
     // REV_SLOPE_INT card should appear (concept = "Slope-intercept form")
     const slopeCard = cards.find((c) => c.id === CARDS.REV_SLOPE_INT);
@@ -191,9 +195,9 @@ describe("MCP search_cards Tool", () => {
     });
     expect(result.isError).toBeFalsy();
 
-    const cards = mcp.parseToolResult<Array<{ id: string; topicId: string }>>(
-      result,
-    );
+    const { cards } = mcp.parseToolResult<{
+      cards: Array<{ id: string; topicId: string }>;
+    }>(result);
 
     // All returned cards should belong to LINEAR_EQUATIONS topic tree
     for (const card of cards) {
@@ -208,16 +212,16 @@ describe("MCP search_cards Tool", () => {
     });
     expect(result.isError).toBeFalsy();
 
-    const cards = mcp.parseToolResult<
-      Array<{
+    const { cards } = mcp.parseToolResult<{
+      cards: Array<{
         id: string;
         concept: string;
         tags: string[];
         topicId: string;
         score: number;
         bloomState: { currentLevel: number | null; highestReached: number | null };
-      }>
-    >(result);
+      }>;
+    }>(result);
 
     expect(cards.length).toBeGreaterThan(0);
     expect(cards.length).toBeLessThanOrEqual(3);
@@ -241,7 +245,7 @@ describe("MCP search_cards Tool", () => {
 
     // Text search won't match a truly random string.
     // Semantic search may return low-relevance results below the cosine threshold.
-    const cards = mcp.parseToolResult<any[]>(result);
+    const { cards } = mcp.parseToolResult<{ cards: any[] }>(result);
     expect(Array.isArray(cards)).toBe(true);
     // Allow 0 or very few results — semantic search can be noisy for gibberish
     expect(cards.length).toBeLessThanOrEqual(2);

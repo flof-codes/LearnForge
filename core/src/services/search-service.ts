@@ -3,11 +3,53 @@ import type { Db } from "../db/types.js";
 import { computeEmbedding } from "./embeddings.js";
 import { ValidationError } from "../lib/errors.js";
 
-export async function searchCards(db: Db, userId: string, query: string, topicId?: string, rawLimit?: number) {
+const DEFAULT_LIMIT = 25;
+const MAX_LIMIT = 100;
+
+export interface SearchCardsResult {
+  cards: Array<{
+    id: string;
+    concept: string;
+    tags: string[] | null;
+    topicId: string;
+    frontHtml: string;
+    backHtml: string;
+    createdAt: string;
+    updatedAt: string;
+    score: number;
+    bloomState: { currentLevel: number | null; highestReached: number | null };
+    fsrsState: {
+      stability: number | null;
+      difficulty: number | null;
+      due: string;
+      state: number | null;
+      lastReview: string | null;
+      reps: number | null;
+      lapses: number | null;
+    } | null;
+  }>;
+  total: number;
+  hasMore: boolean;
+}
+
+export async function searchCards(
+  db: Db,
+  userId: string,
+  query: string,
+  topicId?: string,
+  rawLimit?: number,
+  rawOffset?: number,
+): Promise<SearchCardsResult> {
   if (!query || !query.trim()) throw new ValidationError("q is required");
-  const parsed = rawLimit ?? 20;
-  const limit = Math.min(Math.max(1, Number.isNaN(parsed) ? 20 : parsed), 100);
-  const overFetch = limit * 3;
+  const parsedLimit = rawLimit ?? DEFAULT_LIMIT;
+  const limit = Math.min(
+    Math.max(1, Number.isNaN(parsedLimit) ? DEFAULT_LIMIT : parsedLimit),
+    MAX_LIMIT,
+  );
+  const offset = Math.max(0, rawOffset ?? 0);
+  // Over-fetch candidate pool so RRF ranking has room. Scales with offset+limit,
+  // capped so a deep page doesn't balloon the semantic search.
+  const candidatePool = Math.min(500, (offset + limit) * 3);
 
   // Build topic filter using top-level CTE
   const topicCte = topicId
@@ -28,7 +70,7 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
     ${topicJoin}
     WHERE (c.concept ILIKE ${"%" + query + "%"} OR array_to_string(c.tags, ' ') ILIKE ${"%" + query + "%"})
     ORDER BY c.updated_at DESC
-    LIMIT ${overFetch}
+    LIMIT ${candidatePool}
   `);
 
   // Semantic search: cosine distance on embedding
@@ -45,7 +87,7 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
       WHERE c.embedding IS NOT NULL
         AND c.embedding <=> ${vecLiteral}::vector < 0.45
       ORDER BY c.embedding <=> ${vecLiteral}::vector
-      LIMIT ${overFetch}
+      LIMIT ${candidatePool}
     `);
     semanticRows = semanticResult.rows;
   }
@@ -63,14 +105,17 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
     scores.set(id, (scores.get(id) ?? 0) + 1 / (k + i));
   }
 
-  const rankedIds = [...scores.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
+  const ranked = [...scores.entries()].sort((a, b) => b[1] - a[1]);
+  const total = ranked.length;
+  const pageIds = ranked
+    .slice(offset, offset + limit)
     .map(([id, score]) => ({ id, score }));
 
-  if (rankedIds.length === 0) return [];
+  if (pageIds.length === 0) {
+    return { cards: [], total, hasMore: false };
+  }
 
-  const placeholders = rankedIds.map((r) => sql`${r.id}`);
+  const placeholders = pageIds.map((r) => sql`${r.id}`);
   const inList = sql.join(placeholders, sql`, `);
 
   const cardRows = await db.execute<{
@@ -92,7 +137,7 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
 
   const cardMap = new Map(cardRows.rows.map((row) => [row.id, row]));
 
-  return rankedIds.map(({ id, score }) => {
+  const cards = pageIds.map(({ id, score }) => {
     const row = cardMap.get(id)!;
     return {
       id: row.id,
@@ -111,4 +156,6 @@ export async function searchCards(db: Db, userId: string, query: string, topicId
       } : null,
     };
   });
+
+  return { cards, total, hasMore: offset + cards.length < total };
 }

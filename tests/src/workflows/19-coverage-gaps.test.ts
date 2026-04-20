@@ -298,7 +298,9 @@ describe("MCP search_cards Multi-Tenancy", () => {
       query: "slope-intercept form",
     });
     expect(result.isError).toBeFalsy();
-    const cards = mcp.parseToolResult<Array<{ id: string; concept: string }>>(result);
+    const { cards } = mcp.parseToolResult<{
+      cards: Array<{ id: string; concept: string }>;
+    }>(result);
 
     // Should find the test user's card
     const ids = cards.map((c) => c.id);
@@ -320,7 +322,8 @@ describe("MCP search_cards Multi-Tenancy", () => {
       params: { q: "slope-intercept form" },
     });
     expect(otherRes.status).toBe(200);
-    expect(otherRes.data).toHaveLength(0);
+    expect(otherRes.data.cards).toHaveLength(0);
+    expect(otherRes.data.total).toBe(0);
   });
 });
 

@@ -48,11 +48,12 @@ export function registerContextTools(server: McpServer, db: Db, userId: string) 
       query: z.string().min(1).describe("Search query text"),
       topic_id: z.string().uuid().optional().describe("Optional: restrict to topic and its descendants"),
       limit: z.number().int().positive().max(100).default(10).describe("Maximum results to return"),
+      offset: z.number().int().nonnegative().default(0).describe("Offset for pagination"),
     },
-    async ({ query, topic_id, limit }) => {
+    async ({ query, topic_id, limit, offset }) => {
       try {
-        const results = await searchCards(db, userId, query, topic_id, limit);
-        return { content: [{ type: "text" as const, text: JSON.stringify(results, null, 2) }] };
+        const result = await searchCards(db, userId, query, topic_id, limit, offset);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };

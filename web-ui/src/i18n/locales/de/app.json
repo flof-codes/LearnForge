@@ -186,7 +186,16 @@
     "noPreview": "Keine Vorschau",
     "dueLabel": "F\u00e4llig",
     "cardCount": "{{count}} Karte",
-    "cardCount_other": "{{count}} Karten"
+    "cardCount_other": "{{count}} Karten",
+    "sortConcept": "Konzept (A-Z)"
+  },
+  "pagination": {
+    "showing": "{{from}}-{{to}} von {{total}}",
+    "empty": "Keine Ergebnisse",
+    "perPage": "Pro Seite:",
+    "previous": "Vorherige Seite",
+    "next": "N\u00e4chste Seite",
+    "navLabel": "Seitennavigation"
   },
   "cardDetail": {
     "front": "Vorderseite",
@@ -277,7 +286,6 @@
     "noCardsInTopic": "Noch keine Karten in diesem Thema.",
     "notFound": "Thema nicht gefunden.",
     "cardsLabel": "Karten",
-    "cardsFiltered": "Karten ({{filtered}} von {{total}})",
     "cardsCount": "Karten ({{count}})"
   },
   "shares": {

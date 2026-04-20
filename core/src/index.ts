@@ -77,6 +77,15 @@ export { getTopicContext, getSimilarCards } from "./services/context-service.js"
 // Services - Search
 export { searchCards } from "./services/search-service.js";
 
+// Services - Card List (paginated browse)
+export {
+  listCards,
+  type ListCardsInput,
+  type ListCardsResult,
+  type CardListStatus,
+  type CardListSort,
+} from "./services/card-list-service.js";
+
 // Services - Backfill
 export { backfillEmbeddings, type BackfillOptions, type BackfillProgress } from "./services/backfill-service.js";
 

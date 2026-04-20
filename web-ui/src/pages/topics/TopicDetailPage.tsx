@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Pencil, Trash2, Plus, FolderTree, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTopic, useDeleteTopic } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
-import { contextService } from '../../api/context';
-import { useQuery } from '@tanstack/react-query';
+import { cardService, type CardListSort, type CardListStatus } from '../../api/cards';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import EditTopicModal from './EditTopicModal';
 import ShareTopicModal from './ShareTopicModal';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -16,12 +16,10 @@ import ErrorFallback from '../../components/ErrorFallback';
 import DueForecastChart from '../../components/DueForecastChart';
 import BloomStateChart from '../../components/BloomStateChart';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
+import Pagination from '../../components/Pagination';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
 
-type CardFilter = 'all' | 'new' | 'learning' | 'due';
-type CardSort = 'newest' | 'oldest' | 'updated' | 'studied';
-
-interface ContextCard {
+interface ListCard {
   id: string;
   concept: string;
   tags: string[];
@@ -31,8 +29,10 @@ interface ContextCard {
   updatedAt: string;
   bloomState: { currentLevel: number | null; highestReached: number | null };
   fsrsState: { due: string; state: number; lastReview: string | null } | null;
-  reviews: { bloomLevel: number; rating: number; questionText: string; reviewedAt: string }[];
 }
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const DEFAULT_PAGE_SIZE = 25;
 
 export default function TopicDetailPage() {
   const { t } = useTranslation('app');
@@ -44,48 +44,43 @@ export default function TopicDetailPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<CardFilter>('all');
-  const [sort, setSort] = useState<CardSort>('newest');
+  const [filter, setFilter] = useState<CardListStatus>('all');
+  const [sort, setSort] = useState<CardListSort>('newest');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { data: studySummary } = useStudySummary(id);
 
-  const { data: contextData } = useQuery({
-    queryKey: ['context', 'topic', id],
-    queryFn: () => contextService.topicCards(id!, 1).then(r => r.data),
+  // Reset to first page when filters or topic change — done during render
+  // (React's recommended pattern for resetting derived state without useEffect).
+  const filterKey = `${id ?? ''}|${filter}|${sort}|${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(1);
+  }
+
+  const offset = (page - 1) * pageSize;
+
+  const listQuery = useQuery({
+    queryKey: ['cards', 'topic', id, { filter, sort, offset, pageSize }],
+    queryFn: async () => {
+      const res = await cardService.list({
+        topicId: id,
+        includeDescendants: false,
+        status: filter === 'all' ? undefined : filter,
+        sort,
+        offset,
+        limit: pageSize,
+      });
+      return res.data;
+    },
     enabled: !!id,
+    placeholderData: keepPreviousData,
   });
 
-  const allCards: ContextCard[] = useMemo(() => (contextData as ContextCard[]) ?? [], [contextData]);
-
-  const filteredCards = useMemo(() => {
-    const now = new Date();
-    let result = allCards;
-
-    if (filter === 'new') {
-      result = result.filter(c => !c.fsrsState || c.fsrsState.state === 0);
-    } else if (filter === 'learning') {
-      result = result.filter(c => c.fsrsState?.state === 1 || c.fsrsState?.state === 3);
-    } else if (filter === 'due') {
-      result = result.filter(c => c.fsrsState && new Date(c.fsrsState.due) <= now && c.fsrsState.state !== 0);
-    }
-
-    const sorted = [...result];
-    if (sort === 'newest') {
-      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (sort === 'oldest') {
-      sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    } else if (sort === 'updated') {
-      sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    } else if (sort === 'studied') {
-      sorted.sort((a, b) => {
-        const aTime = a.fsrsState?.lastReview ? new Date(a.fsrsState.lastReview).getTime() : 0;
-        const bTime = b.fsrsState?.lastReview ? new Date(b.fsrsState.lastReview).getTime() : 0;
-        return bTime - aTime;
-      });
-    }
-
-    return sorted;
-  }, [allCards, filter, sort]);
+  const pageCards = (listQuery.data?.cards ?? []) as ListCard[];
+  const total = listQuery.data?.total ?? 0;
 
   if (isLoading) return <LoadingSpinner />;
   if (isError) return <ErrorFallback message={(error as Error).message} onReset={() => refetch()} />;
@@ -191,7 +186,7 @@ export default function TopicDetailPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">
-            {filter !== 'all' ? t('topics.cardsFiltered', { filtered: filteredCards.length, total: allCards.length }) : t('topics.cardsCount', { count: allCards.length })}
+            {t('topics.cardsCount', { count: total })}
           </h2>
           <Link
             to={`/dashboard/cards/new?topicId=${id}`}
@@ -201,13 +196,13 @@ export default function TopicDetailPage() {
           </Link>
         </div>
 
-        {allCards.length > 0 && (
+        {(total > 0 || filter !== 'all') && (
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {([
-              { key: 'all' as CardFilter, label: t('cards.filterAll') },
-              { key: 'new' as CardFilter, label: t('cards.filterNew') },
-              { key: 'learning' as CardFilter, label: t('cards.filterLearning') },
-              { key: 'due' as CardFilter, label: t('cards.filterDue') },
+              { key: 'all' as CardListStatus, label: t('cards.filterAll') },
+              { key: 'new' as CardListStatus, label: t('cards.filterNew') },
+              { key: 'learning' as CardListStatus, label: t('cards.filterLearning') },
+              { key: 'due' as CardListStatus, label: t('cards.filterDue') },
             ]).map(f => (
               <button
                 key={f.key}
@@ -224,36 +219,49 @@ export default function TopicDetailPage() {
             <span className="text-border">|</span>
             <select
               value={sort}
-              onChange={e => setSort(e.target.value as CardSort)}
+              onChange={e => setSort(e.target.value as CardListSort)}
               className="text-xs bg-bg-surface text-text-muted rounded-lg px-2 py-1 border-none outline-none cursor-pointer hover:text-text transition-colors"
             >
               <option value="newest">{t('cards.sortNewest')}</option>
               <option value="oldest">{t('cards.sortOldest')}</option>
               <option value="updated">{t('cards.sortUpdated')}</option>
               <option value="studied">{t('cards.sortStudied')}</option>
+              <option value="concept">{t('cards.sortConcept')}</option>
             </select>
           </div>
         )}
 
-        {filteredCards.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredCards.map(card => (
-              <Link
-                key={card.id}
-                to={`/dashboard/cards/${card.id}`}
-                className="bg-bg-secondary rounded-xl border border-border p-4 hover:bg-bg-surface transition-colors"
-              >
-                <p className="text-sm line-clamp-2 mb-2">{card.concept}</p>
-                <div className="flex items-center gap-2">
-                  <BloomBadge level={card.bloomState?.currentLevel ?? 0} />
-                  {card.tags?.length > 0 && (
-                    <span className="text-xs text-text-muted">{card.tags.slice(0, 2).join(', ')}</span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : allCards.length > 0 ? (
+        {pageCards.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {pageCards.map(card => (
+                <Link
+                  key={card.id}
+                  to={`/dashboard/cards/${card.id}`}
+                  className="bg-bg-secondary rounded-xl border border-border p-4 hover:bg-bg-surface transition-colors"
+                >
+                  <p className="text-sm line-clamp-2 mb-2">{card.concept}</p>
+                  <div className="flex items-center gap-2">
+                    <BloomBadge level={card.bloomState?.currentLevel ?? 0} />
+                    {card.tags?.length > 0 && (
+                      <span className="text-xs text-text-muted">{card.tags.slice(0, 2).join(', ')}</span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4">
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+              />
+            </div>
+          </>
+        ) : total === 0 && filter !== 'all' ? (
           <div className="text-center py-8 text-text-muted bg-bg-secondary rounded-xl border border-border">
             <p className="text-sm">{t('topics.noCardsFilter')}</p>
           </div>

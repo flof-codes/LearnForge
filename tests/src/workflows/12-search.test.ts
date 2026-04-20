@@ -26,22 +26,24 @@ describe("Card Search", () => {
         params: { q: "slope" },
       });
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.data)).toBe(true);
+      expect(Array.isArray(res.data.cards)).toBe(true);
+      expect(typeof res.data.total).toBe("number");
+      expect(typeof res.data.has_more).toBe("boolean");
 
-      const ids = res.data.map((c: any) => c.id);
+      const ids = res.data.cards.map((c: any) => c.id);
       expect(ids).toContain(CARDS.REV_SLOPE_INT);
     });
   });
 
   describe("Response shape", () => {
-    it("returns cards with expected fields", async () => {
+    it("returns cards with expected fields and pagination metadata", async () => {
       const res = await api.get("/cards/search", {
         params: { q: "slope" },
       });
       expect(res.status).toBe(200);
-      expect(res.data.length).toBeGreaterThan(0);
+      expect(res.data.cards.length).toBeGreaterThan(0);
 
-      const card = res.data[0];
+      const card = res.data.cards[0];
       expect(card.id).toBeDefined();
       expect(card.concept).toBeDefined();
       expect(card.tags).toBeDefined();
@@ -53,26 +55,52 @@ describe("Card Search", () => {
     });
   });
 
+  describe("Pagination", () => {
+    it("respects limit and offset", async () => {
+      const page1 = await api.get("/cards/search", {
+        params: { q: "slope", limit: 1, offset: 0 },
+      });
+      expect(page1.status).toBe(200);
+      expect(page1.data.cards.length).toBeLessThanOrEqual(1);
+
+      if (page1.data.total > 1) {
+        const page2 = await api.get("/cards/search", {
+          params: { q: "slope", limit: 1, offset: 1 },
+        });
+        expect(page2.status).toBe(200);
+        expect(page2.data.cards.length).toBeLessThanOrEqual(1);
+        if (page1.data.cards.length > 0 && page2.data.cards.length > 0) {
+          expect(page1.data.cards[0].id).not.toBe(page2.data.cards[0].id);
+        }
+      }
+    });
+
+    it("has_more is false when offset past total", async () => {
+      const res = await api.get("/cards/search", {
+        params: { q: "slope", limit: 5, offset: 9999 },
+      });
+      expect(res.status).toBe(200);
+      expect(res.data.cards).toHaveLength(0);
+      expect(res.data.has_more).toBe(false);
+    });
+  });
+
   describe("Topic filter", () => {
     it("returns results within the specified topic tree", async () => {
-      // Slope-intercept is under Linear Equations, which is under Algebra, which is under Mathematics
       const res = await api.get("/cards/search", {
         params: { q: "slope", topic_id: TOPICS.MATHEMATICS },
       });
       expect(res.status).toBe(200);
-      const ids = res.data.map((c: any) => c.id);
+      const ids = res.data.cards.map((c: any) => c.id);
       expect(ids).toContain(CARDS.REV_SLOPE_INT);
     });
 
     it("excludes cards outside the topic tree", async () => {
-      // Slope-intercept is NOT under Biology — it should not appear in Biology-filtered results
       const res = await api.get("/cards/search", {
         params: { q: "slope", topic_id: TOPICS.BIOLOGY },
       });
       expect(res.status).toBe(200);
-      // Semantic search may return Biology cards (cosine distance ranks all cards in scope),
-      // but the Math slope card must NOT be in the results
-      const ids = res.data.map((c: any) => c.id);
+      const ids = res.data.cards.map((c: any) => c.id);
       expect(ids).not.toContain(CARDS.REV_SLOPE_INT);
     });
   });
@@ -90,21 +118,17 @@ describe("Card Search", () => {
         params: { q: "xyznonexistent" },
       });
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.data)).toBe(true);
-      // With cosine distance threshold, nonsense queries should not return
-      // irrelevant cards — text search finds nothing and semantic search
-      // filters out results beyond the similarity threshold
-      expect(res.data.length).toBe(0);
+      expect(Array.isArray(res.data.cards)).toBe(true);
+      expect(res.data.cards.length).toBe(0);
+      expect(res.data.total).toBe(0);
     });
 
     it("does not match on array literal characters in tags", async () => {
-      // Text search for '{' or ',' must not match via PostgreSQL array syntax.
-      // Semantic search may return low-relevance results for short queries.
       const resBrace = await api.get("/cards/search", {
         params: { q: "{" },
       });
       expect(resBrace.status).toBe(200);
-      for (const card of resBrace.data) {
+      for (const card of resBrace.data.cards) {
         expect(card.concept).not.toContain("{");
         expect((card.tags ?? []).join(" ")).not.toContain("{");
       }
@@ -113,7 +137,7 @@ describe("Card Search", () => {
         params: { q: "," },
       });
       expect(resComma.status).toBe(200);
-      for (const card of resComma.data) {
+      for (const card of resComma.data.cards) {
         expect(card.concept).not.toContain(",");
         expect((card.tags ?? []).join(" ")).not.toContain(",");
       }
@@ -145,7 +169,7 @@ describe("Card Search", () => {
         params: { q: "mitochondria energy" },
       });
       expect(res.status).toBe(200);
-      const ids = res.data.map((c: any) => c.id);
+      const ids = res.data.cards.map((c: any) => c.id);
       expect(ids).toContain(clozeCardId);
     });
 
@@ -154,7 +178,7 @@ describe("Card Search", () => {
         params: { q: "cloze-search-test" },
       });
       expect(res.status).toBe(200);
-      const ids = res.data.map((c: any) => c.id);
+      const ids = res.data.cards.map((c: any) => c.id);
       expect(ids).toContain(clozeCardId);
     });
 
@@ -163,7 +187,7 @@ describe("Card Search", () => {
         params: { q: "cloze searchable mitochondria" },
       });
       expect(res.status).toBe(200);
-      const clozeResult = res.data.find((c: any) => c.id === clozeCardId);
+      const clozeResult = res.data.cards.find((c: any) => c.id === clozeCardId);
       expect(clozeResult).toBeDefined();
       expect(clozeResult.concept).toContain("Cloze searchable");
       expect(clozeResult.score).toBeDefined();
@@ -173,7 +197,6 @@ describe("Card Search", () => {
 
   describe("Multi-tenancy", () => {
     it("other user cannot see test user's cards via search", async () => {
-      // Login as the other user
       const url = process.env.TEST_API_URL ?? TEST_CONFIG.apiUrl;
       const loginRes = await axios.post(`${url}/auth/login`, {
         email: TEST_CONFIG.otherEmail,
@@ -185,12 +208,12 @@ describe("Card Search", () => {
         validateStatus: () => true,
       });
 
-      // Search for a concept that belongs to the test user
       const res = await otherApi.get("/cards/search", {
         params: { q: "slope" },
       });
       expect(res.status).toBe(200);
-      expect(res.data).toHaveLength(0);
+      expect(res.data.cards).toHaveLength(0);
+      expect(res.data.total).toBe(0);
     });
   });
 });

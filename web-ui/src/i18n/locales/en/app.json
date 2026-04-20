@@ -186,7 +186,16 @@
     "noPreview": "No preview",
     "dueLabel": "Due",
     "cardCount": "{{count}} card",
-    "cardCount_other": "{{count}} cards"
+    "cardCount_other": "{{count}} cards",
+    "sortConcept": "Concept (A-Z)"
+  },
+  "pagination": {
+    "showing": "Showing {{from}}-{{to}} of {{total}}",
+    "empty": "No results",
+    "perPage": "Per page:",
+    "previous": "Previous page",
+    "next": "Next page",
+    "navLabel": "Pagination"
   },
   "cardDetail": {
     "front": "Front",
@@ -277,7 +286,6 @@
     "noCardsInTopic": "No cards in this topic yet.",
     "notFound": "Topic not found.",
     "cardsLabel": "Cards",
-    "cardsFiltered": "Cards ({{filtered}} of {{total}})",
     "cardsCount": "Cards ({{count}})"
   },
   "shares": {

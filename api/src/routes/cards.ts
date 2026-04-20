@@ -1,6 +1,18 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { createCard, getCard, updateCard, deleteCard, resetCard, searchCards, ValidationError, type ClozeData } from "@learnforge/core";
+import {
+  createCard,
+  getCard,
+  updateCard,
+  deleteCard,
+  resetCard,
+  searchCards,
+  listCards,
+  ValidationError,
+  type ClozeData,
+  type CardListStatus,
+  type CardListSort,
+} from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function cardRoutes(app: FastifyInstance) {
@@ -30,13 +42,75 @@ export default async function cardRoutes(app: FastifyInstance) {
     return result;
   });
 
-  // GET /cards/search — hybrid search (text + semantic) with RRF fusion
-  app.get<{ Querystring: { q?: string; topic_id?: string; limit?: string } }>("/cards/search", async (req) => {
+  // GET /cards/search — hybrid search (text + semantic) with RRF fusion + offset pagination
+  app.get<{ Querystring: { q?: string; topic_id?: string; limit?: string; offset?: string } }>(
+    "/cards/search",
+    async (req) => {
+      const userId = getUserId(req);
+      const { q, topic_id, limit: limitStr, offset: offsetStr } = req.query;
+      if (!q) throw new ValidationError("q is required");
+      const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+      const offset = offsetStr ? parseInt(offsetStr, 10) : undefined;
+      const result = await searchCards(db, userId, q, topic_id, limit, offset);
+      return { cards: result.cards, total: result.total, has_more: result.hasMore };
+    },
+  );
+
+  // GET /cards — paginated list with server-side filter + sort (for browse UI)
+  app.get<{
+    Querystring: {
+      topic_id?: string;
+      include_descendants?: string;
+      search?: string;
+      bloom_level?: string;
+      status?: string;
+      sort?: string;
+      offset?: string;
+      limit?: string;
+    };
+  }>("/cards", async (req) => {
     const userId = getUserId(req);
-    const { q, topic_id, limit: limitStr } = req.query;
-    if (!q) throw new ValidationError("q is required");
-    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-    return searchCards(db, userId, q, topic_id, limit);
+    const q = req.query;
+
+    const allowedStatus = ["all", "new", "learning", "due"] as const;
+    const allowedSort = ["newest", "oldest", "updated", "studied", "concept"] as const;
+
+    const status = q.status && (allowedStatus as readonly string[]).includes(q.status)
+      ? (q.status as CardListStatus)
+      : undefined;
+    const sort = q.sort && (allowedSort as readonly string[]).includes(q.sort)
+      ? (q.sort as CardListSort)
+      : undefined;
+
+    let bloomLevel: number | undefined;
+    if (q.bloom_level !== undefined && q.bloom_level !== "") {
+      const n = parseInt(q.bloom_level, 10);
+      if (!Number.isNaN(n) && n >= 0 && n <= 5) bloomLevel = n;
+    }
+
+    const limit = q.limit ? parseInt(q.limit, 10) : undefined;
+    const offset = q.offset ? parseInt(q.offset, 10) : undefined;
+
+    const includeDescendants = q.include_descendants === undefined
+      ? undefined
+      : q.include_descendants !== "false" && q.include_descendants !== "0";
+
+    const result = await listCards(db, userId, {
+      topicId: q.topic_id && q.topic_id.length > 0 ? q.topic_id : undefined,
+      includeDescendants,
+      search: q.search,
+      bloomLevel,
+      status,
+      sort,
+      limit: Number.isNaN(limit) ? undefined : limit,
+      offset: Number.isNaN(offset) ? undefined : offset,
+    });
+
+    return {
+      cards: result.cards,
+      total: result.total,
+      has_more: result.hasMore,
+    };
   });
 
   // GET /cards/:id — single card with bloom_state, fsrs_state, and reviews
