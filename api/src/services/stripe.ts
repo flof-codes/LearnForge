@@ -3,7 +3,7 @@ import { config } from "../config.js";
 
 let _stripe: Stripe | null = null;
 
-function getStripe(): Stripe {
+export function getStripe(): Stripe {
   if (!_stripe) {
     if (!config.stripeSecretKey) {
       throw new Error("STRIPE_SECRET_KEY is not configured");

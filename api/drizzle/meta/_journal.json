@@ -99,6 +99,13 @@
       "when": 1777507200000,
       "tag": "0013_card_list_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1777563952207,
+      "tag": "0014_stripe_subscription_id",
+      "breakpoints": true
     }
   ]
 }

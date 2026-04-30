@@ -125,6 +125,17 @@ describe("Admin Dashboard", () => {
       const res = await regularApi.post(`/admin/users/${targetId}/revoke-free`, {});
       expect(res.status).toBe(403);
     });
+
+    it("non-admin user gets 403 on POST /admin/users/:id/sync-stripe", async () => {
+      const res = await regularApi.post(`/admin/users/${targetId}/sync-stripe`, {});
+      expect(res.status).toBe(403);
+    });
+
+    it("POST /admin/users/:id/sync-stripe without token → 401", async () => {
+      const unauth = getUnauthApi();
+      const res = await unauth.post(`/admin/users/${targetId}/sync-stripe`);
+      expect(res.status).toBe(401);
+    });
   });
 
   describe("GET /admin/stats", () => {
@@ -312,6 +323,21 @@ describe("Admin Dashboard", () => {
       );
       expect(rows[0].role).toBe("admin");
       expect(rows[0].subscription_status).toBe("free");
+    });
+  });
+
+  describe("POST /admin/users/:id/sync-stripe", () => {
+    it("returns 400 when target user has no Stripe customer linked", async () => {
+      // targetId at this point has no stripe_customer_id (never went through checkout)
+      const res = await adminApi.post(`/admin/users/${targetId}/sync-stripe`, {});
+      expect(res.status).toBe(400);
+      expect(res.data.error).toMatch(/no stripe customer/i);
+    });
+
+    it("returns 404 for unknown user id", async () => {
+      const fakeId = "00000000-0000-0000-0000-000000000000";
+      const res = await adminApi.post(`/admin/users/${fakeId}/sync-stripe`, {});
+      expect(res.status).toBe(404);
     });
   });
 

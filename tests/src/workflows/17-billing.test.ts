@@ -1,6 +1,9 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { AxiosInstance } from "axios";
+import pg from "pg";
+import { createHmac } from "node:crypto";
 import { login, getApi, getUnauthApi } from "../helpers/api-client.js";
+import { TEST_CONFIG } from "../helpers/fixtures.js";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -128,17 +131,228 @@ describe("Billing", () => {
       expect(res.data.error).toMatch(/signature verification failed/i);
     });
 
-    // TODO: Webhook with valid signature requires the `stripe` npm package
-    // for `stripe.webhooks.generateTestHeaderString()`. If added as a test
-    // dependency, a valid-signature test can be written as follows:
-    //
-    // import Stripe from "stripe";
-    // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    // const header = stripe.webhooks.generateTestHeaderString({
-    //   payload,
-    //   secret: process.env.STRIPE_WEBHOOK_SECRET!,
-    // });
-    // This may also require @fastify/raw-body to be configured for the
-    // test API container so that `request.rawBody` is available.
+  });
+
+  // ── Subscription-aware webhook routing ──────────────────────────────────
+  // These tests verify that stale events from old subscriptions cannot
+  // overwrite the row of a user linked to a different (active) subscription.
+  // They use signed synthetic payloads — no live Stripe calls needed for the
+  // "ignore" branches, which is what we care about most.
+
+  describe("Webhook routing (subscription-aware)", () => {
+    const WEBHOOK_SECRET = "whsec_test_learnforge_integration_tests";
+    const runId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    const customerId = `cus_test_${runId}`;
+    const activeSubId = `sub_test_active_${runId}`;
+    const staleSubId = `sub_test_stale_${runId}`;
+    const userEmail = `webhook-routing-${runId}@test.dev`;
+    let userId: string;
+    let pgClient: pg.Client;
+
+    beforeAll(async () => {
+      pgClient = new pg.Client({
+        host: "localhost",
+        port: TEST_CONFIG.dbPort,
+        user: TEST_CONFIG.dbUser,
+        password: TEST_CONFIG.dbPassword,
+        database: TEST_CONFIG.dbName,
+      });
+      await pgClient.connect();
+
+      // Register a fresh user, then directly set their Stripe linkage in DB
+      // (skipping checkout flow — we're isolating webhook routing behavior).
+      const unauth = getUnauthApi();
+      const reg = await unauth.post("/auth/register", {
+        email: userEmail,
+        password: "webhook-routing-pwd",
+        name: "Webhook Routing Test",
+      });
+      expect(reg.status).toBe(201);
+      userId = (
+        await pgClient.query<{ id: string }>(
+          `SELECT id FROM users WHERE email = $1`,
+          [userEmail],
+        )
+      ).rows[0].id;
+
+      const futurePeriodEnd = new Date(Date.now() + 30 * 86400 * 1000);
+      await pgClient.query(
+        `UPDATE users
+         SET stripe_customer_id = $1,
+             stripe_subscription_id = $2,
+             subscription_status = 'active',
+             subscription_current_period_end = $3
+         WHERE id = $4`,
+        [customerId, activeSubId, futurePeriodEnd, userId],
+      );
+    });
+
+    afterAll(async () => {
+      await pgClient.query(`DELETE FROM users WHERE id = $1`, [userId]);
+      await pgClient.end();
+    });
+
+    function signWebhook(payload: string): string {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signedPayload = `${timestamp}.${payload}`;
+      const signature = createHmac("sha256", WEBHOOK_SECRET)
+        .update(signedPayload)
+        .digest("hex");
+      return `t=${timestamp},v1=${signature}`;
+    }
+
+    async function postWebhook(eventType: string, eventObject: Record<string, unknown>) {
+      const payload = JSON.stringify({
+        id: `evt_test_${runId}_${Math.random().toString(36).slice(2, 8)}`,
+        type: eventType,
+        data: { object: eventObject },
+      });
+      const unauth = getUnauthApi();
+      return unauth.post("/billing/webhook", payload, {
+        headers: {
+          "stripe-signature": signWebhook(payload),
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
+    it("ignores customer.subscription.deleted for a stale (non-matching) sub id", async () => {
+      const res = await postWebhook("customer.subscription.deleted", {
+        id: staleSubId,
+        customer: customerId,
+        status: "canceled",
+        items: { data: [] },
+      });
+      expect(res.status).toBe(200);
+
+      const { rows } = await pgClient.query<{
+        stripe_subscription_id: string;
+        subscription_status: string;
+      }>(
+        `SELECT stripe_subscription_id, subscription_status FROM users WHERE id = $1`,
+        [userId],
+      );
+      expect(rows[0].stripe_subscription_id).toBe(activeSubId);
+      expect(rows[0].subscription_status).toBe("active");
+    });
+
+    it("ignores invoice.payment_failed for a stale (non-matching) sub id", async () => {
+      const res = await postWebhook("invoice.payment_failed", {
+        id: `in_test_${runId}`,
+        customer: customerId,
+        subscription: staleSubId,
+      });
+      expect(res.status).toBe(200);
+
+      const { rows } = await pgClient.query<{ subscription_status: string }>(
+        `SELECT subscription_status FROM users WHERE id = $1`,
+        [userId],
+      );
+      expect(rows[0].subscription_status).toBe("active");
+    });
+
+    it("ignores customer.subscription.updated for a stale sub when user has a different sub linked", async () => {
+      const res = await postWebhook("customer.subscription.updated", {
+        id: staleSubId,
+        customer: customerId,
+        status: "incomplete_expired",
+        items: { data: [] },
+      });
+      expect(res.status).toBe(200);
+
+      const { rows } = await pgClient.query<{
+        stripe_subscription_id: string;
+        subscription_status: string;
+      }>(
+        `SELECT stripe_subscription_id, subscription_status FROM users WHERE id = $1`,
+        [userId],
+      );
+      expect(rows[0].stripe_subscription_id).toBe(activeSubId);
+      expect(rows[0].subscription_status).toBe("active");
+    });
+
+    it("processes invoice.payment_failed for the matching active sub → past_due", async () => {
+      const res = await postWebhook("invoice.payment_failed", {
+        id: `in_test_${runId}_match`,
+        customer: customerId,
+        subscription: activeSubId,
+      });
+      expect(res.status).toBe(200);
+
+      const { rows } = await pgClient.query<{
+        subscription_status: string;
+        stripe_subscription_id: string;
+      }>(
+        `SELECT subscription_status, stripe_subscription_id FROM users WHERE id = $1`,
+        [userId],
+      );
+      expect(rows[0].subscription_status).toBe("past_due");
+      expect(rows[0].stripe_subscription_id).toBe(activeSubId);
+
+      // restore for subsequent tests
+      await pgClient.query(
+        `UPDATE users SET subscription_status = 'active' WHERE id = $1`,
+        [userId],
+      );
+    });
+
+    it("ignores subscription events for users with admin 'free' override", async () => {
+      // Restore link first (previous test cleared period_end and changed status)
+      const futurePeriodEnd = new Date(Date.now() + 30 * 86400 * 1000);
+      await pgClient.query(
+        `UPDATE users
+         SET stripe_subscription_id = $1,
+             subscription_status = 'free',
+             subscription_current_period_end = NULL
+         WHERE id = $2`,
+        [activeSubId, userId],
+      );
+
+      const res = await postWebhook("customer.subscription.updated", {
+        id: activeSubId,
+        customer: customerId,
+        status: "active",
+        items: { data: [{ current_period_end: Math.floor(futurePeriodEnd.getTime() / 1000) }] },
+      });
+      expect(res.status).toBe(200);
+
+      const { rows } = await pgClient.query<{ subscription_status: string }>(
+        `SELECT subscription_status FROM users WHERE id = $1`,
+        [userId],
+      );
+      expect(rows[0].subscription_status).toBe("free");
+
+      // Restore for the next test
+      await pgClient.query(
+        `UPDATE users
+         SET subscription_status = 'active',
+             subscription_current_period_end = $1
+         WHERE id = $2`,
+        [futurePeriodEnd, userId],
+      );
+    });
+
+    it("processes customer.subscription.deleted for the matching active sub → canceled and unlinked", async () => {
+      const res = await postWebhook("customer.subscription.deleted", {
+        id: activeSubId,
+        customer: customerId,
+        status: "canceled",
+        items: { data: [] },
+      });
+      expect(res.status).toBe(200);
+
+      const { rows } = await pgClient.query<{
+        stripe_subscription_id: string | null;
+        subscription_status: string;
+        subscription_current_period_end: Date | null;
+      }>(
+        `SELECT stripe_subscription_id, subscription_status, subscription_current_period_end
+         FROM users WHERE id = $1`,
+        [userId],
+      );
+      expect(rows[0].stripe_subscription_id).toBeNull();
+      expect(rows[0].subscription_status).toBe("canceled");
+      expect(rows[0].subscription_current_period_end).toBeNull();
+    });
   });
 });

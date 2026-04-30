@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Search, Shield, UserCheck, UserX } from 'lucide-react';
+import { RefreshCw, Search, Shield, UserCheck, UserX } from 'lucide-react';
 import { adminService } from '../../api/admin';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
@@ -20,6 +20,7 @@ export default function AdminDashboardPage() {
     { kind: 'grant' | 'revoke'; user: AdminUser } | null
   >(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionInfo, setActionInfo] = useState<string | null>(null);
 
   const statsQuery = useQuery({
     queryKey: ['admin', 'stats'],
@@ -62,6 +63,44 @@ export default function AdminDashboardPage() {
     },
   });
 
+  const syncStripeMutation = useMutation({
+    mutationFn: (userId: string) => adminService.syncStripe(userId).then((r) => r.data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      setActionError(null);
+      const detail = data.source === 'entitlement'
+        ? `${data.status ?? '?'} (${data.subscriptionId ?? ''})`
+        : data.source === 'visibility'
+          ? `${data.status ?? '?'} (no entitlement match)`
+          : 'no subscriptions found';
+      setActionInfo(`${t('admin.users.syncStripeDone')}: ${detail}`);
+    },
+    onError: (err: unknown) => {
+      setActionInfo(null);
+      const message = (err as { response?: { data?: { error?: string } } }).response?.data?.error
+        ?? (err as Error).message;
+      setActionError(message);
+    },
+  });
+
+  const syncAllMutation = useMutation({
+    mutationFn: () => adminService.syncStripeAll().then((r) => r.data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      setActionError(null);
+      const parts = [`${data.succeeded}/${data.total}`];
+      if (data.skippedFree > 0) parts.push(t('admin.users.syncAllSkippedFree', { count: data.skippedFree }));
+      if (data.failed.length > 0) parts.push(t('admin.users.syncAllFailed', { count: data.failed.length }));
+      setActionInfo(`${t('admin.users.syncAllDone')}: ${parts.join(', ')}`);
+    },
+    onError: (err: unknown) => {
+      setActionInfo(null);
+      const message = (err as { response?: { data?: { error?: string } } }).response?.data?.error
+        ?? (err as Error).message;
+      setActionError(message);
+    },
+  });
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setOffset(0);
@@ -93,9 +132,20 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <Shield size={22} className="text-accent-blue" />
-        <h1 className="text-2xl font-medium">{t('admin.title')}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Shield size={22} className="text-accent-blue" />
+          <h1 className="text-2xl font-medium">{t('admin.title')}</h1>
+        </div>
+        <button
+          disabled={syncAllMutation.isPending}
+          onClick={() => syncAllMutation.mutate()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title={t('admin.users.syncAllTitle')}
+        >
+          <RefreshCw size={14} className={syncAllMutation.isPending ? 'animate-spin' : ''} />
+          {t('admin.users.syncAll')}
+        </button>
       </div>
 
       {/* Stats row */}
@@ -189,25 +239,38 @@ export default function AdminDashboardPage() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {user.subscriptionStatus === 'free' ? (
-                      <button
-                        disabled={user.role === 'admin'}
-                        onClick={() => setPendingAction({ kind: 'revoke', user })}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={user.role === 'admin' ? t('admin.users.cannotRevokeAdmin') : ''}
-                      >
-                        <UserX size={14} />
-                        {t('admin.users.revokeFree')}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setPendingAction({ kind: 'grant', user })}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 transition-colors"
-                      >
-                        <UserCheck size={14} />
-                        {t('admin.users.grantFree')}
-                      </button>
-                    )}
+                    <div className="inline-flex items-center gap-1.5 justify-end">
+                      {user.hasStripeCustomer && user.subscriptionStatus !== 'free' && (
+                        <button
+                          disabled={syncStripeMutation.isPending}
+                          onClick={() => syncStripeMutation.mutate(user.id)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={t('admin.users.syncStripeTitle')}
+                        >
+                          <RefreshCw size={14} className={syncStripeMutation.isPending && syncStripeMutation.variables === user.id ? 'animate-spin' : ''} />
+                          {t('admin.users.syncStripe')}
+                        </button>
+                      )}
+                      {user.subscriptionStatus === 'free' ? (
+                        <button
+                          disabled={user.role === 'admin'}
+                          onClick={() => setPendingAction({ kind: 'revoke', user })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={user.role === 'admin' ? t('admin.users.cannotRevokeAdmin') : ''}
+                        >
+                          <UserX size={14} />
+                          {t('admin.users.revokeFree')}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setPendingAction({ kind: 'grant', user })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 transition-colors"
+                        >
+                          <UserCheck size={14} />
+                          {t('admin.users.grantFree')}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -251,6 +314,15 @@ export default function AdminDashboardPage() {
         <div className="fixed bottom-4 right-4 bg-danger text-white px-4 py-2 rounded-lg text-sm shadow-lg">
           {actionError}
         </div>
+      )}
+
+      {actionInfo && (
+        <button
+          onClick={() => setActionInfo(null)}
+          className="fixed bottom-4 right-4 bg-accent-green text-white px-4 py-2 rounded-lg text-sm shadow-lg hover:bg-accent-green/90 transition-colors"
+        >
+          {actionInfo}
+        </button>
       )}
 
       <ConfirmModal
@@ -331,6 +403,18 @@ function StatusBadge({ user, t }: { user: AdminUser; t: (k: string) => string })
   }
   if (status === 'canceled') {
     return <span className="px-2 py-0.5 rounded-md text-xs bg-danger/10 text-danger font-medium">{t('admin.status.canceled')}</span>;
+  }
+  if (status === 'incomplete') {
+    return <span className="px-2 py-0.5 rounded-md text-xs bg-warning/10 text-warning font-medium">{t('admin.status.incomplete')}</span>;
+  }
+  if (status === 'incomplete_expired') {
+    return <span className="px-2 py-0.5 rounded-md text-xs bg-danger/10 text-danger font-medium">{t('admin.status.incompleteExpired')}</span>;
+  }
+  if (status === 'unpaid') {
+    return <span className="px-2 py-0.5 rounded-md text-xs bg-danger/10 text-danger font-medium">{t('admin.status.unpaid')}</span>;
+  }
+  if (status === 'paused') {
+    return <span className="px-2 py-0.5 rounded-md text-xs bg-warning/10 text-warning font-medium">{t('admin.status.paused')}</span>;
   }
   // No subscription — show trial state
   const trialActive = new Date(user.trialEndsAt) > new Date();

@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   mcpApiKeyCreatedAt: timestamp("mcp_api_key_created_at", { withTimezone: true }),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }).notNull(),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }).unique(),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   subscriptionStatus: varchar("subscription_status", { length: 50 }),
   subscriptionCurrentPeriodEnd: timestamp("subscription_current_period_end", { withTimezone: true }),
   fsrsParams: jsonb("fsrs_params"),

@@ -4,6 +4,10 @@ import { db } from "../db/connection.js";
 import { users, topics, cards, reviews } from "@learnforge/core";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { requireAdmin } from "../lib/auth-helpers.js";
+import {
+  syncStripeSubscriptionForCustomer,
+  syncStripeSubscriptionsForAllCustomers,
+} from "../services/billing-sync.js";
 
 const INVALID_HASH = "$invalid$";
 
@@ -188,9 +192,12 @@ export default async function adminRoutes(app: FastifyInstance) {
       throw new ValidationError("User already has a free account");
     }
 
+    // Clear stripe_subscription_id so future webhook events for this sub don't
+    // match-and-overwrite the 'free' override back to a Stripe-derived status.
     await db
       .update(users)
       .set({
+        stripeSubscriptionId: null,
         subscriptionStatus: "free",
         subscriptionCurrentPeriodEnd: null,
       })
@@ -221,6 +228,7 @@ export default async function adminRoutes(app: FastifyInstance) {
     await db
       .update(users)
       .set({
+        stripeSubscriptionId: null,
         subscriptionStatus: null,
         subscriptionCurrentPeriodEnd: null,
         trialEndsAt,
@@ -228,5 +236,68 @@ export default async function adminRoutes(app: FastifyInstance) {
       .where(eq(users.id, id));
 
     return { success: true };
+  });
+
+  app.post<{ Params: { id: string }; Querystring: { force?: string } }>(
+    "/admin/users/:id/sync-stripe",
+    async (request) => {
+      await requireAdmin(request);
+      const { id } = request.params;
+      const force = request.query?.force === "true";
+
+      const [target] = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          stripeCustomerId: users.stripeCustomerId,
+          subscriptionStatus: users.subscriptionStatus,
+        })
+        .from(users)
+        .where(and(eq(users.id, id), ne(users.passwordHash, INVALID_HASH)));
+      if (!target) throw new NotFoundError("User not found");
+      if (!target.stripeCustomerId) {
+        throw new ValidationError("User has no Stripe customer linked");
+      }
+      if (target.subscriptionStatus === "free" && !force) {
+        throw new ValidationError(
+          "User has admin 'free' override. Revoke free access first, or pass ?force=true to overwrite.",
+        );
+      }
+
+      try {
+        const result = await syncStripeSubscriptionForCustomer(target.stripeCustomerId);
+        app.log.info(
+          {
+            userId: id,
+            email: target.email,
+            customerId: target.stripeCustomerId,
+            ...result,
+          },
+          "admin sync-stripe completed",
+        );
+        return {
+          success: true,
+          source: result.source,
+          status: result.status,
+          subscriptionId: result.matchedSubscriptionId,
+          currentPeriodEnd: result.currentPeriodEnd,
+        };
+      } catch (err) {
+        app.log.error(
+          { err, userId: id, customerId: target.stripeCustomerId },
+          "admin sync-stripe failed",
+        );
+        throw new ValidationError(
+          err instanceof Error ? err.message : "Failed to sync subscription from Stripe",
+        );
+      }
+    },
+  );
+
+  app.post("/admin/users/sync-stripe-all", async (request) => {
+    await requireAdmin(request);
+    const result = await syncStripeSubscriptionsForAllCustomers();
+    app.log.info(result, "admin sync-stripe-all completed");
+    return result;
   });
 }
