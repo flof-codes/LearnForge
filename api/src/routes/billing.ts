@@ -166,20 +166,7 @@ export default async function billingRoutes(app: FastifyInstance) {
           signature as string,
         );
       } catch (err) {
-        // Diagnostic: surface the API's view of the secret so test/container
-        // mismatches are visible in CI logs.
-        const cfgSecret = config.stripeWebhookSecret ?? "";
-        const rawBody = (request as unknown as { rawBody?: Buffer }).rawBody;
-        app.log.error(
-          {
-            err: err instanceof Error ? err.message : String(err),
-            sigHeader: typeof signature === "string" ? signature.slice(0, 48) : "(non-string)",
-            apiSecretLen: cfgSecret.length,
-            apiSecretPrefix: cfgSecret.slice(0, 8),
-            bodyLen: rawBody?.length,
-          },
-          "Webhook signature verification failed",
-        );
+        app.log.error(err, "Webhook signature verification failed");
         return reply.status(400).send({ error: "Webhook signature verification failed" });
       }
 

@@ -5,10 +5,11 @@ let _stripe: Stripe | null = null;
 
 export function getStripe(): Stripe {
   if (!_stripe) {
-    if (!config.stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY is not configured");
-    }
-    _stripe = new Stripe(config.stripeSecretKey);
+    // Webhook signature verification is HMAC-based and doesn't hit Stripe's API,
+    // so the constructor must not throw on a missing key. Real API calls (checkout,
+    // list, retrieve) will fail with a clear 401 from Stripe if the key is absent,
+    // which is the right place to surface a config error.
+    _stripe = new Stripe(config.stripeSecretKey || "sk_test_placeholder_unused");
   }
   return _stripe;
 }
