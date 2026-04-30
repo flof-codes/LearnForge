@@ -163,6 +163,21 @@ describe("Billing", () => {
     let pgClient: pg.Client;
 
     beforeAll(async () => {
+      // Diagnostic: dump what we actually read so CI shows secret/file mismatches.
+      const envPath = resolve(__dirname, "../../.env.test");
+      const envExists = existsSync(envPath);
+      const envContent = envExists
+        ? readFileSync(envPath, "utf-8")
+            .split("\n")
+            .filter((l) => l.startsWith("STRIPE_WEBHOOK_SECRET"))
+            .join("\n")
+        : "(file does not exist)";
+      console.log(
+        `[webhook test setup] envPath=${envPath} exists=${envExists} ` +
+          `match=${envContent} secretLen=${WEBHOOK_SECRET.length} ` +
+          `secretPrefix=${WEBHOOK_SECRET.slice(0, 8)}`,
+      );
+
       // Fail loudly if the secret didn't load — saves chasing mysterious 400s.
       expect(
         WEBHOOK_SECRET.length,
@@ -227,12 +242,21 @@ describe("Billing", () => {
         data: { object: eventObject },
       });
       const unauth = getUnauthApi();
-      return unauth.post("/billing/webhook", payload, {
+      const res = await unauth.post("/billing/webhook", payload, {
         headers: {
           "stripe-signature": signWebhook(payload),
           "Content-Type": "application/json",
         },
       });
+      if (res.status !== 200) {
+        // Diagnostic: surface what's actually happening in CI.
+        console.log(
+          `[webhook test] event=${eventType} status=${res.status} body=${JSON.stringify(res.data)} ` +
+            `secretLen=${WEBHOOK_SECRET.length} secretPrefix=${WEBHOOK_SECRET.slice(0, 8)} ` +
+            `payloadLen=${payload.length}`,
+        );
+      }
+      return res;
     }
 
     it("ignores customer.subscription.deleted for a stale (non-matching) sub id", async () => {
