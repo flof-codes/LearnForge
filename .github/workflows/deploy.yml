@@ -71,7 +71,7 @@ jobs:
           STRIPE_SECRET_KEY=
           STRIPE_PRICE_ID_MONTHLY=
           STRIPE_PRICE_ID_ANNUAL=
-          STRIPE_WEBHOOK_SECRET=
+          STRIPE_WEBHOOK_SECRET=whsec_test_learnforge_integration_tests
           EOF
 
       # ── Install test runner dependencies ──

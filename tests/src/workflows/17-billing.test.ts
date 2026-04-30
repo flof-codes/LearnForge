@@ -140,7 +140,10 @@ describe("Billing", () => {
   // "ignore" branches, which is what we care about most.
 
   describe("Webhook routing (subscription-aware)", () => {
-    const WEBHOOK_SECRET = "whsec_test_learnforge_integration_tests";
+    // Read whatever secret the API container is actually using — must match,
+    // or signature verification will reject everything. CI overwrites .env.test,
+    // so don't hardcode.
+    const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
     const runId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     const customerId = `cus_test_${runId}`;
     const activeSubId = `sub_test_active_${runId}`;
