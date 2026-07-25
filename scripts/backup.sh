@@ -18,3 +18,13 @@ if [ ! -s "$BACKUP_DIR/$FILENAME" ]; then
 fi
 
 echo "Backup saved to backup/$FILENAME ($(du -h "$BACKUP_DIR/$FILENAME" | cut -f1))"
+
+# Keep only the newest MAX_BACKUPS dumps (timestamps sort chronologically)
+MAX_BACKUPS=10
+find "$BACKUP_DIR" -maxdepth 1 -type f -name 'learnforge_*.sql' \
+  | sort -r \
+  | tail -n +$((MAX_BACKUPS + 1)) \
+  | while IFS= read -r old; do
+      rm -f "$old"
+      echo "Pruned old backup: $(basename "$old")"
+    done
