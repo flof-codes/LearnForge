@@ -24,15 +24,38 @@
 # ---------------------------------------------------------------------------
 # THE FLIP COMMIT -- a checklist, not an ad-hoc assembly. In ONE commit:
 #
-#   [ ] deploy: false -> true on ONE path only. This repo publishes TWO images, so
-#       the deploy must move to a single `deploy-trigger.yml` job gated
-#       `needs: [build-api-image, build-web-image]`. Setting deploy: true on both
-#       build calls fires two parallel `compose pull/up` races into one service
-#       directory (DRIFT #38). Do NOT add `needs:` between the build jobs.
-#       EVMAN run 30488751579 is the correct shape: both build-attached deploy jobs
-#       skipped, one deploy-trigger job succeeded. There is no
-#       templates/deploy-multi-image.yml to copy -- it does not exist; the shared
-#       repo holds only templates/deploy.yml, which is single-image.
+#   [ ] ADD a `deploy` job here -- inline, NOT `uses: deploy-trigger.yml@main`.
+#       The shared deploy-trigger workflow is unreachable for the same reason
+#       build-push.yml is: it lives in the PRIVATE flof-codes/.github, and this
+#       repo is PUBLIC. Reaching for it at flip time produces the same zero-job
+#       startup_failure, at the worst possible moment. Inline it:
+#
+#         deploy:
+#           needs: [build-images]          # <- ONE job now, covering both images
+#           if: github.ref == 'refs/heads/main'
+#           runs-on: ubuntu-24.04
+#           concurrency:
+#             group: deploy-${{ github.ref }}
+#             cancel-in-progress: false     # <- NEVER cancel a deploy (DRIFT #38)
+#           steps:
+#             - uses: webfactory/ssh-agent@<PIN BY SHA>
+#               with: { ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }} }
+#             - run: echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+#             - run: ssh -p ${{ secrets.DEPLOY_PORT }} \
+#                      ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} true
+#
+#       The remote command is IGNORED -- sshd substitutes the forced command in
+#       authorized_keys, which runs `sudo /usr/local/sbin/deploy-service.sh
+#       learnforge`. That script pulls and restarts BOTH images from one service
+#       directory, which is why one deploy job covers two images and why nothing
+#       here names a compose file.
+#
+#       DEPLOY_KNOWN_HOSTS must be SET FIRST -- it is currently unset, and it is
+#       what stops this trusting whatever host answers. Do not fall back to
+#       ssh-keyscan at deploy time; that trusts the answer it is trying to verify.
+#
+#       One deploy job, never one per image: two would fire parallel
+#       `compose pull/up` races into one service directory.
 #   [ ] delete the legacy `deploy` job below
 #   [ ] delete docker-compose.prod.yml -- but record its contents in the handoff
 #       report FIRST, because the rollback path needs them
@@ -161,55 +184,170 @@ jobs:
         working-directory: tests
 
   # ---------------------------------------------------------------------------
-  # NEW PATH -- publish to GHCR. Dormant: `deploy: false` on both.
+  # NEW PATH -- publish to GHCR. Dormant: nothing here deploys.
+  #
+  # THIS IS A COPY OF flof-codes/.github's build-push.yml, REDUCED, AND THAT IS
+  # A DELIBERATE EXCEPTION.
+  #
+  # Every other app calls the shared reusable workflow. LearnForge cannot:
+  # GitHub does not permit a PUBLIC repository to consume a reusable workflow
+  # from a PRIVATE one, and flof-codes/.github is private and staying private.
+  # No setting bridges it -- the "Accessible from repositories owned by the
+  # user" policy only widens sharing among private repos. The failure mode, if
+  # anyone tries again, is a run marked completed with ZERO jobs, no logs and no
+  # annotations, which reads as a malformed workflow file rather than as a
+  # visibility problem. Two runs on 2026-07-30 confirmed it, including an
+  # 8-line minimal caller with permissions declared.
+  #
+  # THE OBLIGATION THIS CREATES: a fix to build-push.yml -- a pinned action SHA,
+  # the concurrency key, the provenance decision -- DOES NOT REACH THIS FILE.
+  # Nothing warns and nothing fails; it keeps building with the old logic.
+  # server-config's README records the same obligation from the other side.
   #
   # TWO images, not three. api/src/index.ts starts Fastify AND the MCP
   # StreamableHTTP server in one process, and no mcp/Dockerfile exists, so there
   # is no third image to build.
   #
-  # Both gated on `needs: [build, test]`, which preserves the property the legacy
-  # deploy job already had: nothing is published or deployed unless lint and the
-  # integration suite pass. That has to stay true after the flip, when the deploy
-  # trigger replaces the legacy job.
+  # STILL GATED ON `needs: [build, test]`, which is why this lives here rather
+  # than in its own workflow file: a separate file cannot depend on jobs in this
+  # one, so it would publish images from a run whose tests had failed. That
+  # property has to stay true after the flip, when the deploy job replaces the
+  # legacy one.
   #
-  # No `needs:` BETWEEN these two jobs. build-push.yml's concurrency group now
-  # includes the image name, so sibling calls no longer cancel each other and the
-  # serialisation that used to be needed is pure cost.
+  # No build-args. The web image's six configuration values are placeholder
+  # tokens substituted at container start by web-ui/docker-entrypoint.sh, which
+  # keeps one artifact usable in every environment and keeps the operator's
+  # postal address out of both the repo and the image history.
   #
-  # No build-args. The web image's six configuration values are placeholder tokens
-  # substituted at container start by web-ui/docker-entrypoint.sh, which is what
-  # keeps one artifact usable in every environment and keeps the operator's postal
-  # address out of both the repo and the image history.
+  # NO HOST, PORT OR USERNAME APPEARS IN THIS JOB, deliberately -- this repo is
+  # public. The build half needs none; the deploy job added at the flip reads
+  # DEPLOY_HOST, DEPLOY_PORT and DEPLOY_USER from secrets, which are not
+  # publicly readable.
   # ---------------------------------------------------------------------------
-  build-api-image:
+  build-images:
     needs: [build, test]
-    permissions:
-      contents: read
-      packages: write
-    uses: flof-codes/ci-workflows/.github/workflows/build-push.yml@main
-    with:
-      image-name: learnforge-api
-      dockerfile: api/Dockerfile
-      deploy: false
-    secrets:
-      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+    runs-on: ubuntu-24.04
 
-  build-web-image:
-    needs: [build, test]
+    # ONE JOB DEFINITION FOR BOTH IMAGES. Two near-identical jobs in one file is
+    # the same drift this whole design exists to prevent, one scope smaller.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: learnforge-api
+            dockerfile: api/Dockerfile
+          - image: learnforge-web
+            dockerfile: web-ui/Dockerfile
+
+    # ONE BUILD PER REF PER IMAGE, and this MUST be job-level, for two
+    # independent reasons.
+    #
+    # The `matrix` context does not exist at workflow level -- it is available
+    # in jobs.<job_id>.concurrency only. Written at the top of the file,
+    # ${{ matrix.image }} expands to the empty string, both images land in one
+    # group, and with cancel-in-progress each cancels the other: the run ends
+    # with one image at the new commit and one still at the old. No parse error,
+    # no warning.
+    #
+    # And workflow-level concurrency would cover EVERY job including the deploy
+    # job added at the flip, which must never be cancellable. That was DRIFT #38
+    # in the shared workflow; do not re-introduce it here.
+    concurrency:
+      group: build-images-${{ github.ref }}-${{ matrix.image }}
+      cancel-in-progress: true
+
+    # The default GITHUB_TOKEN is read-only on contents and has NO package
+    # scope. Both are named explicitly rather than inherited, so this is
+    # reviewable here instead of in a repository setting nobody looks at.
     permissions:
       contents: read
       packages: write
-    uses: flof-codes/ci-workflows/.github/workflows/build-push.yml@main
-    with:
-      image-name: learnforge-web
-      dockerfile: web-ui/Dockerfile
-      deploy: false
-    secrets:
-      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+    steps:
+      # Third-party actions are pinned BY COMMIT SHA, never by tag. A tag is
+      # mutable, and a moved tag runs unreviewed code in a job holding
+      # packages:write. The trailing comment is the readable version.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      # :latest MOVES ONLY ON THE DEFAULT BRANCH -- that is what `enable` does,
+      # and it is a safety property rather than tidiness. The host pulls :latest.
+      # Without it, pushing a feature branch would silently make that branch what
+      # production deploys next. Every build still gets an immutable :<full-sha>,
+      # so a branch build is deployable on purpose -- by naming its SHA -- but
+      # never by accident.
+      #
+      # The image names are lowercase literals in the matrix above. build-push.yml
+      # lowercases defensively because it derives the name from the repository,
+      # and `LearnForge` would otherwise reach the registry with capitals, which
+      # it rejects. Here they are written out, so there is nothing to lowercase.
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          # Context is the REPO ROOT for both images: api/Dockerfile copies
+          # core/, mcp/ and api/, and web-ui/Dockerfile copies the root
+          # package.json alongside web-ui/. Neither builds from its own
+          # subdirectory.
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # provenance/sbom off DELIBERATELY. With them on, buildx pushes an
+          # image INDEX (the image plus attestation manifests) rather than a
+          # plain manifest. Everything still runs, but the phase 1a digest
+          # comparison then measures an index digest against a manifest digest
+          # and reports a mismatch that is not one. Revisit once digest
+          # comparison is settled; note it in DRIFT.md if it is turned on.
+          provenance: false
+          sbom: false
+
+      - name: Report
+        # A LOCALLY built digest is not the same artifact -- CI will not
+        # reproduce it, because metadata-action stamps the commit into the config
+        # and the created timestamp moves on every rebuild. Only "same run" is a
+        # valid basis for comparison, so the run page carries both.
+        run: |
+          set -euo pipefail
+          {
+            echo "## ${{ matrix.image }}"
+            echo
+            echo '```'
+            echo "image:  ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+            echo "digest: ${{ steps.build.outputs.digest }}"
+            echo "run:    ${{ github.run_id }}"
+            echo "commit: ${{ github.sha }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
   # LEGACY PATH -- still the one that updates the live site. Delete in the flip
