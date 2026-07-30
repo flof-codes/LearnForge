@@ -1,8 +1,63 @@
+# Build & Deploy -- MID-MIGRATION STATE, phase 1a.
+#
+# Two deploy paths coexist here on purpose, and only ONE of them is live:
+#
+#   LEGACY (live)   build -> test -> deploy: ssh to the host, git pull, and
+#                   `docker compose -f docker-compose.prod.yml up --build`. The
+#                   server builds from source. This is what updates the site today.
+#
+#   NEW (dormant)   build-api-image / build-web-image publish to GHCR with
+#                   `deploy: false`. The images are pullable and verifiable by
+#                   hand; nothing on the server consumes them yet.
+#
+# Keeping the legacy job alive is the ZERO-FREEZE pattern: deleting it is what
+# stops pushes from updating the live site, regardless of whether the new path
+# works. Both paths build from the same commit, which is also what makes the
+# container-versus-live URL parity comparison exact.
+#
+# BECAUSE THE LEGACY PATH BUILDS FROM SOURCE, EVERY PUSH TO MAIN DEPLOYS THE
+# CURRENT DOCKERFILE. A port change or a `USER` change lands on the live site the
+# moment it lands on main, unless the same commit carries matching transitional
+# edits to docker-compose.prod.yml. The api image deliberately still runs as root
+# for exactly this reason -- see the comment in api/Dockerfile.
+#
+# ---------------------------------------------------------------------------
+# THE FLIP COMMIT -- a checklist, not an ad-hoc assembly. In ONE commit:
+#
+#   [ ] deploy: false -> true on ONE path only. This repo publishes TWO images, so
+#       the deploy must move to a single `deploy-trigger.yml` job gated
+#       `needs: [build-api-image, build-web-image]`. Setting deploy: true on both
+#       build calls fires two parallel `compose pull/up` races into one service
+#       directory (DRIFT #38). Do NOT add `needs:` between the build jobs.
+#   [ ] delete the legacy `deploy` job below
+#   [ ] delete docker-compose.prod.yml (contents recorded in the handoff report)
+#   [ ] delete the now-dead DEPLOY_PORT and DEPLOY_USER secrets -- the shared
+#       workflow takes those as inputs. They are still in use by the legacy job
+#       until this commit, which is why they survive for now.
+#   [ ] rotate DEPLOY_SSH_KEY to the forced-command keypair (server-side change,
+#       coordinated -- the old key's public half is still in authorized_keys
+#       without a forced command)
+#   [ ] update README.md and CLAUDE.md: /opt/learnforge and "server builds from
+#       source" both stop being true
+#   [ ] chown the /data/images bind mount, then add `USER node` to api/Dockerfile
+#
+# From the flip commit onward, PUSH TO MAIN DEPLOYS PRODUCTION IMMEDIATELY, and
+# whatever pre-commit gate this repo has just became the release gate.
+# ---------------------------------------------------------------------------
+
 name: Build & Deploy
 
 on:
   push:
-    branches: [main]
+    # phase1a/** so the image builds can be verified before merge. Actions cache
+    # is ref-scoped, so a branch build and a main build share nothing and the main
+    # build is a full rebuild -- which means what was verified on the branch is NOT
+    # what :latest ends up pointing at (DRIFT #45). Both need gating, per image.
+    #
+    # build-push.yml withholds :latest from non-default branches, so a branch push
+    # publishes only an immutable :<sha> tag. The legacy deploy job below is
+    # additionally guarded on main.
+    branches: [main, 'phase1a/**']
 
 jobs:
   build:
@@ -90,8 +145,67 @@ jobs:
         run: docker compose -f docker-compose.test.yml down --volumes --remove-orphans 2>/dev/null || true
         working-directory: tests
 
+  # ---------------------------------------------------------------------------
+  # NEW PATH -- publish to GHCR. Dormant: `deploy: false` on both.
+  #
+  # TWO images, not three. api/src/index.ts starts Fastify AND the MCP
+  # StreamableHTTP server in one process, and no mcp/Dockerfile exists, so there
+  # is no third image to build.
+  #
+  # Both gated on `needs: [build, test]`, which preserves the property the legacy
+  # deploy job already had: nothing is published or deployed unless lint and the
+  # integration suite pass. That has to stay true after the flip, when the deploy
+  # trigger replaces the legacy job.
+  #
+  # No `needs:` BETWEEN these two jobs. build-push.yml's concurrency group now
+  # includes the image name, so sibling calls no longer cancel each other and the
+  # serialisation that used to be needed is pure cost.
+  #
+  # No build-args. The web image's six configuration values are placeholder tokens
+  # substituted at container start by web-ui/docker-entrypoint.sh, which is what
+  # keeps one artifact usable in every environment and keeps the operator's postal
+  # address out of both the repo and the image history.
+  # ---------------------------------------------------------------------------
+  build-api-image:
+    needs: [build, test]
+    permissions:
+      contents: read
+      packages: write
+    uses: flof-codes/.github/.github/workflows/build-push.yml@main
+    with:
+      image-name: learnforge-api
+      dockerfile: api/Dockerfile
+      deploy: false
+    secrets:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+  build-web-image:
+    needs: [build, test]
+    permissions:
+      contents: read
+      packages: write
+    uses: flof-codes/.github/.github/workflows/build-push.yml@main
+    with:
+      image-name: learnforge-web
+      dockerfile: web-ui/Dockerfile
+      deploy: false
+    secrets:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+  # ---------------------------------------------------------------------------
+  # LEGACY PATH -- still the one that updates the live site. Delete in the flip
+  # commit, together with docker-compose.prod.yml.
+  # ---------------------------------------------------------------------------
   deploy:
     needs: [build, test]
+    # Guarded on main because the trigger above now also matches phase1a/**
+    # branches. Without this, verifying the image build on a branch would deploy
+    # that branch to production.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH

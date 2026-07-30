@@ -64,15 +64,20 @@ services:
     build:
       context: .
       dockerfile: web-ui/Dockerfile
-      args:
-        VITE_API_URL: http://localhost:3333
-        VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
-        OPERATOR_NAME: "${OPERATOR_NAME:-LearnForge}"
-        OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
-        OPERATOR_CITY: "${OPERATOR_CITY:-Austria}"
-        OPERATOR_EMAIL: "${OPERATOR_EMAIL:-office@learnforge.eu}"
+    # Moved from build ARGS to RUNTIME environment: web-ui/Dockerfile bakes in
+    # placeholder tokens and web-ui/docker-entrypoint.sh substitutes these at
+    # container start. Dev defaults are fine here — unlike the production file,
+    # nothing legally binding is served from localhost.
+    environment:
+      VITE_API_URL: http://localhost:3333
+      VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
+      OPERATOR_NAME: "${OPERATOR_NAME:-LearnForge}"
+      OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
+      OPERATOR_CITY: "${OPERATOR_CITY:-Austria}"
+      OPERATOR_EMAIL: "${OPERATOR_EMAIL:-office@learnforge.eu}"
     ports:
-      - "5173:3000"
+      # 8080: nginx-unprivileged runs as uid 101 and cannot bind a privileged port.
+      - "5173:8080"
     depends_on:
       api:
         condition: service_healthy

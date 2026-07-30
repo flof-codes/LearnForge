@@ -51,15 +51,30 @@ services:
     build:
       context: .
       dockerfile: web-ui/Dockerfile
-      args:
-        VITE_API_URL: "${VITE_API_URL}"
-        VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
-        OPERATOR_NAME: "${OPERATOR_NAME:-LearnForge}"
-        OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
-        OPERATOR_CITY: "${OPERATOR_CITY:-Austria}"
-        OPERATOR_EMAIL: "${OPERATOR_EMAIL:-office@learnforge.eu}"
+    # TRANSITIONAL, and required in the same commit as the Dockerfile change.
+    #
+    # These six moved from build ARGS to RUNTIME environment. web-ui/Dockerfile no
+    # longer declares them as ARGs, so leaving them under `args:` would silently do
+    # nothing and the container would refuse to start with "unset required
+    # variable(s)". Because this file is what the legacy deploy job builds and runs
+    # on the server, that would have taken the live site down on the next push.
+    #
+    # No defaults for the three that carry legal weight: an Impressum that falls
+    # back to "LearnForge, Austria" is wrong in a way that looks fine. The
+    # entrypoint fails closed on an empty value, so a missing one is a failed
+    # health check rather than a published defect.
+    environment:
+      VITE_API_URL: "${VITE_API_URL}"
+      VITE_DONATION_URL: "${VITE_DONATION_URL:-}"
+      OPERATOR_NAME: "${OPERATOR_NAME}"
+      OPERATOR_ADDRESS: "${OPERATOR_ADDRESS:-}"
+      OPERATOR_CITY: "${OPERATOR_CITY}"
+      OPERATOR_EMAIL: "${OPERATOR_EMAIL}"
     ports:
-      - "8090:3000"
+      # 8080, not 3000: the image now uses nginx-unprivileged, which runs as uid
+      # 101 and cannot bind a privileged port. The published port is unchanged, so
+      # the Apache vhost in front of it needs no edit.
+      - "8090:8080"
     depends_on:
       - api
     restart: unless-stopped

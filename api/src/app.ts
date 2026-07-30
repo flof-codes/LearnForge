@@ -15,6 +15,8 @@ import billingRoutes from "./routes/billing.js";
 import exportRoutes from "./routes/export.js";
 import adminRoutes from "./routes/admin.js";
 import shareRoutes from "./routes/shares.js";
+import { sql } from "drizzle-orm";
+import { db } from "./db/connection.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
 
 export function buildApp() {
@@ -77,7 +79,27 @@ export function buildApp() {
   app.register(adminRoutes);
   app.register(shareRoutes);
 
-  app.get("/health", async () => ({ status: "ok" }));
+  // The body names this service on purpose, and the check touches the database.
+  //
+  // A bare {"status":"ok"} proves only that something is listening. Once several
+  // migrated containers share one host, a port collision with a SIBLING container
+  // false-passes a generic sentinel -- which is the exact failure a health check
+  // exists to catch. Separately, an api that is up but cannot reach Postgres
+  // serves 500s on every real route while reporting itself healthy, so the deploy
+  // that broke it looks like it succeeded.
+  app.get("/health", async (_request, reply) => {
+    try {
+      await db.execute(sql`select 1`);
+    } catch (err) {
+      app.log.error({ err }, "health check: database unreachable");
+      return reply.code(503).send({
+        status: "error",
+        service: "learnforge-api",
+        database: "unreachable",
+      });
+    }
+    return { status: "ok", service: "learnforge-api", database: "ok" };
+  });
 
   return app;
 }

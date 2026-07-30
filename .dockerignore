@@ -1,14 +1,33 @@
+# Build context exclusions. The context is the REPO ROOT for both images
+# (api/Dockerfile and web-ui/Dockerfile), so this is the only .dockerignore that
+# applies -- api/.dockerignore is inert and kept only to avoid implying otherwise.
+
+# Dependencies and build output. The build output matters as much as .env does:
+# without it a stale LOCAL build enters the context and can land beside the fresh
+# one, which is the same class of defect as leaking a secret and considerably more
+# likely to happen.
 **/node_modules
 **/dist
+web-ui/dist
+**/coverage
+
+# A stale .tsbuildinfo from a composite build makes tsc skip .d.ts emission
+# entirely -- the build "succeeds" and the image is missing its type output.
 **/*.tsbuildinfo
-**/*.md
-.git
+
+# Secrets. Both patterns are needed: .env.* does not match a bare .env.
 .env
 .env.*
-web-ui/dist
-tests/src
-tests/node_modules
-tests/coverage
-data
+
+# Not part of any build.
+**/*.md
+**/*.log
+.git
+.github
 .githooks
 .claude
+docs
+tests
+
+# Uploaded card images live here locally and are a bind mount in production.
+data

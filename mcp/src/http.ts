@@ -9,7 +9,7 @@ import { clientRegistrationHandler } from "@modelcontextprotocol/sdk/server/auth
 import { revocationHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/revoke.js";
 import { metadataHandler } from "@modelcontextprotocol/sdk/server/auth/handlers/metadata.js";
 import type { OAuthMetadata, OAuthProtectedResourceMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db } from "@learnforge/core";
 import { users, checkSubscriptionAccess } from "@learnforge/core";
 import { registerTopicTools } from "./tools/topics.js";
@@ -181,7 +181,22 @@ Question presentation: Use ask_user_input_v0 for MCQ. Use optionShuffle array to
   });
 
   // --- Health check (no auth) ---
-  app.get("/health", (_req, res) => res.json({ status: "ok" }));
+  //
+  // Names this listener specifically. It shares a container and a process with the
+  // api (api/src/index.ts starts both), but it is a SEPARATE port, so a generic
+  // {"status":"ok"} here is indistinguishable from the api's -- and from any
+  // sibling container that happens to collide on the published port. Every MCP
+  // tool call needs the database, so the probe touches it.
+  app.get("/health", async (_req, res) => {
+    try {
+      await db.execute(sql`select 1`);
+    } catch (err) {
+      console.error("health check: database unreachable", err);
+      res.status(503).json({ status: "error", service: "learnforge-mcp", database: "unreachable" });
+      return;
+    }
+    res.json({ status: "ok", service: "learnforge-mcp", database: "ok" });
+  });
 
   // --- MCP protocol endpoints (dual auth) ---
   app.post("/mcp", express.json(), dualAuth, async (req: Request, res: Response) => {
