@@ -78,6 +78,13 @@ sed_escape() {
     printf '%s' "$1" | sed -e 's/[\\&#]/\\&/g'
 }
 
+# A literal newline, obtained the roundabout way on purpose: command substitution
+# strips TRAILING newlines, so `$(printf '\n')` yields an EMPTY string -- and
+# `case $v in *""*)` then matches every value, which made this guard reject
+# everything. The trailing x survives the stripping and is removed afterwards.
+newline=$(printf '\nx')
+newline=${newline%x}
+
 sedfile=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -f '$sedfile'" EXIT INT TERM
@@ -87,7 +94,7 @@ for var in $REQUIRED_VARS $OPTIONAL_VARS; do
     # A newline in a value would silently truncate the sed expression and corrupt
     # every file it touched, so refuse it rather than half-applying it.
     case $value in
-    *"$(printf '\n')"*)
+    *"$newline"*)
         echo "learnforge-web: refusing to start -- $var contains a newline" >&2
         exit 1
         ;;
