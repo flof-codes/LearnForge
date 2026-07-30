@@ -115,10 +115,16 @@ EXPOSE 3000 3001
 # Declared in the IMAGE so the server can derive its deploy wait ceiling from the
 # artifact rather than from a compose file that might disagree with it:
 #
-#   start_period + (retries + 1) * interval + 30s  =  30 + 6*10 + 30  =  120s
+#   start_period + (retries + 1) * interval + 30s  =  15 + 6*10 + 30  =  105s
 #
 # start_period covers runMigrations() against a real database, which is the slow
 # part of boot and grows with every schema-changing migration.
+#
+# 15s, matching the existing compose value, NOT the 30s an earlier draft used. The
+# production database is ~17 MB and reaches "ready to accept connections" in about
+# 4s (measured server-side); a cold start against an empty database measured ~2s
+# here. The 30s came from pgvector caution imported from a 25 GB deployment and did
+# not apply. Revisit only against a measurement, not against a worry.
 #
 # `node -e`, not curl or wget: node:*-slim ships neither, and a missing probe
 # binary fails closed and reads as an application fault. The port comes from

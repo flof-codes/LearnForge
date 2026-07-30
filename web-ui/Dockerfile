@@ -123,9 +123,18 @@ EXPOSE 8080
 #
 #   start_period + (retries + 1) * interval + 30s  =  5 + 4*10 + 30  =  75s
 #
-# It greps the SENTINEL BODY rather than trusting the status code, because
-# nginx.conf's SPA fallback answers every path with index.html and a 200 -- a
-# status-only check cannot tell the sentinel from the SPA shell.
+# It greps a BODY rather than trusting the status code, because nginx.conf's SPA
+# fallback answers every path with index.html and a 200 -- a status-only check
+# cannot tell a real endpoint from the SPA shell.
+#
+# It probes /runtime-info.json rather than /health, so ONE request proves three
+# things: nginx is serving, the entrypoint ran to completion (the file only exists
+# because it did), and this is learnforge-web rather than a sibling container that
+# collided on the published port. /health remains for proxies and compose files
+# that expect the conventional path.
+#
+# It CANNOT assert that apiUrl is correct -- only the deploy gate knows the expected
+# value. See the note in docker-entrypoint.sh.
 #
 # 127.0.0.1, NOT localhost. Inside the container `localhost` resolves to ::1
 # first, and `listen 8080;` binds IPv4 only -- so the probe got "connection
@@ -133,7 +142,7 @@ EXPOSE 8080
 # permanently unhealthy. A broken probe fails closed and reads as an application
 # fault, which is a bad way to spend an afternoon. Observed here, not theorised.
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -qO- http://127.0.0.1:8080/health | grep -q learnforge-web
+    CMD wget -qO- http://127.0.0.1:8080/runtime-info.json | grep -q '"app":"learnforge-web"'
 
 ENTRYPOINT ["/usr/local/bin/learnforge-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

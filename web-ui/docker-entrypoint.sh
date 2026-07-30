@@ -120,6 +120,40 @@ if [ -n "$leftover" ]; then
     exit 1
 fi
 
+# Publish the values actually in effect, so a MISCONFIGURED container is
+# detectable from outside instead of only a MISSING one.
+#
+# The checks above catch an unset or unsubstituted variable. They cannot catch a
+# variable that is set to the WRONG thing -- a VITE_API_URL pointing at the staging
+# API, or at localhost. That failure is invisible to every other check we have,
+# because nginx serves the bundle perfectly: / returns 200, the health sentinel
+# passes, the deploy reports success, and every visitor's browser then talks to the
+# wrong host. This turns a build-time-shaped fact into a runtime fact.
+#
+# Nothing here is secret: all five values are already public in the served JS bundle
+# and on the Impressum page. OPERATOR_ADDRESS is omitted as it adds nothing to assert
+# against.
+#
+# WHAT CAN AND CANNOT ASSERT AGAINST THIS, stated because the distinction matters:
+#   * the container healthcheck can only check SELF-CONSISTENCY -- that the app is
+#     itself and the entrypoint completed. It cannot know the correct apiUrl.
+#   * the DEPLOY GATE can and should assert apiUrl equals the expected production
+#     URL, because it is the only thing that knows what that is.
+json_escape() {
+    # Backslash first, then quote -- the other order double-escapes.
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+if [ "$VITE_DONATION_URL" = "#" ]; then
+    donation_configured=false
+else
+    donation_configured=true
+fi
+
+cat >"$ROOT/runtime-info.json" <<EOF
+{"app":"learnforge-web","apiUrl":"$(json_escape "$VITE_API_URL")","operatorName":"$(json_escape "$OPERATOR_NAME")","operatorCity":"$(json_escape "$OPERATOR_CITY")","operatorEmail":"$(json_escape "$OPERATOR_EMAIL")","donationConfigured":$donation_configured}
+EOF
+
 # Hand off to the base image's entrypoint so its own /docker-entrypoint.d/
 # handling and signal behaviour are preserved. exec, so nginx is PID 1 and
 # receives SIGTERM directly.

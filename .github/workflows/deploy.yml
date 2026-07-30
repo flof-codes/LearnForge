@@ -29,16 +29,31 @@
 #       `needs: [build-api-image, build-web-image]`. Setting deploy: true on both
 #       build calls fires two parallel `compose pull/up` races into one service
 #       directory (DRIFT #38). Do NOT add `needs:` between the build jobs.
+#       EVMAN run 30488751579 is the correct shape: both build-attached deploy jobs
+#       skipped, one deploy-trigger job succeeded. There is no
+#       templates/deploy-multi-image.yml to copy -- it does not exist; the shared
+#       repo holds only templates/deploy.yml, which is single-image.
 #   [ ] delete the legacy `deploy` job below
-#   [ ] delete docker-compose.prod.yml (contents recorded in the handoff report)
+#   [ ] delete docker-compose.prod.yml -- but record its contents in the handoff
+#       report FIRST, because the rollback path needs them
+#   [ ] delete, or rename to compose.dev.yml, the non-live docker-compose.yml.
+#       NOT cosmetic: on the server that file is writable by the deploy user and
+#       sits beside a sudoers rule, which together form a root-escalation path.
+#       Touches README.md, CLAUDE.md and the test harness.
 #   [ ] delete the now-dead DEPLOY_PORT and DEPLOY_USER secrets -- the shared
 #       workflow takes those as inputs. They are still in use by the legacy job
 #       until this commit, which is why they survive for now.
+#       The secrets here are DEPLOY_*, NOT SSH_*: this repo has DEPLOY_HOST,
+#       DEPLOY_PORT, DEPLOY_USER and DEPLOY_SSH_KEY. There is no SSH_* set to
+#       delete, and DEPLOY_KNOWN_HOSTS does not exist yet and must be added.
 #   [ ] rotate DEPLOY_SSH_KEY to the forced-command keypair (server-side change,
 #       coordinated -- the old key's public half is still in authorized_keys
 #       without a forced command)
 #   [ ] update README.md and CLAUDE.md: /opt/learnforge and "server builds from
 #       source" both stop being true
+#   [ ] have the deploy gate assert /runtime-info.json's apiUrl equals the expected
+#       production URL. The container healthcheck CANNOT -- only the gate knows the
+#       right value, and a wrong-but-present apiUrl passes every other check we have.
 #   [ ] chown the /data/images bind mount, then add `USER node` to api/Dockerfile
 #
 # From the flip commit onward, PUSH TO MAIN DEPLOYS PRODUCTION IMMEDIATELY, and
@@ -171,7 +186,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: flof-codes/.github/.github/workflows/build-push.yml@main
+    uses: flof-codes/ci-workflows/.github/workflows/build-push.yml@main
     with:
       image-name: learnforge-api
       dockerfile: api/Dockerfile
@@ -186,7 +201,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: flof-codes/.github/.github/workflows/build-push.yml@main
+    uses: flof-codes/ci-workflows/.github/workflows/build-push.yml@main
     with:
       image-name: learnforge-web
       dockerfile: web-ui/Dockerfile
