@@ -127,11 +127,13 @@ EXPOSE 8080
 # nginx.conf's SPA fallback answers every path with index.html and a 200 -- a
 # status-only check cannot tell the sentinel from the SPA shell.
 #
-# wget, not curl: alpine ships busybox wget and no curl. A missing probe binary
-# fails closed and reads as an application fault, which is a bad way to spend an
-# afternoon.
+# 127.0.0.1, NOT localhost. Inside the container `localhost` resolves to ::1
+# first, and `listen 8080;` binds IPv4 only -- so the probe got "connection
+# refused" while nginx was serving perfectly well, and the container sat
+# permanently unhealthy. A broken probe fails closed and reads as an application
+# fault, which is a bad way to spend an afternoon. Observed here, not theorised.
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost:8080/health | grep -q learnforge-web
+    CMD wget -qO- http://127.0.0.1:8080/health | grep -q learnforge-web
 
 ENTRYPOINT ["/usr/local/bin/learnforge-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

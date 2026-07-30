@@ -124,8 +124,12 @@ EXPOSE 3000 3001
 # binary fails closed and reads as an application fault. The port comes from
 # process.env so the check follows a PORT override instead of silently probing the
 # wrong one. It matches the SENTINEL BODY, not just the status code.
+#
+# 127.0.0.1, NOT localhost: Fastify listens on 0.0.0.0, which is IPv4 only, while
+# `localhost` in the container resolves to ::1 first. That combination produced a
+# permanently unhealthy container in the web image with the server working fine.
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
-    CMD ["node", "-e", "const p=process.env.PORT||3000;fetch('http://localhost:'+p+'/health').then(r=>r.text().then(t=>process.exit(r.ok&&t.includes('learnforge-api')?0:1))).catch(()=>process.exit(1))"]
+    CMD ["node", "-e", "const p=process.env.PORT||3000;fetch('http://127.0.0.1:'+p+'/health').then(r=>r.text().then(t=>process.exit(r.ok&&t.includes('learnforge-api')?0:1))).catch(()=>process.exit(1))"]
 
 WORKDIR /app/api
 CMD ["node", "dist/index.js"]
