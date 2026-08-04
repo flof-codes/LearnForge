@@ -7,7 +7,15 @@ import { UnauthorizedError, ForbiddenError } from "../lib/errors.js";
 import { db } from "../db/connection.js";
 import { users, checkSubscriptionAccess } from "@learnforge/core";
 
-const PUBLIC_PATHS = new Set(["/health", "/auth/login", "/auth/register", "/billing/webhook"]);
+const PUBLIC_PATHS = new Set([
+  "/health",
+  "/auth/login",
+  "/auth/register",
+  "/auth/verify-email/confirm",
+  "/auth/password-reset/request",
+  "/auth/password-reset/confirm",
+  "/billing/webhook",
+]);
 const PUBLIC_PREFIXES = ["/shares/preview/"];
 
 const SUBSCRIPTION_EXEMPT_PREFIXES = ["/auth/", "/billing/", "/health"];
@@ -44,6 +52,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
     const [user] = await db
       .select({
+        emailVerifiedAt: users.emailVerifiedAt,
         trialEndsAt: users.trialEndsAt,
         subscriptionStatus: users.subscriptionStatus,
         subscriptionCurrentPeriodEnd: users.subscriptionCurrentPeriodEnd,
@@ -53,9 +62,19 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
     if (!user) return;
 
+    // Verification is checked first: it is the earlier step in the account
+    // lifecycle and the one the user can actually resolve right now.
+    if (!user.emailVerifiedAt) {
+      throw new ForbiddenError(
+        "Please confirm your e-mail address to continue creating and editing content.",
+        "EMAIL_NOT_VERIFIED",
+      );
+    }
+
     if (!checkSubscriptionAccess(user).isActive) {
       throw new ForbiddenError(
         "Your trial has expired. Please subscribe to continue creating and editing content.",
+        "TRIAL_EXPIRED",
       );
     }
   });

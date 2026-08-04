@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { LayoutDashboard, FolderTree, Layers, GraduationCap, Settings, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Layers, GraduationCap, Star, Settings, LogOut, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LogoIcon from './public/LogoIcon';
@@ -20,6 +20,7 @@ export default function Sidebar() {
       { to: '/dashboard/topics', icon: FolderTree, label: t('nav.topics') },
       { to: '/dashboard/cards/browse', icon: Layers, label: t('nav.cards') },
       { to: '/dashboard/study', icon: GraduationCap, label: t('nav.study') },
+      { to: '/dashboard/focus', icon: Star, label: t('nav.focus') },
     ];
     if (isAdmin) {
       base.push({ to: '/dashboard/admin', icon: Shield, label: t('nav.admin') });

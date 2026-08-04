@@ -23,7 +23,7 @@ export default function McpSettingsPage() {
   const [copied, setCopied] = useState(false);
   const mcpUrl = `${window.location.origin}/mcp`;
 
-  const { t } = useTranslation(['app', 'legal']);
+  const { t, i18n } = useTranslation(['app', 'legal']);
 
   const themeOptions = [
     { value: 'auto' as const, label: t('app:settings.theme.auto'), icon: MonitorSmartphone },
@@ -109,7 +109,9 @@ export default function McpSettingsPage() {
 
   const profileMutation = useMutation({
     mutationFn: (data: { name?: string; email?: string; current_password?: string }) =>
-      authService.updateProfile(data).then(r => r.data),
+      // locale rides along so the re-verification mail after an e-mail change
+      // arrives in the language the user is actually using.
+      authService.updateProfile({ ...data, locale: i18n.language }).then(r => r.data),
     onSuccess: () => {
       refreshUser();
       setEmailPassword('');

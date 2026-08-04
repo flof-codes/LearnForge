@@ -3,6 +3,7 @@ import axios, { type AxiosInstance } from "axios";
 import pg from "pg";
 import { login, getApi, getUnauthApi } from "../helpers/api-client.js";
 import { TEST_CONFIG } from "../helpers/fixtures.js";
+import { markEmailVerified } from "../helpers/email-verification.js";
 
 // Direct DB client for setting roles (admin role is only settable via SQL per product spec)
 const DB_CONFIG = {
@@ -31,6 +32,10 @@ async function registerUser(
   if (res.status !== 201) {
     throw new Error(`Failed to register ${email}: ${res.status} ${JSON.stringify(res.data)}`);
   }
+  // Fresh registrations are unverified, and the API blocks writes until they
+  // are — this suite tests the admin endpoints, not the verification flow.
+  await markEmailVerified(email);
+
   const token = res.data.token as string;
   const authed = makeAuthClient(token);
   const meRes = await authed.get("/auth/me");

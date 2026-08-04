@@ -4,9 +4,44 @@
     "topics": "Topics",
     "cards": "Cards",
     "study": "Study",
+    "focus": "Focus",
     "settings": "Settings",
     "admin": "Admin",
     "logout": "Logout"
+  },
+  "focus": {
+    "title": "Focus Topics",
+    "description": "Prioritize cards from selected topics during \"Study all\" sessions. Topics are reviewed in order, with the highest priority first.",
+    "empty": "No focus topics set",
+    "emptyHint": "Add topics here to prioritize them in your study sessions. Subtopics inherit focus from their parent.",
+    "addTopic": "Add focus topic",
+    "addTitle": "Add Focus Topic",
+    "add": "Add",
+    "pickTopic": "Select a topic",
+    "alreadyAdded": "This topic is already in your focus list.",
+    "maxReached": "max 20",
+    "save": "Save changes",
+    "clearAll": "Clear all",
+    "remove": "Remove",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "changeExpiry": "Change expiry",
+    "indefinite": "No expiry",
+    "expired": "Expired",
+    "expiresInMinutes_one": "Expires in {{count}} minute",
+    "expiresInMinutes_other": "Expires in {{count}} minutes",
+    "expiresInHours_one": "Expires in {{count}} hour",
+    "expiresInHours_other": "Expires in {{count}} hours",
+    "expiresInDays_one": "Expires in {{count}} day",
+    "expiresInDays_other": "Expires in {{count}} days",
+    "expiryIndefinite": "No expiry",
+    "expiry1h": "1 hour",
+    "expiry4h": "4 hours",
+    "expiry1d": "1 day",
+    "expiry3d": "3 days",
+    "expiry1w": "1 week",
+    "directTooltip": "Focused (priority {{priority}})",
+    "inheritedTooltip": "Inherited focus (priority {{priority}})"
   },
   "admin": {
     "title": "Admin Dashboard",
@@ -519,6 +554,8 @@
   },
   "common": {
     "back": "Back",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }

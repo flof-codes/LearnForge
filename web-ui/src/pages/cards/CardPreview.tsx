@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import BloomBadge from '../../components/BloomBadge';
+import FocusBadge from '../../components/FocusBadge';
 import CardHtmlRender from '../../components/CardHtmlRender';
 
 interface Props {
@@ -10,10 +11,11 @@ interface Props {
   tags: string[];
   isDue?: boolean;
   topicPath?: string;
+  topicId?: string;
   cardIds?: string[];
 }
 
-export default function CardPreview({ id, frontHtml, bloomLevel, tags, isDue, topicPath, cardIds }: Props) {
+export default function CardPreview({ id, frontHtml, bloomLevel, tags, isDue, topicPath, topicId, cardIds }: Props) {
   const { t } = useTranslation('app');
   return (
     <Link
@@ -35,7 +37,10 @@ export default function CardPreview({ id, frontHtml, bloomLevel, tags, isDue, to
       {/* Footer */}
       <div className="border-t border-border px-4 py-3 space-y-2">
         {topicPath && (
-          <p className="text-[11px] text-text-muted truncate">{topicPath}</p>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-[11px] text-text-muted truncate flex-1">{topicPath}</p>
+            <FocusBadge topicId={topicId} />
+          </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
           <BloomBadge level={bloomLevel} />

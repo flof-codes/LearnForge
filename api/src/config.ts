@@ -13,4 +13,12 @@ export const config = {
   appUrl: process.env.APP_URL ?? "http://localhost:5173",
   mcpPort: parseInt(process.env.MCP_PORT ?? "3001", 10),
   mcpPublicUrl: process.env.MCP_PUBLIC_URL ?? "http://localhost:3001/mcp",
+  // SMTP_HOST is the on/off switch for outgoing mail: unset means the mailer
+  // logs instead of sending, so dev and CI run without a mail server.
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: parseInt(process.env.SMTP_PORT ?? "587", 10),
+  smtpSecure: process.env.SMTP_SECURE === "true",
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPassword: process.env.SMTP_PASSWORD ?? "",
+  smtpFrom: process.env.SMTP_FROM ?? "LearnForge <office@learnforge.eu>",
 } as const;

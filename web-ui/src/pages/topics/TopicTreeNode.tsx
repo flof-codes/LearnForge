@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronDown, Pencil, Trash2, Plus, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTopic } from '../../hooks/useTopics';
+import FocusBadge from '../../components/FocusBadge';
 import type { Topic } from '../../types';
 
 interface Props {
@@ -39,6 +40,7 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
         <div className="flex-1 flex items-center gap-2 min-w-0" onClick={() => navigate(`/dashboard/topics/${topic.id}`)}>
           <Layers size={14} className="text-text-muted shrink-0" />
           <span className="text-sm truncate">{topic.name}</span>
+          <FocusBadge topicId={topic.id} />
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 mr-1">

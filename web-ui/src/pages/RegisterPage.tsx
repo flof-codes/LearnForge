@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t } = useTranslation('common');
+  const { t, i18n } = useTranslation('common');
   const { t: tLegal } = useTranslation('legal');
 
   const nextParam = searchParams.get('next');
@@ -32,7 +32,7 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      const { data } = await authService.register(email, password, name);
+      const { data } = await authService.register(email, password, name, i18n.language);
       login(data.token);
       navigate(safeNext, { replace: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

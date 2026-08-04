@@ -41,6 +41,7 @@ export default function CardGrid({ cards, topics }: Props) {
           tags={card.tags ?? []}
           isDue={card.fsrsState ? new Date(card.fsrsState.due) <= new Date() : false}
           topicPath={card.topicId && topics ? buildBreadcrumb(card.topicId, topics) : undefined}
+          topicId={card.topicId}
           cardIds={cardIds}
         />
       ))}

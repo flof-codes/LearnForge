@@ -4,9 +4,44 @@
     "topics": "Themen",
     "cards": "Karten",
     "study": "Lernen",
+    "focus": "Fokus",
     "settings": "Einstellungen",
     "admin": "Admin",
     "logout": "Abmelden"
+  },
+  "focus": {
+    "title": "Fokus-Themen",
+    "description": "Priorisiere Karten ausgewählter Themen in „Alles lernen“-Sitzungen. Themen werden in der angegebenen Reihenfolge abgearbeitet, höchste Priorität zuerst.",
+    "empty": "Keine Fokus-Themen gesetzt",
+    "emptyHint": "Füge hier Themen hinzu, um sie in deinen Lernsitzungen zu priorisieren. Unterthemen erben den Fokus vom übergeordneten Thema.",
+    "addTopic": "Fokus-Thema hinzufügen",
+    "addTitle": "Fokus-Thema hinzufügen",
+    "add": "Hinzufügen",
+    "pickTopic": "Thema auswählen",
+    "alreadyAdded": "Dieses Thema ist bereits in deiner Fokus-Liste.",
+    "maxReached": "max. 20",
+    "save": "Änderungen speichern",
+    "clearAll": "Alle entfernen",
+    "remove": "Entfernen",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "changeExpiry": "Ablauf ändern",
+    "indefinite": "Kein Ablauf",
+    "expired": "Abgelaufen",
+    "expiresInMinutes_one": "Läuft in {{count}} Minute ab",
+    "expiresInMinutes_other": "Läuft in {{count}} Minuten ab",
+    "expiresInHours_one": "Läuft in {{count}} Stunde ab",
+    "expiresInHours_other": "Läuft in {{count}} Stunden ab",
+    "expiresInDays_one": "Läuft in {{count}} Tag ab",
+    "expiresInDays_other": "Läuft in {{count}} Tagen ab",
+    "expiryIndefinite": "Kein Ablauf",
+    "expiry1h": "1 Stunde",
+    "expiry4h": "4 Stunden",
+    "expiry1d": "1 Tag",
+    "expiry3d": "3 Tage",
+    "expiry1w": "1 Woche",
+    "directTooltip": "Fokussiert (Priorität {{priority}})",
+    "inheritedTooltip": "Geerbter Fokus (Priorität {{priority}})"
   },
   "admin": {
     "title": "Admin-Dashboard",
@@ -519,6 +554,8 @@
   },
   "common": {
     "back": "Zur\u00fcck",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "cancel": "Abbrechen",
+    "close": "Schlie\u00dfen"
   }
 }

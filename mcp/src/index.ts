@@ -12,6 +12,7 @@ import { registerStudyTools } from "./tools/study.js";
 import { registerContextTools } from "./tools/context.js";
 import { registerImageTools } from "./tools/images.js";
 import { registerSkillTools } from "./tools/skill.js";
+import { registerFocusTools } from "./tools/focus.js";
 import { config } from "./config.js";
 import { createMcpHttpApp } from "./http.js";
 
@@ -26,12 +27,19 @@ async function resolveApiKey(rawKey: string): Promise<string> {
 
 async function checkSubscription(userId: string): Promise<void> {
   const [user] = await db.select({
+    emailVerifiedAt: users.emailVerifiedAt,
     trialEndsAt: users.trialEndsAt,
     subscriptionStatus: users.subscriptionStatus,
     subscriptionCurrentPeriodEnd: users.subscriptionCurrentPeriodEnd,
   }).from(users).where(eq(users.id, userId));
 
   if (!user) throw new Error("User not found");
+
+  // Mirrors the API's write gate — otherwise MCP would be an open side door
+  // into the same mutations for an unverified account.
+  if (!user.emailVerifiedAt) {
+    throw new Error("Please confirm your e-mail address at learnforge.eu before using MCP tools.");
+  }
 
   if (!checkSubscriptionAccess(user).isActive) {
     throw new Error("Subscription expired. Please subscribe at learnforge.eu to continue using MCP tools.");
@@ -71,6 +79,7 @@ Question presentation: Use ask_user_input_v0 for MCQ. Use optionShuffle array to
     registerContextTools(server, db, userId);
     registerImageTools(server, db, userId, config.imagePath);
     registerSkillTools(server);
+    registerFocusTools(server, db, userId);
     return server;
   }
 

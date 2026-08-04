@@ -1,10 +1,11 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, jsonb, integer, boolean } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: varchar("email", { length: 255 }).unique().notNull(),
   passwordHash: text("password_hash").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   role: varchar("role", { length: 20 }).notNull().default("user"),
   mcpApiKeyHash: varchar("mcp_api_key_hash", { length: 64 }),
   mcpApiKeyCreatedAt: timestamp("mcp_api_key_created_at", { withTimezone: true }),
@@ -13,6 +14,8 @@ export const users = pgTable("users", {
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   subscriptionStatus: varchar("subscription_status", { length: 50 }),
   subscriptionCurrentPeriodEnd: timestamp("subscription_current_period_end", { withTimezone: true }),
+  subscriptionCancelAtPeriodEnd: boolean("subscription_cancel_at_period_end").notNull().default(false),
+  locale: varchar("locale", { length: 5 }).notNull().default("de"),
   fsrsParams: jsonb("fsrs_params"),
   reviewsSinceOptimization: integer("reviews_since_optimization").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

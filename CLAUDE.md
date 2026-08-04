@@ -142,6 +142,20 @@ npm run test:integration:down  # tear down
 - Plugin: `@fastify/jwt` registered via `api/src/plugins/auth.ts`
 - Config: `JWT_SECRET`, `AUTH_PASSWORD`, `JWT_EXPIRES_IN` (default `"7d"`)
 
+### E-Mail Verification & Password Reset
+- Registration leaves `users.email_verified_at` NULL and mails a link; until it is confirmed, `api/src/plugins/auth.ts` rejects every write with 403 `EMAIL_NOT_VERIFIED` (reads and `/auth/*`, `/billing/*` stay open). MCP mirrors the check and refuses the session outright.
+- Tokens live in `auth_tokens`, SHA-256 hashed, single-use: verification 24 h, reset 1 h. Same user + type is rate limited to one mail per minute.
+- `POST /auth/password-reset/request` always answers 200 — it must not reveal whether an address is registered.
+- Changing the e-mail via `PUT /auth/profile` clears verification and re-sends.
+- Mail goes out over SMTP (`SMTP_HOST` … `SMTP_FROM`). With `SMTP_HOST` empty the API only logs what it would have sent — that is how dev and the integration tests run.
+- Tests that register a throwaway user and then write must call `markEmailVerified()` from `tests/src/helpers/email-verification.js`.
+
+### Subscription Lifecycle Mails
+- Three mails from the Stripe webhook in `api/src/routes/billing.ts`: abo confirmed (`checkout.session.completed`), cancellation scheduled (`customer.subscription.updated` when `cancel_at_period_end` flips on), subscription ended (`customer.subscription.deleted`).
+- The webhook answers **500** on a processing error, so Stripe redelivers. Every send therefore sits last in its branch, keyed off a local state transition a redelivery cannot repeat: prior `subscription_status` for the confirmation, `users.subscription_cancel_at_period_end` for the cancellation, the cleared `stripe_subscription_id` for the end mail. Sends swallow their own errors so a mail fault never retries work that already succeeded.
+- `users.locale` carries the language, since a webhook has no request to read it from. Set at registration, updated by `PUT /auth/profile` (the language switcher writes it for signed-in users).
+- The admin `free` override still short-circuits every branch before any mail.
+
 ### MCP (API Key)
 - HTTP transport requires `Authorization: Bearer <MCP_API_KEY>` header
 - `/health` endpoint is public
@@ -174,6 +188,10 @@ npm run test:integration:down  # tear down
 
 ```
 POST /auth/login
+POST /auth/register             POST /auth/verify-email/request
+POST /auth/verify-email/confirm
+POST /auth/password-reset/request
+POST /auth/password-reset/confirm
 GET/POST /topics                GET/PUT/DELETE /topics/:id
 GET /topics/:id/tree            GET /topics/:id/breadcrumb
 POST /cards                     GET/PUT/DELETE /cards/:id

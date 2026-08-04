@@ -100,5 +100,27 @@ export {
   type AcceptShareOptions,
 } from "./services/shares.js";
 
+// Services - Focus
+export {
+  getFocusTopics,
+  setFocusTopics,
+  clearFocusTopics,
+  getExpandedFocus,
+  type FocusTopicInput,
+  type FocusTopicRow,
+  type ExpandedFocusEntry,
+} from "./services/focus-service.js";
+
+// Services - Auth Tokens
+export {
+  createAuthToken,
+  consumeAuthToken,
+  invalidateAuthTokens,
+  hashAuthToken,
+  TOKEN_TTL_MS,
+  RESEND_COOLDOWN_MS,
+  type AuthTokenType,
+} from "./services/auth-token-service.js";
+
 // Image utils
 export { extFromMime } from "./lib/image-utils.js";

@@ -16,6 +16,7 @@ import CardDetailPage from './pages/cards/CardDetailPage';
 import CardEditorPage from './pages/cards/CardEditorPage';
 import StudyStartPage from './pages/study/StudyStartPage';
 import StudySessionPage from './pages/study/StudySessionPage';
+import FocusPage from './pages/focus/FocusPage';
 import McpSettingsPage from './pages/settings/McpSettingsPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import LandingPage from './pages/public/LandingPage';
@@ -24,6 +25,9 @@ import DatenschutzPage from './pages/public/DatenschutzPage';
 import AGBPage from './pages/public/AGBPage';
 import DocsPage from './pages/public/DocsPage';
 import SharePage from './pages/SharePage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -55,6 +59,9 @@ export function AppRoutes() {
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Public share accept page */}
       <Route path="/share/:token" element={<SharePage />} />
@@ -70,6 +77,7 @@ export function AppRoutes() {
         <Route path="cards/:id/edit" element={<CardEditorPage />} />
         <Route path="study" element={<StudyStartPage />} />
         <Route path="study/session" element={<StudySessionPage />} />
+        <Route path="focus" element={<FocusPage />} />
         <Route path="settings" element={<McpSettingsPage />} />
         <Route path="settings/mcp" element={<Navigate to="/dashboard/settings" replace />} />
         <Route path="settings/billing" element={<Navigate to="/dashboard/settings" replace />} />

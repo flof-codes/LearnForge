@@ -39,7 +39,46 @@
     "name": "Name",
     "passwordHint": "At least 8 characters",
     "loginFailed": "Login failed",
-    "registrationFailed": "Registration failed"
+    "registrationFailed": "Registration failed",
+    "forgotPassword": "Forgot your password?"
+  },
+  "verifyEmail": {
+    "subtitle": "E-mail confirmation",
+    "checking": "Checking your link...",
+    "success": "Your e-mail address is confirmed. You're all set.",
+    "failed": "Confirmation failed",
+    "missingToken": "This link is incomplete.",
+    "errorHint": "The link has expired or was already used. Sign in and request a new confirmation mail.",
+    "toDashboard": "Go to dashboard"
+  },
+  "verifyBanner": {
+    "title": "Please confirm your e-mail address ({{email}}).",
+    "hint": "Until then the app is read-only — creating or editing cards and topics is blocked.",
+    "resend": "Resend mail",
+    "sending": "Sending...",
+    "resent": "Confirmation mail sent again. Check your spam folder too.",
+    "resendFailed": "Mail could not be sent"
+  },
+  "forgotPassword": {
+    "subtitle": "Reset your password",
+    "submit": "Request link",
+    "sending": "Sending...",
+    "sent": "If an account exists for this address, a mail is on its way.",
+    "sentHint": "The link is valid for 1 hour. Check your spam folder too.",
+    "backToLogin": "Back to sign in"
+  },
+  "resetPassword": {
+    "subtitle": "Set a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Repeat password",
+    "submit": "Save password",
+    "saving": "Saving...",
+    "success": "Password changed. Redirecting you to sign in.",
+    "failed": "Password could not be changed",
+    "tooShort": "Password must be at least 8 characters",
+    "mismatch": "Passwords do not match",
+    "missingToken": "This link is incomplete.",
+    "requestNew": "Request a new link"
   },
   "language": {
     "en": "EN",

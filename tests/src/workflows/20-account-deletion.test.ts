@@ -3,6 +3,7 @@ import type { AxiosInstance } from "axios";
 import axios from "axios";
 import { login, getApi, getUnauthApi } from "../helpers/api-client.js";
 import { TEST_CONFIG, SEED } from "../helpers/fixtures.js";
+import { markEmailVerified } from "../helpers/email-verification.js";
 
 /**
  * Account deletion tests (DELETE /auth/account).
@@ -50,6 +51,10 @@ async function registerFreshUser(suffix: string): Promise<FreshUser> {
   if (res.status !== 201) {
     throw new Error(`Failed to register fresh user: ${res.status} ${JSON.stringify(res.data)}`);
   }
+
+  // Fresh registrations are unverified, and the API blocks writes until they
+  // are — this suite tests deletion, not the verification flow.
+  await markEmailVerified(email);
 
   const token = res.data.token as string;
   const api = axios.create({

@@ -208,6 +208,8 @@ export interface User {
   name: string;
   role: 'user' | 'admin';
   createdAt: string;
+  emailVerified: boolean;
+  locale: string;
   trialEndsAt: string;
   subscriptionStatus: string | null;
   hasActiveSubscription: boolean;
@@ -264,4 +266,27 @@ export interface AdminUsersResponse {
 export interface McpKeyStatus {
   hasKey: boolean;
   createdAt: string | null;
+}
+
+// --- Focus Topics ---
+export interface FocusTopic {
+  id: string;
+  topic_id: string;
+  topic_name: string;
+  priority: number;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface FocusTopicInput {
+  topic_id: string;
+  expires_at?: string | null;
+}
+
+export interface ExpandedFocusEntry {
+  topic_id: string;
+  root_topic_id: string;
+  priority: number;
+  expires_at: string | null;
+  inherited: boolean;
 }

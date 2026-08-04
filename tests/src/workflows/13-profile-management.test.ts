@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { AxiosInstance } from "axios";
 import { login, getApi, getUnauthApi } from "../helpers/api-client.js";
 import { TEST_CONFIG } from "../helpers/fixtures.js";
+import { markEmailVerified } from "../helpers/email-verification.js";
 
 /**
  * Profile management tests.
@@ -59,6 +60,11 @@ afterAll(async () => {
       }
     }
   }
+
+  // Changing the address revokes verification, and the API has no way to grant
+  // it back — restore the seed contract directly, or every later suite that
+  // writes as the seeded user gets a 403.
+  await markEmailVerified(TEST_CONFIG.email);
 
   // Re-login with original credentials and restore name
   await login(TEST_CONFIG.email, TEST_CONFIG.password);

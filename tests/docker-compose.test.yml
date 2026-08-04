@@ -34,6 +34,11 @@ services:
       APP_URL: http://localhost:4444
       MCP_PORT: "3001"
       MCP_PUBLIC_URL: "http://localhost:4445/mcp"
+      # Escape hatch for running the suite without the 722 MB embedding model —
+      # useful when the Hugging Face download is unavailable. Empty by default,
+      # so the full suite keeps exercising embeddings. Suites that assert on
+      # semantic search or similar-card results will fail when this is set.
+      LEARNFORGE_DISABLE_EMBEDDINGS: "${LEARNFORGE_DISABLE_EMBEDDINGS:-}"
     volumes:
       - test-images:/data/images
     healthcheck:

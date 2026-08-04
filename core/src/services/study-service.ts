@@ -4,6 +4,8 @@ import type { Db } from "../db/types.js";
 export async function getStudyCards(db: Db, userId: string, topicId?: string, rawLimit?: number) {
   const limit = Math.max(1, Math.min(100, rawLimit ?? 10));
 
+  // Focus ordering is only applied to the full "study all" flow.
+  // When the caller passes an explicit topic_id, they've already chosen scope, so we keep due-ASC.
   const topicFilter = topicId
     ? sql`
         WITH RECURSIVE topic_tree AS (
@@ -24,6 +26,23 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
         LIMIT ${limit}
       `
     : sql`
+        WITH RECURSIVE active_focus AS (
+          SELECT topic_id, priority
+          FROM focus_topics
+          WHERE user_id = ${userId}
+            AND (expires_at IS NULL OR expires_at > NOW())
+        ),
+        focus_tree AS (
+          SELECT af.topic_id, af.priority FROM active_focus af
+          UNION ALL
+          SELECT t.id, ft.priority
+          FROM topics t
+          JOIN focus_tree ft ON t.parent_id = ft.topic_id
+          WHERE t.user_id = ${userId}
+        ),
+        topic_priority AS (
+          SELECT topic_id, MIN(priority) AS priority FROM focus_tree GROUP BY topic_id
+        )
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
                c.card_type, c.cloze_data,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state,
@@ -32,9 +51,10 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
         JOIN fsrs_state fs ON fs.card_id = c.id
         LEFT JOIN bloom_state bs ON bs.card_id = c.id
         JOIN topics t ON c.topic_id = t.id
+        LEFT JOIN topic_priority tp ON tp.topic_id = c.topic_id
         WHERE fs.due <= NOW()
           AND t.user_id = ${userId}
-        ORDER BY fs.due ASC
+        ORDER BY tp.priority ASC NULLS LAST, fs.due ASC
         LIMIT ${limit}
       `;
 

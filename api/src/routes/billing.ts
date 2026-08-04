@@ -7,6 +7,7 @@ import { config } from "../config.js";
 import { UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
 import {
+  getStripe,
   createStripeCustomer,
   createCheckoutSession,
   createCustomerPortalSession,
@@ -16,9 +17,71 @@ import {
   syncStripeSubscriptionById,
   syncStripeSubscriptionForCustomer,
   decideSubscriptionEventRouting,
+  readPeriodEnd,
 } from "../services/billing-sync.js";
+import { sendMail } from "../services/mailer.js";
+import {
+  buildSubscriptionConfirmedMail,
+  buildSubscriptionCanceledMail,
+  buildSubscriptionEndedMail,
+  formatMailAmount,
+  formatMailDate,
+  normalizeLocale,
+  type MailLocale,
+  type SubscriptionMailData,
+} from "../services/mail-templates.js";
+
+/**
+ * Plan and price for the mail's detail block, read off the Stripe object.
+ * Every field is optional in Stripe's shape, so anything missing is simply
+ * omitted from the mail rather than guessed at.
+ */
+function describeSubscription(
+  sub: Stripe.Subscription,
+  locale: MailLocale,
+): { planLabel: string | null; amount: string | null } {
+  const price = sub.items?.data?.[0]?.price;
+  const interval = price?.recurring?.interval;
+
+  const planLabel =
+    interval === "year"
+      ? locale === "de" ? "Jährlich" : "Annual"
+      : interval === "month"
+      ? locale === "de" ? "Monatlich" : "Monthly"
+      : null;
+
+  const amount =
+    price?.unit_amount != null && price.currency
+      ? formatMailAmount(price.unit_amount, price.currency, locale)
+      : null;
+
+  return { planLabel, amount };
+}
 
 export default async function billingRoutes(app: FastifyInstance) {
+  /**
+   * Subscription mails are a side effect of webhook processing, which returns
+   * 500 on failure so Stripe redelivers. Every send therefore sits at the very
+   * end of its branch, behind a state transition that a redelivery cannot
+   * repeat, and swallows its own errors so a mail problem never triggers a retry
+   * of work that already succeeded.
+   */
+  function subscriptionMailData(
+    sub: Stripe.Subscription | null,
+    locale: MailLocale,
+    date: Date | null,
+  ): SubscriptionMailData {
+    const described = sub ? describeSubscription(sub, locale) : { planLabel: null, amount: null };
+    return {
+      ...described,
+      date: date ? formatMailDate(date, locale) : null,
+      // The Stripe portal link is a short-lived session URL, so point at the
+      // settings page that creates one on demand instead.
+      actionUrl: `${config.appUrl}/dashboard/settings`,
+      appUrl: config.appUrl,
+    };
+  }
+
   app.post<{ Body: { plan: string } }>("/billing/checkout", async (request) => {
     const userId = getUserId(request);
     const { plan } = request.body ?? {};
@@ -199,7 +262,12 @@ export default async function billingRoutes(app: FastifyInstance) {
           return;
         }
         const [user] = await db
-          .select({ id: users.id, subscriptionStatus: users.subscriptionStatus })
+          .select({
+            id: users.id,
+            email: users.email,
+            locale: users.locale,
+            subscriptionStatus: users.subscriptionStatus,
+          })
           .from(users)
           .where(eq(users.stripeCustomerId, customerId));
         if (user?.subscriptionStatus === "free") {
@@ -209,6 +277,11 @@ export default async function billingRoutes(app: FastifyInstance) {
           );
           return;
         }
+        // Captured before the sync — it is what tells a first activation apart
+        // from a redelivery of the same event.
+        const wasAlreadyEntitled =
+          user?.subscriptionStatus === "active" || user?.subscriptionStatus === "trialing";
+
         const result = await syncStripeSubscriptionById(customerId, subscriptionId);
         if (result.rowsUpdated === 0) {
           app.log.warn(
@@ -221,6 +294,26 @@ export default async function billingRoutes(app: FastifyInstance) {
             "checkout.session.completed: linked subscription",
           );
         }
+
+        if (user && result.rowsUpdated > 0 && !wasAlreadyEntitled) {
+          try {
+            const locale = normalizeLocale(user.locale);
+            const sub = await getStripe().subscriptions.retrieve(subscriptionId);
+            const periodEnd = readPeriodEnd(sub);
+            const delivered = await sendMail(
+              buildSubscriptionConfirmedMail(
+                user.email,
+                subscriptionMailData(sub, locale, periodEnd != null ? new Date(periodEnd * 1000) : null),
+                locale,
+              ),
+            );
+            if (!delivered) {
+              app.log.warn({ eventId: event.id, userId: user.id }, "Subscription confirmation mail was not delivered");
+            }
+          } catch (err) {
+            app.log.error({ err, eventId: event.id, userId: user.id }, "Subscription confirmation mail failed");
+          }
+        }
         return;
       }
 
@@ -231,8 +324,11 @@ export default async function billingRoutes(app: FastifyInstance) {
         const [user] = await db
           .select({
             id: users.id,
+            email: users.email,
+            locale: users.locale,
             stripeSubscriptionId: users.stripeSubscriptionId,
             subscriptionStatus: users.subscriptionStatus,
+            subscriptionCancelAtPeriodEnd: users.subscriptionCancelAtPeriodEnd,
           })
           .from(users)
           .where(eq(users.stripeCustomerId, customerId));
@@ -284,6 +380,29 @@ export default async function billingRoutes(app: FastifyInstance) {
           },
           "subscription event processed",
         );
+
+        // Cancellation scheduled: Stripe keeps the subscription active until the
+        // period ends, so this is the only moment the customer gets told their
+        // click worked. Keyed off our own flag, not the event payload, so a
+        // redelivery finds it already true and stays quiet.
+        if (!user.subscriptionCancelAtPeriodEnd && subscription.cancel_at_period_end === true) {
+          try {
+            const locale = normalizeLocale(user.locale);
+            const periodEnd = readPeriodEnd(subscription);
+            const delivered = await sendMail(
+              buildSubscriptionCanceledMail(
+                user.email,
+                subscriptionMailData(subscription, locale, periodEnd != null ? new Date(periodEnd * 1000) : null),
+                locale,
+              ),
+            );
+            if (!delivered) {
+              app.log.warn({ eventId: event.id, userId: user.id }, "Cancellation mail was not delivered");
+            }
+          } catch (err) {
+            app.log.error({ err, eventId: event.id, userId: user.id }, "Cancellation mail failed");
+          }
+        }
         return;
       }
 
@@ -293,6 +412,8 @@ export default async function billingRoutes(app: FastifyInstance) {
         const [user] = await db
           .select({
             id: users.id,
+            email: users.email,
+            locale: users.locale,
             stripeSubscriptionId: users.stripeSubscriptionId,
             subscriptionStatus: users.subscriptionStatus,
           })
@@ -327,8 +448,28 @@ export default async function billingRoutes(app: FastifyInstance) {
             stripeSubscriptionId: null,
             subscriptionStatus: "canceled",
             subscriptionCurrentPeriodEnd: null,
+            subscriptionCancelAtPeriodEnd: false,
           })
           .where(eq(users.id, user.id));
+
+        // Idempotent by construction: the update above clears
+        // stripe_subscription_id, so a redelivery exits at the id check and
+        // never reaches this point a second time.
+        try {
+          const locale = normalizeLocale(user.locale);
+          const delivered = await sendMail(
+            buildSubscriptionEndedMail(
+              user.email,
+              subscriptionMailData(subscription, locale, new Date(event.created * 1000)),
+              locale,
+            ),
+          );
+          if (!delivered) {
+            app.log.warn({ eventId: event.id, userId: user.id }, "Subscription ended mail was not delivered");
+          }
+        } catch (err) {
+          app.log.error({ err, eventId: event.id, userId: user.id }, "Subscription ended mail failed");
+        }
         return;
       }
 

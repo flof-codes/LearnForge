@@ -36,7 +36,7 @@ function pickVisibilitySubscription(
   return sorted[0];
 }
 
-function readPeriodEnd(sub: Stripe.Subscription): number | null {
+export function readPeriodEnd(sub: Stripe.Subscription): number | null {
   const itemEnd = sub.items?.data?.[0]?.current_period_end;
   if (typeof itemEnd === "number") return itemEnd;
   const legacyEnd = (sub as Stripe.Subscription & { current_period_end?: number })
@@ -168,6 +168,7 @@ async function applySyncResult(
         stripeSubscriptionId: entitlement.id,
         subscriptionStatus: entitlement.status,
         subscriptionCurrentPeriodEnd: currentPeriodEnd,
+        subscriptionCancelAtPeriodEnd: entitlement.cancel_at_period_end === true,
       })
       .where(eq(users.stripeCustomerId, customerId))
       .returning({ id: users.id });
@@ -191,6 +192,7 @@ async function applySyncResult(
         stripeSubscriptionId: null,
         subscriptionStatus: visibility.status,
         subscriptionCurrentPeriodEnd: null,
+        subscriptionCancelAtPeriodEnd: false,
       })
       .where(eq(users.stripeCustomerId, customerId))
       .returning({ id: users.id });
@@ -210,6 +212,7 @@ async function applySyncResult(
       stripeSubscriptionId: null,
       subscriptionStatus: null,
       subscriptionCurrentPeriodEnd: null,
+      subscriptionCancelAtPeriodEnd: false,
     })
     .where(eq(users.stripeCustomerId, customerId))
     .returning({ id: users.id });

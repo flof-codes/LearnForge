@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTopicBreadcrumb } from '../hooks/useTopics';
+import FocusBadge from './FocusBadge';
 
 interface Props {
   topicId: string | undefined;
@@ -21,6 +22,7 @@ export default function TopicBreadcrumb({ topicId }: Props) {
           >
             {topic.name}
           </Link>
+          <FocusBadge topicId={topic.id} />
         </span>
       ))}
     </nav>

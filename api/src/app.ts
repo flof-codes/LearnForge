@@ -15,6 +15,7 @@ import billingRoutes from "./routes/billing.js";
 import exportRoutes from "./routes/export.js";
 import adminRoutes from "./routes/admin.js";
 import shareRoutes from "./routes/shares.js";
+import focusRoutes from "./routes/focus.js";
 import { sql } from "drizzle-orm";
 import { db } from "./db/connection.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
@@ -39,7 +40,7 @@ export function buildApp() {
       return reply.status(404).send({ error: error.message });
     }
     if (error instanceof ForbiddenError) {
-      return reply.status(403).send({ error: error.message });
+      return reply.status(403).send({ error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
     if (error instanceof ValidationError) {
       return reply.status(400).send({ error: error.message });
@@ -78,6 +79,7 @@ export function buildApp() {
   app.register(exportRoutes);
   app.register(adminRoutes);
   app.register(shareRoutes);
+  app.register(focusRoutes);
 
   // The body names this service on purpose, and the check touches the database.
   //

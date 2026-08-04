@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useDueCards } from '../../hooks/useStudy';
 import { useSubmitReview } from '../../hooks/useReviews';
 import BloomBadge from '../../components/BloomBadge';
+import FocusBadge from '../../components/FocusBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import InteractiveCard from './InteractiveCard';
 import SessionSummary from './SessionSummary';
@@ -105,6 +106,7 @@ export default function StudySessionPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BloomBadge level={currentCard.bloomState.currentLevel} />
+          <FocusBadge topicId={currentCard.topicId} size="md" />
           <span className="text-sm text-text-muted">{t('study.cardOf', { current: currentIndex + 1, total: cards.length })}</span>
         </div>
         <button

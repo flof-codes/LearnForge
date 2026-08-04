@@ -39,7 +39,46 @@
     "name": "Name",
     "passwordHint": "Mindestens 8 Zeichen",
     "loginFailed": "Anmeldung fehlgeschlagen",
-    "registrationFailed": "Registrierung fehlgeschlagen"
+    "registrationFailed": "Registrierung fehlgeschlagen",
+    "forgotPassword": "Passwort vergessen?"
+  },
+  "verifyEmail": {
+    "subtitle": "E-Mail-Bestätigung",
+    "checking": "Dein Link wird geprüft...",
+    "success": "Deine E-Mail-Adresse ist bestätigt. Du kannst jetzt loslegen.",
+    "failed": "Bestätigung fehlgeschlagen",
+    "missingToken": "Dieser Link ist unvollständig.",
+    "errorHint": "Der Link ist abgelaufen oder wurde bereits verwendet. Melde dich an und fordere eine neue Bestätigungsmail an.",
+    "toDashboard": "Zum Dashboard"
+  },
+  "verifyBanner": {
+    "title": "Bitte bestätige deine E-Mail-Adresse ({{email}}).",
+    "hint": "Bis dahin kannst du nur lesen — Karten und Themen anlegen oder ändern ist gesperrt.",
+    "resend": "Mail erneut senden",
+    "sending": "Wird gesendet...",
+    "resent": "Bestätigungsmail wurde erneut verschickt. Schau auch im Spam-Ordner nach.",
+    "resendFailed": "Mail konnte nicht gesendet werden"
+  },
+  "forgotPassword": {
+    "subtitle": "Passwort zurücksetzen",
+    "submit": "Link anfordern",
+    "sending": "Wird gesendet...",
+    "sent": "Wenn ein Konto zu dieser Adresse existiert, ist eine Mail unterwegs.",
+    "sentHint": "Der Link ist 1 Stunde gültig. Schau auch im Spam-Ordner nach.",
+    "backToLogin": "Zurück zur Anmeldung"
+  },
+  "resetPassword": {
+    "subtitle": "Neues Passwort setzen",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort wiederholen",
+    "submit": "Passwort speichern",
+    "saving": "Wird gespeichert...",
+    "success": "Passwort geändert. Du wirst zur Anmeldung weitergeleitet.",
+    "failed": "Passwort konnte nicht geändert werden",
+    "tooShort": "Das Passwort muss mindestens 8 Zeichen lang sein",
+    "mismatch": "Die Passwörter stimmen nicht überein",
+    "missingToken": "Dieser Link ist unvollständig.",
+    "requestNew": "Neuen Link anfordern"
   },
   "language": {
     "en": "EN",

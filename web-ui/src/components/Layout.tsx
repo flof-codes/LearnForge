@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import EmailVerificationBanner from './EmailVerificationBanner';
 
 export default function Layout() {
   return (
@@ -7,6 +8,7 @@ export default function Layout() {
       <Sidebar />
       <main className="flex-1 min-w-0 px-6 pt-10 pb-24 md:px-12 md:pt-12 md:pb-12 overflow-auto">
         <div className="max-w-[1100px] mx-auto">
+          <EmailVerificationBanner />
           <Outlet />
         </div>
       </main>
