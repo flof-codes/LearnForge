@@ -44,7 +44,8 @@ Session start: Call get_instructions to load the tutor workflow before doing any
 Study session: get_study_summary → get_study_cards → [question loop with submit_review after each card].
 Card creation: Generate preview → wait for user approval → create_card. Call get_templates for HTML templates.
 Cross-concept questions (Bloom 3+): Use get_similar_cards for context.
-Question presentation: Use ask_user_input_v0 for MCQ. Use optionShuffle array to order options.`,
+Question presentation: Print the stem and full lettered options as chat text, ordered by the card's
+optionShuffle array; collect the answer with the visualizer's show_widget using the mcq-selector template.`,
       },
     );
     registerTopicTools(server, db, userId);

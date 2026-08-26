@@ -48,39 +48,44 @@ For Bloom 3+: also call \`get_similar_cards(card_id, limit=15)\` for cross-conce
 \`\`\`
 CARD 1 (first card — nothing to submit yet):
   Read cards[0]: concept="Mitochondria", bloomState.currentLevel=1, reviews=[...]
-  Generate Bloom-1 question, apply optionShuffle
+  Generate Bloom-1 question, apply optionShuffle, letter the options
   YOUR OUTPUT:
     "Let's start! Here's your first question:
      Why are mitochondria called the 'powerhouse' of the cell?
-     (Select all that apply)"
+     (Select all that apply)
+     A) They synthesise ATP via oxidative phosphorylation
+     B) They fix CO2 into glucose in the stroma
+     C) They store the cell's genetic blueprint
+     D) They oxidise pyruvate in the citric acid cycle"
   TOOL CALLS:
-    → ask_user_input_v0({ options: [...], multiSelect: true })
+    → show_widget(mcq-selector, KEYS=["A","B","C","D"], MODE='multi')
 
-USER ANSWERS CARD 1: selects "B, C"
+USER ANSWERS CARD 1: "Answer: A, B"
 
-  Evaluate: B correct, C wrong → rating 2
+  Evaluate: A correct, B wrong, D missed → rating 2
   Read cards[1]: concept="Chloroplasts", bloomState.currentLevel=0
   Generate Bloom-0 question for cards[1], apply optionShuffle
   YOUR OUTPUT:
-    "Almost! B is correct — mitochondria produce ATP via oxidative
-     phosphorylation. But C describes chloroplasts, not mitochondria.
+    "Almost! A is correct — mitochondria produce ATP via oxidative
+     phosphorylation. B describes chloroplasts. You also missed D.
      Bloom level: stays at Understand (L1).
      ---
      Next: Which of the following are found in chloroplasts?
-     (Select all that apply)"
+     (Select all that apply)
+     A) ...  B) ...  C) ...  D) ..."
   TOOL CALLS (in this exact order):
     1. submit_review({                          ← AFTER the text
          card_id: cards[0].id,
          bloom_level: 1,                        ← cards[0].bloomState.currentLevel
          rating: 2,
          question_text: "Why are mitochondria called the 'powerhouse'... A) ... B) ... C) ... D) ... (Select all that apply)",
-         answer_expected: "B, D",
-         user_answer: "B, C",
+         answer_expected: "A, D",
+         user_answer: "A, B",
          modality: "mcq"
        })
-    2. ask_user_input_v0({ options: [...] })     ← for cards[1]
+    2. show_widget(...)                          ← for cards[1]
 
-USER ANSWERS CARD 2: selects "A" — correct
+USER ANSWERS CARD 2: "Answer: A" — correct
 
   Evaluate: all correct → rating 3
   Read cards[2] (last in batch): concept="Cell Wall", bloomState.currentLevel=2
@@ -93,7 +98,7 @@ USER ANSWERS CARD 2: selects "A" — correct
      to the cell wall compared to the plasma membrane?"
   TOOL CALLS:
     1. submit_review({ card_id: cards[1].id, bloom_level: 0, rating: 3, ... })
-    2. ask_user_input_v0({ options: [...] })
+    2. show_widget(...)
 
 USER ANSWERS CARD 3 (last in batch):
 
@@ -108,7 +113,7 @@ USER ANSWERS CARD 3 (last in batch):
 
 ### Open Response Flow
 
-Same ordering — feedback + next question as chat text FIRST, then submit_review. No ask_user_input_v0 needed (user types free-form). Example:
+Same ordering — feedback + next question as chat text FIRST, then submit_review. No widget needed (user types free-form). Example:
 
 \`\`\`
 YOUR OUTPUT:
@@ -125,7 +130,7 @@ TOOL CALLS:
 - \`card_id\`: from cards[N].id
 - \`bloom_level\`: **MUST be cards[N].bloomState.currentLevel** — the level you generated the question for. Wrong value silently skips Bloom advancement.
 - \`rating\`: 1=Again, 2=Hard, 3=Good, 4=Easy (see Evaluation Guide)
-- \`question_text\`: the **exact, complete question** as shown — including all MCQ options with letters
+- \`question_text\`: the **exact, complete question** as shown — stem **plus every lettered option in full**. The picker widget only stores letters, so this field is the sole record of what they meant.
 - \`answer_expected\`: correct answer (e.g. "A, C" for MCQ)
 - \`user_answer\`: user's actual answer (e.g. "B, C" for MCQ)
 - \`modality\`: "mcq" or "chat"
@@ -134,17 +139,23 @@ Submit individually after each card — FSRS scheduling depends on per-response 
 
 ### MCQ Presentation Rules
 
-**Default: multi_select** (multiSelect=true). Add "(Select all that apply)". Only use single_select for binary questions (yes/no, true/false).
+**Option text goes in your chat message, letters go in the widget — never both.** Chat text renders KaTeX and has no length limit; widget labels have neither.
 
-**Option length limit:** \`ask_user_input_v0\` truncates at 105 chars. If ANY option exceeds this → letter-key pattern: full options A–D in chat text, only "A", "B", "C", "D" as widget options.
+Steps:
+1. Generate N options → apply optionShuffle → assign letters A, B, C… in display order.
+2. Print the stem and the full lettered options as chat text.
+3. Call \`show_widget\` with the \`mcq-selector\` template (\`get_templates\`), setting \`KEYS\` to the letters used and \`MODE\` to \`'single'\` or \`'multi'\`. Nothing else in the widget.
 
-**optionShuffle:** Each card includes an \`optionShuffle\` array. Use it to randomize display order:
-1. Generate N options. Take first N values from optionShuffle.
-2. Pair each option with its shuffle value. Sort ascending → display order.
-Example: Options [A, B, C, D], optionShuffle [3, 1, 6, 2]
-→ Sorted: [(B,1), (D,2), (A,3), (C,6)] → Display: B, D, A, C
+The widget answers as a normal user turn: \`Answer: A, C\` — letters sorted, comma-separated. Accept a bare typed letter too; the user may skip the widget.
+
+**Default: \`MODE='multi'\`.** Add "(Select all that apply)". Use \`'single'\` for binary or single-answer questions.
+
+**optionShuffle:** Each card includes an \`optionShuffle\` array. Take its first N values, pair them with your N options, sort ascending → display order. Letters are assigned *after* the sort.
+Example: options [W, X, Y, Z], optionShuffle [3, 1, 6, 2] → order X, Z, W, Y → print "A) X  B) Z  C) W  D) Y".
 
 **Multi-select scoring:** all correct + no wrong → 4, all correct + 1 wrong → 3, >50% correct → 2, fewer → 1.
+
+Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, fall back to \`ask_user_input_v0\` with the letters as options — it truncates labels at 105 chars, which is why letters are all it gets.
 
 ### Handling Mid-Quiz Exploration
 
@@ -174,8 +185,8 @@ When a card has \`cardType === "cloze"\`, use this flow instead of the standard 
 
 | Level | Name | Format | Interaction | Details |
 |-------|------|--------|-------------|---------|
-| 0 | Remember | Cloze MCQ, original sentence + hints | \`ask_user_input_v0\`, 4 options, single-select | Use \`clozeData.sourceText\` verbatim. Show hint as \`[hint]\` or \`[...]\` if no hint. Distractors from **different categories**. |
-| 1 | Understand | Cloze MCQ, no hints, harder distractors | \`ask_user_input_v0\`, 4 options, single-select | Same \`sourceText\`, always show \`[...]\` (hide hints). Distractors from the **same functional category**. |
+| 0 | Remember | Cloze MCQ, original sentence + hints | \`mcq-selector\` widget, 4 options, \`MODE='single'\` | Use \`clozeData.sourceText\` verbatim. Show hint as \`[hint]\` or \`[...]\` if no hint. Distractors from **different categories**. |
+| 1 | Understand | Cloze MCQ, no hints, harder distractors | \`mcq-selector\` widget, 4 options, \`MODE='single'\` | Same \`sourceText\`, always show \`[...]\` (hide hints). Distractors from the **same functional category**. |
 | 2 | Apply | Open cloze, AI-rephrased sentence | Chat typed input | AI generates a NEW sentence where the same answer fits the blank, using a different context/angle. User must recall, not recognize. |
 | 3 | Analyze | Cloze fill-in + comparison follow-up | Chat typed input | Two-part: (1) fill the blank, (2) explain a distinction using \`get_similar_cards\` context. Rating based on both parts. |
 | 4 | Evaluate | Cloze fill-in + claim evaluation | Chat typed input | Two-part: (1) fill the blank, (2) evaluate whether the surrounding claim is valid/accurate. Rating based on both parts. |
@@ -209,11 +220,12 @@ CARD: cardType="cloze", bloomState.currentLevel=0
   YOUR OUTPUT:
     "Fill in the blank:
      The [organelle] is the ___powerhouse___ of the cell.
-     Which term completes the blank?"
+     Which term completes the blank?
+     A) ribosome  B) mitochondria  C) nucleus  D) lysosome"
   TOOL CALLS:
-    → ask_user_input_v0({ options: ["mitochondria", "ribosome", "nucleus", "lysosome"] })
+    → show_widget(mcq-selector, KEYS=["A","B","C","D"], MODE='single')
 
-USER SELECTS: "mitochondria" — correct
+USER ANSWERS: "Answer: B" — correct
 
   Evaluate: correct → rating 3
   YOUR OUTPUT: "Correct! The mitochondria is the organelle..."
@@ -222,7 +234,7 @@ USER SELECTS: "mitochondria" — correct
          card_id: "...",
          bloom_level: 0,
          rating: 3,
-         question_text: "The [organelle] is the powerhouse of the cell. A) mitochondria B) ribosome C) nucleus D) lysosome",
+         question_text: "The [organelle] is the powerhouse of the cell. A) ribosome B) mitochondria C) nucleus D) lysosome",
          answer_expected: "mitochondria",
          user_answer: "mitochondria",
          modality: "mcq"
@@ -269,10 +281,10 @@ Card creation is always user-triggered ("create a card about X", "save as card")
 4. Only after explicit approval: call \`create_card\`.
 
 ### Front Side Rules
-The front side is a static question prompt — answering happens in chat via \`ask_user_input_v0\`, not through the card HTML.
+The front side is a static question prompt — answering happens in chat via the \`mcq-selector\` widget, not through the card HTML.
 - Show the question only. The front must not reveal the answer.
 - Keep it clean: term/concept + question.
-- No interactive elements (sliders, diagrams, formula displays, input fields, textareas, or buttons) on the front. Exception: the MCQ template includes options and a check button for web self-study — these are part of the template and fine to keep, but in chat sessions the AI uses \`ask_user_input_v0\` instead.
+- No interactive elements (sliders, diagrams, formula displays, input fields, textareas, or buttons) on the front. Exception: the MCQ template's options and check button, which exist for web self-study — chat sessions ignore them and use the \`mcq-selector\` widget instead.
 - Choose template: mcq (multi-select), label-diagram, open-response, or simple styled question.
 
 ### Back Side Rules
@@ -416,6 +428,7 @@ For complete CSS, KaTeX setup, and SVG guidelines, see \`get_templates\`.
 
 | Action | Tool | Key Parameters |
 |--------|------|----------------|
+| Present an MCQ | show_widget (visualizer) | \`mcq-selector\` template, KEYS, MODE |
 | Study summary | get_study_summary | topic_id? |
 | Due cards | get_study_cards | topic_id?, limit? |
 | Submit review | submit_review | card_id, bloom_level, rating, question_text, modality?, answer_expected? |
@@ -456,7 +469,68 @@ button:hover{background:#b45309 !important}
 // HTML Templates — each stores only template-specific CSS + content
 // ---------------------------------------------------------------------------
 
-const TEMPLATES: Record<string, { description: string; variables: string; html: string }> = {
+const TEMPLATES: Record<
+  string,
+  { description: string; variables: string; html: string; standalone?: boolean }
+> = {
+  "mcq-selector": {
+    description:
+      "Answer picker for chat MCQ sessions — a row of letter buttons rendered by the visualizer's show_widget, NOT a card side. Print the stem and the full lettered options as chat text; this widget holds only the letters. Replies as a normal user turn: 'Answer: A, C'. Uses the visualizer design system, so it must be passed to show_widget verbatim without Pico CSS.",
+    variables:
+      "MODE ('single' sends on first click; 'multi' toggles and needs Submit), KEYS (letter array, post-optionShuffle — any length from 2 upward)",
+    standalone: true,
+    html: `<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Answer picker for the question above</h2>
+<div style="padding:1rem 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <div id="strip" style="display:flex;gap:8px"></div>
+  <button id="go">Submit ↗</button>
+  <span id="msg" style="font-size:13px;color:var(--text-muted)"></span>
+</div>
+<script>
+var MODE = 'multi';
+var KEYS = ['A', 'B', 'C', 'D'];
+var picked = [];
+var strip = document.getElementById('strip');
+var go = document.getElementById('go');
+var msg = document.getElementById('msg');
+KEYS.forEach(function (k) {
+  var b = document.createElement('button');
+  b.textContent = k;
+  b.setAttribute('data-k', k);
+  b.setAttribute('aria-pressed', 'false');
+  b.style.cssText = 'min-width:44px;padding:8px 0';
+  b.onclick = function () {
+    if (MODE === 'single') { picked = [k]; paint(); send(); return; }
+    var j = picked.indexOf(k);
+    if (j > -1) { picked.splice(j, 1); } else { picked.push(k); }
+    paint();
+  };
+  strip.appendChild(b);
+});
+function paint() {
+  Array.prototype.forEach.call(strip.children, function (b) {
+    var on = picked.indexOf(b.getAttribute('data-k')) > -1;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.style.background = on ? 'var(--bg-accent)' : '';
+    b.style.borderColor = on ? 'var(--border-accent)' : '';
+    b.style.color = on ? 'var(--text-accent)' : '';
+  });
+  msg.style.color = 'var(--text-muted)';
+  msg.textContent = picked.length ? picked.slice().sort().join(', ') : '';
+}
+function send() { sendPrompt('Answer: ' + picked.slice().sort().join(', ')); }
+go.onclick = function () {
+  if (!picked.length) {
+    msg.style.color = 'var(--text-danger)';
+    msg.textContent = 'Pick an option first';
+    return;
+  }
+  send();
+};
+if (MODE === 'single') { go.style.display = 'none'; }
+paint();
+</script>`,
+  },
+
   mcq: {
     description: "Multiple choice question with native checkboxes. Front side: user selects correct answers, clicks Check. Uses <article>, <fieldset>, <label> for semantic structure. Pair with a visual-explain back side.",
     variables: "{{QUESTION}}, {{CONTEXT}} (optional blockquote), {{OPTIONS}} (checkboxes with data-correct), {{FEEDBACK}} (shown on perfect score)",
@@ -491,7 +565,7 @@ function lfCheck(){const labels=document.querySelectorAll('#opts label');const b
   },
 
   "open-response": {
-    description: "Static question prompt for the front side — no interactive elements. The user answers in chat via ask_user_input_v0, not through card HTML. Uses <article> with <blockquote> for context.",
+    description: "Static question prompt for the front side — no interactive elements. The user answers in chat, not through card HTML. Uses <article> with <blockquote> for context.",
     variables: "{{QUESTION}}, {{CONTEXT}} (blockquote text)",
     html: `<article>
   <blockquote>{{CONTEXT}}</blockquote>
@@ -649,13 +723,13 @@ export function registerSkillTools(server: McpServer) {
 
   server.tool(
     "get_templates",
-    "Get HTML card templates for LearnForge. Returns template HTML with variable placeholders, CSS, and JS. Use when creating or updating cards. Pass a template_name to get one specific template, or omit to get all six.",
+    "Get HTML templates for LearnForge: the six card-side templates, plus mcq-selector, the letter-button answer picker used with the visualizer's show_widget during chat MCQ sessions. Returns template HTML with variable placeholders, CSS, and JS. Pass a template_name to get one specific template, or omit to get all seven.",
     {
       template_name: z
-        .enum(["mcq", "open-response", "visual-explain", "label-diagram", "slider", "cloze"])
+        .enum(["mcq-selector", "mcq", "open-response", "visual-explain", "label-diagram", "slider", "cloze"])
         .optional()
         .describe(
-          "Specific template to retrieve. Options: mcq, open-response, visual-explain, label-diagram, slider, cloze. Omit to get all templates.",
+          "Specific template to retrieve. Options: mcq-selector, mcq, open-response, visual-explain, label-diagram, slider, cloze. Omit to get all templates.",
         ),
     },
     async ({ template_name }) => {
@@ -671,7 +745,7 @@ export function registerSkillTools(server: McpServer) {
           name: template_name,
           description: t.description,
           variables: t.variables,
-          html: SHARED_HEAD + t.html,
+          html: t.standalone ? t.html : SHARED_HEAD + t.html,
         };
         return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
       }
@@ -681,7 +755,7 @@ export function registerSkillTools(server: McpServer) {
         name,
         description: t.description,
         variables: t.variables,
-        html: SHARED_HEAD + t.html,
+        html: t.standalone ? t.html : SHARED_HEAD + t.html,
       }));
       return { content: [{ type: "text" as const, text: JSON.stringify(all, null, 2) }] };
     },

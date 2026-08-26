@@ -37,12 +37,14 @@
 - Vorderseite = clean, fokussiert: Begriff + Frage(n)
 
 ## Review-Flow im Chat (PFLICHT)
-- Beim Abfragen von Karten im Chat: **IMMER `AskUserQuestion`-Tool verwenden** statt HTML-Karten zu zeigen
-- MCQ → als Single-Choice Frage mit Optionen
-- Zuordnung → als Serie von Fragen ("Wo gehört X hin?" → Optionen)
-- Slider/Berechnung → als Frage mit Zahlenwert-Optionen
+- Beim Abfragen von Karten im Chat: **keine HTML-Karten zeigen** — Frage als Chat-Text stellen
+- MCQ → Fragestamm + vollständige Optionen als Chat-Text (A, B, C, …), Antwort über
+  `visualize:show_widget` mit dem `mcq-selector`-Template (nur die Buchstaben im Widget)
+- Zuordnung → Serie von MCQ-Fragen ("Wo gehört X hin?")
+- Slider/Berechnung → Frage mit Zahlenwert-Optionen
 - Open Response → normale Chat-Frage (User tippt Antwort)
-- **Vorteil:** Antwort kommt direkt zurück → Claude kann sofort bewerten und `submit_review` aufrufen
+- **Warum Optionen im Chat-Text:** dort greift die KaTeX-Pipeline, und es gibt kein Längenlimit
+- Das Widget antwortet als normaler User-Turn: `Answer: A, C`
 - Die interaktiven HTML-Karten bleiben als visuelles Lernmaterial auf der **Rückseite** erhalten
 
 ## Git Conventions
