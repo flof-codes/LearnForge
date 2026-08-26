@@ -425,6 +425,22 @@ describe("MCP Tools", () => {
       expect(textContent).toBeDefined();
       expect(textContent!.text).toContain("LearnForge");
       expect(textContent!.text.length).toBeGreaterThan(100);
+      expect(textContent!.text).toContain("Voice mode only");
+      expect(textContent!.text).toContain("interaction overlay for every card type");
+      expect(textContent!.text).toContain("including standard and cloze cards");
+      expect(textContent!.text).toContain("Do not apply these rules to text-only sessions");
+      expect(textContent!.text).toContain("Show a question card on screen");
+      expect(textContent!.text).toContain("Ask for reasoning in voice");
+      expect(textContent!.text).toContain("Do not read a long list of answer letters or options aloud");
+      expect(textContent!.text).toContain("Treat discussion as ungraded exploration");
+      expect(textContent!.text).toContain("Wait for completion");
+      expect(textContent!.text).toContain("unambiguously confident finished response");
+      expect(textContent!.text).toContain("Handle skips without grading");
+      expect(textContent!.text).toContain("Record, then give feedback");
+      expect(textContent!.text).toContain("Continue immediately");
+      expect(textContent!.text).toContain("Text-only mode");
+      expect(textContent!.text).toContain("next question IMMEDIATELY after answering");
+      expect(textContent!.text).toContain("Concrete Text-Only Example: Cloze MCQ Session");
     });
 
     it("get_templates returns all templates", async () => {
