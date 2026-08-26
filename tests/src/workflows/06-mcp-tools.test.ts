@@ -431,8 +431,9 @@ describe("MCP Tools", () => {
       const result = await mcp.callTool("get_templates", {});
       const templates = mcp.parseToolResult<any[]>(result);
 
-      expect(templates.length).toBe(6);
+      expect(templates.length).toBe(7);
       const names = templates.map((t: any) => t.name);
+      expect(names).toContain("mcq-selector");
       expect(names).toContain("mcq");
       expect(names).toContain("open-response");
       expect(names).toContain("visual-explain");
@@ -455,6 +456,21 @@ describe("MCP Tools", () => {
 
       expect(template.name).toBe("mcq");
       expect(template.html).toContain("fieldset");
+    });
+
+    // mcq-selector renders inside the visualizer sandbox, which supplies its own
+    // design system. Prepending the card templates' Pico CSS head would fight it.
+    it("mcq-selector is served without the Pico head that card templates get", async () => {
+      const selector = mcp.parseToolResult<any>(
+        await mcp.callTool("get_templates", { template_name: "mcq-selector" }),
+      );
+      const card = mcp.parseToolResult<any>(
+        await mcp.callTool("get_templates", { template_name: "visual-explain" }),
+      );
+
+      expect(card.html).toContain("pico.classless.min.css");
+      expect(selector.html).not.toContain("pico.classless.min.css");
+      expect(selector.html).toContain("sendPrompt('Answer: '");
     });
   });
 
