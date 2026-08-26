@@ -1,86 +1,67 @@
-# Build & Deploy -- MID-MIGRATION STATE, phase 1a.
+# Build & Deploy -- registry deploys. Flipped 2026-08-26; phase 1a is over here.
 #
-# Two deploy paths coexist here on purpose, and only ONE of them is live:
+#   build -> test -> build-images (GHCR) -> deploy
 #
-#   LEGACY (live)   build -> test -> deploy: ssh to the host, git pull, and
-#                   `docker compose -f docker-compose.prod.yml up --build`. The
-#                   server builds from source. This is what updates the site today.
+# THE DEPLOY JOB SENDS NO COMMAND. `ssh ... true` is a placeholder: the key's
+# authorized_keys entry carries a forced command, so sshd DISCARDS whatever is
+# sent from here and runs `sudo /usr/local/sbin/deploy-service.sh learnforge`.
+# That script snapshots the service dataset, pulls both images and restarts the
+# stack from ONE service directory -- which is why a single deploy job covers two
+# images, and why nothing in this file names a compose file.
 #
-#   NEW (dormant)   build-api-image / build-web-image publish to GHCR with
-#                   `deploy: false`. The images are pullable and verifiable by
-#                   hand; nothing on the server consumes them yet.
+# WHY INLINE, not `uses: flof-codes/.github/.../deploy-trigger.yml@main`:
+# that repo is PRIVATE and this one is PUBLIC. GitHub does not permit a public
+# repo to consume a reusable workflow from a private one, and the failure mode is
+# a run marked completed with ZERO jobs, no logs and no annotations. Same reason
+# build-images inlines build-push.yml. THE OBLIGATION THIS CREATES: a fix to
+# either shared workflow DOES NOT REACH THIS FILE. Nothing warns.
 #
-# Keeping the legacy job alive is the ZERO-FREEZE pattern: deleting it is what
-# stops pushes from updating the live site, regardless of whether the new path
-# works. Both paths build from the same commit, which is also what makes the
-# container-versus-live URL parity comparison exact.
+# WHAT THIS REPLACED, and why it was green for three weeks while doing nothing:
+# the legacy job ran `cd /opt/learnforge && sudo ./scripts/backup.sh && git pull
+# && docker compose -f docker-compose.prod.yml up --build -d`. Phase 1a retired
+# learnforge on 2026-07-31 -- checkout deleted, sudoers rule for
+# scripts/backup.sh removed. The SAME DAY the shared `github-deploy` key, which
+# is still this repo's DEPLOY_SSH_KEY, was given a forced command naming
+# `deploy-service.sh wobble`. Every push here has deployed WOBBLE since and
+# reported success; the runs on 08-04 and 08-26 both did. Nothing was ever red.
 #
-# BECAUSE THE LEGACY PATH BUILDS FROM SOURCE, EVERY PUSH TO MAIN DEPLOYS THE
-# CURRENT DOCKERFILE. A port change or a `USER` change lands on the live site the
-# moment it lands on main, unless the same commit carries matching transitional
-# edits to docker-compose.prod.yml. The api image deliberately still runs as root
-# for exactly this reason -- see the comment in api/Dockerfile.
+# The lesson worth carrying: a job that SENDS a command to a forced-command key
+# cannot fail loudly, because the command it sends is never read. Correctness
+# lives in WHICH KEY the secret holds, not in anything written here.
 #
-# ---------------------------------------------------------------------------
-# THE FLIP COMMIT -- a checklist, not an ad-hoc assembly. In ONE commit:
+# NO PRE-DEPLOY DUMP, deliberately. deploy-service.sh takes a ZFS snapshot of the
+# whole service dataset before every deploy and refuses to deploy if that
+# snapshot fails (1c section 8), honours PREDEPLOY_KEEP, and logs "dump skipped
+# -- the pre-deploy snapshot above already covers the whole directory".
+# scripts/backup.sh stays in the repo as a LOCAL dev dump against
+# docker-compose.yml. It is not a deploy step, and its sudoers rule is gone.
 #
-#   [ ] ADD a `deploy` job here -- inline, NOT `uses: deploy-trigger.yml@main`.
-#       The shared deploy-trigger workflow is unreachable for the same reason
-#       build-push.yml is: it lives in the PRIVATE flof-codes/.github, and this
-#       repo is PUBLIC. Reaching for it at flip time produces the same zero-job
-#       startup_failure, at the worst possible moment. Inline it:
+# HOST, PORT AND USER STAY IN SECRETS -- this repo is public. The flip checklist
+# said to delete DEPLOY_PORT and DEPLOY_USER because the SHARED workflow takes
+# them as inputs with defaults. Inlining reverses that: written literally here
+# they would publish the port and the deploy account name, so they stay secrets.
+# DEPLOY_KNOWN_HOSTS pins the host key. Never ssh-keyscan at deploy time -- that
+# trusts the answer it is trying to verify.
 #
-#         deploy:
-#           needs: [build-images]          # <- ONE job now, covering both images
-#           if: github.ref == 'refs/heads/main'
-#           runs-on: ubuntu-24.04
-#           concurrency:
-#             group: deploy-${{ github.ref }}
-#             cancel-in-progress: false     # <- NEVER cancel a deploy (DRIFT #38)
-#           steps:
-#             - uses: webfactory/ssh-agent@<PIN BY SHA>
-#               with: { ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }} }
-#             - run: echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-#             - run: ssh -p ${{ secrets.DEPLOY_PORT }} \
-#                      ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} true
-#
-#       The remote command is IGNORED -- sshd substitutes the forced command in
-#       authorized_keys, which runs `sudo /usr/local/sbin/deploy-service.sh
-#       learnforge`. That script pulls and restarts BOTH images from one service
-#       directory, which is why one deploy job covers two images and why nothing
-#       here names a compose file.
-#
-#       DEPLOY_KNOWN_HOSTS must be SET FIRST -- it is currently unset, and it is
-#       what stops this trusting whatever host answers. Do not fall back to
-#       ssh-keyscan at deploy time; that trusts the answer it is trying to verify.
-#
-#       One deploy job, never one per image: two would fire parallel
-#       `compose pull/up` races into one service directory.
-#   [ ] delete the legacy `deploy` job below
-#   [ ] delete docker-compose.prod.yml -- but record its contents in the handoff
-#       report FIRST, because the rollback path needs them
+# STILL OPEN from the flip checklist:
+#   [ ] delete docker-compose.prod.yml -- record its contents in the handoff
+#       report FIRST, the rollback path needs them. Confirm server-config's
+#       backup/backup-targets.conf no longer names the /opt path before removing
+#       it: a stale path there aborts the WHOLE nightly database run, not just
+#       this app's dump.
 #   [ ] delete, or rename to compose.dev.yml, the non-live docker-compose.yml.
 #       NOT cosmetic: on the server that file is writable by the deploy user and
 #       sits beside a sudoers rule, which together form a root-escalation path.
 #       Touches README.md, CLAUDE.md and the test harness.
-#   [ ] delete the now-dead DEPLOY_PORT and DEPLOY_USER secrets -- the shared
-#       workflow takes those as inputs. They are still in use by the legacy job
-#       until this commit, which is why they survive for now.
-#       The secrets here are DEPLOY_*, NOT SSH_*: this repo has DEPLOY_HOST,
-#       DEPLOY_PORT, DEPLOY_USER and DEPLOY_SSH_KEY. There is no SSH_* set to
-#       delete, and DEPLOY_KNOWN_HOSTS does not exist yet and must be added.
-#   [ ] rotate DEPLOY_SSH_KEY to the forced-command keypair (server-side change,
-#       coordinated -- the old key's public half is still in authorized_keys
-#       without a forced command)
-#   [ ] update README.md and CLAUDE.md: /opt/learnforge and "server builds from
-#       source" both stop being true
 #   [ ] have the deploy gate assert /runtime-info.json's apiUrl equals the expected
 #       production URL. The container healthcheck CANNOT -- only the gate knows the
 #       right value, and a wrong-but-present apiUrl passes every other check we have.
 #   [ ] chown the /data/images bind mount, then add `USER node` to api/Dockerfile
+#   [ ] update README.md and CLAUDE.md: /opt/learnforge and "server builds from
+#       source" both stop being true
 #
-# From the flip commit onward, PUSH TO MAIN DEPLOYS PRODUCTION IMMEDIATELY, and
-# whatever pre-commit gate this repo has just became the release gate.
+# PUSH TO MAIN NOW DEPLOYS PRODUCTION IMMEDIATELY, and whatever pre-commit gate
+# this repo has just became the release gate.
 # ---------------------------------------------------------------------------
 
 name: Build & Deploy
@@ -93,7 +74,7 @@ on:
     # what :latest ends up pointing at (DRIFT #45). Both need gating, per image.
     #
     # build-push.yml withholds :latest from non-default branches, so a branch push
-    # publishes only an immutable :<sha> tag. The legacy deploy job below is
+    # publishes only an immutable :<sha> tag. The deploy job below is
     # additionally guarded on main.
     branches: [main, 'phase1a/**']
 
@@ -184,7 +165,7 @@ jobs:
         working-directory: tests
 
   # ---------------------------------------------------------------------------
-  # NEW PATH -- publish to GHCR. Dormant: nothing here deploys.
+  # Publish to GHCR. The deploy job at the bottom consumes these images.
   #
   # THIS IS A COPY OF flof-codes/.github's build-push.yml, REDUCED, AND THAT IS
   # A DELIBERATE EXCEPTION.
@@ -211,8 +192,8 @@ jobs:
   # STILL GATED ON `needs: [build, test]`, which is why this lives here rather
   # than in its own workflow file: a separate file cannot depend on jobs in this
   # one, so it would publish images from a run whose tests had failed. That
-  # property has to stay true after the flip, when the deploy job replaces the
-  # legacy one.
+  # property survived the flip -- deploy now hangs off build-images, so the same
+  # gate transitively covers the deploy.
   #
   # No build-args. The web image's six configuration values are placeholder
   # tokens substituted at container start by web-ui/docker-entrypoint.sh, which
@@ -220,8 +201,8 @@ jobs:
   # postal address out of both the repo and the image history.
   #
   # NO HOST, PORT OR USERNAME APPEARS IN THIS JOB, deliberately -- this repo is
-  # public. The build half needs none; the deploy job added at the flip reads
-  # DEPLOY_HOST, DEPLOY_PORT and DEPLOY_USER from secrets, which are not
+  # public. The build half needs none; the deploy job reads DEPLOY_HOST,
+  # DEPLOY_PORT, DEPLOY_USER and DEPLOY_KNOWN_HOSTS from secrets, which are not
   # publicly readable.
   # ---------------------------------------------------------------------------
   build-images:
@@ -350,31 +331,68 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
-  # LEGACY PATH -- still the one that updates the live site. Delete in the flip
-  # commit, together with docker-compose.prod.yml.
+  # ONE deploy job, NEVER one per image: two would race parallel `compose
+  # pull/up` into a single service directory. Gated on build-images rather than
+  # on [build, test] so it cannot fire before both images are in the registry --
+  # build-images is itself gated on [build, test], so the test gate still covers
+  # the deploy.
+  #
+  # Guarded on main because the trigger above also matches phase1a/** branches,
+  # and because :latest -- which the host pulls -- only moves on the default
+  # branch. Without the guard a branch push would deploy that branch.
   # ---------------------------------------------------------------------------
   deploy:
-    needs: [build, test]
-    # Guarded on main because the trigger above now also matches phase1a/**
-    # branches. Without this, verifying the image build on a branch would deploy
-    # that branch to production.
+    needs: [build-images]
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
+    # NEVER cancel a deploy -- that was DRIFT #38. Cancelling mid-run would abort
+    # a half-finished `compose up` on the host and leave the stack part-restarted.
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+
     steps:
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-
-      - name: Add server to known_hosts
-        run: ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to server
+      # No third-party action: the key is written directly, which is what the
+      # shared deploy-trigger does. One less action to pin by SHA, and nothing
+      # holds the private half beyond this job.
+      - name: Trigger deploy
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
         run: |
-          ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
-            cd /opt/learnforge &&
-            sudo ./scripts/backup.sh &&
-            GIT_SSH_COMMAND="ssh -i /home/github_deploy/.ssh/github_learnforge_access -o StrictHostKeyChecking=no" git pull origin main &&
-            sudo docker compose -f docker-compose.prod.yml down --remove-orphans &&
-            sudo docker compose -f docker-compose.prod.yml up --build -d
-          '
+          set -euo pipefail
+          # An unset secret expands to empty, and ssh would then fail with
+          # something unhelpful three steps later. Name the missing one instead.
+          # DEPLOY_KNOWN_HOSTS is the one that does not exist yet: this job stays
+          # RED until it is set, which is the point -- a silent green deploy is
+          # exactly what this replaced.
+          for v in KEY KNOWN_HOSTS HOST USER PORT; do
+            if [ -z "${!v}" ]; then
+              echo "::error::deploy: secret $v is not set" >&2
+              exit 1
+            fi
+          done
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY"         > ~/.ssh/id_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # `true` is DISCARDED -- see the forced-command note at the top of this
+          # file. What actually runs is deploy-service.sh learnforge.
+          ssh -i ~/.ssh/id_deploy \
+              -o IdentitiesOnly=yes \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
+              -o StrictHostKeyChecking=yes \
+              -o BatchMode=yes \
+              -o ConnectTimeout=15 \
+              -p "$PORT" "$USER@$HOST" true
+
+      - name: Remove the key from the runner
+        if: always()
+        run: rm -f ~/.ssh/id_deploy ~/.ssh/known_hosts
