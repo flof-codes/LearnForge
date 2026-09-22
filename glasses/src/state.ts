@@ -73,6 +73,8 @@ export interface ReviewPayload {
   question_id: string;
   selected: string[];
   dont_know?: boolean;
+  /** The session mode; the server grades multiple choice with partial credit. */
+  multi?: boolean;
 }
 
 export type MenuItem = "skip" | "home" | "close";
@@ -107,21 +109,21 @@ export function initialState(): State {
 export type QuestionRow = { kind: "option"; id: string } | { kind: "confirm" } | { kind: "dontknow" };
 
 /** Rows of the question view: options, then Confirm (multi only), then I don't know. */
-export function questionRows(q: Question): QuestionRow[] {
+export function questionRows(q: Question, mode: Mode): QuestionRow[] {
   const rows: QuestionRow[] = q.options.map(o => ({ kind: "option" as const, id: o.id }));
-  if (q.mode === "multi") rows.push({ kind: "confirm" });
+  if (mode === "multi") rows.push({ kind: "confirm" });
   rows.push({ kind: "dontknow" });
   return rows;
 }
 
-export function gradeOutcome(q: Question, selected: string[]): Outcome {
+export function gradeOutcome(q: Question, selected: string[], mode: Mode): Outcome {
   const correct = new Set(q.correctIds);
   const picked = new Set(selected);
   if (picked.size === 0) return "dontknow";
   let hits = 0, wrong = 0;
   for (const id of picked) { if (correct.has(id)) hits++; else wrong++; }
   if (hits === correct.size && wrong === 0) return "correct";
-  if (q.mode === "multi" && hits > 0) return "partial";
+  if (mode === "multi" && hits > 0) return "partial";
   return "wrong";
 }
 
@@ -154,7 +156,8 @@ function nextQuestion(state: State, now: number): { state: State; effects: Effec
     return { state: { ...state, queue: [], fetching, view: { kind: "preparing", mode: state.mode } }, effects };
   }
   return {
-    state: { ...state, queue: rest, fetching, view: { kind: "question", mode: q.mode, q, cursor: 0, selected: [], shownAt: now } },
+    // The session mode decides how a question is asked, whatever the compiled row looks like.
+    state: { ...state, queue: rest, fetching, view: { kind: "question", mode: state.mode, q, cursor: 0, selected: [], shownAt: now } },
     effects,
   };
 }
@@ -224,7 +227,7 @@ export function reduce(state: State, action: Action): { state: State; effects: E
     case "SCROLL_DOWN": {
       const delta = action.type === "SCROLL_UP" ? -1 : 1;
       if (v.kind === "home") return { state: { ...state, view: { ...v, cursor: move(v.cursor, delta, MODE_ROWS.length) } }, effects: none };
-      if (v.kind === "question") return { state: { ...state, view: { ...v, cursor: move(v.cursor, delta, questionRows(v.q).length) } }, effects: none };
+      if (v.kind === "question") return { state: { ...state, view: { ...v, cursor: move(v.cursor, delta, questionRows(v.q, v.mode).length) } }, effects: none };
       return { state, effects: none };
     }
 
@@ -237,17 +240,18 @@ export function reduce(state: State, action: Action): { state: State; effects: E
           return { state: s, effects: [fetchEffect(s)] };
         }
         case "question": {
-          const row = questionRows(v.q)[v.cursor];
+          const row = questionRows(v.q, v.mode)[v.cursor];
           if (row.kind === "option" && v.mode === "multi") {
             const selected = v.selected.includes(row.id) ? v.selected.filter(id => id !== row.id) : [...v.selected, row.id];
             return { state: { ...state, view: { ...v, selected } }, effects: none };
           }
           if (row.kind === "confirm" && v.selected.length === 0) return { state, effects: none };
           const selected = row.kind === "option" ? [row.id] : row.kind === "confirm" ? v.selected : [];
-          const outcome = gradeOutcome(v.q, selected);
+          const outcome = gradeOutcome(v.q, selected, v.mode);
+          const multi = v.mode === "multi";
           const review: ReviewPayload = selected.length === 0
-            ? { question_id: v.q.questionId, selected: [], dont_know: true }
-            : { question_id: v.q.questionId, selected };
+            ? { question_id: v.q.questionId, selected: [], dont_know: true, multi }
+            : { question_id: v.q.questionId, selected, multi };
           return {
             state: {
               ...state,

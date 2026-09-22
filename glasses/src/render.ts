@@ -42,14 +42,14 @@ function renderHome(v: Extract<View, { kind: "home" }>): string {
   return screen(lines);
 }
 
-function optionLabel(q: Question, id: string, selected: string[]): string {
+function optionLabel(q: Question, id: string, selected: string[], mode: "single" | "multi"): string {
   const text = q.options.find(o => o.id === id)?.text ?? "";
-  if (q.mode === "multi") return `[${selected.includes(id) ? "x" : " "}] ${id}  ${text}`;
+  if (mode === "multi") return `[${selected.includes(id) ? "x" : " "}] ${id}  ${text}`;
   return `${id}  ${text}`;
 }
 
 function renderQuestion(v: Extract<View, { kind: "question" }>): string {
-  const rows = questionRows(v.q);
+  const rows = questionRows(v.q, v.mode);
   const rowCount = rows.length;
   const hint = v.mode === "multi" ? ["Select all that apply."] : [];
   // Everything below the stem is fixed height; the stem takes what is left, at least two lines.
@@ -58,7 +58,7 @@ function renderQuestion(v: Extract<View, { kind: "question" }>): string {
   if (lines.length < stemLines + hint.length) lines.push("");
   rows.forEach((r, i) => {
     const active = v.cursor === i;
-    if (r.kind === "option") lines.push(row(active, optionLabel(v.q, r.id, v.selected)));
+    if (r.kind === "option") lines.push(row(active, optionLabel(v.q, r.id, v.selected, v.mode)));
     else if (r.kind === "confirm") lines.push(row(active, `->  Confirm${v.selected.length ? ` (${v.selected.length})` : ""}`));
     else lines.push(row(active, v.mode === "multi" ? "?   I don't know" : "?  I don't know"));
   });

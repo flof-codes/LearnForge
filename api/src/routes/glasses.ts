@@ -157,7 +157,7 @@ export default async function glassesRoutes(app: FastifyInstance) {
   });
 
   // POST /glasses/reviews — a ring answer; the review service grades it
-  app.post<{ Body: { question_id: string; selected?: string[]; dont_know?: boolean } }>("/glasses/reviews", {
+  app.post<{ Body: { question_id: string; selected?: string[]; dont_know?: boolean; multi?: boolean } }>("/glasses/reviews", {
     schema: {
       body: {
         type: "object",
@@ -166,6 +166,7 @@ export default async function glassesRoutes(app: FastifyInstance) {
           question_id: { type: "string", format: "uuid" },
           selected: { type: "array", items: { type: "string", minLength: 1, maxLength: 1 }, maxItems: 4 },
           dont_know: { type: "boolean" },
+          multi: { type: "boolean" },
         },
         additionalProperties: false,
       },
@@ -175,6 +176,7 @@ export default async function glassesRoutes(app: FastifyInstance) {
       question_id: request.body.question_id,
       selected: request.body.selected ?? [],
       dont_know: request.body.dont_know,
+      multi: request.body.multi,
     });
     reply.status(201);
     return result;

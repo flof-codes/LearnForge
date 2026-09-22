@@ -154,6 +154,7 @@ export interface ReviewBody {
   question_id: string;
   selected: string[];
   dont_know?: boolean;
+  multi?: boolean;
 }
 
 export function submitReview(token: string, body: ReviewBody) {

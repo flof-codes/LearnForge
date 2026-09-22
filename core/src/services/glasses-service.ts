@@ -518,6 +518,8 @@ export interface GlassesAnswerInput {
   /** Option letters the learner picked; empty together with dont_know. */
   selected: string[];
   dont_know?: boolean;
+  /** Asked as multiple choice (session mode), so partial credit applies even with one correct option. */
+  multi?: boolean;
 }
 
 /** Turns a ring answer into a graded review. The server decides style, ids and rating. */
@@ -551,7 +553,7 @@ export async function submitGlassesAnswer(db: Db, userId: string, input: Glasses
     question_id,
     card_id: q.card_id,
     bloom_level: q.card_level,
-    style: correctIds.length === 1 ? "single" : "multiple",
+    style: input.multi || correctIds.length > 1 ? "multiple" : "single",
     correct_option_ids: correctIds,
     selected_option_ids: selected,
     question_text: `${q.stem} ${q.options.map((o, i) => `${OPTION_LETTERS[i]}) ${o}`).join(" ")}`,
