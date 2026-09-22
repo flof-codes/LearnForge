@@ -55,11 +55,14 @@ function optionLabel(q: Question, id: string): string {
 
 function renderQuestion(v: Extract<View, { kind: "question" }>): BasePage {
   const rows = questionRows(v.q, v.mode);
-  const header = clampLines(v.q.stem, v.mode === "multi" ? HEADER_ROWS - 1 : HEADER_ROWS);
+  const header = clampLines(v.q.stem, HEADER_ROWS - 1);
+  // The list items never change while picking, so the highlight stays put; the header carries the state.
+  while (header.length < HEADER_ROWS - 1) header.push("");
+  const picked = [...v.selected].sort().join(", ");
   if (v.mode === "multi") {
-    // The list items never change while toggling, so the highlight stays put; the header carries the state.
-    while (header.length < HEADER_ROWS - 1) header.push("");
-    header.push(v.selected.length ? fitLine(`Selected: ${[...v.selected].sort().join(", ")}   -> Confirm`) : "Select all that apply, then Confirm.");
+    header.push(v.selected.length ? fitLine(`Selected: ${picked}   double tap = confirm`) : "Select all that apply, then double tap.");
+  } else {
+    header.push(v.selected.length ? fitLine(`Selected: ${picked}   double tap = confirm`) : "Tap an answer, then double tap to confirm.");
   }
   const items = rows.map(r => {
     if (r.kind === "option") return optionLabel(v.q, r.id);

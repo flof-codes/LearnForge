@@ -341,7 +341,11 @@ function onEvent(event: EvenHubEvent): void {
   const listType = eventTypeOf(event.listEvent);
 
   if (sysType === OsEventTypeList.DOUBLE_CLICK_EVENT || textType === OsEventTypeList.DOUBLE_CLICK_EVENT || listType === OsEventTypeList.DOUBLE_CLICK_EVENT) {
-    // Root page: the system exit dialog. Mandatory, whichever envelope carried it.
+    // On a question the double tap confirms the marked answer; everywhere else it is the system exit dialog.
+    if (state.view.kind === "question") {
+      dispatch({ type: "CONFIRM" });
+      return;
+    }
     void bridge.shutDownPageContainer(1);
     return;
   }

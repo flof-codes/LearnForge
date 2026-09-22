@@ -99,7 +99,9 @@ export type Action =
   | { type: "ASK"; text: string }
   | { type: "ANSWER_LOADED"; answer: string }
   | { type: "ASK_FAILED"; message: string }
-  | { type: "ANSWER_NEXT"; pageCount: number };
+  | { type: "ANSWER_NEXT"; pageCount: number }
+  /** Double tap on a question: submit what is selected. */
+  | { type: "CONFIRM" };
 
 export type Effect =
   | { type: "FETCH_SUMMARY" }
@@ -151,6 +153,25 @@ function goHome(state: State): { state: State; effects: Effect[] } {
   return {
     state: { ...state, view: { kind: "home", summary: null, cursor: 0 }, queue: [], reviewed: 0, correct: 0 },
     effects: [{ type: "FETCH_SUMMARY" }],
+  };
+}
+
+/** Records the answer locally, shows the result, and hands grading to the server. Empty = I don't know. */
+function submitAnswer(state: State, v: Extract<View, { kind: "question" }>, selected: string[]): { state: State; effects: Effect[] } {
+  const outcome = gradeOutcome(v.q, selected, v.mode);
+  const multi = v.mode === "multi";
+  const review: ReviewPayload = selected.length === 0
+    ? { question_id: v.q.questionId, selected: [], dont_know: true, multi }
+    : { question_id: v.q.questionId, selected, multi };
+  return {
+    state: {
+      ...state,
+      reviewed: state.reviewed + 1,
+      correct: state.correct + (outcome === "correct" ? 1 : 0),
+      answered: [...state.answered, v.q.questionId],
+      view: { kind: "result", mode: v.mode, q: v.q, outcome, selected },
+    },
+    effects: [{ type: "SUBMIT_REVIEW", review }],
   };
 }
 
@@ -256,6 +277,10 @@ export function reduce(state: State, action: Action): { state: State; effects: E
       if (v.kind !== "asking") return { state, effects: none };
       return { state: { ...state, view: { kind: "answer", back: v.back, answer: `Error: ${action.message}`, page: 0 } }, effects: none };
 
+    case "CONFIRM":
+      if (v.kind !== "question" || v.selected.length === 0) return { state, effects: none };
+      return submitAnswer(state, v, v.selected);
+
     case "ANSWER_NEXT":
       // Tap on the overlay: next page, or back to the screen underneath.
       if (v.kind === "asking") return { state: { ...state, view: v.back }, effects: none };
@@ -275,27 +300,15 @@ export function reduce(state: State, action: Action): { state: State; effects: E
         case "question": {
           const row = questionRows(v.q, v.mode)[action.index];
           if (!row) return { state, effects: none };
-          if (row.kind === "option" && v.mode === "multi") {
-            const selected = v.selected.includes(row.id) ? v.selected.filter(id => id !== row.id) : [...v.selected, row.id];
+          if (row.kind === "option") {
+            // A tap only marks; a double tap (CONFIRM) submits. Multi toggles, single replaces.
+            const selected = v.mode === "multi"
+              ? (v.selected.includes(row.id) ? v.selected.filter(id => id !== row.id) : [...v.selected, row.id])
+              : [row.id];
             return { state: { ...state, view: { ...v, selected } }, effects: none };
           }
-          if (row.kind === "confirm" && v.selected.length === 0) return { state, effects: none };
-          const selected = row.kind === "option" ? [row.id] : row.kind === "confirm" ? v.selected : [];
-          const outcome = gradeOutcome(v.q, selected, v.mode);
-          const multi = v.mode === "multi";
-          const review: ReviewPayload = selected.length === 0
-            ? { question_id: v.q.questionId, selected: [], dont_know: true, multi }
-            : { question_id: v.q.questionId, selected, multi };
-          return {
-            state: {
-              ...state,
-              reviewed: state.reviewed + 1,
-              correct: state.correct + (outcome === "correct" ? 1 : 0),
-              answered: [...state.answered, v.q.questionId],
-              view: { kind: "result", mode: v.mode, q: v.q, outcome, selected },
-            },
-            effects: [{ type: "SUBMIT_REVIEW", review }],
-          };
+          if (row.kind === "confirm") return submitAnswer(state, v, v.selected);
+          return submitAnswer(state, v, []); // I don't know
         }
         default:
           return { state, effects: none };
