@@ -1,4 +1,4 @@
-import { ROWS, clampLines, fitLine, screen } from "./text.js";
+import { ROWS, clampLines, fitLine, paginate, screen } from "./text.js";
 import { MODE_ROWS, questionRows, type Question, type State, type View } from "./state.js";
 
 /**
@@ -12,9 +12,19 @@ import { MODE_ROWS, questionRows, type Question, type State, type View } from ".
  * have without any error.
  */
 
-export type Page =
+export type BasePage =
   | { kind: "text"; content: string }
   | { kind: "list"; header: string; items: string[] };
+
+export type Page = BasePage | { kind: "overlay"; base: BasePage; overlay: string };
+
+/** The answer box sits inset over the screen underneath, so it reads as a card in front. */
+export const OVERLAY_COLS = 44;
+export const OVERLAY_ROWS = 5;
+
+export function answerPages(answer: string): string[][] {
+  return paginate(answer, OVERLAY_COLS, OVERLAY_ROWS);
+}
 
 /** Lines the header box above a list can hold. */
 export const HEADER_ROWS = 3;
@@ -23,7 +33,7 @@ function stat(label: string, value: string | number): string {
   return `${label} ${value}`;
 }
 
-function renderHome(v: Extract<View, { kind: "home" }>): Page {
+function renderHome(v: Extract<View, { kind: "home" }>): BasePage {
   const s = v.summary;
   const lines: string[] = [];
   if (s) {
@@ -43,7 +53,7 @@ function optionLabel(q: Question, id: string): string {
   return `${id}   ${q.options.find(o => o.id === id)?.text ?? ""}`;
 }
 
-function renderQuestion(v: Extract<View, { kind: "question" }>): Page {
+function renderQuestion(v: Extract<View, { kind: "question" }>): BasePage {
   const rows = questionRows(v.q, v.mode);
   const header = clampLines(v.q.stem, v.mode === "multi" ? HEADER_ROWS - 1 : HEADER_ROWS);
   if (v.mode === "multi") {
@@ -59,7 +69,7 @@ function renderQuestion(v: Extract<View, { kind: "question" }>): Page {
   return { kind: "list", header: screen(header, HEADER_ROWS), items };
 }
 
-function renderResult(v: Extract<View, { kind: "result" }>): Page {
+function renderResult(v: Extract<View, { kind: "result" }>): BasePage {
   const byId = new Map(v.q.options.map(o => [o.id, o.text]));
   const right = v.q.correctIds.map(id => `${id}  ${byId.get(id) ?? ""}`).join(", ");
   const lines: string[] = [];
@@ -87,8 +97,24 @@ function renderResult(v: Extract<View, { kind: "result" }>): Page {
 }
 
 export function render(state: State): Page {
-  const v = state.view;
+  return renderView(state.view);
+}
+
+function renderView(v: View): Page {
   switch (v.kind) {
+    case "asking": {
+      const base = renderView(v.back);
+      if (base.kind === "overlay") return base;
+      return { kind: "overlay", base, overlay: screen(["Asking Claude...", "", fitLine(`"${v.text}"`, OVERLAY_COLS), "", "Usually 10 to 20 seconds.", "tap = cancel"], OVERLAY_ROWS + 1) };
+    }
+    case "answer": {
+      const base = renderView(v.back);
+      if (base.kind === "overlay") return base;
+      const pages = answerPages(v.answer);
+      const page = pages[Math.min(v.page, pages.length - 1)];
+      const footer = v.page + 1 < pages.length ? `tap = more (${v.page + 1}/${pages.length})` : "tap = back";
+      return { kind: "overlay", base, overlay: screen([...page, footer], OVERLAY_ROWS + 1) };
+    }
     case "boot":
       return { kind: "text", content: screen(["LearnForge", "", "Starting..."]) };
     case "pair":

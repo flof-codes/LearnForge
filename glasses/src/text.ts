@@ -73,3 +73,11 @@ export function padRight(text: string, width: number = COLS): string {
 export function screen(lines: string[], rows: number = ROWS): string {
   return lines.slice(0, rows).join("\n");
 }
+
+/** Splits text into pages of `rows` wrapped lines each; never returns an empty list. */
+export function paginate(text: string, width: number, rows: number): string[][] {
+  const lines = wrap(text, width);
+  const pages: string[][] = [];
+  for (let i = 0; i < lines.length; i += rows) pages.push(lines.slice(i, i + rows));
+  return pages.length ? pages : [[""]];
+}

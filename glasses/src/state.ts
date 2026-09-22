@@ -50,7 +50,10 @@ export type View =
   | { kind: "question"; mode: Mode; q: Question; cursor: number; selected: string[]; shownAt: number }
   | { kind: "result"; mode: Mode; q: Question; outcome: Outcome; selected: string[] }
   | { kind: "done"; reviewed: number; correct: number }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string }
+  /** The learner asked about the card; the reply overlays the screen underneath (`back`). */
+  | { kind: "asking"; back: View; text: string }
+  | { kind: "answer"; back: View; answer: string; page: number };
 
 export interface State {
   view: View;
@@ -92,12 +95,17 @@ export type Action =
   | { type: "RETRY_BATCH" }
   | { type: "CLICK_PREPARING" }
   | { type: "BATCH_FAILED"; message: string }
-  | { type: "FAILED"; message: string };
+  | { type: "FAILED"; message: string }
+  | { type: "ASK"; text: string }
+  | { type: "ANSWER_LOADED"; answer: string }
+  | { type: "ASK_FAILED"; message: string }
+  | { type: "ANSWER_NEXT"; pageCount: number };
 
 export type Effect =
   | { type: "FETCH_SUMMARY" }
   | { type: "FETCH_BATCH"; mode: Mode; sessionId: string | null; exclude: string[] }
   | { type: "SUBMIT_REVIEW"; review: ReviewPayload }
+  | { type: "ASK"; questionId: string; text: string }
   | { type: "SHUTDOWN" };
 
 /** Ask for more when this many unanswered questions are left. */
@@ -126,6 +134,13 @@ export function gradeOutcome(q: Question, selected: string[], mode: Mode): Outco
   if (hits === correct.size && wrong === 0) return "correct";
   if (mode === "multi" && hits > 0) return "partial";
   return "wrong";
+}
+
+/** The question a view is about, if any. */
+export function questionOf(v: View): Question | null {
+  if (v.kind === "question" || v.kind === "result") return v.q;
+  if (v.kind === "asking" || v.kind === "answer") return questionOf(v.back);
+  return null;
 }
 
 function fetchEffect(state: State): Effect {
@@ -224,6 +239,29 @@ export function reduce(state: State, action: Action): { state: State; effects: E
     case "SCROLL_DOWN":
       // Selection lives in the firmware's list widget; nothing to track here.
       return { state, effects: none };
+
+    case "ASK": {
+      const q = questionOf(v);
+      if (!q || v.kind === "asking") return { state, effects: none };
+      const text = action.text.trim();
+      if (!text) return { state, effects: none };
+      return { state: { ...state, view: { kind: "asking", back: v, text } }, effects: [{ type: "ASK", questionId: q.questionId, text }] };
+    }
+
+    case "ANSWER_LOADED":
+      if (v.kind !== "asking") return { state, effects: none };
+      return { state: { ...state, view: { kind: "answer", back: v.back, answer: action.answer, page: 0 } }, effects: none };
+
+    case "ASK_FAILED":
+      if (v.kind !== "asking") return { state, effects: none };
+      return { state: { ...state, view: { kind: "answer", back: v.back, answer: `Error: ${action.message}`, page: 0 } }, effects: none };
+
+    case "ANSWER_NEXT":
+      // Tap on the overlay: next page, or back to the screen underneath.
+      if (v.kind === "asking") return { state: { ...state, view: v.back }, effects: none };
+      if (v.kind !== "answer") return { state, effects: none };
+      if (v.page + 1 < action.pageCount) return { state: { ...state, view: { ...v, page: v.page + 1 } }, effects: none };
+      return { state: { ...state, view: v.back }, effects: none };
 
     case "CLICK_ROW": {
       // From the native list: the firmware moved the highlight, the tap tells us which row.

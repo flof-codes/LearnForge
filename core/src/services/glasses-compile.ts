@@ -3,6 +3,8 @@ import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import { oauthClients, oauthTokens } from "../db/schema/index.js";
 import { NOT_DISPUTED } from "./study-filters.js";
+import { NotFoundError } from "../lib/errors.js";
+import { stripHtml } from "../lib/strip-html.js";
 
 /** Bump when the compile rules in mcp/src/tools/skill.ts change; older rows are dropped on the next store. */
 export const GLASSES_PROMPT_VERSION = 1;
@@ -69,4 +71,49 @@ export async function countPendingCompile(db: Db, userId: string): Promise<numbe
       )
   `);
   return pending.rows[0]?.n ?? 0;
+}
+
+export interface GlassesAskContext {
+  cardId: string;
+  bloomLevel: number;
+  concept: string;
+  topicName: string;
+  frontText: string;
+  backText: string;
+  stem: string | null;
+  options: string[] | null;
+  correct: number[] | null;
+  explanation: string | null;
+}
+
+/** Everything a tutor reply about a served question needs, by its ticket. */
+export async function getGlassesAskContext(db: Db, userId: string, questionId: string): Promise<GlassesAskContext> {
+  const rows = await db.execute<{
+    card_id: string; card_level: number; concept: string; topic_name: string; front_html: string; back_html: string;
+    stem: string | null; options: string[] | null; correct: number[] | null; explanation: string | null;
+  }>(sql`
+    SELECT sq.card_id, sq.card_level, c.concept, t.name AS topic_name, c.front_html, c.back_html,
+           gq.stem, gq.options, gq.correct, gq.explanation
+    FROM study_questions sq
+    JOIN study_sessions ss ON ss.id = sq.session_id AND ss.user_id = ${userId}
+    JOIN cards c ON c.id = sq.card_id
+    JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN glasses_questions gq ON gq.card_id = sq.card_id AND gq.bloom_level = sq.card_level
+      AND gq.prompt_version = ${GLASSES_PROMPT_VERSION} AND gq.status = 'ready'
+    WHERE sq.id = ${questionId}
+  `);
+  const r = rows.rows[0];
+  if (!r) throw new NotFoundError("Question ticket not found");
+  return {
+    cardId: r.card_id,
+    bloomLevel: r.card_level,
+    concept: r.concept,
+    topicName: r.topic_name,
+    frontText: stripHtml(r.front_html).slice(0, 1500),
+    backText: stripHtml(r.back_html).slice(0, 3000),
+    stem: r.stem,
+    options: r.options,
+    correct: r.correct,
+    explanation: r.explanation,
+  };
 }

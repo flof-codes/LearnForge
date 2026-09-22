@@ -329,6 +329,19 @@ describe("Glasses — token scope, compile queue, batch and answers", () => {
     expect((await glasses.post("/glasses/reviews", { question_id: q.questionId, selected: ["E"] })).status).toBe(400);
   });
 
+  it("POST /glasses/ask validates its input and reports the tutor as unavailable when the compiler is off", async () => {
+    const batch = await glasses.get(`/glasses/next?mode=multi&limit=20&session_id=${sessionId}`);
+    const q = batch.data.questions[0];
+    expect((await glasses.post("/glasses/ask", { question_id: "00000000-0000-0000-0000-000000000000", text: "why?" })).status).toBe(q ? 503 : 503);
+    if (q) {
+      expect((await glasses.post("/glasses/ask", { question_id: q.questionId, text: "" })).status).toBe(400);
+      const res = await glasses.post("/glasses/ask", { question_id: q.questionId, text: "Why is B wrong?" });
+      expect(res.status).toBe(503); // GLASSES_COMPILER is off in the test stack
+      expect(res.data.error).toMatch(/not enabled/);
+    }
+    expect((await api.post("/glasses/ask", { question_id: "00000000-0000-0000-0000-000000000000", text: "why?" })).status).toBe(401);
+  });
+
   it("editing a card drops its compiled question and puts it back in the queue", async () => {
     const cardD = (await createFreshCard(api, TOPICS.EMPTY_TOPIC, "glasses-d")).id;
     createdCards.push(cardD);

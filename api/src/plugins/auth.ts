@@ -26,7 +26,7 @@ const PUBLIC_PREFIXES = ["/shares/preview/"];
  * admin's JWT, and a glasses token presented anywhere else still fails jwtVerify,
  * which is the whole scope check.
  */
-const GLASSES_TOKEN_PATHS = new Set(["/glasses/summary", "/glasses/next", "/glasses/reviews"]);
+const GLASSES_TOKEN_PATHS = new Set(["/glasses/summary", "/glasses/next", "/glasses/reviews", "/glasses/ask"]);
 
 const SUBSCRIPTION_EXEMPT_PREFIXES = ["/auth/", "/billing/", "/health"];
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);

@@ -183,4 +183,6 @@ export {
   GLASSES_COMPILER_TOKEN_TTL_MS,
   mintGlassesCompilerToken,
   countPendingCompile,
+  getGlassesAskContext,
+  type GlassesAskContext,
 } from "./services/glasses-compile.js";

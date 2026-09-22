@@ -14,6 +14,7 @@ import {
 import { countPendingCompile } from "@learnforge/core";
 import { getUserId, requireAdmin } from "../lib/auth-helpers.js";
 import { requestCompile, isCompiling } from "../services/glasses-compiler.js";
+import { askAboutQuestion } from "../services/glasses-ask.js";
 
 /**
  * Even Realities G2 glasses.
@@ -180,5 +181,24 @@ export default async function glassesRoutes(app: FastifyInstance) {
     });
     reply.status(201);
     return result;
+  });
+
+  // POST /glasses/ask — a typed (later: spoken) question about the card on the glasses, answered by Claude Code on this host
+  app.post<{ Body: { question_id: string; text: string } }>("/glasses/ask", {
+    schema: {
+      body: {
+        type: "object",
+        required: ["question_id", "text"],
+        properties: {
+          question_id: { type: "string", format: "uuid" },
+          text: { type: "string", minLength: 1, maxLength: 500 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (request, reply) => {
+    const result = await askAboutQuestion(db, getUserId(request), request.body, request.log);
+    if (!result.ok) return reply.status(result.status).send({ error: result.message });
+    return { answer: result.answer };
   });
 }
