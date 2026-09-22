@@ -50,12 +50,11 @@ function optionLabel(q: Question, id: string, selected: string[], mode: "single"
 
 function renderQuestion(v: Extract<View, { kind: "question" }>): string {
   const rows = questionRows(v.q, v.mode);
-  const rowCount = rows.length;
-  const hint = v.mode === "multi" ? ["Select all that apply."] : [];
   // Everything below the stem is fixed height; the stem takes what is left, at least two lines.
-  const stemLines = Math.max(2, ROWS - rowCount - hint.length - 1);
-  const lines: string[] = [...clampLines(v.q.stem, stemLines), ...hint];
-  if (lines.length < stemLines + hint.length) lines.push("");
+  // Multi: 2 stem + 4 options + Confirm + I don't know = 8. The checkboxes say "select all that apply".
+  const stemLines = Math.max(2, ROWS - rows.length);
+  const lines: string[] = clampLines(v.q.stem, stemLines);
+  while (lines.length < stemLines) lines.push("");
   rows.forEach((r, i) => {
     const active = v.cursor === i;
     if (r.kind === "option") lines.push(row(active, optionLabel(v.q, r.id, v.selected, v.mode)));
@@ -87,9 +86,8 @@ function renderResult(v: Extract<View, { kind: "result" }>): string {
       break;
   }
   lines.push("");
-  const room = ROWS - lines.length - 2;
+  const room = ROWS - lines.length - 1;
   lines.push(...clampLines(v.q.explanation, Math.max(2, room)));
-  while (lines.length < ROWS - 1) lines.push("");
   lines.push("tap = next   .   hold = menu");
   return screen(lines);
 }
@@ -113,17 +111,15 @@ export function render(state: State): string {
     case "home":
       return renderHome(v);
     case "preparing":
-      return screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "Fetching the next questions.", "", "", "", "", "tap = retry   .   hold = menu"]);
+      return screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "Fetching the next questions.", "", "tap = retry   .   hold = menu"]);
     case "empty":
       if (v.compiling) {
         return screen([
           "",
           fitLine(`Compiling ${v.pendingCompile} card${v.pendingCompile === 1 ? "" : "s"} on the server...`),
           "",
-          "Claude is writing the questions.",
-          "This takes a minute or two; the app",
-          "checks back by itself.",
-          "",
+          "Claude is writing the questions. This takes a",
+          "minute or two; the app checks back by itself.",
           "",
           "tap = home   .   hold = menu",
         ]);
@@ -136,8 +132,6 @@ export function render(state: State): string {
           ? fitLine(`${v.pendingCompile} due card${v.pendingCompile === 1 ? "" : "s"} still need compiling.`)
           : "Nothing due for this mode right now.",
         v.pendingCompile > 0 ? "The compiler did not start; check the api log." : "",
-        "",
-        "",
         "",
         "tap = home   .   hold = menu",
       ]);
@@ -152,12 +146,9 @@ export function render(state: State): string {
         "",
         fitLine(`${v.reviewed} reviewed, ${v.correct} right.`),
         "",
-        "",
-        "",
-        "",
         "tap = home   .   double tap = exit",
       ]);
     case "error":
-      return screen(["", "Something went wrong.", "", ...clampLines(v.message, 4), "", "tap = home"]);
+      return screen(["", "Something went wrong.", "", ...clampLines(v.message, 3), "", "tap = home"]);
   }
 }

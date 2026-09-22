@@ -15,7 +15,13 @@
  * which validates stems against 48 columns.
  */
 export const COLS = 58;
-export const ROWS = 10;
+/**
+ * 8, not 10: the event-capture container scrolls natively on swipe as soon as
+ * its content is taller than the box, and with border and padding ten lines
+ * overflow. Content that never overflows cannot scroll, so the cursor moves
+ * without the whole text jumping.
+ */
+export const ROWS = 8;
 
 /** Greedy word wrap. Words longer than the width are cut, never dropped. */
 export function wrap(text: string, width: number = COLS): string[] {
