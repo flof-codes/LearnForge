@@ -8,8 +8,13 @@
  * core/src/services/glasses-service.ts, so a compiled question always fits.
  */
 
-/** Must stay >= GLASSES_CAPS.cols in core, which validates stems against 48 columns. */
-export const COLS = 48;
+/**
+ * Measured on the device 2026-09-22: 48 broke lines well before the edge. The
+ * firmware wraps overflow itself, so a value slightly too high costs one extra
+ * wrapped line rather than lost text. Must stay >= GLASSES_CAPS.cols in core,
+ * which validates stems against 48 columns.
+ */
+export const COLS = 58;
 export const ROWS = 10;
 
 /** Greedy word wrap. Words longer than the width are cut, never dropped. */

@@ -1,4 +1,4 @@
-import { COLS, ROWS, clampLines, fitLine, padRight, screen } from "./text.js";
+import { COLS, ROWS, clampLines, fitLine, screen } from "./text.js";
 import { MODE_ROWS, questionRows, type Question, type State, type View } from "./state.js";
 
 /**
@@ -12,8 +12,8 @@ const CURSOR = "> ";
 const NO_CURSOR = "  ";
 
 function row(active: boolean, text: string): string {
-  const line = fitLine((active ? CURSOR : NO_CURSOR) + text, COLS);
-  return active ? padRight(line, COLS) : line;
+  // No padding: the display has no inverse video, and trailing spaces could wrap.
+  return fitLine((active ? CURSOR : NO_CURSOR) + text, COLS);
 }
 
 function stat(label: string, value: string | number): string {
@@ -106,7 +106,7 @@ export function render(state: State): string {
         "Connect this device at",
         "learnforge.eu  >  Settings  >  Glasses",
         "",
-        padRight(`Code   ${v.code}`, 20),
+        `Code   ${v.code}`,
         "",
         "Waiting for confirmation...",
       ]);
