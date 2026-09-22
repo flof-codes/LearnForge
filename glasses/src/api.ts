@@ -63,6 +63,7 @@ interface BatchResponse {
   sessionId: string;
   questions: Question[];
   pendingCompile: number;
+  compiling: boolean;
 }
 
 export function fetchBatch(token: string, mode: "single" | "multi", sessionId: string | null, exclude: string[]): Promise<BatchResponse> {

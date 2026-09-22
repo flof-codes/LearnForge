@@ -11,7 +11,9 @@ import {
   getGlassesSummary,
   ValidationError,
 } from "@learnforge/core";
+import { countPendingCompile } from "@learnforge/core";
 import { getUserId, requireAdmin } from "../lib/auth-helpers.js";
+import { requestCompile, isCompiling } from "../services/glasses-compiler.js";
 
 /**
  * Even Realities G2 glasses.
@@ -121,9 +123,12 @@ export default async function glassesRoutes(app: FastifyInstance) {
 
   // --- Glasses (bearer token resolved by the auth plugin) -------------------
 
-  // GET /glasses/summary — the Home screen numbers
+  // GET /glasses/summary — the Home screen numbers; opening the app also kicks off a compile when cards are pending
   app.get("/glasses/summary", async (request) => {
-    return getGlassesSummary(db, getUserId(request));
+    const userId = getUserId(request);
+    const [summary, pendingCompile] = await Promise.all([getGlassesSummary(db, userId), countPendingCompile(db, userId)]);
+    const compiling = pendingCompile > 0 ? await requestCompile(db, userId, request.log) : isCompiling(userId);
+    return { ...summary, pendingCompile, compiling };
   });
 
   // GET /glasses/next — compiled questions with tickets; starts or resumes the glasses session
@@ -145,7 +150,10 @@ export default async function glassesRoutes(app: FastifyInstance) {
     if (mode !== "single" && mode !== "multi") throw new ValidationError("mode must be single or multi");
     const limit = parseInt(request.query.limit ?? "5", 10) || 5;
     const exclude = request.query.exclude ? request.query.exclude.split(",").filter(Boolean).slice(0, 50) : [];
-    return getGlassesBatch(db, getUserId(request), { mode, limit, session_id: request.query.session_id, exclude });
+    const userId = getUserId(request);
+    const batch = await getGlassesBatch(db, userId, { mode, limit, session_id: request.query.session_id, exclude });
+    const compiling = batch.pendingCompile > 0 ? await requestCompile(db, userId, request.log) : isCompiling(userId);
+    return { ...batch, compiling };
   });
 
   // POST /glasses/reviews — a ring answer; the review service grades it

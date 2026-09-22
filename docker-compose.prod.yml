@@ -40,8 +40,13 @@ services:
       SMTP_FROM: "${SMTP_FROM:-LearnForge <office@learnforge.eu>}"
       MCP_PORT: "3001"
       MCP_PUBLIC_URL: "${MCP_PUBLIC_URL}"
+      # Glasses compiler: "claude-code" runs the bundled Claude Code on demand, "off" disables it.
+      GLASSES_COMPILER: "${GLASSES_COMPILER:-off}"
+      CLAUDE_CODE_OAUTH_TOKEN: "${CLAUDE_CODE_OAUTH_TOKEN:-}"
     volumes:
       - ./data/images:/data/images
+      # Claude Code login for the glasses compiler, when signing in inside the container instead of via token
+      - ./data/claude:/data/claude
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
       interval: 10s

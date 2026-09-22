@@ -115,6 +115,19 @@ export function render(state: State): string {
     case "preparing":
       return screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "", "", "", "", "", "hold = menu"]);
     case "empty":
+      if (v.compiling) {
+        return screen([
+          "",
+          fitLine(`Compiling ${v.pendingCompile} card${v.pendingCompile === 1 ? "" : "s"} on the server...`),
+          "",
+          "Claude is writing the questions.",
+          "This takes a minute or two; the app",
+          "checks back by itself.",
+          "",
+          "",
+          "tap = home   .   hold = menu",
+        ]);
+      }
       return screen([
         "",
         "Nothing ready on the glasses.",
@@ -122,7 +135,7 @@ export function render(state: State): string {
         v.pendingCompile > 0
           ? fitLine(`${v.pendingCompile} due card${v.pendingCompile === 1 ? "" : "s"} still need compiling.`)
           : "Nothing due for this mode right now.",
-        v.pendingCompile > 0 ? "Run the compile skill in Claude Code." : "",
+        v.pendingCompile > 0 ? "The compiler did not start; check the api log." : "",
         "",
         "",
         "",

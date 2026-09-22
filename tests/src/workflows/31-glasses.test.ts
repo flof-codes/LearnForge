@@ -177,7 +177,9 @@ describe("Glasses — token scope, compile queue, batch and answers", () => {
   it("GET /glasses/summary returns the Home screen numbers only", async () => {
     const res = await glasses.get("/glasses/summary");
     expect(res.status).toBe(200);
-    expect(Object.keys(res.data).sort()).toEqual(["accuracy7d", "bloomLevels", "dueCount", "newCount", "streak"]);
+    expect(Object.keys(res.data).sort()).toEqual(["accuracy7d", "bloomLevels", "compiling", "dueCount", "newCount", "pendingCompile", "streak"]);
+    expect(res.data.compiling).toBe(false); // GLASSES_COMPILER is off in the test stack
+    expect(res.data.pendingCompile).toBeTypeOf("number");
   });
 
   it("the compile queue lists the fresh cards with what Claude needs", async () => {
@@ -288,6 +290,7 @@ describe("Glasses — token scope, compile queue, batch and answers", () => {
     expect(q.mode).toBe("multi");
     expect(q.correctIds).toEqual(["A", "C"]);
     expect(res.data.pendingCompile).toBeTypeOf("number");
+    expect(res.data.compiling).toBe(false);
   });
 
   it("an unknown mode is a 400", async () => {

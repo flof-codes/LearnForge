@@ -148,8 +148,8 @@ ul.check .def{color:var(--ink2)}
       <path class="dg-e" d="M615 115 H670"/><polygon points="670,115 662,110 662,120" fill="var(--ink2)"/>
 
       <rect class="dg-box soft" x="20" y="215" width="920" height="64" rx="10"/>
-      <text class="dg-t" x="36" y="240">Compile runner, two allowed options (see companion report)</text>
-      <text class="dg-s" x="36" y="262">A · LearnForge API with its own API key, for every user.   B · The user's own Claude Code or Claude Desktop via the MCP tool <tspan class="dg-m">compile_glasses_questions</tspan>, on their subscription.</text>
+      <text class="dg-t" x="36" y="240">Compile runner, as built: Claude Code, never LearnForge code</text>
+      <text class="dg-s" x="36" y="262">On app open the API spawns the unmodified Claude Code bundled in its image, signed in by the admin on the server, against the local MCP. Manual fallback: <tspan class="dg-m">/compile-glasses</tspan> in your own Claude Code.</text>
       <path class="dg-e call" d="M480 215 V190"/>
     </svg>
   </div>
@@ -312,7 +312,7 @@ Done. 12 reviewed, 9 right.
       <path class="dg-e" d="M70 134 H270"/><text class="dg-s" x="80" y="128">tap start</text>
       <path class="dg-e acc" d="M270 134 H480"/><text class="dg-m" x="290" y="128">GET /glasses/next?mode=&amp;limit=5</text>
       <path class="dg-e" d="M480 134 H680"/><text class="dg-m" x="500" y="128">due cards + cache lookup</text>
-      <path class="dg-e call" d="M480 160 H870"/><text class="dg-m" x="500" y="154">no compile at serve time: cache is filled from Claude Code via MCP</text>
+      <path class="dg-e call" d="M480 160 H870"/><text class="dg-m" x="500" y="154">pending cards: api spawns claude -p (hosted Claude Code), which fills the cache via MCP</text>
       <path class="dg-e call" d="M870 178 H680"/><text class="dg-m" x="700" y="192">store compiled question</text>
       <path class="dg-e" d="M480 204 H270"/><text class="dg-m" x="290" y="198">5 compiled questions, JSON</text>
       <path class="dg-e" d="M270 222 H70"/><text class="dg-s" x="80" y="236">Question view</text>
@@ -414,7 +414,7 @@ evenhub pack glasses/app.json glasses/dist -o learnforge-glasses.ehpk</code></pr
 
 <section>
   <h2>Decisions</h2>
-  <p class="small" style="margin-bottom:12px">Decided 2026-09-22: 1 = compile only from Florian's Claude Code via MCP, no API-key route yet, feature admin-only. 2 to 5 = A. Session mode (MCQ single, MCQ multi, Speech) is chosen on the Home screen; only the two MCQ modes are built now.</p>
+  <p class="small" style="margin-bottom:12px">Decided 2026-09-22: 1 = compile by Claude Code only, no API-key route, feature admin-only. Revised the same day: the api runs the bundled Claude Code on the server when the app opens (Florian signs it in there), so no manual step is needed. 2 to 5 = A. Session mode (MCQ single, MCQ multi, Speech) is chosen on the Home screen; only the two MCQ modes are built now.</p>
   <div class="two">
     <div class="card">
       <h3><span class="num">1</span> Who compiles the questions <span class="chip ok">decided 2026-09-22: B only, admin only</span></h3>

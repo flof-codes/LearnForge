@@ -99,7 +99,14 @@ COPY --from=build /app/api/dist api/dist
 # Required at RUNTIME, not just at build: runMigrations() reads ./drizzle on boot.
 COPY --from=build /app/api/drizzle api/drizzle
 
-RUN mkdir -p /data/images
+# Claude Code for the glasses compiler (api/src/services/glasses-compiler.ts).
+# Unmodified binary, pinned; the admin signs it in on the server, either with
+# CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` or by running `claude` once
+# inside the container with CLAUDE_CONFIG_DIR on a persistent volume.
+RUN npm install -g @anthropic-ai/claude-code@2.1.278 --no-audit --no-fund
+ENV CLAUDE_CONFIG_DIR=/data/claude
+
+RUN mkdir -p /data/images /data/claude
 
 # STILL RUNS AS ROOT, and that is a deliberate deferral rather than an oversight.
 #

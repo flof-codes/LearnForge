@@ -178,3 +178,9 @@ export {
   type GlassesBatchOptions,
   type GlassesAnswerInput,
 } from "./services/glasses-service.js";
+export {
+  GLASSES_COMPILER_CLIENT_ID,
+  GLASSES_COMPILER_TOKEN_TTL_MS,
+  mintGlassesCompilerToken,
+  countPendingCompile,
+} from "./services/glasses-compile.js";

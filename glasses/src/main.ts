@@ -26,6 +26,8 @@ const CONTAINER_ID = 1;
 const CONTAINER_NAME = "main";
 const SCROLL_COOLDOWN_MS = 300;
 const PAIR_POLL_MS = 2000;
+const COMPILE_POLL_MS = 15000;
+const COMPILE_POLL_MAX = 24; // 6 minutes
 
 const MENU: Array<{ id: number; label: string; item: MenuItem }> = [
   { id: 1, label: "Skip card", item: "skip" },
@@ -40,6 +42,8 @@ let token: string | null = null;
 let lastScrollAt = 0;
 let pairTimer: ReturnType<typeof setInterval> | null = null;
 let flushing = false;
+let compilePolls = 0;
+let compileTimer: ReturnType<typeof setTimeout> | null = null;
 
 // --- Display -----------------------------------------------------------------
 
@@ -99,7 +103,8 @@ async function runEffect(effect: Effect): Promise<void> {
         await flushQueue();
         const batch = await fetchBatch(token, effect.mode, effect.sessionId, effect.exclude);
         await storage.setSession(bridge, batch.sessionId);
-        dispatch({ type: "BATCH_LOADED", sessionId: batch.sessionId, questions: batch.questions, pendingCompile: batch.pendingCompile });
+        dispatch({ type: "BATCH_LOADED", sessionId: batch.sessionId, questions: batch.questions, pendingCompile: batch.pendingCompile, compiling: batch.compiling });
+        scheduleCompilePoll(batch.compiling || batch.pendingCompile > 0);
         return;
       }
       case "SUBMIT_REVIEW": {
@@ -127,6 +132,18 @@ async function handleAuthError(err: unknown): Promise<boolean> {
   await storage.clearToken(bridge);
   await beginPairing();
   return true;
+}
+
+/** While the server compiles, ask again every few seconds; stop after a bounded number of tries. */
+function scheduleCompilePoll(active: boolean): void {
+  if (compileTimer) { clearTimeout(compileTimer); compileTimer = null; }
+  if (!active || state.view.kind !== "empty") { compilePolls = 0; return; }
+  if (compilePolls >= COMPILE_POLL_MAX) { compilePolls = 0; return; }
+  compilePolls += 1;
+  compileTimer = setTimeout(() => {
+    compileTimer = null;
+    if (state.view.kind === "empty") dispatch({ type: "RETRY_BATCH" });
+  }, COMPILE_POLL_MS);
 }
 
 // --- Offline review queue --------------------------------------------------------

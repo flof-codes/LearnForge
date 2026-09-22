@@ -23,8 +23,8 @@ import { getStudySummary } from "./study-service.js";
  * ticketed batch, and the translation of a ring answer into a review.
  */
 
-/** Bump when the compile rules in mcp/src/tools/skill.ts change; older rows are dropped on the next store. */
-export const GLASSES_PROMPT_VERSION = 1;
+import { GLASSES_PROMPT_VERSION, countPendingCompile } from "./glasses-compile.js";
+export { GLASSES_PROMPT_VERSION };
 
 /** Display caps shared with glasses/src/text.ts. */
 export const GLASSES_CAPS = {
@@ -484,18 +484,7 @@ export async function getGlassesBatch(db: Db, userId: string, opts: GlassesBatch
     LIMIT ${limit}
   `);
 
-  const pending = await db.execute<{ n: number }>(sql`
-    SELECT count(*)::int AS n
-    FROM cards c
-    JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
-    JOIN fsrs_state fs ON fs.card_id = c.id
-    LEFT JOIN bloom_state bs ON bs.card_id = c.id
-    WHERE fs.due <= NOW() AND ${NOT_DISPUTED}
-      AND NOT EXISTS (
-        SELECT 1 FROM glasses_questions gq
-        WHERE gq.card_id = c.id AND gq.bloom_level = COALESCE(bs.current_level, 0) AND ${FRESH_ROW}
-      )
-  `);
+  const pendingCompile = await countPendingCompile(db, userId);
 
   const questions: GlassesQuestion[] = [];
   if (rows.rows.length > 0) {
@@ -521,7 +510,7 @@ export async function getGlassesBatch(db: Db, userId: string, opts: GlassesBatch
     await db.execute(sql`UPDATE study_sessions SET last_activity = NOW() WHERE id = ${sessionId}`);
   }
 
-  return { sessionId, questions, pendingCompile: pending.rows[0]?.n ?? 0 };
+  return { sessionId, questions, pendingCompile };
 }
 
 export interface GlassesAnswerInput {

@@ -46,7 +46,7 @@ export type View =
   | { kind: "pair"; code: string; expiresAt: number }
   | { kind: "home"; summary: Summary | null; cursor: number }
   | { kind: "preparing"; mode: Mode }
-  | { kind: "empty"; mode: Mode; pendingCompile: number }
+  | { kind: "empty"; mode: Mode; pendingCompile: number; compiling: boolean }
   | { kind: "question"; mode: Mode; q: Question; cursor: number; selected: string[]; shownAt: number }
   | { kind: "result"; mode: Mode; q: Question; outcome: Outcome; selected: string[] }
   | { kind: "done"; reviewed: number; correct: number }
@@ -85,7 +85,8 @@ export type Action =
   | { type: "PAIR_STARTED"; code: string; expiresAt: number }
   | { type: "PAIRED" }
   | { type: "SUMMARY_LOADED"; summary: Summary }
-  | { type: "BATCH_LOADED"; sessionId: string; questions: Question[]; pendingCompile: number }
+  | { type: "BATCH_LOADED"; sessionId: string; questions: Question[]; pendingCompile: number; compiling: boolean }
+  | { type: "RETRY_BATCH" }
   | { type: "BATCH_FAILED"; message: string }
   | { type: "FAILED"; message: string };
 
@@ -171,6 +172,13 @@ export function reduce(state: State, action: Action): { state: State; effects: E
     case "PAIRED":
       return goHome(state);
 
+    case "RETRY_BATCH": {
+      // The server is compiling; ask again for what is ready now.
+      if (v.kind !== "empty" || state.fetching) return { state, effects: none };
+      const s: State = { ...state, fetching: true, exhausted: false, view: { kind: "preparing", mode: state.mode } };
+      return { state: s, effects: [fetchEffect(s)] };
+    }
+
     case "SUMMARY_LOADED":
       if (v.kind !== "home") return { state, effects: none };
       return { state: { ...state, view: { ...v, summary: action.summary } }, effects: none };
@@ -197,7 +205,7 @@ export function reduce(state: State, action: Action): { state: State; effects: E
       if (v.kind !== "preparing") return { state: s, effects: none };
       if (s.queue.length === 0) {
         if (s.reviewed > 0) return { state: { ...s, view: { kind: "done", reviewed: s.reviewed, correct: s.correct } }, effects: none };
-        return { state: { ...s, view: { kind: "empty", mode: s.mode, pendingCompile: action.pendingCompile } }, effects: none };
+        return { state: { ...s, view: { kind: "empty", mode: s.mode, pendingCompile: action.pendingCompile, compiling: action.compiling } }, effects: none };
       }
       return nextQuestion(s, Date.now());
     }

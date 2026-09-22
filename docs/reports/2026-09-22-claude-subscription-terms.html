@@ -212,11 +212,11 @@ ol.steps .owner{font-size:12px;color:var(--ink2)}
     <tr><th>Path</th><th>Who</th><th>How the compile step runs</th><th>Terms</th><th>Effort</th></tr>
     <tr><td><b>A · API key on the server</b></td><td>Every user</td><td><code>compileMicroMcq</code> in core calls <code>claude-opus-5</code> with <code>ANTHROPIC_API_KEY</code>, about 1 cent per card, cached. Cost is part of the LearnForge subscription.</td><td><span class="chip ok">Commercial</span></td><td>Small. One service, one env var.</td></tr>
     <tr><td><b>B · Your Claude Code via MCP</b></td><td>You, and any user with a subscription and Claude Code</td><td>New MCP tool <code>compile_glasses_questions</code>. A skill or a Claude Code scheduled routine asks Claude to compile due cards and store them. Claude Code holds the credential and makes the request.</td><td><span class="chip ok">Ordinary use</span></td><td>Small. One tool, one skill file.</td></tr>
-    <tr><td><b>C · T3-style companion</b></td><td>Subscription users without Claude Code habits</td><td>A LearnForge desktop or CLI companion spawns the user's unmodified <code>claude -p</code> with the MCP server configured. LearnForge never touches credentials.</td><td><span class="chip call">Commercial + 3 conditions</span></td><td>Large. Installer, spawn environment, the brittleness T3 hit.</td></tr>
+    <tr><td><b>C · Hosted Claude Code on the server</b> <span class="chip ok">built</span></td><td>Florian, admin only</td><td>The api image bundles the unmodified <code>claude</code> binary. Florian signs it in on the server himself (<code>claude setup-token</code> or a persisted login). When the glasses app opens with pending cards, the api spawns <code>claude -p</code> against the local MCP with a 30-minute LearnForge token. LearnForge code never reads the Claude credential.</td><td><span class="chip ok">"platform hosts Claude Code", unmodified, own login, no intermediation</span></td><td>Done. One env var and a volume on the server.</td></tr>
     <tr><td><b>Never</b></td><td></td><td>Any Max token on the server. A Claude login button. Storing user OAuth tokens or setup-tokens.</td><td><span class="chip bad">prohibited</span></td><td></td></tr>
   </table>
   </div>
-  <p class="small" style="margin-top:12px">A and B share the same cache table and the same JSON schema, so the glasses never know which runner filled the cache. B covers your personal use on Max completely, which is why C is not needed now.</p>
+  <p class="small" style="margin-top:12px">B and C share the same MCP tools and cache table, so the glasses never know which one filled it. C is what runs day to day; B is the manual fallback. A stays unbuilt until there is a second user.</p>
 </section>
 
 <section>
