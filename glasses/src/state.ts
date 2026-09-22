@@ -83,6 +83,7 @@ export type Action =
   | { type: "SCROLL_UP" }
   | { type: "SCROLL_DOWN" }
   | { type: "CLICK"; now: number }
+  | { type: "CLICK_ROW"; index: number; now: number }
   | { type: "MENU"; item: MenuItem }
   | { type: "PAIR_STARTED"; code: string; expiresAt: number }
   | { type: "PAIRED" }
@@ -125,10 +126,6 @@ export function gradeOutcome(q: Question, selected: string[], mode: Mode): Outco
   if (hits === correct.size && wrong === 0) return "correct";
   if (mode === "multi" && hits > 0) return "partial";
   return "wrong";
-}
-
-function move(cursor: number, delta: number, count: number): number {
-  return (cursor + delta + count) % count;
 }
 
 function fetchEffect(state: State): Effect {
@@ -224,23 +221,22 @@ export function reduce(state: State, action: Action): { state: State; effects: E
     }
 
     case "SCROLL_UP":
-    case "SCROLL_DOWN": {
-      const delta = action.type === "SCROLL_UP" ? -1 : 1;
-      if (v.kind === "home") return { state: { ...state, view: { ...v, cursor: move(v.cursor, delta, MODE_ROWS.length) } }, effects: none };
-      if (v.kind === "question") return { state: { ...state, view: { ...v, cursor: move(v.cursor, delta, questionRows(v.q, v.mode).length) } }, effects: none };
+    case "SCROLL_DOWN":
+      // Selection lives in the firmware's list widget; nothing to track here.
       return { state, effects: none };
-    }
 
-    case "CLICK": {
+    case "CLICK_ROW": {
+      // From the native list: the firmware moved the highlight, the tap tells us which row.
       switch (v.kind) {
         case "home": {
-          if (v.cursor === 2) return { state, effects: none }; // Speech: not built yet
-          const mode: Mode = v.cursor === 0 ? "single" : "multi";
+          if (action.index === 2) return { state, effects: none }; // Speech: not built yet
+          const mode: Mode = action.index === 0 ? "single" : "multi";
           const s: State = { ...state, mode, queue: [], seenCards: [], reviewed: 0, correct: 0, fetching: true, exhausted: false, view: { kind: "preparing", mode } };
           return { state: s, effects: [fetchEffect(s)] };
         }
         case "question": {
-          const row = questionRows(v.q, v.mode)[v.cursor];
+          const row = questionRows(v.q, v.mode)[action.index];
+          if (!row) return { state, effects: none };
           if (row.kind === "option" && v.mode === "multi") {
             const selected = v.selected.includes(row.id) ? v.selected.filter(id => id !== row.id) : [...v.selected, row.id];
             return { state: { ...state, view: { ...v, selected } }, effects: none };
@@ -263,6 +259,13 @@ export function reduce(state: State, action: Action): { state: State; effects: E
             effects: [{ type: "SUBMIT_REVIEW", review }],
           };
         }
+        default:
+          return { state, effects: none };
+      }
+    }
+
+    case "CLICK": {
+      switch (v.kind) {
         case "result":
           return nextQuestion(state, action.now);
         case "preparing":

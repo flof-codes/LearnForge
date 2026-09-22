@@ -2,7 +2,10 @@ import {
   waitForEvenAppBridge,
   TextContainerProperty,
   TextContainerUpgrade,
+  ListContainerProperty,
+  ListItemContainerProperty,
   CreateStartUpPageContainer,
+  RebuildPageContainer,
   MenuContainerProperty,
   MenuItemProperty,
   OsEventTypeList,
@@ -11,20 +14,23 @@ import {
 } from "@evenrealities/even_hub_sdk";
 import { ApiError, fetchBatch, fetchSummary, pollPairing, randomSecret, sha256Hex, startPairing, submitReview, type ReviewBody } from "./api.js";
 import { storage } from "./storage.js";
-import { render } from "./render.js";
+import { render, type Page } from "./render.js";
 import { initialState, reduce, type Action, type Effect, type MenuItem, type State } from "./state.js";
 
 /**
  * LearnForge on the Even Realities G2.
  *
- * One full-screen text container, redrawn in place after every event. The ring
- * (and the temple pads) deliver click, double click, scroll up/down and the
- * tap-then-hold menu; everything else is a state machine in state.ts.
+ * Two page shapes. A plain screen is one text box. A screen with choices is a
+ * text header plus the firmware's native list, which moves its own highlight on
+ * swipe and reports the tapped index; that avoids the bounce a text box shows
+ * when swiped. Everything else is the state machine in state.ts.
  */
 
-const CONTAINER_ID = 1;
-const CONTAINER_NAME = "main";
-const SCROLL_COOLDOWN_MS = 300;
+const TEXT_ID = 1;
+const TEXT_NAME = "main";
+const LIST_ID = 2;
+const LIST_NAME = "rows";
+const HEADER_HEIGHT = 100;
 const PAIR_POLL_MS = 2000;
 const COMPILE_POLL_MS = 15000;
 const COMPILE_POLL_MAX = 24; // 6 minutes
@@ -39,7 +45,6 @@ const bridge = await waitForEvenAppBridge();
 
 let state: State = initialState();
 let token: string | null = null;
-let lastScrollAt = 0;
 let pairTimer: ReturnType<typeof setInterval> | null = null;
 let flushing = false;
 let compilePolls = 0;
@@ -51,37 +56,61 @@ const menuObject = new MenuContainerProperty({
   menuItems: MENU.map(m => new MenuItemProperty({ itemID: m.id, itemName: m.label })),
 });
 
-const startResult = await bridge.createStartUpPageContainer(
-  new CreateStartUpPageContainer({
-    containerTotalNum: 1,
-    textObject: [
-      new TextContainerProperty({
-        xPosition: 0,
-        yPosition: 0,
-        width: 576,
-        height: 288,
-        // A frame around the whole text: without it the block is hard to focus on the waveguide.
-        borderWidth: 2,
-        borderColor: 8,
-        borderRadius: 8,
-        paddingLength: 10,
-        containerID: CONTAINER_ID,
-        containerName: CONTAINER_NAME,
-        content: render(state),
-        isEventCapture: 1,
+const frame = { borderWidth: 2, borderColor: 8, borderRadius: 8, paddingLength: 10 };
+
+function textContainers(content: string): TextContainerProperty[] {
+  return [new TextContainerProperty({
+    ...frame, xPosition: 0, yPosition: 0, width: 576, height: 288,
+    containerID: TEXT_ID, containerName: TEXT_NAME, content, isEventCapture: 1,
+  })];
+}
+
+function listContainers(header: string, items: string[]) {
+  return {
+    textObject: [new TextContainerProperty({
+      ...frame, xPosition: 0, yPosition: 0, width: 576, height: HEADER_HEIGHT,
+      containerID: TEXT_ID, containerName: TEXT_NAME, content: header, isEventCapture: 0,
+    })],
+    listObject: [new ListContainerProperty({
+      ...frame, xPosition: 0, yPosition: HEADER_HEIGHT, width: 576, height: 288 - HEADER_HEIGHT,
+      containerID: LIST_ID, containerName: LIST_NAME, isEventCapture: 1,
+      itemContainer: new ListItemContainerProperty({
+        itemCount: items.length,
+        itemWidth: 0,
+        isItemSelectBorderEn: 1,
+        itemName: items,
       }),
-    ],
-    menuObject,
-  }),
+    })],
+  };
+}
+
+let shown: Page = render(state);
+const startResult = await bridge.createStartUpPageContainer(
+  new CreateStartUpPageContainer({ containerTotalNum: 1, textObject: textContainers(shown.kind === "text" ? shown.content : ""), menuObject }),
 );
 if (startResult !== 0) console.error("createStartUpPageContainer failed:", startResult);
 
-let lastContent = render(state);
-async function draw(): Promise<void> {
-  const content = render(state);
-  if (content === lastContent) return;
-  lastContent = content;
-  await bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID: CONTAINER_ID, containerName: CONTAINER_NAME, content }));
+/** Redraws are serialised: a rebuild that overlaps an upgrade leaves the page half-drawn. */
+let drawing: Promise<void> = Promise.resolve();
+function draw(): void {
+  drawing = drawing.then(async () => {
+    const page = render(state);
+    const sameList = shown.kind === "list" && page.kind === "list" && shown.items.join("\n") === page.items.join("\n");
+    const sameText = shown.kind === "text" && page.kind === "text";
+    if (sameList || sameText) {
+      const content = page.kind === "text" ? page.content : page.header;
+      const before = shown.kind === "text" ? shown.content : shown.header;
+      if (content !== before) {
+        await bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID: TEXT_ID, containerName: TEXT_NAME, content }));
+      }
+    } else if (page.kind === "text") {
+      await bridge.rebuildPageContainer(new RebuildPageContainer({ containerTotalNum: 1, textObject: textContainers(page.content), menuObject }));
+    } else {
+      const { textObject, listObject } = listContainers(page.header, page.items);
+      await bridge.rebuildPageContainer(new RebuildPageContainer({ containerTotalNum: 2, textObject, listObject, menuObject }));
+    }
+    shown = page;
+  }).catch(err => console.warn("draw failed:", err));
 }
 
 // --- Dispatch and effects ------------------------------------------------------
@@ -89,7 +118,7 @@ async function draw(): Promise<void> {
 function dispatch(action: Action): void {
   const { state: next, effects } = reduce(state, action);
   state = next;
-  void draw();
+  draw();
   for (const effect of effects) void runEffect(effect);
 }
 
@@ -169,7 +198,7 @@ async function flushQueue(): Promise<void> {
         await submitReview(token, head);
       } catch (err) {
         // 4xx other than 401 means this review will never be accepted; drop it rather than block the queue.
-        if (err instanceof ApiError && err.status !== 401 && err.status < 500) {
+        if (err instanceof ApiError && err.status !== 401 && err.status < 500 && err.status !== 0) {
           console.warn("review rejected:", err.message);
         } else {
           throw err;
@@ -241,25 +270,34 @@ function onEvent(event: EvenHubEvent): void {
 
   const sysType = eventTypeOf(event.sysEvent);
   const textType = eventTypeOf(event.textEvent);
-  const type = textType ?? sysType;
-  if (type === null) return;
+  const listType = eventTypeOf(event.listEvent);
 
-  switch (type) {
-    case OsEventTypeList.DOUBLE_CLICK_EVENT:
-      // Root page: the system exit dialog. Mandatory, whichever envelope carried it.
-      void bridge.shutDownPageContainer(1);
-      return;
-    case OsEventTypeList.CLICK_EVENT:
-      dispatch({ type: "CLICK", now: Date.now() });
-      return;
-    case OsEventTypeList.SCROLL_TOP_EVENT:
-    case OsEventTypeList.SCROLL_BOTTOM_EVENT: {
-      const now = Date.now();
-      if (now - lastScrollAt < SCROLL_COOLDOWN_MS) return;
-      lastScrollAt = now;
-      dispatch({ type: type === OsEventTypeList.SCROLL_TOP_EVENT ? "SCROLL_UP" : "SCROLL_DOWN" });
-      return;
+  if (sysType === OsEventTypeList.DOUBLE_CLICK_EVENT || textType === OsEventTypeList.DOUBLE_CLICK_EVENT || listType === OsEventTypeList.DOUBLE_CLICK_EVENT) {
+    // Root page: the system exit dialog. Mandatory, whichever envelope carried it.
+    void bridge.shutDownPageContainer(1);
+    return;
+  }
+
+  if (event.listEvent) {
+    // The firmware moved the highlight itself; scroll events from a list are boundary notices only.
+    if (listType !== OsEventTypeList.CLICK_EVENT) return;
+    const items = shown.kind === "list" ? shown.items : [];
+    let index = event.listEvent.currentSelectItemIndex;
+    // The index is omitted for the first item on some builds; fall back to the name, then to 0.
+    if (index === undefined) {
+      const byName = event.listEvent.currentSelectItemName ? items.indexOf(event.listEvent.currentSelectItemName) : -1;
+      index = byName >= 0 ? byName : 0;
     }
+    dispatch({ type: "CLICK_ROW", index, now: Date.now() });
+    return;
+  }
+
+  const type = textType ?? sysType;
+  switch (type) {
+    case OsEventTypeList.CLICK_EVENT:
+      // On a list page the tap already arrived as a listEvent.
+      if (shown.kind === "text") dispatch({ type: "CLICK", now: Date.now() });
+      return;
     case OsEventTypeList.FOREGROUND_ENTER_EVENT:
       // Back from the background: push any answers given while the link was down.
       void flushQueue();

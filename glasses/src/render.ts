@@ -1,31 +1,33 @@
-import { COLS, ROWS, clampLines, fitLine, screen } from "./text.js";
+import { ROWS, clampLines, fitLine, screen } from "./text.js";
 import { MODE_ROWS, questionRows, type Question, type State, type View } from "./state.js";
 
 /**
- * Turns a view into the text of the single full-screen container.
+ * Turns a view into what the glasses should show.
+ *
+ * Screens with something to pick use the firmware's native list: it moves the
+ * highlight on swipe without the rubber-band bounce a text box shows, and
+ * reports the clicked index. Everything else is one text box.
  *
  * Markers stay ASCII on purpose: the firmware font drops glyphs it does not
- * have without any error, and ✓ / ✗ have not been measured on the device yet.
+ * have without any error.
  */
 
-const CURSOR = "> ";
-const NO_CURSOR = "  ";
+export type Page =
+  | { kind: "text"; content: string }
+  | { kind: "list"; header: string; items: string[] };
 
-function row(active: boolean, text: string): string {
-  // No padding: the display has no inverse video, and trailing spaces could wrap.
-  return fitLine((active ? CURSOR : NO_CURSOR) + text, COLS);
-}
+/** Lines the header box above a list can hold. */
+export const HEADER_ROWS = 3;
 
 function stat(label: string, value: string | number): string {
   return `${label} ${value}`;
 }
 
-function renderHome(v: Extract<View, { kind: "home" }>): string {
+function renderHome(v: Extract<View, { kind: "home" }>): Page {
   const s = v.summary;
   const lines: string[] = [];
   if (s) {
-    const streak = `${s.reviewStreak} d`;
-    lines.push(fitLine(`${stat("Due", s.dueCount)}   ${stat("New", s.newCount)}   ${stat("Streak", streak)}`));
+    lines.push(fitLine(`${stat("Due", s.dueCount)}   ${stat("New", s.newCount)}   ${stat("Streak", `${s.reviewStreak} d`)}`));
     lines.push(fitLine(s.accuracy7d === null ? "Accuracy 7 d  -" : `Accuracy 7 d  ${Math.round(s.accuracy7d * 100)}%`));
     const b = s.bloomLevels;
     const lo = (b[0] ?? 0) + (b[1] ?? 0), mid = (b[2] ?? 0) + (b[3] ?? 0), hi = (b[4] ?? 0) + (b[5] ?? 0);
@@ -33,39 +35,31 @@ function renderHome(v: Extract<View, { kind: "home" }>): string {
   } else {
     lines.push("LearnForge", "", "Loading...");
   }
-  lines.push("");
-  MODE_ROWS.forEach((label, i) => {
-    const suffix = i === 2 ? "          (later)" : "";
-    lines.push(row(v.cursor === i, label + suffix));
-  });
-  lines.push("tap = start   .   hold = menu");
-  return screen(lines);
+  const items = MODE_ROWS.map((label, i) => (i === 2 ? `${label}   (later)` : label));
+  return { kind: "list", header: screen(lines, HEADER_ROWS), items };
 }
 
-function optionLabel(q: Question, id: string, selected: string[], mode: "single" | "multi"): string {
-  const text = q.options.find(o => o.id === id)?.text ?? "";
-  if (mode === "multi") return `[${selected.includes(id) ? "x" : " "}] ${id}  ${text}`;
-  return `${id}  ${text}`;
+function optionLabel(q: Question, id: string): string {
+  return `${id}   ${q.options.find(o => o.id === id)?.text ?? ""}`;
 }
 
-function renderQuestion(v: Extract<View, { kind: "question" }>): string {
+function renderQuestion(v: Extract<View, { kind: "question" }>): Page {
   const rows = questionRows(v.q, v.mode);
-  // Everything below the stem is fixed height; the stem takes what is left, at least two lines.
-  // Multi: 2 stem + 4 options + Confirm + I don't know = 8. The checkboxes say "select all that apply".
-  const stemLines = Math.max(2, ROWS - rows.length);
-  const lines: string[] = clampLines(v.q.stem, stemLines);
-  while (lines.length < stemLines) lines.push("");
-  rows.forEach((r, i) => {
-    const active = v.cursor === i;
-    if (r.kind === "option") lines.push(row(active, optionLabel(v.q, r.id, v.selected, v.mode)));
-    else if (r.kind === "confirm") lines.push(row(active, `->  Confirm${v.selected.length ? ` (${v.selected.length})` : ""}`));
-    else lines.push(row(active, v.mode === "multi" ? "?   I don't know" : "?  I don't know"));
+  const header = clampLines(v.q.stem, v.mode === "multi" ? HEADER_ROWS - 1 : HEADER_ROWS);
+  if (v.mode === "multi") {
+    // The list items never change while toggling, so the highlight stays put; the header carries the state.
+    while (header.length < HEADER_ROWS - 1) header.push("");
+    header.push(v.selected.length ? fitLine(`Selected: ${[...v.selected].sort().join(", ")}   -> Confirm`) : "Select all that apply, then Confirm.");
+  }
+  const items = rows.map(r => {
+    if (r.kind === "option") return optionLabel(v.q, r.id);
+    if (r.kind === "confirm") return "Confirm";
+    return "I don't know";
   });
-  if (lines.length < ROWS) lines.push(v.mode === "multi" ? "tap = toggle" : "tap = answer");
-  return screen(lines);
+  return { kind: "list", header: screen(header, HEADER_ROWS), items };
 }
 
-function renderResult(v: Extract<View, { kind: "result" }>): string {
+function renderResult(v: Extract<View, { kind: "result" }>): Page {
   const byId = new Map(v.q.options.map(o => [o.id, o.text]));
   const right = v.q.correctIds.map(id => `${id}  ${byId.get(id) ?? ""}`).join(", ");
   const lines: string[] = [];
@@ -89,16 +83,16 @@ function renderResult(v: Extract<View, { kind: "result" }>): string {
   const room = ROWS - lines.length - 1;
   lines.push(...clampLines(v.q.explanation, Math.max(2, room)));
   lines.push("tap = next   .   hold = menu");
-  return screen(lines);
+  return { kind: "text", content: screen(lines) };
 }
 
-export function render(state: State): string {
+export function render(state: State): Page {
   const v = state.view;
   switch (v.kind) {
     case "boot":
-      return screen(["LearnForge", "", "Starting..."]);
+      return { kind: "text", content: screen(["LearnForge", "", "Starting..."]) };
     case "pair":
-      return screen([
+      return { kind: "text", content: screen([
         "LearnForge",
         "",
         "Connect this device at",
@@ -107,14 +101,14 @@ export function render(state: State): string {
         `Code   ${v.code}`,
         "",
         "Waiting for confirmation...",
-      ]);
+      ]) };
     case "home":
       return renderHome(v);
     case "preparing":
-      return screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "Fetching the next questions.", "", "tap = retry   .   hold = menu"]);
+      return { kind: "text", content: screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "Fetching the next questions.", "", "tap = retry   .   hold = menu"]) };
     case "empty":
       if (v.compiling) {
-        return screen([
+        return { kind: "text", content: screen([
           "",
           fitLine(`Compiling ${v.pendingCompile} card${v.pendingCompile === 1 ? "" : "s"} on the server...`),
           "",
@@ -122,9 +116,9 @@ export function render(state: State): string {
           "minute or two; the app checks back by itself.",
           "",
           "tap = home   .   hold = menu",
-        ]);
+        ]) };
       }
-      return screen([
+      return { kind: "text", content: screen([
         "",
         "Nothing ready on the glasses.",
         "",
@@ -134,21 +128,21 @@ export function render(state: State): string {
         v.pendingCompile > 0 ? "The compiler did not start; check the api log." : "",
         "",
         "tap = home   .   hold = menu",
-      ]);
+      ]) };
     case "question":
       return renderQuestion(v);
     case "result":
       return renderResult(v);
     case "done":
-      return screen([
+      return { kind: "text", content: screen([
         "",
         "Done.",
         "",
         fitLine(`${v.reviewed} reviewed, ${v.correct} right.`),
         "",
         "tap = home   .   double tap = exit",
-      ]);
+      ]) };
     case "error":
-      return screen(["", "Something went wrong.", "", ...clampLines(v.message, 3), "", "tap = home"]);
+      return { kind: "text", content: screen(["", "Something went wrong.", "", ...clampLines(v.message, 3), "", "tap = home"]) };
   }
 }
