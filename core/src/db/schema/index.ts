@@ -12,3 +12,4 @@ export { authTokens, authTokensRelations } from "./authTokens.js";
 export { cardOriginals, cardOriginalsRelations } from "./cardOriginals.js";
 export { studySessions } from "./studySessions.js";
 export { studyQuestions } from "./studyQuestions.js";
+export { glassesPairCodes, glassesTokens, glassesQuestions } from "./glasses.js";

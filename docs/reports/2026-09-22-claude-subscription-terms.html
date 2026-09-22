@@ -1,0 +1,268 @@
+<title>The Credential Line</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F2F5F3; --surface:#FFFFFF; --ink:#16211E; --ink2:#4C5B56; --line:#D3DBD7;
+  --accent:#0F6B5C; --accent-soft:#DCEDE8; --call:#9A6510; --call-soft:#F6EAD2;
+  --bad:#A8322B; --bad-soft:#F6DFDC; --ok:#1E6B3A; --ok-soft:#DDEFE2; --park:#4A5A8C; --park-soft:#E3E7F3;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0F1513; --surface:#182120; --ink:#E5ECE9; --ink2:#9DADA7; --line:#2C3835;
+  --accent:#56C6B0; --accent-soft:#15322D; --call:#E2AD55; --call-soft:#3A2D14;
+  --bad:#EF8B83; --bad-soft:#3D1D1A; --ok:#7CCB94; --ok-soft:#16301F; --park:#9FB0E6; --park-soft:#20273D;
+}}
+:root[data-theme="dark"]{
+  --ground:#0F1513; --surface:#182120; --ink:#E5ECE9; --ink2:#9DADA7; --line:#2C3835;
+  --accent:#56C6B0; --accent-soft:#15322D; --call:#E2AD55; --call-soft:#3A2D14;
+  --bad:#EF8B83; --bad-soft:#3D1D1A; --ok:#7CCB94; --ok-soft:#16301F; --park:#9FB0E6; --park-soft:#20273D;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif;padding-inline:20px;padding-block:32px 64px;margin:0}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif;text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:34px;font-weight:700}
+h2{font-size:22px;font-weight:700;margin-bottom:14px}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+code{font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+.lede{color:var(--ink2);max-width:66ch;margin-top:10px}
+a{color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tile .n{font-family:"Bricolage Grotesque",sans-serif;font-size:30px;font-weight:700;line-height:1}
+.tile .l{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+.tile .s{font-size:13px;color:var(--ink2)}
+.tile.bad .n{color:var(--bad)} .tile.ver .n{color:var(--accent)} .tile.ok .n{color:var(--ok)} .tile.call .n{color:var(--call)}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;vertical-align:middle;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.call{background:var(--call-soft);color:var(--call)} .chip.park{background:var(--park-soft);color:var(--park)} .chip.acc{background:var(--accent-soft);color:var(--accent)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:500;border-top:0}
+.tablewrap{overflow-x:auto}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.diagram svg{display:block;min-width:700px;width:100%;height:auto}
+.q-ok{fill:var(--ok-soft)} .q-bad{fill:var(--bad-soft)} .q-warn{fill:var(--call-soft)}
+.dg-t{font:600 13px "IBM Plex Sans",sans-serif;fill:var(--ink)}
+.dg-s{font:12px "IBM Plex Sans",sans-serif;fill:var(--ink2)}
+.dg-h{font:700 14px "Bricolage Grotesque",sans-serif;fill:var(--ink)}
+.dg-ax{font:500 11px "IBM Plex Sans",sans-serif;fill:var(--ink2);letter-spacing:.06em;text-transform:uppercase}
+.dg-line{stroke:var(--line);stroke-width:1.2}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.card h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card .num{font-family:"Bricolage Grotesque",sans-serif;color:var(--accent);font-weight:700}
+.field{display:grid;grid-template-columns:120px 1fr;gap:10px;font-size:14px}
+.field b{color:var(--ink2);font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
+blockquote{margin:0;padding:10px 14px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;font-size:14px}
+blockquote cite{display:block;font-size:12px;color:var(--ink2);margin-top:6px;font-style:normal}
+.timeline{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 16px}
+.tl{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.tl:first-child{border-top:0}
+.tl .d{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink2);padding-top:2px}
+.cond{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cond .c{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.cond .c b{font-family:"Bricolage Grotesque",sans-serif;font-size:15px}
+ul.check{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+ul.check li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+ul.check li::before{content:"";width:16px;height:16px;border:1.5px solid var(--ink2);border-radius:4px;margin-top:3px}
+ul.check .def{color:var(--ink2)}
+ol.steps{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+ol.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;counter-increment:s}
+ol.steps li::before{content:counter(s);font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:18px;color:var(--accent);line-height:1.3}
+ol.steps .body{display:flex;flex-direction:column;gap:6px}
+ol.steps .body p{font-size:14px}
+ol.steps .owner{font-size:12px;color:var(--ink2)}
+.small{font-size:13px;color:var(--ink2)}
+.small ul{margin:6px 0 0;padding-left:18px}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.cond{grid-template-columns:1fr}}
+@media (max-width:520px){.field{grid-template-columns:1fr}.tl{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">LearnForge · Claude access model · 2026-09-22</div>
+  <h1 style="margin-top:8px">The Credential Line</h1>
+  <p class="lede">Question: may LearnForge compile glasses questions with a Claude Max subscription, ours or a user's, and is "a wrapper around Claude Code" enough to make that legal? This report reads Anthropic's current rules, looks at how T3 Code stays on the right side of them, and maps the allowed paths for LearnForge.</p>
+</header>
+
+<section class="tiles">
+  <div class="tile bad"><span class="l">Verdict</span><span class="n">No</span><span class="s">Neither your Max nor a user's Max may be used from the LearnForge server. Claude.ai login inside LearnForge is out too.</span></div>
+  <div class="tile ver"><span class="l">Verified</span><span class="n">4 rules</span><span class="s">Read on Anthropic's own legal page today. Quoted below, not paraphrased from news.</span></div>
+  <div class="tile ok"><span class="l">Allowed</span><span class="n">3 paths</span><span class="s">API key on the server. User's own Claude Code via MCP. A T3-style companion that spawns the unmodified binary.</span></div>
+  <div class="tile call"><span class="l">Your call</span><span class="n">2</span><span class="s">Which compile runners to build, and whether a companion is worth it.</span></div>
+</section>
+
+<section>
+  <h2>The rule in one picture</h2>
+  <p class="small" style="margin-bottom:12px">Anthropic draws the line on two questions: whose credential is it, and whose software makes the request to Anthropic.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two by two grid: credential holder versus requesting software, with allowed and prohibited quadrants">
+      <text class="dg-ax" x="470" y="22" text-anchor="middle">Who makes the request to Anthropic</text>
+      <text class="dg-t" x="300" y="48" text-anchor="middle">Anthropic's own client</text>
+      <text class="dg-s" x="300" y="64" text-anchor="middle">unmodified Claude Code binary, Claude app</text>
+      <text class="dg-t" x="660" y="48" text-anchor="middle">LearnForge code</text>
+      <text class="dg-s" x="660" y="64" text-anchor="middle">API server, glasses plugin, own harness</text>
+
+      <text class="dg-ax" transform="translate(22 235) rotate(-90)" text-anchor="middle">Whose credential</text>
+      <text class="dg-t" x="60" y="150" text-anchor="middle" transform="rotate(-90 60 150)">The user's</text>
+      <text class="dg-s" x="76" y="150" text-anchor="middle" transform="rotate(-90 76 150)">Max login, or their API key</text>
+      <text class="dg-t" x="60" y="315" text-anchor="middle" transform="rotate(-90 60 315)">LearnForge's</text>
+      <text class="dg-s" x="76" y="315" text-anchor="middle" transform="rotate(-90 76 315)">Florian's Max, or a Console key</text>
+
+      <rect class="q-ok" x="120" y="80" width="360" height="150" rx="10"/>
+      <text class="dg-h" x="136" y="106">Allowed</text>
+      <text class="dg-s" x="136" y="128">User signs in to their own Claude Code or Claude</text>
+      <text class="dg-s" x="136" y="146">Desktop and uses the LearnForge MCP connector.</text>
+      <text class="dg-s" x="136" y="164">Also: a product that spawns the unmodified binary,</text>
+      <text class="dg-s" x="136" y="182">user logs in themselves, never intermediated.</text>
+      <text class="dg-s" x="136" y="212">→ T3 Code · LearnForge MCP path</text>
+
+      <rect class="q-bad" x="490" y="80" width="360" height="150" rx="10"/>
+      <text class="dg-h" x="506" y="106">Prohibited</text>
+      <text class="dg-s" x="506" y="128">"Log in with Claude" inside LearnForge, routing</text>
+      <text class="dg-s" x="506" y="146">requests through a user's Max, storing their</text>
+      <text class="dg-s" x="506" y="164">OAuth tokens, or having them paste a</text>
+      <text class="dg-s" x="506" y="182">setup-token into LearnForge.</text>
+      <text class="dg-s" x="506" y="212">→ OpenCode-style, banned Jan 2026</text>
+
+      <rect class="q-warn" x="120" y="240" width="360" height="150" rx="10"/>
+      <text class="dg-h" x="136" y="266">Allowed for one person only</text>
+      <text class="dg-s" x="136" y="288">You, in your own Claude Code, compiling your own</text>
+      <text class="dg-s" x="136" y="306">cards through MCP. Ordinary individual use.</text>
+      <text class="dg-s" x="136" y="324">Not a product feature for others.</text>
+      <text class="dg-s" x="136" y="354">→ Florian's personal runner</text>
+
+      <rect class="q-ok" x="490" y="240" width="360" height="150" rx="10"/>
+      <text class="dg-h" x="506" y="266">Allowed, Commercial Terms</text>
+      <text class="dg-s" x="506" y="288">LearnForge API calls Claude with its own Console</text>
+      <text class="dg-s" x="506" y="306">API key, pays per token, bills users through the</text>
+      <text class="dg-s" x="506" y="324">LearnForge subscription. The normal product path.</text>
+      <text class="dg-s" x="506" y="354">→ Runner A in the glasses report</text>
+
+      <rect x="490" y="240" width="360" height="150" rx="10" fill="none" stroke="var(--bad)" stroke-width="0" />
+      <text class="dg-s" x="506" y="378" fill="var(--bad)">Except: Florian's Max token on the server. That is the prohibited quadrant, whoever owns the token.</text>
+    </svg>
+  </div>
+</section>
+
+<section>
+  <h2>What Anthropic actually says</h2>
+  <div class="two">
+    <blockquote>OAuth authentication is intended exclusively for purchasers of Claude Free, Pro, Max, Team, and Enterprise subscription plans and is designed to support ordinary use of Claude Code and other native Anthropic applications.<cite>Claude Code docs, Legal and compliance, "Authentication and credential use"</cite></blockquote>
+    <blockquote>Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, or Max plan credentials on behalf of their users. Moreover, developers may not collect, store, or intermediate Claude.ai credentials or session tokens.<cite>same page. This rules out a user's Max on the LearnForge server and a Claude login button in LearnForge.</cite></blockquote>
+    <blockquote>Developers building products or services that interact with Claude's capabilities, including those using the Agent SDK, should use API key authentication through Claude Console or a supported cloud provider.<cite>same page. The Agent SDK is named explicitly, which matters for how T3 Code is built.</cite></blockquote>
+    <blockquote>Nor does it prevent an end user from signing in to the unmodified Claude Code binary with their own Claude subscription, including where a platform hosts Claude Code.<cite>same page. This sentence is what makes T3 Code and a LearnForge companion possible.</cite></blockquote>
+  </div>
+  <div class="tablewrap" style="margin-top:14px">
+  <table>
+    <tr><th>Pattern</th><th>Verdict</th><th>Deciding sentence</th></tr>
+    <tr><td>LearnForge server calls Claude with Florian's Max token</td><td><span class="chip bad">prohibited</span></td><td>OAuth is for "ordinary use of Claude Code and other native Anthropic applications". A Fastify route is neither.</td></tr>
+    <tr><td>Users log in to LearnForge with their Max</td><td><span class="chip bad">prohibited</span></td><td>"does not permit third-party developers to offer Claude.ai login into their own applications"</td></tr>
+    <tr><td>Users paste a <code>claude setup-token</code> into LearnForge</td><td><span class="chip bad">prohibited</span></td><td>"may not collect, store, or intermediate Claude.ai credentials or session tokens"</td></tr>
+    <tr><td>Own harness speaking the Claude Code wire protocol with subscription OAuth</td><td><span class="chip bad">prohibited</span></td><td>OpenCode removed Claude support after legal requests. Anthropic: harnesses "generate unusual traffic patterns without any of the usual telemetry".</td></tr>
+    <tr><td>LearnForge server calls Claude with a Console API key</td><td><span class="chip ok">allowed</span></td><td>"should use API key authentication through Claude Console". Commercial Terms, billed to LearnForge.</td></tr>
+    <tr><td>User's own Claude Code or Claude Desktop uses the LearnForge MCP connector</td><td><span class="chip ok">allowed</span></td><td>Ordinary use of a native Anthropic application. LearnForge is a connector, not a requester.</td></tr>
+    <tr><td>Product spawns the user's unmodified <code>claude</code> binary, user signed in themselves</td><td><span class="chip ok">allowed, conditions</span></td><td>"signing in to the unmodified Claude Code binary with their own Claude subscription, including where a platform hosts Claude Code". Requires Commercial Terms and the three conditions below.</td></tr>
+    <tr><td>Users bring their own Console API key</td><td><span class="chip ok">allowed</span></td><td>"does not restrict how customers provision and manage their own API keys", billed to the key owner.</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>How T3 Code does it</h2>
+  <div class="two">
+    <div class="card">
+      <h3>Mechanism</h3>
+      <div class="field"><b>What it is</b><span>Open-source GUI for coding agents by Theo Browne's team. A Node WebSocket server on the user's machine wraps provider CLIs, with web, desktop and mobile clients on top.</span></div>
+      <div class="field"><b>Claude path</b><span>The Claude provider adapter launches the locally installed, unmodified <code>claude</code> binary through the official Agent SDK. T3 discovers the binary, checks it, and spawns it as a child process.</span></div>
+      <div class="field"><b>Credentials</b><span>None. The user runs <code>claude</code> login themselves. T3 ships no model credits, never sees the OAuth token, never talks to Anthropic's API directly. Its docs: bring your own provider accounts.</span></div>
+      <div class="field"><b>Why it passes</b><span>Credential holder is the user. Requesting software is Anthropic's own binary. T3 is a remote control for a Claude Code the user already runs, not a harness of its own.</span></div>
+    </div>
+    <div class="card">
+      <h3>Timeline</h3>
+      <div class="timeline">
+        <div class="tl"><span class="d">Jan 2026</span><span>Enforcement starts. Third-party tools using subscription OAuth see failures; OpenCode drops Claude support after legal requests.</span></div>
+        <div class="tl"><span class="d">2026-02-19</span><span>Anthropic rewrites the Legal and compliance page: OAuth is for Claude Code and native apps only, developers use API keys, no Claude.ai login in third-party apps.</span></div>
+        <div class="tl"><span class="d">Feb 2026</span><span>Theo posts that T3 has an Agent SDK PR ready for subscriptions and will ship it only after a public thumbs-up from Anthropic staff.</span></div>
+        <div class="tl"><span class="d">Mar 2026</span><span>T3 ships Claude subscriptions via the official Agent SDK and CLI instead of a custom auth harness. Coverage frames it as the compliant counter-example to OpenCode.</span></div>
+        <div class="tl"><span class="d">2026-06-23</span><span>Issue #3530: Max OAuth verifies but generations 401 only inside T3, while the bare CLI and SDK work. Shows the path is allowed but brittle: any spawn-environment difference breaks it.</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px">One tension remains in the text: the same page says Agent SDK developers "should use API key authentication", while T3 uses the SDK with the user's subscription. The unmodified-binary sentence is what covers it, and Anthropic has not moved against T3 since. Treat this as tolerated and documented, not as a guarantee.</p>
+</section>
+
+<section>
+  <h2>So is "a wrapper around Claude Code" legal?</h2>
+  <p style="max-width:70ch;margin-bottom:14px">Not any wrapper. Three conditions have to hold at the same time, and the request has to leave from the user's machine, not from a LearnForge server holding their token.</p>
+  <div class="cond">
+    <div class="c"><b>1 · Unmodified binary</b><span>Install and run Claude Code as Anthropic publishes it. Do not remove, disable or restrict any built-in login method.</span></div>
+    <div class="c"><b>2 · The user's own login</b><span>Each user signs in to Claude Code themselves through Anthropic's flow, with their own subscription or key. Their usage is billed to them.</span></div>
+    <div class="c"><b>3 · No intermediation</b><span>LearnForge never pays for, resells or routes their Claude usage, and never collects, stores or forwards their tokens. Running Claude Code inside a product also means accepting the Commercial Terms.</span></div>
+  </div>
+  <p class="small" style="margin-top:12px">Naming: you may say in plain text that LearnForge "runs Claude Code". You may not put Claude or Anthropic in a feature name or logo.</p>
+</section>
+
+<section>
+  <h2>What this means for LearnForge</h2>
+  <div class="tablewrap">
+  <table>
+    <tr><th>Path</th><th>Who</th><th>How the compile step runs</th><th>Terms</th><th>Effort</th></tr>
+    <tr><td><b>A · API key on the server</b></td><td>Every user</td><td><code>compileMicroMcq</code> in core calls <code>claude-opus-5</code> with <code>ANTHROPIC_API_KEY</code>, about 1 cent per card, cached. Cost is part of the LearnForge subscription.</td><td><span class="chip ok">Commercial</span></td><td>Small. One service, one env var.</td></tr>
+    <tr><td><b>B · Your Claude Code via MCP</b></td><td>You, and any user with a subscription and Claude Code</td><td>New MCP tool <code>compile_glasses_questions</code>. A skill or a Claude Code scheduled routine asks Claude to compile due cards and store them. Claude Code holds the credential and makes the request.</td><td><span class="chip ok">Ordinary use</span></td><td>Small. One tool, one skill file.</td></tr>
+    <tr><td><b>C · T3-style companion</b></td><td>Subscription users without Claude Code habits</td><td>A LearnForge desktop or CLI companion spawns the user's unmodified <code>claude -p</code> with the MCP server configured. LearnForge never touches credentials.</td><td><span class="chip call">Commercial + 3 conditions</span></td><td>Large. Installer, spawn environment, the brittleness T3 hit.</td></tr>
+    <tr><td><b>Never</b></td><td></td><td>Any Max token on the server. A Claude login button. Storing user OAuth tokens or setup-tokens.</td><td><span class="chip bad">prohibited</span></td><td></td></tr>
+  </table>
+  </div>
+  <p class="small" style="margin-top:12px">A and B share the same cache table and the same JSON schema, so the glasses never know which runner filled the cache. B covers your personal use on Max completely, which is why C is not needed now.</p>
+</section>
+
+<section>
+  <h2>Decisions</h2>
+  <div class="two">
+    <div class="card">
+      <h3><span class="num">1</span> Which compile runners to build</h3>
+      <div class="field"><b>Situation</b><span>The glasses need compiled questions before a session. Your Max cannot fill the cache from the server, but it can from your Claude Code.</span></div>
+      <div class="field"><b>A · Recommended</b><span>Build A and B together. A is the default for everyone; B is one MCP tool plus a skill so you compile on Max from Claude Code.</span></div>
+      <div class="field"><b>B</b><span>Build A only. Your own compiles cost cents on the API key. Simplest, no MCP change.</span></div>
+    </div>
+    <div class="card">
+      <h3><span class="num">2</span> Companion app</h3>
+      <div class="field"><b>Situation</b><span>Path C is allowed but is the most code and the most fragile, as T3's 401 issue shows.</span></div>
+      <div class="field"><b>A · Recommended</b><span>No companion. Document path B for subscription users who want to avoid API-key cost.</span></div>
+      <div class="field"><b>B</b><span>Build a companion later, after the glasses flow is stable and there are users asking for it.</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Open questions</h2>
+  <ul class="check">
+    <li><span>Does a scheduled Claude Code routine that compiles 50 cards nightly count as "ordinary use"? <span class="def">Default: yes when you set it up in your own Claude Code for your own cards. Keep batches small and on demand rather than a nightly sweep.</span></span></li>
+    <li><span>Should LearnForge accept the Commercial Terms explicitly now? <span class="def">Default: already implied by using a Console API key for path A. No extra step.</span></span></li>
+    <li><span>Ask Anthropic sales for confirmation? <span class="def">Default: not for A and B. Only if path C is ever built.</span></span></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Next steps</h2>
+  <ol class="steps">
+    <li><div class="body"><p>Answer decisions 1 and 2. They feed decision 1 of the glasses report.</p><span class="owner">Florian</span></div></li>
+    <li><div class="body"><p>Create a Console API key for the LearnForge API and add <code>ANTHROPIC_API_KEY</code> to the production secrets. Never to the repo.</p><span class="owner">Florian · before path A ships</span></div></li>
+    <li><div class="body"><p>Add the MCP tool and a <code>/learnforge:compile-glasses</code> skill as part of the glasses implementation plan.</p><span class="owner">Claude · after decision 1 A</span></div></li>
+  </ol>
+</section>
+
+<section class="small">
+  <h2 style="font-size:16px">Method and sources</h2>
+  <p>Quotes were read from Anthropic's Legal and compliance page on 2026-09-22. T3 Code facts come from its repository, an issue thread, and three articles; the exact ship date of T3's subscription support is not stated in any source, so it is given as the month. This is a reading of published terms, not legal advice.</p>
+  <ul>
+    <li><a href="https://code.claude.com/docs/en/legal-and-compliance">Claude Code: Legal and compliance</a> · <a href="https://code.claude.com/docs/en/authentication">Claude Code: Authentication</a> · <a href="https://anthropic.com/legal/terms">Consumer Terms</a> · <a href="https://www.anthropic.com/legal/commercial-terms">Commercial Terms</a></li>
+    <li><a href="https://www.theregister.com/software/2026/02/20/anthropic-clarifies-ban-on-third-party-tool-access-to-claude/5014546">The Register, 2026-02-20</a> · <a href="https://winbuzzer.com/2026/02/19/anthropic-bans-claude-subscription-oauth-in-third-party-apps-xcxwbn/">Winbuzzer, 2026-02-19</a> · <a href="https://alternativeto.net/news/2026/2/anthropic-officially-bans-using-subscription-authentication-for-third-party-claude-use">AlternativeTo</a></li>
+    <li><a href="https://github.com/pingdotgg/t3code">pingdotgg/t3code</a> · <a href="https://github.com/pingdotgg/t3code/issues/3530">t3code issue #3530</a> · <a href="https://x.com/theo/status/2030072127605592547">Theo's post on the Agent SDK PR</a> · <a href="https://flaviocopes.com/t3-code/">Flavio Copes, T3 Code deep dive</a> · <a href="https://daily.dev/posts/t3-code-got-banned-from-claude--fwselnkdq">daily.dev, 2026-03-24</a> · <a href="https://github.com/anthropics/claude-code/issues/82266">claude-code issue #82266</a></li>
+  </ul>
+</section>
+
+</div>

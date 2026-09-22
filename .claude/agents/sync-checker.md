@@ -2,7 +2,7 @@
 name: sync-checker
 description: Phase 2 reviewer. Diffs shared code between api/ and mcp/ (schema files, service files) and flags any drift.
 tools: Bash, Read, Grep, Glob
-model: sonnet
+model: opus
 ---
 
 # Sync Checker Agent

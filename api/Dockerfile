@@ -20,6 +20,9 @@ COPY core/package.json core/
 COPY api/package.json api/
 COPY mcp/package.json mcp/
 COPY web-ui/package.json web-ui/
+# glasses is a root workspace too: npm ci refuses to run when a listed workspace
+# has no package.json, even though nothing from it is built into this image.
+COPY glasses/package.json glasses/
 RUN apt-get update && apt-get install -y python3 make g++ --no-install-recommends && rm -rf /var/lib/apt/lists/*
 # --ignore-scripts then an explicit rebuild: argon2 and sharp are native and must
 # be built for this platform. sharp is required by @xenova/transformers for

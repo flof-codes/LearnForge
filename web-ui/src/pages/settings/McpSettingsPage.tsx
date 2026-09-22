@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import ConfirmModal from '../../components/ConfirmModal';
 import LanguageSwitcher from '../../components/public/LanguageSwitcher';
+import GlassesSection from '../../components/settings/GlassesSection';
 
 function computeTrialDays(trialEndsAt: string | undefined | null): number {
   if (!trialEndsAt) return 0;
@@ -648,6 +649,9 @@ export default function McpSettingsPage() {
           </div>
         </section>
       )}
+
+      {/* Glasses (Even Realities G2), admin only */}
+      {user?.role === 'admin' && <GlassesSection />}
 
       {/* Delete Account */}
       <section className="bg-bg-secondary rounded-xl border border-danger/30 p-6 space-y-4">

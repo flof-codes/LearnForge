@@ -46,6 +46,8 @@ describe("MCP Tools", () => {
       expect(toolNames).toContain("submit_review");
       expect(toolNames).toContain("get_instructions");
       expect(toolNames).toContain("get_templates");
+      expect(toolNames).toContain("get_glasses_compile_queue");
+      expect(toolNames).toContain("store_glasses_question");
     });
   });
 

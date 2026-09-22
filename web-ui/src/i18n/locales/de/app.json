@@ -451,6 +451,23 @@
       "saveDescription": "Dieser Schl\u00fcssel wird nur einmal angezeigt. Kopiere ihn jetzt und bewahre ihn sicher auf.",
       "copyToClipboard": "In Zwischenablage kopieren"
     },
+    "glasses": {
+      "title": "Brille",
+      "description": "Verbindet die Even Realities G2 App. Öffne LearnForge auf der Brille und gib den angezeigten Code ein. Nur für Admins.",
+      "codeLabel": "Kopplungscode",
+      "codePlaceholder": "z.B. K7F42Q",
+      "connect": "Verbinden",
+      "connecting": "Verbinden...",
+      "connected": "Brille verbunden. Die App auf der Brille macht von selbst weiter.",
+      "devices": "Gekoppelte Geräte",
+      "noDevices": "Noch keine Brille gekoppelt",
+      "created": "Gekoppelt am {{date}}",
+      "lastUsed": "Zuletzt genutzt am {{date}}",
+      "neverUsed": "Noch nicht genutzt",
+      "expires": "Gültig bis {{date}}",
+      "revoke": "Widerrufen",
+      "revoking": "Widerrufen..."
+    },
     "claude": {
       "title": "Claude (claude.ai) Einrichtung",
       "step1": "\u00d6ffne <1>claude.ai</1> und gehe zu <bold>Settings > Connectors</bold>",

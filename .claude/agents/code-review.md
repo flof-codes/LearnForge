@@ -2,7 +2,7 @@
 name: code-review
 description: Phase 2 reviewer. Merged plan-completeness + security-auditor. Checks plan implementation, architecture, clean code, file sizes, hardcoded secrets, SQL injection, input validation, sensitive logs, auth bypass.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 ---
 
 # Code Review Agent

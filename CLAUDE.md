@@ -63,12 +63,13 @@
 
 ## Project Structure
 
-Monorepo with 4 packages — all ESM (`"type": "module"`):
+Monorepo with 5 packages — all ESM (`"type": "module"`):
 
 - `core/` — Shared package (`@learnforge/core`): DB schema, services, utilities
 - `api/` — Fastify 5 REST backend (thin route handlers calling core services)
 - `web-ui/` — React 19 SPA (React Router 7, TanStack Query 5, Tailwind CSS 4, Vite 7)
 - `mcp/` — MCP server with tutor instructions and card templates (stdio + StreamableHTTP transport)
+- `glasses/` — Even Hub plugin for the Even Realities G2 glasses (Vite + TS, ring-operated MCQ; admin-only, sideloaded, not built in CI)
 
 This project uses internationalization (i18n) with DE/EN translations. When modifying user-facing text, update both language files. Translation keys are spread across 25+ components.
 
@@ -204,6 +205,10 @@ GET /context/topic/:id?depth=   GET /context/similar/:card_id?limit=
 POST /images                    GET/DELETE /images/:id
 POST/GET /shares                DELETE /shares/:id
 GET /shares/preview/:token      POST /shares/accept/:token
+POST /glasses/pair/start        POST /glasses/pair/poll     (public, rate limited)
+POST /glasses/claim             GET/DELETE /glasses/tokens[/:id]   (admin JWT)
+GET /glasses/summary            GET /glasses/next?mode=&limit=&session_id=&exclude=
+POST /glasses/reviews           (glasses bearer token, see api/src/plugins/auth.ts)
 GET /health
 ```
 
@@ -223,6 +228,8 @@ GET /health
 | Similar cards | get_similar_cards | card_id, limit? |
 | Topic context | get_topic_context | topic_id, depth? |
 | Upload/Delete image | upload_image, delete_image | file_path / image_id |
+| Glasses compile queue (admin) | get_glasses_compile_queue | limit?, topic_id?, horizon_days? |
+| Store glasses question (admin) | store_glasses_question | card_id, bloom_level, stem, options[4], correct[], explanation, or skip + reason |
 
 ## Architecture Rules
 
@@ -236,6 +243,14 @@ GET /health
 - Image files stored on disk at `IMAGE_PATH` (container: `/data/images`, MCP local: `~/.learnforge/images`).
 - FSRS intervals are adjusted by study modality: chat (1.2x), web (0.95x), mcq (1.05x).
 - Topic sharing is **copy-only**: `acceptShareLink` deep-copies topic tree + cards into recipient's account with fresh bloom/fsrs state. Image files are copied on disk (new UUID filenames, independent DB rows). Revoking a link blocks new imports; already-imported copies remain untouched. Link tokens are 24-byte url-safe random.
+
+## Glasses (Even Realities G2)
+
+- Admin-only feature. Questions are compiled ahead of time by Claude in the admin's own Claude Code session through the MCP tools (`/compile-glasses` skill); the API never calls Claude and holds no Anthropic key. Reason: subscription OAuth may not be used from a server, see docs/reports/2026-09-22-claude-subscription-terms.html.
+- Pairing: the glasses generate a secret, send its SHA-256 to `POST /glasses/pair/start`, show the 6-char code; the admin claims it in Settings → Glasses; poll returns only a status. Tokens live hashed in `glasses_tokens`, 90 days, revocable.
+- `glasses_questions` is keyed by (card_id, bloom_level, prompt_version) and is fresh only while `card_updated_at` and `original_id` match the card. `updateCard` deletes a card's rows. Bump `GLASSES_PROMPT_VERSION` in core when the compile rules change.
+- Serving uses study sessions (`client: glasses`, difficulty 0.3) and question tickets; `POST /glasses/reviews` sends letters plus the ticket and the review service grades (`style` single/multiple from the correct count).
+- Display caps (core `GLASSES_CAPS`, mirrored in `glasses/src/text.ts`): stem 96 chars / 2 lines, 4 options × 28, explanation 190, Latin text only.
 
 ## Conventions
 
@@ -258,8 +273,8 @@ Use the lint-gate agent to check type safety and linting.
 ```
 
 Prüft:
-- `tsc --noEmit` auf api/ und mcp/, `tsc -b` auf web-ui/
-- `eslint .` auf alle 3 Packages
+- `tsc --noEmit` auf api/, mcp/ und glasses/, `tsc -b` auf web-ui/
+- `eslint .` auf alle 4 Packages (api, mcp, web-ui, glasses)
 - **Null-Toleranz**: Ein einziger Fehler = BLOCKED. Phase 2 startet NICHT.
 
 ### Phase 2: Parallele Spezialisten (nach bestandenem Lint Gate)

@@ -1,0 +1,16 @@
+{
+  "package_id": "eu.learnforge.glasses",
+  "edition": "202601",
+  "name": "LearnForge",
+  "version": "0.1.0",
+  "min_sdk_version": "0.0.15",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Fetch compiled questions and save reviews on learnforge.eu",
+      "whitelist": ["https://learnforge.eu"]
+    }
+  ],
+  "supported_languages": ["en", "de"]
+}

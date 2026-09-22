@@ -249,9 +249,11 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
   const [updated] = await db.update(cards).set(updates).where(eq(cards.id, cardId)).returning(cardColumns);
   if (!updated) throw new NotFoundError("Card not found");
 
-  // The tutor's original question may no longer match the edited content.
+  // The tutor's original question may no longer match the edited content, and
+  // neither does a question compiled for the glasses from the old content.
   if (concept !== undefined || front_html !== undefined || back_html !== undefined || cloze_data !== undefined) {
     await markOriginalStale(db, userId, cardId);
+    await db.execute(sql`DELETE FROM glasses_questions WHERE card_id = ${cardId}`);
   }
 
   return updated;

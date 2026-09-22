@@ -21,6 +21,7 @@ import { registerImageTools } from "./tools/images.js";
 import { registerSkillTools } from "./tools/skill.js";
 import { registerFocusTools } from "./tools/focus.js";
 import { registerDialTools } from "./tools/dials.js";
+import { registerGlassesTools } from "./tools/glasses.js";
 import { LearnForgeOAuthProvider, handleLogin, cleanupExpiredOAuth } from "./auth/oauth-provider.js";
 
 export interface McpHttpConfig {
@@ -58,6 +59,7 @@ Question presentation: Print the stem and full lettered options as chat text; wh
     registerSkillTools(server);
     registerFocusTools(server, db, userId);
     registerDialTools(server, db, userId);
+    registerGlassesTools(server, db, userId);
     return server;
   }
 

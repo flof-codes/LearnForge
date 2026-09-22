@@ -459,6 +459,27 @@ For complete CSS, KaTeX setup, and SVG guidelines, see \`get_templates\`.
 
 ---
 
+## Glasses Compile Flow (admin only)
+
+<glasses_compile_flow>
+LearnForge runs on Even Realities G2 glasses as tiny multiple-choice questions answered with the R1 ring. The glasses show one fixed-font screen of 576×288 pixels: about 48 characters per line and 10 lines. They never call Claude. You compile the questions ahead of time, here, through two tools:
+
+1. \`get_glasses_compile_queue\` — due-soon cards without a compiled question at their current Bloom level. Each entry carries concept, cardType, clozeData, frontText, backText, topicName, bloomLevel, changeRate, the current \`original\` and, for level 3+, similarCards.
+2. \`store_glasses_question\` — one call per entry. Or \`skip: true\` with a reason when the card cannot be compressed.
+
+### Rules
+- **Caps are hard**: stem ≤ 96 chars on 2 lines, exactly 4 options ≤ 28 chars each, explanation ≤ 190 chars. Latin letters, digits and punctuation only — the firmware font drops other glyphs silently. No KaTeX, no HTML, no Unicode arrows or ticks.
+- **Level style** follows the standard question table: level 0 remembers a fact, 1 understands why, 2 applies to a scenario, 3+ compares with the similarCards. The stem must still be answerable from the four options alone.
+- **changeRate 0** means word for word: stem = original.questionText, options = original.options texts. Trim only, never rephrase.
+- **Cloze cards**: pick the deletion for the level (rotating), build the sentence with \`[...]\`, distractors from different categories at level 0 and the same category at level 1.
+- **Single first**: \`correct\` has one index unless the card genuinely asks for a set. Two or three correct indices make it a multi-select question; "MCQ single" sessions on the glasses serve only single-correct rows.
+- **Skip** formula-heavy cards, diagram labelling, anything with images that carry the meaning, and cards whose four options cannot stay under 28 chars. Give the reason in one sentence; skipped cards stay in chat.
+- **Explanation** answers "why" in one breath and names the right option. It is shown after every answer, right or wrong.
+- Never ask the learner anything during compiling. Report how many were stored and how many skipped, with the skip reasons.
+</glasses_compile_flow>
+
+---
+
 ## Tool Quick Reference
 
 | Action | Tool | Key Parameters |
@@ -485,6 +506,8 @@ For complete CSS, KaTeX setup, and SVG guidelines, see \`get_templates\`.
 | Topic context | get_topic_context | topic_id, depth? |
 | Upload image | upload_image | file_path, card_id? |
 | Delete image | delete_image | image_id |
+| Glasses compile queue | get_glasses_compile_queue | limit?, topic_id?, horizon_days? (admin) |
+| Store glasses question | store_glasses_question | card_id, bloom_level, stem, options[4], correct[], explanation, or skip + reason (admin) |
 | Get instructions | get_instructions | — |
 | Get templates | get_templates | template_name? |
 `;

@@ -4,9 +4,12 @@ export { NotFoundError, ValidationError } from "@learnforge/core";
 // HTTP-specific errors (only used in API)
 export class UnauthorizedError extends Error {
   readonly statusCode = 401;
-  constructor(message = "Unauthorized") {
+  /** Machine-readable discriminator, e.g. TOKEN_REVOKED so a device can drop a stored token. */
+  readonly code?: string;
+  constructor(message = "Unauthorized", code?: string) {
     super(message);
     this.name = "UnauthorizedError";
+    this.code = code;
   }
 }
 

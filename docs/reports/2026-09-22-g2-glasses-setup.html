@@ -1,0 +1,487 @@
+<title>LearnForge on G2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F2F5F3; --surface:#FFFFFF; --ink:#16211E; --ink2:#4C5B56; --line:#D3DBD7;
+  --accent:#0F6B5C; --accent-soft:#DCEDE8; --call:#9A6510; --call-soft:#F6EAD2;
+  --bad:#A8322B; --bad-soft:#F6DFDC; --ok:#1E6B3A; --ok-soft:#DDEFE2; --park:#4A5A8C; --park-soft:#E3E7F3;
+  --glass-bg:#070B08; --glass-fg:#8CF59A; --glass-dim:#3E7A48; --glass-frame:#1C2620;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0F1513; --surface:#182120; --ink:#E5ECE9; --ink2:#9DADA7; --line:#2C3835;
+  --accent:#56C6B0; --accent-soft:#15322D; --call:#E2AD55; --call-soft:#3A2D14;
+  --bad:#EF8B83; --bad-soft:#3D1D1A; --ok:#7CCB94; --ok-soft:#16301F; --park:#9FB0E6; --park-soft:#20273D;
+  --glass-frame:#2A3630;
+}}
+:root[data-theme="dark"]{
+  --ground:#0F1513; --surface:#182120; --ink:#E5ECE9; --ink2:#9DADA7; --line:#2C3835;
+  --accent:#56C6B0; --accent-soft:#15322D; --call:#E2AD55; --call-soft:#3A2D14;
+  --bad:#EF8B83; --bad-soft:#3D1D1A; --ok:#7CCB94; --ok-soft:#16301F; --park:#9FB0E6; --park-soft:#20273D;
+  --glass-frame:#2A3630;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif;padding-inline:20px;padding-block:32px 64px;margin:0}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif;text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:34px;font-weight:700}
+h2{font-size:22px;font-weight:700;margin-bottom:14px}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+code,pre,.mono{font-family:"IBM Plex Mono",monospace}
+code{font-size:13px;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+pre{font-size:13px;line-height:1.5;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:0}
+pre code{background:none;padding:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+.lede{color:var(--ink2);max-width:66ch;margin-top:10px}
+a{color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tile .n{font-family:"Bricolage Grotesque",sans-serif;font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.tile .l{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+.tile .s{font-size:13px;color:var(--ink2)}
+.tile.done .n{color:var(--ok)} .tile.ver .n{color:var(--accent)} .tile.open .n{color:var(--park)} .tile.call .n{color:var(--call)}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid transparent;vertical-align:middle}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.call{background:var(--call-soft);color:var(--call)} .chip.park{background:var(--park-soft);color:var(--park)} .chip.acc{background:var(--accent-soft);color:var(--accent)} .chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.mute{background:var(--ground);color:var(--ink2);border-color:var(--line)}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:500;border-top:0}
+.tablewrap{overflow-x:auto}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.diagram svg{display:block;min-width:760px;width:100%;height:auto}
+.dg-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.dg-box.acc{stroke:var(--accent);stroke-width:1.6}
+.dg-box.new{stroke:var(--call);stroke-dasharray:5 4;stroke-width:1.6}
+.dg-box.soft{fill:var(--accent-soft);stroke:none}
+.dg-t{font:600 13px "IBM Plex Sans",sans-serif;fill:var(--ink)}
+.dg-s{font:12px "IBM Plex Sans",sans-serif;fill:var(--ink2)}
+.dg-m{font:11px "IBM Plex Mono",monospace;fill:var(--ink2)}
+.dg-e{stroke:var(--ink2);stroke-width:1.4;fill:none}
+.dg-e.acc{stroke:var(--accent)}
+.dg-e.call{stroke:var(--call);stroke-dasharray:5 4}
+.dg-lane{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+.dg-zone{fill:var(--accent-soft);stroke:none;opacity:.55}
+.dg-zone.call{fill:var(--call-soft)}
+.dg-num{fill:var(--accent)}
+.dg-numt{font:700 11px "IBM Plex Sans",sans-serif;fill:#fff}
+.screens{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.screen{display:flex;flex-direction:column;gap:8px}
+.screen h3{font-size:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.glass{background:var(--glass-bg);color:var(--glass-fg);border:6px solid var(--glass-frame);border-radius:10px;aspect-ratio:2/1;padding:10px 12px;font:500 12.5px/1.45 "IBM Plex Mono",monospace;white-space:pre;overflow:hidden;max-width:100%}
+.glass .dim{color:var(--glass-dim)}
+.glass .cur{background:var(--glass-fg);color:var(--glass-bg)}
+.screen .cap{font-size:13px;color:var(--ink2)}
+.screen .net{font-size:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bars{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.bar{display:grid;grid-template-columns:220px 1fr 80px;gap:12px;align-items:center;font-size:13px}
+.bar .track{height:12px;background:var(--accent-soft);border-radius:4px;position:relative;overflow:hidden}
+.bar .fill{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:4px}
+.bar .v{font-variant-numeric:tabular-nums;color:var(--ink2);text-align:right}
+.bar.total .fill{background:var(--park)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.card h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card .num{font-family:"Bricolage Grotesque",sans-serif;color:var(--accent);font-weight:700}
+.field{display:grid;grid-template-columns:120px 1fr;gap:10px;font-size:14px}
+.field b{color:var(--ink2);font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
+ol.steps{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+ol.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;counter-increment:s}
+ol.steps li::before{content:counter(s);font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:18px;color:var(--accent);line-height:1.3}
+ol.steps .body{display:flex;flex-direction:column;gap:6px}
+ol.steps .body p{font-size:14px}
+ol.steps .owner{font-size:12px;color:var(--ink2)}
+ul.check{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+ul.check li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+ul.check li::before{content:"";width:16px;height:16px;border:1.5px solid var(--ink2);border-radius:4px;margin-top:3px}
+ul.check .def{color:var(--ink2)}
+.small{font-size:13px;color:var(--ink2)}
+.small ul{margin:6px 0 0;padding-left:18px}
+.note{background:var(--call-soft);border-radius:8px;padding:10px 14px;font-size:14px}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}.screens{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.bar{grid-template-columns:140px 1fr 70px}}
+@media (max-width:600px){.screens{grid-template-columns:1fr}.field{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">LearnForge · Even Realities G2 study mode · 2026-09-22 · revision 3 · built</div>
+  <h1 style="margin-top:8px">LearnForge on G2</h1>
+  <p class="lede">Goal: review LearnForge cards as tiny single- or multiple-choice questions on the G2 glasses, at every Bloom level, operated only with the R1 ring. Claude compiles each card into a question that fits the display ahead of time, so the ring loop never waits. The start screen picks the session mode, MCQ or voice; this report designs the MCQ path. It shows every view, marks when data leaves the glasses, and draws where Claude sits between authoring a card and answering it.</p>
+</header>
+
+<section class="tiles">
+  <div class="tile done"><span class="l">Done</span><span class="n">Built</span><span class="s">Core service, migration 0019, API routes, auth path, MCP compile tools, web-ui section, glasses app, compile skill. Lint gate clean on 5 packages.</span></div>
+  <div class="tile ver"><span class="l">Verified</span><span class="n">533 tests</span><span class="s">Full integration suite green, including 25 new glasses cases: pairing, token scope, caps, tickets, server grading, staleness, revoke.</span></div>
+  <div class="tile open"><span class="l">Open</span><span class="n">Live test</span><span class="s">Deploy on main, compile a few cards from Claude Code, pair the glasses, sideload by QR. Glyph check for ✓ ✗ still pending.</span></div>
+  <div class="tile call"><span class="l">Your call</span><span class="n">0</span><span class="s">All decisions taken. Speech mode row is shown but disabled.</span></div>
+</section>
+
+<section>
+  <h2>Where Claude sits: three moments</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three moments: authoring a card with Claude in chat, compiling it into a micro question, and reviewing on the glasses without Claude">
+      <rect class="dg-box acc" x="20" y="40" width="270" height="150" rx="10"/>
+      <text class="dg-t" x="36" y="66">1 · Author</text>
+      <text class="dg-s" x="36" y="88">Chat with Claude, LearnForge MCP</text>
+      <text class="dg-m" x="36" y="108">create_card · update_card</text>
+      <text class="dg-s" x="36" y="132">Rich card: front, back, cloze data,</text>
+      <text class="dg-s" x="36" y="150">KaTeX, diagrams. Unchanged.</text>
+      <text class="dg-m" x="36" y="176">exists today</text>
+
+      <rect class="dg-box new" x="345" y="40" width="270" height="150" rx="10"/>
+      <text class="dg-t" x="361" y="66">2 · Compile</text>
+      <text class="dg-s" x="361" y="88">Claude turns card + Bloom level into</text>
+      <text class="dg-m" x="361" y="108">{mode, stem, options[4],</text>
+      <text class="dg-m" x="361" y="124"> correct[], explanation, skip?}</text>
+      <text class="dg-s" x="361" y="148">Per-level style from the tutor rules,</text>
+      <text class="dg-s" x="361" y="166">similar cards for level 3+. Cached.</text>
+      <text class="dg-m" x="361" y="184">new · runner is decision 1</text>
+
+      <rect class="dg-box" x="670" y="40" width="270" height="150" rx="10"/>
+      <text class="dg-t" x="686" y="66">3 · Review</text>
+      <text class="dg-s" x="686" y="88">Glasses show the compiled question.</text>
+      <text class="dg-s" x="686" y="106">Ring answers. No Claude call.</text>
+      <text class="dg-m" x="686" y="130">POST /reviews · modality mcq</text>
+      <text class="dg-s" x="686" y="154">FSRS and Bloom update in core,</text>
+      <text class="dg-s" x="686" y="172">same as chat and web reviews.</text>
+
+      <path class="dg-e" d="M290 115 H345"/><polygon points="345,115 337,110 337,120" fill="var(--ink2)"/>
+      <path class="dg-e" d="M615 115 H670"/><polygon points="670,115 662,110 662,120" fill="var(--ink2)"/>
+
+      <rect class="dg-box soft" x="20" y="215" width="920" height="64" rx="10"/>
+      <text class="dg-t" x="36" y="240">Compile runner, two allowed options (see companion report)</text>
+      <text class="dg-s" x="36" y="262">A · LearnForge API with its own API key, for every user.   B · The user's own Claude Code or Claude Desktop via the MCP tool <tspan class="dg-m">compile_glasses_questions</tspan>, on their subscription.</text>
+      <path class="dg-e call" d="M480 215 V190"/>
+    </svg>
+  </div>
+  <p class="small" style="margin-top:10px">Compile output is validated server-side against the character caps below and stored in <code>micro_mcq_cache</code>. When a card is edited, its compiled questions are dropped and rebuilt on the next compile run. Cards that cannot be compressed, for example formula-heavy ones, come back with <code>skip</code> and stay in chat.</p>
+</section>
+
+<section>
+  <h2>Every view, and what it sends</h2>
+  <div class="screens">
+    <div class="screen">
+      <h3>Pair <span class="chip park">first launch</span></h3>
+      <div class="glass">LearnForge
+
+Connect this device at
+learnforge.eu/glasses
+
+Code   <span class="cur"> K7F4 2Q </span>
+
+<span class="dim">Waiting for confirmation...</span></div>
+      <p class="cap">No ring input. Code expires after 10 min. Token then lives in the SDK's own storage on the phone.</p>
+      <div class="net"><span class="chip call">sends</span><code>POST /glasses/pair/start</code> with the hash of a device-generated secret, then <code>POST /glasses/pair/poll</code> every 2 s (status only)</div>
+    </div>
+    <div class="screen">
+      <h3>Home <span class="chip acc">every open</span></h3>
+      <div class="glass">Due 12   New 3   Streak 7 d
+Accuracy 7 d  86%
+Bloom  0-1: 14  2-3: 6  4-5: 2
+
+<span class="cur">> MCQ single                 </span>
+  MCQ multi
+  Speech          <span class="dim">(later)</span>
+<span class="dim">tap = start   ·   hold = menu</span></div>
+      <p class="cap">Same numbers as the web app's study summary, and the only screen with stats. The cursor picks one of three session modes. Speech is shown but disabled until it has its own design.</p>
+      <div class="net"><span class="chip call">sends</span><code>GET /glasses/summary</code></div>
+    </div>
+    <div class="screen">
+      <h3>Preparing <span class="chip mute">rare</span></h3>
+      <div class="glass">
+
+Preparing 5 questions...
+
+<span class="dim">Cards edited since the last
+compile are rebuilt first.</span>
+
+
+
+<span class="dim">hold = menu</span></div>
+      <p class="cap">Shown only when the cache is cold. Normally the batch returns in well under a second.</p>
+      <div class="net"><span class="chip call">sends</span><code>GET /glasses/next?mode=&amp;limit=5</code></div>
+    </div>
+    <div class="screen">
+      <h3>Question · single <span class="chip acc">swipe + tap</span></h3>
+      <div class="glass">Which quantity is conserved in
+an elastic collision only?
+
+<span class="cur">> A  Kinetic energy          </span>
+  B  Momentum
+  C  Mass
+  D  Charge
+  ?  I don't know
+<span class="dim">tap = answer</span></div>
+      <p class="cap">Question only, no header. Swipe moves the cursor and wraps. Tap on a letter answers at once. One text container, updated in place.</p>
+      <div class="net"><span class="chip ok">no network</span> cursor moves are local</div>
+    </div>
+    <div class="screen">
+      <h3>Question · multi <span class="chip acc">toggle, confirm</span></h3>
+      <div class="glass">Which are vector quantities?
+Select all that apply.
+
+  [x] A  Velocity
+<span class="cur">> [ ] B  Speed               </span>
+  [x] C  Force
+  [ ] D  Energy
+  ->  Confirm
+  ?   I don't know</div>
+      <p class="cap">Tap toggles the row. The Confirm row submits. Options and both action rows share the same cursor, so the ring needs nothing new.</p>
+      <div class="net"><span class="chip ok">no network</span> until Confirm</div>
+    </div>
+    <div class="screen">
+      <h3>Result · correct <span class="chip ok">tap</span></h3>
+      <div class="glass">OK   A  Kinetic energy
+
+Inelastic collisions turn kinetic
+energy into heat and deformation.
+Momentum is conserved in both.
+
+
+
+<span class="dim">tap = next</span></div>
+      <p class="cap">Explanation is the compiled one-liner, max 3 lines. Next question is already on the phone, so tap is instant.</p>
+      <div class="net"><span class="chip call">sends</span><code>POST /glasses/reviews</code> with the ticket and the letter; the server grades</div>
+    </div>
+    <div class="screen">
+      <h3>Result · wrong or partial <span class="chip bad">tap</span></h3>
+      <div class="glass">X    You chose B  Momentum
+Right: A  Kinetic energy
+
+Momentum is conserved in every
+collision. Only elastic ones keep
+kinetic energy.
+
+
+<span class="dim">tap = next</span></div>
+      <p class="cap">Multi-select shows which letters were right and missed. Rating follows the tutor rules: partial credit possible.</p>
+      <div class="net"><span class="chip call">sends</span><code>POST /glasses/reviews</code> with the ticket and the letters; partial credit from the review service</div>
+    </div>
+    <div class="screen">
+      <h3>I don't know <span class="chip bad">explanation</span></h3>
+      <div class="glass">Answer: A  Kinetic energy
+
+Elastic: kinetic energy and
+momentum both conserved.
+Inelastic: only momentum.
+Think billiard balls vs. clay.
+
+<span class="dim">tap = next</span></div>
+      <p class="cap">Same layout as a wrong answer, but the full explanation fills the screen. Counts as "Again" so the card comes back soon.</p>
+      <div class="net"><span class="chip call">sends</span><code>POST /glasses/reviews</code> with <code>dont_know: true</code>; recorded as rating 1</div>
+    </div>
+    <div class="screen">
+      <h3>Menu and Done <span class="chip mute">hold · end</span></h3>
+      <div class="glass"><span class="dim">tap, then hold:</span>
+  Skip card
+  Change topic
+  Home
+  Close app
+<span class="dim">-----------------------------------</span>
+Done. 12 reviewed, 9 right.
+
+<span class="dim">tap = home   double tap = exit</span></div>
+      <p class="cap">Menu is the system contextual menu, up to 10 items. Skip sends nothing, the card stays due. Double tap on the root page opens the mandatory exit dialog.</p>
+      <div class="net"><span class="chip ok">no network</span> except Home, which refetches the summary</div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px">Reviews are queued in bridge storage and retried, so a dropped Bluetooth or Wi-Fi link never loses an answer. Every 5 answers the app fetches the next batch. The glyph set is fixed and unknown characters are dropped silently, so markers stay ASCII (<code>OK</code>, <code>X</code>, <code>[x]</code>) until the font-measurement skill confirms ✓ and ✗ exist.</p>
+</section>
+
+<section>
+  <h2>Data flow of one session</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 960 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence: glasses, plugin on phone, LearnForge API, Postgres, Claude">
+      <g class="dg-t">
+        <text x="70" y="24" text-anchor="middle">Glasses + ring</text>
+        <text x="270" y="24" text-anchor="middle">Plugin (phone)</text>
+        <text x="480" y="24" text-anchor="middle">LearnForge API</text>
+        <text x="680" y="24" text-anchor="middle">Postgres</text>
+        <text x="870" y="24" text-anchor="middle">Claude</text>
+      </g>
+      <g class="dg-lane">
+        <line x1="70" y1="36" x2="70" y2="460"/><line x1="270" y1="36" x2="270" y2="460"/><line x1="480" y1="36" x2="480" y2="460"/><line x1="680" y1="36" x2="680" y2="460"/><line x1="870" y1="36" x2="870" y2="460"/>
+      </g>
+
+      <circle class="dg-num" cx="20" cy="64" r="9"/><text class="dg-numt" x="20" y="68" text-anchor="middle">1</text>
+      <path class="dg-e" d="M70 64 H270"/><text class="dg-s" x="80" y="58">open app</text>
+      <path class="dg-e acc" d="M270 64 H480"/><text class="dg-m" x="290" y="58">GET /glasses/summary</text>
+      <path class="dg-e" d="M480 64 H680"/><text class="dg-m" x="500" y="58">counts, streak, accuracy</text>
+      <path class="dg-e" d="M270 84 H70"/><text class="dg-s" x="80" y="98">Home view</text>
+
+      <circle class="dg-num" cx="20" cy="134" r="9"/><text class="dg-numt" x="20" y="138" text-anchor="middle">2</text>
+      <path class="dg-e" d="M70 134 H270"/><text class="dg-s" x="80" y="128">tap start</text>
+      <path class="dg-e acc" d="M270 134 H480"/><text class="dg-m" x="290" y="128">GET /glasses/next?mode=&amp;limit=5</text>
+      <path class="dg-e" d="M480 134 H680"/><text class="dg-m" x="500" y="128">due cards + cache lookup</text>
+      <path class="dg-e call" d="M480 160 H870"/><text class="dg-m" x="500" y="154">no compile at serve time: cache is filled from Claude Code via MCP</text>
+      <path class="dg-e call" d="M870 178 H680"/><text class="dg-m" x="700" y="192">store compiled question</text>
+      <path class="dg-e" d="M480 204 H270"/><text class="dg-m" x="290" y="198">5 compiled questions, JSON</text>
+      <path class="dg-e" d="M270 222 H70"/><text class="dg-s" x="80" y="236">Question view</text>
+
+      <circle class="dg-num" cx="20" cy="270" r="9"/><text class="dg-numt" x="20" y="274" text-anchor="middle">3</text>
+      <path class="dg-e" d="M70 270 H270"/><text class="dg-s" x="80" y="264">swipe, toggle</text>
+      <path class="dg-e" d="M270 288 H70"/><text class="dg-s" x="80" y="302">cursor redraw, local only</text>
+
+      <circle class="dg-num" cx="20" cy="338" r="9"/><text class="dg-numt" x="20" y="342" text-anchor="middle">4</text>
+      <path class="dg-e" d="M70 338 H270"/><text class="dg-s" x="80" y="332">tap answer, Confirm, or I don't know</text>
+      <path class="dg-e" d="M270 356 H70"/><text class="dg-s" x="80" y="370">Result view at once</text>
+      <path class="dg-e acc" d="M270 338 H480"/><text class="dg-m" x="290" y="332">POST /glasses/reviews (async, queued)</text>
+      <path class="dg-e" d="M480 338 H680"/><text class="dg-m" x="500" y="332">graded: reviews, fsrs_state, bloom_state</text>
+
+      <circle class="dg-num" cx="20" cy="408" r="9"/><text class="dg-numt" x="20" y="412" text-anchor="middle">5</text>
+      <path class="dg-e" d="M70 408 H270"/><text class="dg-s" x="80" y="402">tap next · skip via menu</text>
+      <path class="dg-e" d="M270 426 H70"/><text class="dg-s" x="80" y="440">next question from the phone, skip sends nothing</text>
+      <path class="dg-e acc" d="M270 408 H480"/><text class="dg-m" x="290" y="402">after 5 answers: GET /glasses/next again</text>
+    </svg>
+  </div>
+  <div class="tablewrap" style="margin-top:14px">
+  <table>
+    <tr><th>Call</th><th>Auth</th><th>When</th><th>Payload worth knowing</th></tr>
+    <tr><td><code>POST /glasses/pair/start</code> · <code>POST /glasses/pair/poll</code></td><td>none, rate limited</td><td>First launch</td><td>The glasses generate a 32-byte secret and send only its SHA-256. Poll returns <code>pending</code> or <code>claimed</code>, never a token. The admin claims the code with <code>POST /glasses/claim</code> in Settings → Glasses.</td></tr>
+    <tr><td><code>GET /glasses/summary</code></td><td>glasses token</td><td>Every open, and Home from the menu</td><td>Due, new, streak, 7-day accuracy, Bloom distribution. Nothing else.</td></tr>
+    <tr><td><code>GET /glasses/next</code></td><td>glasses token</td><td>Start, then when 2 questions are left</td><td>Due cards with a fresh compiled row at their current level, one study-session ticket each. <code>mode=single</code> serves one-correct rows, <code>mode=multi</code> all rows. <code>exclude</code> keeps cards with an unsent review out.</td></tr>
+    <tr><td><code>POST /glasses/reviews</code></td><td>glasses token</td><td>Every answer, Confirm, or I don't know</td><td>Ticket plus letters, or <code>dont_know</code>. The review service grades: single hit = 4, multi by hits minus wrong picks, I don't know = 1. Replaying a ticket returns the first result, so the offline queue can retry.</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Ring mapping and rating rules</h2>
+  <div class="two">
+    <div class="tablewrap">
+    <table>
+      <tr><th>Gesture</th><th>Event</th><th>Effect</th></tr>
+      <tr><td>Swipe up / down</td><td><code>SCROLL_TOP</code> / <code>SCROLL_BOTTOM</code></td><td>Move cursor over options and action rows, wrap, 300 ms cooldown</td></tr>
+      <tr><td>Tap</td><td><code>CLICK</code> (0 or <code>undefined</code>)</td><td>Home: start the chosen mode. Single: answer. Multi: toggle, or submit on Confirm. Result: next</td></tr>
+      <tr><td>Tap on "?"</td><td><code>CLICK</code></td><td>I don't know: show explanation, rating 1</td></tr>
+      <tr><td>Double tap</td><td><code>DOUBLE_CLICK</code></td><td>Root: system exit dialog. Result views: back to Home</td></tr>
+      <tr><td>Tap, then hold</td><td>menu → <code>menuItemClickEvent</code></td><td>Skip · Change topic · Home · Close</td></tr>
+    </table>
+    </div>
+    <div class="tablewrap">
+    <table>
+      <tr><th>Outcome</th><th>Rating</th><th>Source</th></tr>
+      <tr><td>Single, correct</td><td>4</td><td>Review service: correctness 1</td></tr>
+      <tr><td>Single, wrong</td><td>1</td><td>correctness 0</td></tr>
+      <tr><td>Multi</td><td>1 to 4</td><td>(hits − wrong picks) ÷ correct count, mapped to a rating</td></tr>
+      <tr><td>I don't know</td><td>1</td><td>empty selection, <code>user_answer</code> "I don't know"</td></tr>
+      <tr><td>Skip</td><td>none</td><td>Ticket expires unanswered</td></tr>
+    </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Character budget per screen</h2>
+  <p class="small" style="margin-bottom:10px">Fixed firmware font, roughly 50 to 60 characters per line and 400 to 500 per screen. Claude is asked for these caps and the API rejects anything longer. Dropping the header line bought two more lines for the question.</p>
+  <div class="bars">
+    <div class="bar"><span>Stem, 2 lines</span><div class="track"><div class="fill" style="width:19%"></div></div><span class="v">≤ 96</span></div>
+    <div class="bar"><span>4 options × 28 chars</span><div class="track"><div class="fill" style="width:22%"></div></div><span class="v">≤ 112</span></div>
+    <div class="bar"><span>Action rows (Confirm, I don't know)</span><div class="track"><div class="fill" style="width:6%"></div></div><span class="v">≤ 30</span></div>
+    <div class="bar"><span>Explanation, 4 lines</span><div class="track"><div class="fill" style="width:38%"></div></div><span class="v">≤ 190</span></div>
+    <div class="bar"><span>Footer hint</span><div class="track"><div class="fill" style="width:5%"></div></div><span class="v">≤ 24</span></div>
+    <div class="bar total"><span><b>Worst-case question screen</b></span><div class="track"><div class="fill" style="width:52%"></div></div><span class="v">262 / 500</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Setup, in order</h2>
+  <ol class="steps">
+    <li><div class="body"><h3>Unlock Developer Mode</h3><p>Pair G2 and R1 in the Even Realities app, update firmware. Sign in at <a href="https://hub.evenrealities.com">hub.evenrealities.com</a>, which flips the account to developer. Force-quit and reopen the phone app; the Even Hub tab now shows "Scan QR".</p><span class="owner">Florian · phone and glasses in hand</span></div></li>
+    <li><div class="body"><h3>Install the tooling</h3><pre><code>npm install -g @evenrealities/evenhub-cli @evenrealities/evenhub-simulator</code></pre><p>Node 20 LTS or 22+. Optional: the <code>everything-evenhub</code> Claude Code plugin marketplace adds 12 Even Hub skills for building.</p><span class="owner">Claude · after your OK</span></div></li>
+    <li><div class="body"><h3>Scaffold the <code>glasses/</code> workspace</h3><pre><code>npx degit even-realities/evenhub-templates/minimal glasses</code></pre><p>Add <code>"glasses"</code> to the root workspaces. The template ships Vite, TypeScript and the SDK.</p><span class="owner">Claude</span></div></li>
+    <li><div class="body"><h3>Write <code>glasses/app.json</code></h3><pre><code>{
+  "package_id": "eu.learnforge.glasses",
+  "name": "LearnForge",
+  "version": "0.1.0",
+  "edition": "202601",
+  "min_sdk_version": "0.0.14",
+  "entrypoint": "index.html",
+  "permissions": [
+    { "name": "network", "desc": "Fetch questions and save reviews",
+      "whitelist": ["https://learnforge.eu", "http://192.168.x.x:3333"] }
+  ],
+  "supported_languages": ["en", "de"]
+}</code></pre><p>One full origin per entry, no wildcards. The http entry is dev only. Name max 20 characters, no "Even" in it.</p><span class="owner">Claude · you supply the LAN IP and the production API origin</span></div></li>
+    <li><div class="body"><h3>Backend: compile service, pairing, next batch</h3><p>Migration for <code>glasses_tokens</code> and <code>micro_mcq_cache</code>. Core service <code>compileMicroMcq</code> with the JSON schema above and server-side cap validation. Routes in <code>api/src/routes/glasses.ts</code>. Runner A uses <code>@anthropic-ai/sdk</code> with <code>ANTHROPIC_API_KEY</code> in the API container. Runner B is an MCP tool <code>compile_glasses_questions</code> that accepts the same JSON and writes the cache.</p><span class="owner">Claude · after decisions 1 to 3</span></div></li>
+    <li><div class="body"><h3>Glasses app: nine views, one reducer</h3><p><code>src/main.ts</code> awaits <code>waitForEvenAppBridge()</code>, creates one full-screen text container with <code>isEventCapture: 1</code>, and routes <code>onEvenHubEvent</code> into a state machine: pair, home, preparing, question, result, done. Token and the review queue live in <code>bridge.setLocalStorage</code>. Handle <code>FOREGROUND_EXIT</code> and <code>FOREGROUND_ENTER</code> for the 2-minute idle check.</p><span class="owner">Claude</span></div></li>
+    <li><div class="body"><h3>Web-ui: Connect glasses page</h3><p>Settings → "Connect glasses" with one code input and a revoke button. DE and EN strings.</p><span class="owner">Claude</span></div></li>
+    <li><div class="body"><h3>Run it on the glasses</h3><pre><code>npm run dev -w glasses
+evenhub qr --url "http://&lt;laptop-lan-ip&gt;:5173"</code></pre><p>Scan from the Even Hub tab. Same Wi-Fi, port 5173 open. The simulator sends clicks as <code>sysEvent</code> while hardware uses <code>textEvent</code>, so the reducer accepts both.</p><span class="owner">Florian scans · Claude drives the simulator</span></div></li>
+    <li><div class="body"><h3>Package for daily use</h3><pre><code>npm run build -w glasses
+evenhub pack glasses/app.json glasses/dist -o learnforge-glasses.ehpk</code></pre><p>Upload in the Even Hub portal as a Beta build. Beta installs without review and survives phone lock, which QR sideload does not.</p><span class="owner">Florian uploads · Claude builds</span></div></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Decisions</h2>
+  <p class="small" style="margin-bottom:12px">Decided 2026-09-22: 1 = compile only from Florian's Claude Code via MCP, no API-key route yet, feature admin-only. 2 to 5 = A. Session mode (MCQ single, MCQ multi, Speech) is chosen on the Home screen; only the two MCQ modes are built now.</p>
+  <div class="two">
+    <div class="card">
+      <h3><span class="num">1</span> Who compiles the questions <span class="chip ok">decided 2026-09-22: B only, admin only</span></h3>
+      <div class="field"><b>Situation</b><span>A Max subscription may not be used from the LearnForge server, neither yours nor a user's. An API key on the server is fine. A user's own Claude Code calling the LearnForge MCP is fine.</span></div>
+      <div class="field"><b>A · Recommended</b><span>Both runners. Server API key as default for every user, about 1 cent per card. Plus the MCP tool so you fill your own cache from Claude Code on Max.</span></div>
+      <div class="field"><b>B</b><span>Server API key only. Simpler, and your cards cost you cents too.</span></div>
+    </div>
+    <div class="card">
+      <h3><span class="num">2</span> How the glasses log in</h3>
+      <div class="field"><b>Situation</b><span>Password login only today. No keyboard on the glasses.</span></div>
+      <div class="field"><b>A · Recommended</b><span>Glasses show a 6-character code, you type it once in web-ui, the app polls until claimed. Zero ring typing.</span></div>
+      <div class="field"><b>B</b><span>Web-ui shows a PIN, you dial digits with the ring. Fiddly on every re-pair.</span></div>
+    </div>
+    <div class="card">
+      <h3><span class="num">3</span> Rating for "I don't know" and partial multi-select</h3>
+      <div class="field"><b>Situation</b><span>Tutor rules give partial credit on multi-select and rate wrong single answers 1. "I don't know" is new.</span></div>
+      <div class="field"><b>A · Recommended</b><span>I don't know = 1, always. Multi-select keeps the tutor's precision-and-recall ladder 4 / 3 / 2 / 1.</span></div>
+      <div class="field"><b>B</b><span>I don't know = 2 when the card is new, to avoid punishing first contact. Everything else as A.</span></div>
+    </div>
+    <div class="card">
+      <h3><span class="num">4</span> Distribution</h3>
+      <div class="field"><b>Situation</b><span>QR sideload dies when the phone locks. Beta builds install without review. Store release means manual review and immutable versions.</span></div>
+      <div class="field"><b>A · Recommended</b><span>Beta channel for now.</span></div>
+      <div class="field"><b>B</b><span>Store from the first version.</span></div>
+    </div>
+    <div class="card">
+      <h3><span class="num">5</span> Where the code lives</h3>
+      <div class="field"><b>Situation</b><span>Public repo. The package contains only built web assets and the manifest.</span></div>
+      <div class="field"><b>A · Recommended</b><span>New <code>glasses/</code> workspace in the monorepo, same lint gate and CI.</span></div>
+      <div class="field"><b>B</b><span>Separate private repo. Loses shared types and the quality gate.</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Open questions</h2>
+  <ul class="check">
+    <li><span>Which API origin do the glasses call in production? <span class="def">Default: the same host as the web app, one https origin in the whitelist.</span></span></li>
+    <li><span>Does a glasses session pick a topic, or take all due? <span class="def">Default: all due; "Change topic" in the menu lists top-level topics.</span></span></li>
+    <li><span>Single or multi by default? <span class="def">Default: Claude chooses per card; the tutor rules default to multi, and binary or definition cards become single.</span></span></li>
+    <li><span>Cards with formulas or images? <span class="def">Default: Claude may return <code>skip</code>; those cards stay in chat and are not counted as due on the glasses.</span></span></li>
+    <li><span>What does "Start voice" do on the glasses? <span class="def">Default: out of scope here. Needs its own design around the mic, an ASR path and text-only feedback. The row is shown so the start screen is final.</span></span></li>
+    <li><span>Do we render ✓ and ✗? <span class="def">Default: ASCII until the font-measurement skill confirms the glyphs.</span></span></li>
+    <li><span>Glasses token lifetime? <span class="def">Default: 90 days, revocable from the Connect glasses page.</span></span></li>
+    <li><span>Cache invalidation when the tutor rules change? <span class="def">Default: yes, the cache key includes a prompt version string.</span></span></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Next steps</h2>
+  <ol class="steps">
+    <li><div class="body"><p>Answer decisions 1 to 5, or say "all A". Read the companion report if decision 1 needs the reasoning.</p><span class="owner">Florian</span></div></li>
+    <li><div class="body"><p>Sign in at hub.evenrealities.com, reopen the phone app, confirm "Scan QR" appears. Send the laptop's LAN IP.</p><span class="owner">Florian · independent of the decisions</span></div></li>
+    <li><div class="body"><p>Implementation plan for backend, MCP tool and glasses workspace, presented for confirmation, then build. Quality gate afterwards.</p><span class="owner">Claude · after step 1</span></div></li>
+    <li><div class="body"><p>First QR sideload with Pair and Home only, to prove whitelist, CORS and ring events on hardware before the question views.</p><span class="owner">Claude builds, Florian scans · after step 3</span></div></li>
+    <li><div class="body"><p>Beta package upload once ten cards have gone through on the glasses.</p><span class="owner">Florian · after step 4</span></div></li>
+  </ol>
+</section>
+
+<section class="small">
+  <h2 style="font-size:16px">Method and sources</h2>
+  <p>Display, input, networking, lifecycle and packaging facts come from the official Even Hub docs read on 2026-09-22. The characters-per-line figure is the community estimate for the fixed firmware font and needs measuring before the layout is final. Rating rules come from the tutor instructions in <code>mcp/src/tools/skill.ts</code>. Cost per card assumes list prices for claude-opus-5 and one call per card and bloom level.</p>
+  <ul>
+    <li><a href="https://hub.evenrealities.com/docs/get-started/quickstart/index">Even Hub quickstart</a> · <a href="https://hub.evenrealities.com/docs/get-started/quickstart/first-app">first app</a> · <a href="https://hub.evenrealities.com/docs/build/display">display</a> · <a href="https://hub.evenrealities.com/docs/build/device-apis">device APIs</a> · <a href="https://hub.evenrealities.com/docs/build/networking">networking</a> · <a href="https://hub.evenrealities.com/docs/build/page-lifecycle">page lifecycle</a> · <a href="https://hub.evenrealities.com/docs/build/contextual-menu">contextual menu</a> · <a href="https://hub.evenrealities.com/docs/test/local-testing">local testing</a> · <a href="https://hub.evenrealities.com/docs/ship/packaging">packaging</a> · <a href="https://hub.evenrealities.com/docs/ship/app-submission">app submission</a></li>
+    <li><a href="https://github.com/even-realities/evenhub-templates">evenhub-templates</a> · <a href="https://github.com/even-realities/everything-evenhub">everything-evenhub</a> · <a href="https://github.com/nickustinov/even-g2-notes">even-g2-notes</a> · <a href="https://github.com/pangoleen/awesome-even-realities-g2">awesome-even-realities-g2</a></li>
+    <li>Companion report: The Credential Line, same date, same folder.</li>
+  </ul>
+</section>
+
+</div>

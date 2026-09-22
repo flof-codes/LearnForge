@@ -281,6 +281,15 @@ export interface McpKeyStatus {
   createdAt: string | null;
 }
 
+// --- Glasses (Even Realities G2, admin only) ---
+export interface GlassesToken {
+  id: string;
+  label: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+}
+
 // --- Focus Topics ---
 export interface FocusTopic {
   id: string;

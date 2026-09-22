@@ -451,6 +451,23 @@
       "saveDescription": "This key will only be shown once. Copy it now and store it securely.",
       "copyToClipboard": "Copy to clipboard"
     },
+    "glasses": {
+      "title": "Glasses",
+      "description": "Pair the Even Realities G2 app. Open LearnForge on the glasses, then type the code it shows. Admin only.",
+      "codeLabel": "Pairing code",
+      "codePlaceholder": "e.g. K7F42Q",
+      "connect": "Connect",
+      "connecting": "Connecting...",
+      "connected": "Glasses connected. The app on the glasses continues by itself.",
+      "devices": "Paired devices",
+      "noDevices": "No glasses paired yet",
+      "created": "Paired {{date}}",
+      "lastUsed": "Last used {{date}}",
+      "neverUsed": "Not used yet",
+      "expires": "Expires {{date}}",
+      "revoke": "Revoke",
+      "revoking": "Revoking..."
+    },
     "claude": {
       "title": "Claude (claude.ai) Setup",
       "step1": "Open <1>claude.ai</1> and go to <bold>Settings > Connectors</bold>",

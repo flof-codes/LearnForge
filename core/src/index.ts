@@ -147,3 +147,34 @@ export {
 
 // Image utils
 export { extFromMime } from "./lib/image-utils.js";
+
+// Services - Glasses (Even Realities G2)
+export {
+  GLASSES_PROMPT_VERSION,
+  GLASSES_CAPS,
+  GLASSES_PAIR_CODE_TTL_MS,
+  GLASSES_TOKEN_TTL_MS,
+  hashGlassesToken,
+  normalizePairCode,
+  startGlassesPairing,
+  pollGlassesPairing,
+  claimGlassesPairing,
+  resolveGlassesToken,
+  listGlassesTokens,
+  revokeGlassesToken,
+  getGlassesCompileQueue,
+  storeGlassesQuestion,
+  validateGlassesQuestion,
+  getGlassesBatch,
+  submitGlassesAnswer,
+  getGlassesSummary,
+  type GlassesTokenRow,
+  type GlassesTokenCheck,
+  type GlassesCompileQueueEntry,
+  type GlassesCompileQueueOptions,
+  type StoreGlassesQuestionInput,
+  type GlassesMode,
+  type GlassesQuestion,
+  type GlassesBatchOptions,
+  type GlassesAnswerInput,
+} from "./services/glasses-service.js";

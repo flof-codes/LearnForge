@@ -2,7 +2,7 @@
 name: test-coverage
 description: Phase 2 reviewer. Runs integration tests, reports results and coverage. Flags failing tests as blockers and untested new code as warnings.
 tools: Bash, Read, Grep, Glob
-model: sonnet
+model: opus
 ---
 
 # Test Coverage Agent

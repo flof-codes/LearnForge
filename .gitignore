@@ -57,3 +57,5 @@ templates-draft/
 
 # Agent team tickets (local only)
 tickets/
+# Glasses dev config carries a LAN address; only the example is tracked
+glasses/.env.development

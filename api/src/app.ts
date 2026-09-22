@@ -16,12 +16,15 @@ import exportRoutes from "./routes/export.js";
 import adminRoutes from "./routes/admin.js";
 import shareRoutes from "./routes/shares.js";
 import focusRoutes from "./routes/focus.js";
+import glassesRoutes from "./routes/glasses.js";
 import { sql } from "drizzle-orm";
 import { db } from "./db/connection.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
 
 export function buildApp() {
-  const app = Fastify({ logger: true });
+  // trustProxy: the api sits behind a reverse proxy; without it request.ip is the
+  // proxy and every per-IP limit (glasses pairing) collapses into one global bucket.
+  const app = Fastify({ logger: true, trustProxy: true });
 
   app.register(cors, {
     origin: true,
@@ -34,7 +37,7 @@ export function buildApp() {
 
   app.setErrorHandler((error: Error & { validation?: unknown; statusCode?: number }, _request, reply) => {
     if (error instanceof UnauthorizedError) {
-      return reply.status(401).send({ error: error.message });
+      return reply.status(401).send({ error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
     if (error instanceof NotFoundError) {
       return reply.status(404).send({ error: error.message });
@@ -80,6 +83,7 @@ export function buildApp() {
   app.register(adminRoutes);
   app.register(shareRoutes);
   app.register(focusRoutes);
+  app.register(glassesRoutes);
 
   // The body names this service on purpose, and the check touches the database.
   //
