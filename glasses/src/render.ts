@@ -113,7 +113,7 @@ export function render(state: State): string {
     case "home":
       return renderHome(v);
     case "preparing":
-      return screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "", "", "", "", "", "hold = menu"]);
+      return screen(["", `Preparing ${v.mode === "multi" ? "multi" : "single"} choice...`, "", "Fetching the next questions.", "", "", "", "", "tap = retry   .   hold = menu"]);
     case "empty":
       if (v.compiling) {
         return screen([

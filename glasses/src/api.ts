@@ -18,10 +18,24 @@ export class ApiError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 25000;
+/** Questions per fetch: the whole batch with options and explanations travels in one response. */
+export const BATCH_SIZE = 10;
+
 async function request<T>(path: string, init: RequestInit & { token?: string } = {}): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (init.token) headers.Authorization = `Bearer ${init.token}`;
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  // A request that never returns would leave the display on "Preparing" forever.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...init, headers, signal: controller.signal });
+  } catch (err) {
+    throw new ApiError(0, controller.signal.aborted ? "No answer from the server in 25 s" : (err instanceof Error ? err.message : String(err)));
+  } finally {
+    clearTimeout(timer);
+  }
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, body.error ?? `HTTP ${res.status}`, body.code);
@@ -130,7 +144,7 @@ interface BatchResponse {
 }
 
 export function fetchBatch(token: string, mode: "single" | "multi", sessionId: string | null, exclude: string[]): Promise<BatchResponse> {
-  const params = new URLSearchParams({ mode, limit: "5" });
+  const params = new URLSearchParams({ mode, limit: String(BATCH_SIZE) });
   if (sessionId) params.set("session_id", sessionId);
   if (exclude.length) params.set("exclude", exclude.slice(0, 50).join(","));
   return request<BatchResponse>(`/glasses/next?${params.toString()}`, { token });

@@ -19,7 +19,7 @@ export const compilerConfig = {
   bin: process.env.CLAUDE_BIN ?? "claude",
   model: process.env.GLASSES_COMPILER_MODEL ?? "opus",
   mcpUrl: process.env.GLASSES_COMPILER_MCP_URL ?? `http://127.0.0.1:${process.env.MCP_PORT ?? "3001"}/mcp`,
-  batch: parseInt(process.env.GLASSES_COMPILER_BATCH ?? "20", 10) || 20,
+  batch: parseInt(process.env.GLASSES_COMPILER_BATCH ?? "10", 10) || 10,
   timeoutMs: 12 * 60 * 1000,
   /** After a run, wait this long before another one for the same user; stops a failing binary from looping. */
   cooldownMs: 90 * 1000,

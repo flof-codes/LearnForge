@@ -60,8 +60,11 @@ const startResult = await bridge.createStartUpPageContainer(
         yPosition: 0,
         width: 576,
         height: 288,
-        borderWidth: 0,
-        paddingLength: 4,
+        // A frame around the whole text: without it the block is hard to focus on the waveguide.
+        borderWidth: 2,
+        borderColor: 8,
+        borderRadius: 8,
+        paddingLength: 10,
         containerID: CONTAINER_ID,
         containerName: CONTAINER_NAME,
         content: render(state),

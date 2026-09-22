@@ -87,6 +87,7 @@ export type Action =
   | { type: "SUMMARY_LOADED"; summary: Summary }
   | { type: "BATCH_LOADED"; sessionId: string; questions: Question[]; pendingCompile: number; compiling: boolean }
   | { type: "RETRY_BATCH" }
+  | { type: "CLICK_PREPARING" }
   | { type: "BATCH_FAILED"; message: string }
   | { type: "FAILED"; message: string };
 
@@ -173,8 +174,8 @@ export function reduce(state: State, action: Action): { state: State; effects: E
       return goHome(state);
 
     case "RETRY_BATCH": {
-      // The server is compiling; ask again for what is ready now.
-      if (v.kind !== "empty" || state.fetching) return { state, effects: none };
+      // The server is compiling, or a fetch failed: ask again for what is ready now.
+      if ((v.kind !== "empty" && v.kind !== "preparing") || state.fetching) return { state, effects: none };
       const s: State = { ...state, fetching: true, exhausted: false, view: { kind: "preparing", mode: state.mode } };
       return { state: s, effects: [fetchEffect(s)] };
     }
@@ -189,23 +190,32 @@ export function reduce(state: State, action: Action): { state: State; effects: E
       return { state: s, effects: none };
     }
 
+    case "CLICK_PREPARING":
+      // A tap while nothing is in flight re-asks the server.
+      if (v.kind !== "preparing" || state.fetching) return { state, effects: none };
+      return reduce(state, { type: "RETRY_BATCH" });
+
     case "BATCH_LOADED": {
       const fresh = action.questions.filter(q =>
         !state.answered.includes(q.questionId) &&
         !state.queue.some(x => x.questionId === q.questionId) &&
         !state.seenCards.includes(q.cardId));
+      const moreComing = action.compiling || action.pendingCompile > 0;
       const s: State = {
         ...state,
         fetching: false,
-        exhausted: fresh.length === 0,
+        // Nothing new and nothing being compiled: stop asking until the next session.
+        exhausted: fresh.length === 0 && !moreComing,
         sessionId: action.sessionId,
         queue: [...state.queue, ...fresh],
         seenCards: [...state.seenCards, ...fresh.map(q => q.cardId)],
       };
       if (v.kind !== "preparing") return { state: s, effects: none };
       if (s.queue.length === 0) {
+        // The compiler is still working: wait on the compiling screen, which polls, instead of ending the session.
+        if (moreComing) return { state: { ...s, view: { kind: "empty", mode: s.mode, pendingCompile: action.pendingCompile, compiling: action.compiling } }, effects: none };
         if (s.reviewed > 0) return { state: { ...s, view: { kind: "done", reviewed: s.reviewed, correct: s.correct } }, effects: none };
-        return { state: { ...s, view: { kind: "empty", mode: s.mode, pendingCompile: action.pendingCompile, compiling: action.compiling } }, effects: none };
+        return { state: { ...s, view: { kind: "empty", mode: s.mode, pendingCompile: 0, compiling: false } }, effects: none };
       }
       return nextQuestion(s, Date.now());
     }
@@ -251,6 +261,8 @@ export function reduce(state: State, action: Action): { state: State; effects: E
         }
         case "result":
           return nextQuestion(state, action.now);
+        case "preparing":
+          return reduce(state, { type: "CLICK_PREPARING" });
         case "done":
         case "empty":
         case "error":
