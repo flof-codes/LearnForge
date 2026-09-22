@@ -39,6 +39,9 @@ describe("MCP Tools", () => {
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain("list_topics");
       expect(toolNames).toContain("create_card");
+      for (const name of ["start_session", "set_change_rate", "get_original", "set_original", "dispute_original", "resolve_dispute"]) {
+        expect(toolNames).toContain(name);
+      }
       expect(toolNames).toContain("get_study_cards");
       expect(toolNames).toContain("submit_review");
       expect(toolNames).toContain("get_instructions");

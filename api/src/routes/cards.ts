@@ -120,7 +120,7 @@ export default async function cardRoutes(app: FastifyInstance) {
   });
 
   // PUT /cards/:id — update card content
-  app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string; cloze_data?: ClozeData } }>("/cards/:id", {
+  app.put<{ Params: { id: string }; Body: { concept?: string; front_html?: string; back_html?: string; tags?: string[]; topic_id?: string; cloze_data?: ClozeData; change_rate?: number | null } }>("/cards/:id", {
     schema: {
       body: {
         type: "object",
@@ -131,6 +131,7 @@ export default async function cardRoutes(app: FastifyInstance) {
           back_html: { type: "string", minLength: 1 },
           tags: { type: "array", items: { type: "string" } },
           cloze_data: { type: "object" },
+          change_rate: { type: ["number", "null"], minimum: 0, maximum: 1 },
         },
         additionalProperties: false,
       },

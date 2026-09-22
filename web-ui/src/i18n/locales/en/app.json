@@ -557,5 +557,18 @@
     "loading": "Loading...",
     "cancel": "Cancel",
     "close": "Close"
+  },
+  "variation": {
+    "variation": "Question variation",
+    "exact": "Exact",
+    "reworded": "Reworded",
+    "newContext": "New context",
+    "free": "Free",
+    "hintExact": "Asked word for word. Stays on its level.",
+    "hintReworded": "Same question, different wording.",
+    "hintNewContext": "Same idea in a new situation.",
+    "hintFree": "Anything that tests the idea.",
+    "sameAs": "Same as \u201c{{name}}\u201d ({{word}})",
+    "sameAsDefault": "Same as default ({{word}})"
   }
 }

@@ -7,6 +7,9 @@ import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { validateCardHtml } from "../lib/sanitize-card-html.js";
 import { verifyCardOwnership } from "../lib/card-ownership.js";
 import { validateClozeData, renderClozeHtml, type ClozeData } from "../lib/cloze-parser.js";
+import { markOriginalStale, getCurrentOriginals } from "./originals-service.js";
+import { loadTopicRates, resolveCardRate, resolveTopicRate, validateChangeRate } from "./change-rate.js";
+import { sql } from "drizzle-orm";
 
 /** All card columns except `embedding` (internal-only, never exposed to clients). */
 const cardColumns = {
@@ -18,6 +21,8 @@ const cardColumns = {
   tags: cards.tags,
   cardType: cards.cardType,
   clozeData: cards.clozeData,
+  changeRate: cards.changeRate,
+  currentOriginalId: cards.currentOriginalId,
   createdAt: cards.createdAt,
   updatedAt: cards.updatedAt,
 };
@@ -116,11 +121,13 @@ export async function getCard(db: Db, userId: string, cardId: string) {
       tags: cards.tags,
       cardType: cards.cardType,
       clozeData: cards.clozeData,
+      changeRate: cards.changeRate,
       createdAt: cards.createdAt,
       updatedAt: cards.updatedAt,
       bloomCardId: bloomState.cardId,
       bloomCurrentLevel: bloomState.currentLevel,
       bloomHighestReached: bloomState.highestReached,
+      bloomProgress: bloomState.progress,
       bloomUpdatedAt: bloomState.updatedAt,
       fsrsCardId: fsrsState.cardId,
       fsrsStability: fsrsState.stability,
@@ -140,7 +147,7 @@ export async function getCard(db: Db, userId: string, cardId: string) {
   if (!row) throw new NotFoundError("Card not found");
 
   const bloom = row.bloomCardId != null
-    ? { cardId: row.bloomCardId, currentLevel: row.bloomCurrentLevel!, highestReached: row.bloomHighestReached!, updatedAt: row.bloomUpdatedAt! }
+    ? { cardId: row.bloomCardId, currentLevel: row.bloomCurrentLevel!, highestReached: row.bloomHighestReached!, progress: row.bloomProgress ?? 0, updatedAt: row.bloomUpdatedAt! }
     : null;
 
   const fsrs = row.fsrsCardId != null
@@ -148,6 +155,10 @@ export async function getCard(db: Db, userId: string, cardId: string) {
     : null;
 
   const cardReviews = await db.select().from(reviews).where(eq(reviews.cardId, cardId));
+  const topicRates = await loadTopicRates(db, userId);
+  const effective = resolveCardRate({ changeRate: row.changeRate, topicId: row.topicId }, topicRates);
+  const inherited = resolveTopicRate(row.topicId, topicRates);
+  const originals = await getCurrentOriginals(db, userId, [cardId]);
 
   return {
     id: row.id,
@@ -158,6 +169,12 @@ export async function getCard(db: Db, userId: string, cardId: string) {
     tags: row.tags,
     cardType: row.cardType,
     clozeData: row.clozeData,
+    changeRate: row.changeRate,
+    effectiveChangeRate: effective.changeRate,
+    rateSource: effective.rateSource,
+    inheritedChangeRate: inherited.changeRate,
+    inheritedFrom: inherited.sourceTopicName,
+    original: originals.get(cardId) ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     bloomState: bloom,
@@ -173,10 +190,12 @@ export interface UpdateCardInput {
   tags?: string[];
   topic_id?: string;
   cloze_data?: ClozeData;
+  /** 0..1 question variation for this card; null re-inherits from the topic. */
+  change_rate?: number | null;
 }
 
 export async function updateCard(db: Db, userId: string, cardId: string, input: UpdateCardInput) {
-  const { concept, tags, topic_id, cloze_data } = input;
+  const { concept, tags, topic_id, cloze_data, change_rate } = input;
   let { front_html, back_html } = input;
 
   await verifyCardOwnership(db, cardId, userId);
@@ -217,6 +236,7 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
   if (tags !== undefined) updates.tags = tags;
   if (topic_id !== undefined) updates.topicId = topic_id;
   if (cloze_data !== undefined) updates.clozeData = cloze_data;
+  if (change_rate !== undefined) updates.changeRate = validateChangeRate(change_rate);
 
   if (concept !== undefined || front_html !== undefined || back_html !== undefined || tags !== undefined) {
     const finalConcept = concept ?? currentCard.concept;
@@ -228,6 +248,11 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
 
   const [updated] = await db.update(cards).set(updates).where(eq(cards.id, cardId)).returning(cardColumns);
   if (!updated) throw new NotFoundError("Card not found");
+
+  // The tutor's original question may no longer match the edited content.
+  if (concept !== undefined || front_html !== undefined || back_html !== undefined || cloze_data !== undefined) {
+    await markOriginalStale(db, userId, cardId);
+  }
 
   return updated;
 }
@@ -252,7 +277,7 @@ export async function resetCard(db: Db, userId: string, cardId: string) {
   const result = await db.transaction(async (tx) => {
     const [bloom] = await tx
       .update(bloomState)
-      .set({ currentLevel: 0, highestReached: 0, updatedAt: new Date() })
+      .set({ currentLevel: 0, highestReached: 0, progress: 0, updatedAt: new Date() })
       .where(eq(bloomState.cardId, cardId))
       .returning();
 
@@ -271,6 +296,8 @@ export async function resetCard(db: Db, userId: string, cardId: string) {
       .returning();
 
     await tx.delete(reviews).where(eq(reviews.cardId, cardId));
+    // Open tickets would compare a NULL last_review against NULL and look valid again.
+    await tx.execute(sql`DELETE FROM study_questions WHERE card_id = ${cardId}`);
 
     return { ...card, bloomState: bloom, fsrsState: fsrs, reviews: [] };
   });

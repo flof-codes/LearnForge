@@ -51,7 +51,7 @@ export default async function topicRoutes(app: FastifyInstance) {
   });
 
   // PUT /topics/:id
-  app.put<{ Params: { id: string }; Body: { name?: string; description?: string; parentId?: string | null } }>("/topics/:id", {
+  app.put<{ Params: { id: string }; Body: { name?: string; description?: string; parentId?: string | null; changeRate?: number | null } }>("/topics/:id", {
     schema: {
       body: {
         type: "object",
@@ -59,6 +59,7 @@ export default async function topicRoutes(app: FastifyInstance) {
           name: { type: "string", minLength: 1 },
           description: { type: "string" },
           parentId: { type: ["string", "null"], format: "uuid" },
+          changeRate: { type: ["number", "null"], minimum: 0, maximum: 1 },
         },
         additionalProperties: false,
       },

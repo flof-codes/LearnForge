@@ -557,5 +557,18 @@
     "loading": "Laden...",
     "cancel": "Abbrechen",
     "close": "Schlie\u00dfen"
+  },
+  "variation": {
+    "variation": "Fragevariation",
+    "exact": "Exakt",
+    "reworded": "Umformuliert",
+    "newContext": "Neuer Kontext",
+    "free": "Frei",
+    "hintExact": "Wird w\u00f6rtlich abgefragt. Bleibt auf der Stufe.",
+    "hintReworded": "Gleiche Frage, andere Formulierung.",
+    "hintNewContext": "Gleiche Idee in neuer Situation.",
+    "hintFree": "Alles, was die Idee pr\u00fcft.",
+    "sameAs": "Wie \u201e{{name}}\u201c ({{word}})",
+    "sameAsDefault": "Wie Standard ({{word}})"
   }
 }

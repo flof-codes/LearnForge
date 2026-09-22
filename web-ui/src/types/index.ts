@@ -9,6 +9,11 @@ export interface Topic {
   cardCount: number;
   newCount?: number;
   dueCount?: number;
+  changeRate?: number | null;
+  effectiveChangeRate?: number;
+  rateSource?: 'card' | 'topic' | 'default';
+  inheritedChangeRate?: number;
+  inheritedFrom?: string | null;
 }
 
 export interface TopicWithChildren extends Topic {
@@ -34,6 +39,7 @@ export interface UpdateTopicInput {
   name?: string;
   description?: string;
   parentId?: string;
+  changeRate?: number | null;
 }
 
 // --- Cards ---
@@ -52,6 +58,11 @@ export interface CardWithState extends Card {
   bloomState: BloomState;
   fsrsState: FsrsState;
   reviews: Review[];
+  changeRate?: number | null;
+  effectiveChangeRate?: number;
+  rateSource?: 'card' | 'topic' | 'default';
+  inheritedChangeRate?: number;
+  inheritedFrom?: string | null;
 }
 
 export interface CreateCardInput {
@@ -68,6 +79,7 @@ export interface UpdateCardInput {
   back_html?: string;
   tags?: string[];
   topic_id?: string;
+  change_rate?: number | null;
 }
 
 // --- Bloom State ---
@@ -75,6 +87,7 @@ export interface BloomState {
   cardId: string;
   currentLevel: number;
   highestReached: number;
+  progress?: number;
   updatedAt: string;
 }
 

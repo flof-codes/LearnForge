@@ -293,35 +293,37 @@ describe("Study Flow", () => {
       expect(result.fsrsState.lapses).toBeGreaterThanOrEqual(1);
     });
 
-    it("chat modality pushes due further than web", async () => {
+    it("a tutor review (chat) pushes due further than web self-rating", async () => {
       const cardWeb = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "modality-web");
       const cardChat = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "modality-chat");
       freshCardIds.push(cardWeb.id, cardChat.id);
 
       const now = Date.now();
-      const webResult = await submitReview(api, cardWeb.id, 0, 3, { modality: "web" });
-      const chatResult = await submitReview(api, cardChat.id, 0, 3, { modality: "chat" });
+      // Easy on a new card goes straight to Review with a multi-day interval;
+      // shorter learning steps are never scaled.
+      const webResult = await submitReview(api, cardWeb.id, 0, 4, { modality: "web" });
+      const chatResult = await submitReview(api, cardChat.id, 0, 4, { modality: "chat" });
 
       const webInterval = new Date(webResult.fsrsState.due).getTime() - now;
       const chatInterval = new Date(chatResult.fsrsState.due).getTime() - now;
 
-      // Chat modality (1.2x) should push due further than web (0.95x)
+      // Tutor factor at the default rate (1.4) pushes due further than web (0.95)
       expect(chatInterval).toBeGreaterThan(webInterval);
     });
 
-    it("mcq modality pushes due further than web", async () => {
+    it("a tutor review (mcq) pushes due further than web self-rating", async () => {
       const cardWeb = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "modality-web2");
       const cardMcq = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "modality-mcq");
       freshCardIds.push(cardWeb.id, cardMcq.id);
 
       const now = Date.now();
-      const webResult = await submitReview(api, cardWeb.id, 0, 3, { modality: "web" });
-      const mcqResult = await submitReview(api, cardMcq.id, 0, 3, { modality: "mcq" });
+      const webResult = await submitReview(api, cardWeb.id, 0, 4, { modality: "web" });
+      const mcqResult = await submitReview(api, cardMcq.id, 0, 4, { modality: "mcq" });
 
       const webInterval = new Date(webResult.fsrsState.due).getTime() - now;
       const mcqInterval = new Date(mcqResult.fsrsState.due).getTime() - now;
 
-      // MCQ modality (1.05x) should push due further than web (0.95x)
+      // Tutor factor (1.4 at the default rate) pushes due further than web (0.95)
       expect(mcqInterval).toBeGreaterThan(webInterval);
     });
   });

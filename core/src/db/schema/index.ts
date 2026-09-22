@@ -9,3 +9,6 @@ export { oauthClients, oauthAuthorizationCodes, oauthTokens } from "./oauth.js";
 export { shareLinks, shareLinksRelations } from "./shareLinks.js";
 export { focusTopics, focusTopicsRelations } from "./focusTopics.js";
 export { authTokens, authTokensRelations } from "./authTokens.js";
+export { cardOriginals, cardOriginalsRelations } from "./cardOriginals.js";
+export { studySessions } from "./studySessions.js";
+export { studyQuestions } from "./studyQuestions.js";

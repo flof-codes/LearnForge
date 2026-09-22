@@ -15,7 +15,7 @@ export default async function exportRoutes(app: FastifyInstance) {
 
     // 1. Query all topics for the user
     const topicResult = await db.execute(sql`
-      SELECT id, parent_id, name, description, created_at
+      SELECT id, parent_id, name, description, created_at, change_rate
       FROM topics
       WHERE user_id = ${userId}
       ORDER BY created_at
@@ -24,8 +24,9 @@ export default async function exportRoutes(app: FastifyInstance) {
     // 2. Query all cards with bloom_state, fsrs_state, and reviews
     const cardResult = await db.execute(sql`
       SELECT c.id, c.topic_id, c.concept, c.front_html, c.back_html, c.tags,
+        c.card_type, c.cloze_data, c.change_rate,
         c.created_at, c.updated_at,
-        bs.current_level, bs.highest_reached,
+        bs.current_level, bs.highest_reached, bs.progress,
         fs.stability, fs.difficulty, fs.due, fs.state as fsrs_state,
         fs.last_review, fs.reps, fs.lapses,
         json_agg(json_build_object(
@@ -36,7 +37,15 @@ export default async function exportRoutes(app: FastifyInstance) {
           'answerExpected', r.answer_expected,
           'userAnswer', r.user_answer,
           'modality', r.modality,
-          'reviewedAt', r.reviewed_at
+          'reviewedAt', r.reviewed_at,
+          'style', r.style,
+          'correctness', r.correctness,
+          'onLevel', r.on_level,
+          'changeRate', r.change_rate,
+          'sessionDifficulty', r.session_difficulty,
+          'levelStep', r.level_step,
+          'intervalFactor', r.interval_factor,
+          'rulesVersion', r.rules_version
         ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
       FROM cards c
       JOIN topics t ON c.topic_id = t.id
@@ -45,8 +54,9 @@ export default async function exportRoutes(app: FastifyInstance) {
       LEFT JOIN reviews r ON r.card_id = c.id
       WHERE t.user_id = ${userId}
       GROUP BY c.id, c.topic_id, c.concept, c.front_html, c.back_html, c.tags,
+        c.card_type, c.cloze_data, c.change_rate,
         c.created_at, c.updated_at,
-        bs.current_level, bs.highest_reached,
+        bs.current_level, bs.highest_reached, bs.progress,
         fs.stability, fs.difficulty, fs.due, fs.state, fs.last_review, fs.reps, fs.lapses
       ORDER BY c.created_at
     `);
@@ -62,6 +72,7 @@ export default async function exportRoutes(app: FastifyInstance) {
       name: row.name,
       description: row.description,
       createdAt: row.created_at,
+      changeRate: row.change_rate,
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- raw SQL result rows
@@ -72,11 +83,15 @@ export default async function exportRoutes(app: FastifyInstance) {
       frontHtml: row.front_html,
       backHtml: row.back_html,
       tags: row.tags,
+      cardType: row.card_type,
+      clozeData: row.cloze_data,
+      changeRate: row.change_rate,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       bloomState: {
         currentLevel: row.current_level ?? 0,
         highestReached: row.highest_reached ?? 0,
+        progress: row.progress ?? 0,
       },
       fsrsState: row.due
         ? {
@@ -101,7 +116,7 @@ export default async function exportRoutes(app: FastifyInstance) {
     }));
 
     const exportData = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       topics,
       cards,

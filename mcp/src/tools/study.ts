@@ -6,14 +6,15 @@ import { getStudyCards, getStudySummary, getDueForecast } from "@learnforge/core
 export function registerStudyTools(server: McpServer, db: Db, userId: string) {
   server.tool(
     "get_study_cards",
-    "Get cards ready to study (new + due for review), optionally filtered by topic (includes descendants)",
+    "Get cards ready to study (new + due for review), optionally filtered by topic (includes descendants). Pass the session_id from start_session: each card then carries a question_id ticket that submit_review needs, plus its original question, effective change rate, level and progress.",
     {
       topic_id: z.string().uuid().optional(),
       limit: z.number().int().min(1).max(100).default(5).optional(),
+      session_id: z.string().uuid().optional().describe("From start_session; issues one ticket per card"),
     },
-    async ({ topic_id, limit }) => {
+    async ({ topic_id, limit, session_id }) => {
       try {
-        const cards = await getStudyCards(db, userId, topic_id, limit ?? 5);
+        const cards = await getStudyCards(db, userId, topic_id, limit ?? 5, { sessionId: session_id });
         return { content: [{ type: "text" as const, text: JSON.stringify(cards, null, 2) }] };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

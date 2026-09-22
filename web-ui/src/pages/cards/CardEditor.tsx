@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import TopicSelector from '../../components/TopicSelector';
 import TagInput from '../../components/TagInput';
 import CardHtmlRender from '../../components/CardHtmlRender';
+import VariationSlider from '../../components/VariationSlider';
 import type { CardWithState, CreateCardInput, UpdateCardInput } from '../../types';
 
 interface Props {
@@ -55,6 +56,7 @@ export default function CardEditor({ initialData, onSubmit, isPending, onDirty }
   const [frontHtml, setFrontHtml] = useState(initialData?.frontHtml ?? '');
   const [backHtml, setBackHtml] = useState(initialData?.backHtml ?? '');
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? []);
+  const [changeRate, setChangeRate] = useState<number | null>(initialData?.changeRate ?? null);
   const [previewSide, setPreviewSide] = useState<'front' | 'back'>('front');
 
   const frontEditorRef = useCodeMirror(initialData?.frontHtml ?? '', setFrontHtml);
@@ -65,6 +67,7 @@ export default function CardEditor({ initialData, onSubmit, isPending, onDirty }
       setConcept(initialData.concept); // eslint-disable-line react-hooks/set-state-in-effect
       setTopicId(initialData.topicId);
       setTags(initialData.tags);
+      setChangeRate(initialData.changeRate ?? null);
     }
   }, [initialData]);
 
@@ -77,6 +80,7 @@ export default function CardEditor({ initialData, onSubmit, isPending, onDirty }
         back_html: backHtml,
         tags,
         topic_id: topicId,
+        change_rate: changeRate,
       } as UpdateCardInput);
     } else {
       onSubmit({
@@ -125,6 +129,16 @@ export default function CardEditor({ initialData, onSubmit, isPending, onDirty }
           <span className="block text-sm text-text-muted mb-1">{t('cardEditor.tags')}</span>
           <TagInput tags={tags} onChange={setTags} />
         </label>
+
+        {initialData && (
+          <VariationSlider
+            idPrefix="edit-card"
+            value={changeRate}
+            inheritedValue={initialData.inheritedChangeRate ?? 0.8}
+            inheritedFrom={initialData.inheritedFrom ?? null}
+            onChange={v => { setChangeRate(v); onDirty?.(); }}
+          />
+        )}
 
         <button
           type="submit"

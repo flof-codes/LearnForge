@@ -7,6 +7,7 @@ import { shareLinks, topics, cards, bloomState, fsrsState, images } from "../db/
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { extFromMime } from "../lib/image-utils.js";
 import { createInitialFsrsState } from "./fsrs.js";
+import { loadTopicRates, resolveTopicRate } from "./change-rate.js";
 
 function generateToken(): string {
   return randomBytes(24).toString("base64url");
@@ -102,6 +103,7 @@ type SourceTopic = {
   parent_id: string | null;
   name: string;
   description: string | null;
+  change_rate: number | null;
 };
 
 
@@ -130,14 +132,14 @@ export async function acceptShareLink(
 
   const topicRows = await db.execute<SourceTopic>(sql`
     WITH RECURSIVE tree AS (
-      SELECT id, parent_id, name, description FROM topics
+      SELECT id, parent_id, name, description, change_rate FROM topics
       WHERE id = ${link.topicId} AND user_id = ${link.ownerId}
       UNION ALL
-      SELECT t.id, t.parent_id, t.name, t.description
+      SELECT t.id, t.parent_id, t.name, t.description, t.change_rate
       FROM topics t JOIN tree tr ON t.parent_id = tr.id
       WHERE t.user_id = ${link.ownerId}
     )
-    SELECT id, parent_id, name, description FROM tree
+    SELECT id, parent_id, name, description, change_rate FROM tree
   `);
 
   if (topicRows.rows.length === 0) throw new NotFoundError("Source topic not found");
@@ -155,6 +157,11 @@ export async function acceptShareLink(
     : [];
 
   const initialFsrs = createInitialFsrsState();
+
+  // The recipient has none of the owner's ancestor topics, so the copied root
+  // carries the rate the source root inherited. Overrides below it travel as they are.
+  const ownerTopicRates = await loadTopicRates(db, link.ownerId);
+  const rootEffective = resolveTopicRate(link.topicId, ownerTopicRates);
 
   const result = await db.transaction(async (tx) => {
     const topicIdMap = new Map<string, string>();
@@ -185,6 +192,9 @@ export async function acceptShareLink(
           description: src.description,
           parentId: newParentId,
           userId: recipientUserId,
+          changeRate: isRoot
+            ? (rootEffective.rateSource === "default" ? null : rootEffective.changeRate)
+            : src.change_rate,
         })
         .returning({ id: topics.id });
       topicIdMap.set(src.id, inserted.id);
@@ -204,6 +214,7 @@ export async function acceptShareLink(
           tags: srcCard.tags ?? [],
           cardType: srcCard.cardType,
           clozeData: srcCard.clozeData,
+          changeRate: srcCard.changeRate,
           embedding: srcCard.embedding ?? undefined,
         })
         .returning({ id: cards.id });

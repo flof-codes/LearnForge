@@ -25,13 +25,35 @@ export {
 } from "./lib/cloze-parser.js";
 
 // Services - Bloom
-export { computeBloomTransition, type BloomTransitionResult } from "./services/bloom.js";
+export {
+  computeBloomTransition, computeLevelStep, applyLevelStep, correctnessFromRating, ratingFromCorrectness,
+  RULES_VERSION, DEFAULT_CHANGE_RATE, LEVEL_THRESHOLD, PASS_MARK,
+  type BloomTransitionResult, type LevelProgressResult,
+} from "./services/bloom.js";
+
+// Services - Dials (change rate, sessions, originals)
+export {
+  loadTopicRates, resolveCardRate, resolveTopicRate, getEffectiveCardRate, getEffectiveTopicRate,
+  setChangeRate, validateChangeRate, type EffectiveRate, type RateSource, type SetChangeRateInput,
+} from "./services/change-rate.js";
+export {
+  startSession, getSession, getOpenQuestions, validateDifficulty, SESSION_EXPIRY_HOURS,
+  type StudySession, type StartSessionInput,
+} from "./services/session-service.js";
+export {
+  setOriginal, getCardOriginal, getCurrentOriginals, disputeOriginal, resolveDispute, markOriginalStale,
+  type CardOriginal, type OriginalOption, type SetOriginalInput,
+} from "./services/originals-service.js";
 
 // Services - FSRS
 export {
   createInitialFsrsState,
   processReview,
   applyModalityMultiplier,
+  applyIntervalFactor,
+  tutorIntervalFactor,
+  intervalDays,
+  WEB_INTERVAL_FACTOR,
   isValidModality,
   type FsrsDbState,
   type StudyModality,
@@ -53,10 +75,11 @@ export {
 } from "./services/card-service.js";
 
 // Services - Review
-export { submitReview, deleteReview, type SubmitReviewInput, type DeleteReviewOptions } from "./services/review-service.js";
+export { submitReview, deleteReview, gradeChoice, type SubmitReviewInput, type DeleteReviewOptions, type QuestionStyle } from "./services/review-service.js";
 
 // Services - Study
-export { getStudyCards, getStudySummary, getDueForecast, getStudyStats } from "./services/study-service.js";
+export { getStudyCards, getStudySummary, type GetStudyCardsOptions } from "./services/study-service.js";
+export { getDueForecast, getStudyStats } from "./services/study-stats.js";
 
 // Services - Topic
 export {

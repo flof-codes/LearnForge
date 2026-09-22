@@ -1,5 +1,5 @@
-import { pgTable, uuid, text, varchar, timestamp, jsonb, customType } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, uuid, text, varchar, real, timestamp, jsonb, customType, check } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { topics } from "./topics.js";
 
 const vector = customType<{ data: number[]; driverParam: string }>({
@@ -23,10 +23,16 @@ export const cards = pgTable("cards", {
   tags: text("tags").array().default([]),
   cardType: varchar("card_type", { length: 20 }).notNull().default("standard"),
   clozeData: jsonb("cloze_data"),
+  /** Question variation 0..1 for this card; NULL inherits from the topic chain. */
+  changeRate: real("change_rate"),
+  /** The current anchor question (card_originals.id). No FK to avoid a cycle; the originals table cascades from cards. */
+  currentOriginalId: uuid("current_original_id"),
   embedding: vector("embedding"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
-});
+}, (t) => [
+  check("cards_change_rate_range", sql`${t.changeRate} IS NULL OR (${t.changeRate} >= 0 AND ${t.changeRate} <= 1)`),
+]);
 
 export const cardsRelations = relations(cards, ({ one }) => ({
   topic: one(topics, { fields: [cards.topicId], references: [topics.id] }),

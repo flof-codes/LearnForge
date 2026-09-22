@@ -137,16 +137,17 @@ describe("Cloze Study Flow", () => {
       expect(result.fsrsState.lapses).toBeGreaterThanOrEqual(1);
     });
 
-    it("modality multipliers work for cloze cards (chat > web)", async () => {
+    it("the tutor interval factor applies to cloze cards (chat > web)", async () => {
       const cardWeb = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "mod-web");
       const cardChat = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "mod-chat");
       freshCardIds.push(cardWeb.id, cardChat.id);
 
       const now = Date.now();
-      const webResult = await submitReview(api, cardWeb.id, 0, 3, {
+      // Easy on a new card reaches Review; sub-day learning steps are not scaled.
+      const webResult = await submitReview(api, cardWeb.id, 0, 4, {
         modality: "web",
       });
-      const chatResult = await submitReview(api, cardChat.id, 0, 3, {
+      const chatResult = await submitReview(api, cardChat.id, 0, 4, {
         modality: "chat",
       });
 

@@ -2,10 +2,11 @@ import { eq, and, sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import { topics, cards } from "../db/schema/index.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { validateChangeRate, loadTopicRates, resolveTopicRate } from "./change-rate.js";
 
 export async function listTopics(db: Db, userId: string) {
   const result = await db.execute<{
-    id: string; name: string; description: string | null; parent_id: string | null; created_at: string;
+    id: string; name: string; description: string | null; parent_id: string | null; created_at: string; change_rate: number | null;
     child_count: number; card_count: number; new_count: number; learning_count: number; due_count: number;
   }>(sql`
     SELECT t.*,
@@ -25,15 +26,30 @@ export async function listTopics(db: Db, userId: string) {
     FROM topics t
     WHERE t.parent_id IS NULL AND t.user_id = ${userId}
   `);
+  const topicRates = await loadTopicRates(db, userId);
   return result.rows.map(r => ({
     id: r.id, name: r.name, description: r.description, parentId: r.parent_id, createdAt: r.created_at,
     childCount: r.child_count, cardCount: r.card_count, newCount: r.new_count, learningCount: r.learning_count, dueCount: r.due_count,
+    ...rateFields(r.id, r.parent_id, r.change_rate, topicRates),
   }));
+}
+
+/** The four rate fields the UI needs: own value, effective value and what an empty value would inherit. */
+function rateFields(id: string, parentId: string | null, changeRate: number | null, topicRates: Awaited<ReturnType<typeof loadTopicRates>>) {
+  const effective = resolveTopicRate(id, topicRates);
+  const inherited = resolveTopicRate(parentId, topicRates);
+  return {
+    changeRate,
+    effectiveChangeRate: effective.changeRate,
+    rateSource: effective.rateSource,
+    inheritedChangeRate: inherited.changeRate,
+    inheritedFrom: inherited.sourceTopicName,
+  };
 }
 
 export async function getTopic(db: Db, userId: string, topicId: string) {
   const topicResult = await db.execute<{
-    id: string; name: string; description: string | null; parent_id: string | null; created_at: string;
+    id: string; name: string; description: string | null; parent_id: string | null; created_at: string; change_rate: number | null;
     card_count: number; new_count: number; learning_count: number; due_count: number;
   }>(sql`
     SELECT t.*,
@@ -55,13 +71,15 @@ export async function getTopic(db: Db, userId: string, topicId: string) {
 
   if (topicResult.rows.length === 0) throw new NotFoundError("Topic not found");
   const r = topicResult.rows[0];
+  const topicRates = await loadTopicRates(db, userId);
   const topic = {
     id: r.id, name: r.name, description: r.description, parentId: r.parent_id, createdAt: r.created_at,
     cardCount: r.card_count, newCount: r.new_count, learningCount: r.learning_count, dueCount: r.due_count,
+    ...rateFields(r.id, r.parent_id, r.change_rate, topicRates),
   };
 
   const childResult = await db.execute<{
-    id: string; name: string; description: string | null; parent_id: string | null; created_at: string;
+    id: string; name: string; description: string | null; parent_id: string | null; created_at: string; change_rate: number | null;
     child_count: number; card_count: number; new_count: number; learning_count: number; due_count: number;
   }>(sql`
     SELECT t.*,
@@ -84,6 +102,7 @@ export async function getTopic(db: Db, userId: string, topicId: string) {
   const children = childResult.rows.map(c => ({
     id: c.id, name: c.name, description: c.description, parentId: c.parent_id, createdAt: c.created_at,
     childCount: c.child_count, cardCount: c.card_count, newCount: c.new_count, learningCount: c.learning_count, dueCount: c.due_count,
+    ...rateFields(c.id, c.parent_id, c.change_rate, topicRates),
   }));
 
   return { ...topic, children };
@@ -168,15 +187,18 @@ export interface UpdateTopicInput {
   name?: string;
   description?: string;
   parentId?: string | null;
+  /** 0..1 sets the question variation for cards below this topic; null re-inherits. */
+  changeRate?: number | null;
 }
 
 export async function updateTopic(db: Db, userId: string, topicId: string, input: UpdateTopicInput) {
-  const { name, description, parentId } = input;
+  const { name, description, parentId, changeRate } = input;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle .set() partial update
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;
   if (description !== undefined) updates.description = description;
+  if (changeRate !== undefined) updates.changeRate = validateChangeRate(changeRate);
   if (parentId !== undefined) {
     if (parentId === topicId) throw new ValidationError("A topic cannot be its own parent");
     if (parentId !== null) {

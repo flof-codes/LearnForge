@@ -58,8 +58,16 @@ describe("Data Export", () => {
     const res = await api.get("/export", { responseType: "arraybuffer" });
     const { exportData } = parseExportZip(res.data);
 
-    expect(exportData.version).toBe(1);
+    expect(exportData.version).toBe(2); // 2 since release 1 of the dials: change_rate, progress, review log columns
     expect(exportData.exportedAt).toBeDefined();
+    expect(exportData.topics[0]).toHaveProperty("changeRate");
+    const reviewed = exportData.cards.find((c: any) => c.reviews.length > 0)!;
+    expect(reviewed).toHaveProperty("changeRate");
+    expect(reviewed).toHaveProperty("cardType");
+    expect(reviewed.bloomState).toHaveProperty("progress");
+    for (const key of ["style", "correctness", "onLevel", "changeRate", "sessionDifficulty", "levelStep", "intervalFactor", "rulesVersion"]) {
+      expect(reviewed.reviews[0]).toHaveProperty(key);
+    }
     expect(new Date(exportData.exportedAt).getTime()).not.toBeNaN();
     expect(Array.isArray(exportData.topics)).toBe(true);
     expect(Array.isArray(exportData.cards)).toBe(true);

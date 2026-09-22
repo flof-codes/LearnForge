@@ -20,6 +20,7 @@ import { registerContextTools } from "./tools/context.js";
 import { registerImageTools } from "./tools/images.js";
 import { registerSkillTools } from "./tools/skill.js";
 import { registerFocusTools } from "./tools/focus.js";
+import { registerDialTools } from "./tools/dials.js";
 import { LearnForgeOAuthProvider, handleLogin, cleanupExpiredOAuth } from "./auth/oauth-provider.js";
 
 export interface McpHttpConfig {
@@ -41,11 +42,11 @@ export function createMcpHttpApp(db: Db, mcpConfig: McpHttpConfig): {
         instructions: `LearnForge spaced repetition tutor with Bloom's Taxonomy progression.
 
 Session start: Call get_instructions to load the tutor workflow before doing anything else.
-Study session: get_study_summary → get_study_cards → [question loop with submit_review after each card].
+Study session: get_study_summary → start_session (ask the learner for the difficulty: Commute / Desk / Deep) → get_study_cards with session_id → [question loop: show the next question, then submit_review with the previous card's question_id ticket].
+Every question derives from the card's original question; at change rate 0 ask it word for word with the options in their stored order. Show the difficulty on every question.
 Card creation: Generate preview → wait for user approval → create_card. Call get_templates for HTML templates.
 Cross-concept questions (Bloom 3+): Use get_similar_cards for context.
-Question presentation: Print the stem and full lettered options as chat text, ordered by the card's
-optionShuffle array; collect the answer with the visualizer's show_widget using the mcq-selector template.`,
+Question presentation: Print the stem and full lettered options as chat text; where the client has the visualizer, collect the answer with show_widget and the mcq-selector template, otherwise let the learner type the letters.`,
       },
     );
     registerTopicTools(server, db, userId);
@@ -56,6 +57,7 @@ optionShuffle array; collect the answer with the visualizer's show_widget using 
     registerImageTools(server, db, userId, imagePath);
     registerSkillTools(server);
     registerFocusTools(server, db, userId);
+    registerDialTools(server, db, userId);
     return server;
   }
 

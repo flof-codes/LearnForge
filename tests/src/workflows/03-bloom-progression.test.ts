@@ -71,16 +71,21 @@ describe("Bloom Progression", () => {
     expect(result.bloomState.currentLevel).toBe(2);
   });
 
-  it("drops on Hard at current level", async () => {
+  it("one Hard at current level does not drop, two do", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "bloom-hard");
     freshCardIds.push(card.id);
 
     // Advance to level 2
     await advanceToLevel(card.id, 2);
 
-    // Hard at level 2
-    const result = await submitReview(api, card.id, 2, 2);
-    expect(result.bloomState.currentLevel).toBe(1);
+    // Hard counts as 40 % correct: step −0.8 × 0.6 = −0.48, just above the −0.5 edge
+    const first = await submitReview(api, card.id, 2, 2);
+    expect(first.bloomState.currentLevel).toBe(2);
+    expect(first.bloomState.progress).toBeCloseTo(-0.48, 2);
+
+    const second = await submitReview(api, card.id, 2, 2);
+    expect(second.bloomState.currentLevel).toBe(1);
+    expect(second.bloomState.progress).toBe(0);
   });
 
   it("cannot drop below level 0", async () => {

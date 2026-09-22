@@ -193,7 +193,7 @@ describe("MCP Image Tools", () => {
 // ── MCP submit_review with modalities ───────────────────────────────────────
 
 describe("MCP Review Modalities", () => {
-  it("submit_review with chat modality pushes due further than web", async () => {
+  it("submit_review as a tutor (chat) pushes due further than web self-rating", async () => {
     // Create two cards
     const createWeb = await mcp.callTool("create_card", {
       topic_id: TOPICS.EMPTY_TOPIC,
@@ -218,7 +218,7 @@ describe("MCP Review Modalities", () => {
     const webResult = await mcp.callTool("submit_review", {
       card_id: cardWeb.id,
       bloom_level: 0,
-      rating: 3,
+      rating: 4,
       question_text: "MCP web modality test",
       modality: "web",
     });
@@ -227,7 +227,7 @@ describe("MCP Review Modalities", () => {
     const chatResult = await mcp.callTool("submit_review", {
       card_id: cardChat.id,
       bloom_level: 0,
-      rating: 3,
+      rating: 4,
       question_text: "MCP chat modality test",
       modality: "chat",
     });
@@ -236,11 +236,11 @@ describe("MCP Review Modalities", () => {
     const webInterval = new Date(webReview.fsrsState.due).getTime() - now;
     const chatInterval = new Date(chatReview.fsrsState.due).getTime() - now;
 
-    // Chat (1.2x) should push due further than web (0.95x)
+    // Tutor factor (1.4 at the default rate) pushes due further than web (0.95)
     expect(chatInterval).toBeGreaterThan(webInterval);
   });
 
-  it("submit_review with mcq modality pushes due further than web", async () => {
+  it("submit_review as a tutor (mcq) pushes due further than web self-rating", async () => {
     const createWeb = await mcp.callTool("create_card", {
       topic_id: TOPICS.EMPTY_TOPIC,
       concept: "MCP modality web2 test",
@@ -264,7 +264,7 @@ describe("MCP Review Modalities", () => {
     const webResult = await mcp.callTool("submit_review", {
       card_id: cardWeb.id,
       bloom_level: 0,
-      rating: 3,
+      rating: 4,
       question_text: "MCP web modality test 2",
       modality: "web",
     });
@@ -273,7 +273,7 @@ describe("MCP Review Modalities", () => {
     const mcqResult = await mcp.callTool("submit_review", {
       card_id: cardMcq.id,
       bloom_level: 0,
-      rating: 3,
+      rating: 4,
       question_text: "MCP mcq modality test",
       modality: "mcq",
     });
@@ -282,7 +282,7 @@ describe("MCP Review Modalities", () => {
     const webInterval = new Date(webReview.fsrsState.due).getTime() - now;
     const mcqInterval = new Date(mcqReview.fsrsState.due).getTime() - now;
 
-    // MCQ (1.05x) should push due further than web (0.95x)
+    // Tutor factor (1.4 at the default rate) pushes due further than web (0.95)
     expect(mcqInterval).toBeGreaterThan(webInterval);
   });
 });

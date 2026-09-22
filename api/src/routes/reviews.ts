@@ -1,22 +1,29 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { submitReview, deleteReview } from "@learnforge/core";
+import { submitReview, deleteReview, type SubmitReviewInput } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function reviewRoutes(app: FastifyInstance) {
 
   // POST /reviews — submit a review
   app.post<{
-    Body: { card_id: string; bloom_level: number; rating: number; question_text: string; skip_bloom?: boolean; modality?: string; answer_expected?: string; user_answer?: string };
+    Body: SubmitReviewInput;
   }>("/reviews", {
     schema: {
       body: {
         type: "object",
-        required: ["card_id", "bloom_level", "rating", "question_text"],
+        required: ["bloom_level", "question_text"],
         properties: {
           card_id: { type: "string", format: "uuid" },
+          question_id: { type: "string", format: "uuid" },
           bloom_level: { type: "integer", minimum: 0, maximum: 5 },
+          target_level: { type: "integer", minimum: 0, maximum: 5 },
           rating: { type: "integer", minimum: 1, maximum: 4 },
+          correctness: { type: "number", minimum: 0, maximum: 1 },
+          style: { type: "string", enum: ["open", "single", "multiple", "self"] },
+          correct_option_ids: { type: "array", items: { type: "string" } },
+          selected_option_ids: { type: "array", items: { type: "string" } },
+          session_difficulty: { type: "number", minimum: 0, maximum: 1 },
           question_text: { type: "string", minLength: 1 },
           skip_bloom: { type: "boolean" },
           modality: { type: "string", enum: ["chat", "web", "mcq"] },

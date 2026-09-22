@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateTopic } from '../../hooks/useTopics';
 import TopicSelector from '../../components/TopicSelector';
+import VariationSlider from '../../components/VariationSlider';
 import type { Topic } from '../../types';
 
 interface Props {
@@ -16,6 +17,8 @@ export default function EditTopicModal({ open, topic, onClose }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedParent, setSelectedParent] = useState('');
+  const [changeRate, setChangeRate] = useState<number | null>(null);
+  const [rateTouched, setRateTouched] = useState(false);
   const updateTopic = useUpdateTopic();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -25,6 +28,8 @@ export default function EditTopicModal({ open, topic, onClose }: Props) {
       setName(topic.name); // eslint-disable-line react-hooks/set-state-in-effect
       setDescription(topic.description ?? '');
       setSelectedParent(topic.parentId ?? '');
+      setChangeRate(topic.changeRate ?? null);
+      setRateTouched(false);
     }
   }, [topic]);
 
@@ -81,6 +86,7 @@ export default function EditTopicModal({ open, topic, onClose }: Props) {
           name: name.trim(),
           description: description.trim() || undefined,
           parentId: selectedParent || undefined,
+          ...(rateTouched ? { changeRate } : {}),
         },
       },
       { onSuccess: onClose }
@@ -129,6 +135,13 @@ export default function EditTopicModal({ open, topic, onClose }: Props) {
             <span className="block text-sm text-text-muted mb-1">{t('topics.parentTopic')}</span>
             <TopicSelector value={selectedParent} onChange={setSelectedParent} excludeId={topic.id} allowNone />
           </label>
+          <VariationSlider
+            idPrefix="edit-topic"
+            value={changeRate}
+            inheritedValue={topic.inheritedChangeRate ?? 0.8}
+            inheritedFrom={topic.inheritedFrom ?? null}
+            onChange={v => { setChangeRate(v); setRateTouched(true); }}
+          />
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm bg-bg-surface text-text-muted hover:text-text-primary transition-colors">
               {t('topics.cancel')}
