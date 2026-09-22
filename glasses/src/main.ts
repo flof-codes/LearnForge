@@ -188,7 +188,9 @@ async function beginPairing(): Promise<void> {
   const { code, expiresAt } = await startPairing(await sha256Hex(secret));
   dispatch({ type: "PAIR_STARTED", code: `${code.slice(0, 3)} ${code.slice(3)}`, expiresAt: new Date(expiresAt).getTime() });
 
-  pairTimer = setInterval(async () => {
+  pairTimer = setInterval(() => void pollOnce(), PAIR_POLL_MS);
+
+  async function pollOnce(): Promise<void> {
     try {
       if (Date.now() > new Date(expiresAt).getTime()) {
         if (pairTimer) clearInterval(pairTimer);
@@ -212,7 +214,7 @@ async function beginPairing(): Promise<void> {
         await beginPairing();
       }
     }
-  }, PAIR_POLL_MS);
+  }
 }
 
 // --- Input -------------------------------------------------------------------------
@@ -285,4 +287,8 @@ async function boot(b: EvenAppBridge): Promise<void> {
   void flushQueue();
 }
 
-void boot(bridge);
+boot(bridge).catch((err: unknown) => {
+  // A failed first request must not leave the display on "Starting...".
+  const message = err instanceof Error ? err.message : String(err);
+  dispatch({ type: "FAILED", message: `Cannot reach LearnForge: ${message}` });
+});

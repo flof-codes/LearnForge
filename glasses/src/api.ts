@@ -8,7 +8,8 @@ import type { Question, Summary } from "./state.js";
  * only ever saw its hash.
  */
 
-export const API_BASE: string = (import.meta.env.VITE_API_URL as string | undefined) ?? "https://learnforge.eu";
+/** The api is served under /api on the production host; app.json whitelists the origin. */
+export const API_BASE: string = (import.meta.env.VITE_API_URL as string | undefined) ?? "https://learnforge.eu/api";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) {
