@@ -18,7 +18,8 @@ const PUBLIC_PATHS = new Set([
   "/glasses/pair/start",
   "/glasses/pair/poll",
 ]);
-const PUBLIC_PREFIXES = ["/shares/preview/"];
+// /media/<id>/<sig> carries its own HMAC signature; see core lib/media-url.ts.
+const PUBLIC_PREFIXES = ["/shares/preview/", "/media/"];
 
 /**
  * Routes the G2 glasses call with their own bearer token instead of a JWT.

@@ -104,6 +104,8 @@ export interface CardWithState extends Card {
   templateId?: string | null;
   clozeNumber?: number;
   suspended?: boolean;
+  /** gap | user | anki | unsupported */
+  suspendedBy?: string | null;
   note?: CardNoteInfo | null;
   changeRate?: number | null;
   effectiveChangeRate?: number;
@@ -358,4 +360,41 @@ export interface ExpandedFocusEntry {
   priority: number;
   expires_at: string | null;
   inherited: boolean;
+}
+
+// --- Anki import ---
+export type AnkiImportStatus = 'analyzing' | 'staged' | 'queued' | 'running' | 'done' | 'failed';
+
+export interface AnkiPreview {
+  version: 'legacy1' | 'legacy2' | 'latest';
+  schema: number;
+  counts: { notes: number; cards: number; reviewLogEntries: number; media: number; mediaBytes: number; new: number; learning: number; review: number; suspended: number };
+  decks: Array<{ path: string; cards: number }>;
+  noteTypes: Array<{ name: string; kind: 'standard' | 'cloze'; notes: number; supported: boolean; known: boolean }>;
+  duplicates: { total: number; newer: number };
+}
+
+export interface AnkiImportStats {
+  noteTypes: { created: number; reused: number; updated: number; unsupported: number };
+  topics: { created: number; reused: number };
+  notes: { created: number; updated: number; unchanged: number; failed: number };
+  cards: { created: number; suspended: number; unsupported: number; notRendered: number };
+  schedule: Record<'new' | 'anki-fsrs' | 'replay' | 'sm2', number>;
+  media: { stored: number; reused: number; failed: number; overQuota: number };
+  reviewLogEntries: number;
+  errors: Array<{ guid: string; message: string }>;
+}
+
+export interface AnkiImport {
+  id: string;
+  filename: string;
+  status: AnkiImportStatus;
+  packageVersion: string | null;
+  options: { schedule: 'keep' | 'fresh' } | null;
+  preview: AnkiPreview | null;
+  stats: AnkiImportStats | null;
+  error: string | null;
+  progress: { done: number; total: number };
+  createdAt: string;
+  finishedAt: string | null;
 }

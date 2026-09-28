@@ -148,6 +148,13 @@
       "when": 1790078665451,
       "tag": "0020_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790596693363,
+      "tag": "0021_anki_import",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import rawBody from "fastify-raw-body";
@@ -18,9 +18,23 @@ import shareRoutes from "./routes/shares.js";
 import focusRoutes from "./routes/focus.js";
 import glassesRoutes from "./routes/glasses.js";
 import noteRoutes from "./routes/notes.js";
+import ankiImportRoutes from "./routes/anki-import.js";
 import { sql } from "drizzle-orm";
 import { db } from "./db/connection.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
+import { signMediaRefs, unsignMediaRefsDeep, referencedMediaIds, textArray } from "@learnforge/core";
+import { config, mediaUrlSecret } from "./config.js";
+
+const HOST_RE = /^[a-z0-9.-]+(:\d{1,5})?$/i;
+
+/** Origin for signed media URLs: API_PUBLIC_URL, else the request's own host when it is a plain host name. */
+function mediaBaseUrl(request: FastifyRequest): string | null {
+  if (config.apiPublicUrl) return config.apiPublicUrl;
+  const host = request.host;
+  if (!HOST_RE.test(host)) return null; // X-Forwarded-Host is client-controlled behind trustProxy
+  const proto = request.protocol === "https" ? "https" : "http";
+  return `${proto}://${host}`;
+}
 
 export function buildApp() {
   // trustProxy: the api sits behind a reverse proxy; without it request.ip is the
@@ -59,6 +73,33 @@ export function buildApp() {
     return reply.status(500).send({ error: "Internal server error" });
   });
 
+  // Card HTML keeps media as /images/<id>; the sandboxed card frame cannot send
+  // the login token, so JSON responses carry signed /media URLs instead, and
+  // bodies that write HTML are turned back before any handler sees them.
+  const requester = (request: FastifyRequest) => (request.user as { sub?: string } | undefined)?.sub;
+  app.addHook("preValidation", async (request) => {
+    const userId = requester(request);
+    if (userId && request.body && typeof request.body === "object" && !request.isMultipart()) {
+      request.body = unsignMediaRefsDeep(request.body, mediaUrlSecret, userId);
+    }
+  });
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (typeof payload !== "string" || !payload.includes("/images/")) return payload;
+    if (!String(reply.getHeader("content-type") ?? "").includes("application/json")) return payload;
+    if (request.url.startsWith("/export")) return payload; // exports keep the stored form
+    const userId = requester(request);
+    if (!userId) return payload;
+    const base = mediaBaseUrl(request);
+    if (!base) return payload;
+    const ids = referencedMediaIds(payload);
+    if (ids.length === 0) return payload;
+    // Only the requester's own files get a URL: an id copied from someone else stays inert.
+    const owned = await db.execute<{ id: string }>(sql`
+      SELECT id FROM images WHERE user_id = ${userId} AND id = ANY(${textArray(ids)}::uuid[])
+    `);
+    return signMediaRefs(payload, base, mediaUrlSecret, userId, new Set(owned.rows.map(r => r.id.toLowerCase())));
+  });
+
   // Validate UUID route params (e.g. :id, :card_id) before handlers run
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   app.addHook("preHandler", async (request) => {
@@ -75,6 +116,7 @@ export function buildApp() {
   app.register(topicRoutes);
   app.register(cardRoutes);
   app.register(noteRoutes);
+  app.register(ankiImportRoutes);
   app.register(reviewRoutes);
   app.register(studyRoutes);
   app.register(contextRoutes);

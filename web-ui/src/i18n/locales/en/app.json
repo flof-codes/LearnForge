@@ -245,6 +245,12 @@
     "navLabel": "Pagination"
   },
   "cardDetail": {
+    "suspendedBy": {
+      "gap": "suspended: the gap was removed",
+      "user": "suspended",
+      "anki": "suspended in Anki",
+      "unsupported": "not viewable in LearnForge yet"
+    },
     "noteType": "Card design",
     "suspended": "suspended",
     "front": "Front",
@@ -303,6 +309,7 @@
     "createCard": "Create Card"
   },
   "topics": {
+    "importAnki": "Import from Anki",
     "title": "Topics",
     "newTopic": "New Topic",
     "noTopicsYet": "No topics yet. Create one to get started.",
@@ -592,5 +599,78 @@
     "hintFree": "Anything that tests the idea.",
     "sameAs": "Same as \u201c{{name}}\u201d ({{word}})",
     "sameAsDefault": "Same as default ({{word}})"
+  },
+  "ankiImport": {
+    "title": "Import from Anki",
+    "back": "Back to topics",
+    "intro": "Bring an Anki deck into LearnForge: decks become topics, note types keep their fields, templates and styling, and every card keeps its schedule. Media, review history and Anki's settings are kept as well.",
+    "pickHint": "Export a deck in Anki (File → Export → Anki Deck Package) and choose the file here.",
+    "choose": "Choose .apkg or .colpkg",
+    "uploading": "Uploading… {{percent}} %",
+    "limits": "Up to 200 MB and 100,000 notes. All Anki versions are supported.",
+    "uploadFailed": "The upload failed. Please try again.",
+    "startFailed": "The import could not be started.",
+    "discardFailed": "The import could not be removed.",
+    "analyzing": "Reading the package…",
+    "importing": "Importing notes… {{done}} of {{total}}",
+    "version": {
+      "legacy1": "Anki package, format of Anki 2.0",
+      "legacy2": "Anki package, format of Anki 2.1",
+      "latest": "Anki package, current format"
+    },
+    "count": {
+      "notes": "Notes",
+      "cards": "Cards",
+      "reviews": "Reviews in history",
+      "media": "Media files"
+    },
+    "states": "{{new}} new, {{learning}} in learning, {{review}} in review, {{suspended}} suspended",
+    "decks": "Decks → topics",
+    "noteTypes": "Note types",
+    "cardCount_one": "{{count}} card",
+    "cardCount_other": "{{count}} cards",
+    "noteCount_one": "{{count}} note",
+    "noteCount_other": "{{count}} notes",
+    "cloze": "Cloze",
+    "known": "imported before",
+    "unsupported": "not viewable yet",
+    "unsupportedHint": "Image occlusion notes are imported and kept, but left out of study until LearnForge can draw them.",
+    "duplicates": "{{total}} notes are already in LearnForge. {{newer}} of them changed in Anki since and will be updated; your schedule and level stay.",
+    "schedule": "Schedule",
+    "scheduleOption": {
+      "keep": "Keep Anki's schedule",
+      "fresh": "Start fresh"
+    },
+    "scheduleHint": {
+      "keep": "Recommended. Due dates and memory state carry over, so you continue where Anki left off.",
+      "fresh": "Every card starts as new. Suspended cards stay suspended."
+    },
+    "start_one": "Import {{count}} note",
+    "start_other": "Import {{count}} notes",
+    "discard": "Discard",
+    "doneTitle": "Import finished",
+    "done": {
+      "notes": "Notes: {{created}} new, {{updated}} updated, {{unchanged}} unchanged",
+      "cards": "Cards: {{created}} new, {{suspended}} suspended as in Anki",
+      "topics": "Topics: {{created}} new, {{reused}} reused",
+      "media": "Media files: {{stored}} stored, {{reused}} already present",
+      "unsupported": "{{count}} image occlusion cards are kept but not studied yet.",
+      "overQuota": "{{count}} media files were skipped: your storage is full.",
+      "failed_one": "{{count}} note could not be imported",
+      "failed_other": "{{count}} notes could not be imported",
+      "embeddings": "Search for similar cards gets ready in the background over the next minutes."
+    },
+    "toTopics": "Go to topics",
+    "another": "Import another file",
+    "failedTitle": "The import failed",
+    "history": "Recent imports",
+    "status": {
+      "analyzing": "reading",
+      "staged": "ready to import",
+      "queued": "waiting",
+      "running": "importing",
+      "done": "done",
+      "failed": "failed"
+    }
   }
 }

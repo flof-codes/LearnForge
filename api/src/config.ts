@@ -1,9 +1,24 @@
 import "dotenv/config";
+import { createHmac } from "node:crypto";
+import path from "node:path";
 
 export const config = {
   databaseUrl: process.env.DATABASE_URL ?? "postgresql://learnforge:learnforge@localhost:5432/learnforge",
   port: parseInt(process.env.PORT ?? "3000", 10),
   imagePath: process.env.IMAGE_PATH ?? "/data/images",
+  /**
+   * Staged Anki uploads until their import ends. Defaults to a folder on the
+   * image volume, so an upload survives a recreated container between preview
+   * and commit. Files there are never served: media are looked up by id.
+   */
+  importPath: process.env.IMPORT_PATH ?? path.join(process.env.IMAGE_PATH ?? "/data/images", ".imports"),
+  /** Media storage per user; an import stops storing files past it. */
+  mediaQuotaBytes: parseInt(process.env.MEDIA_QUOTA_MB ?? "5120", 10) * 1024 * 1024,
+  /**
+   * Origin card HTML uses to reach `/media/…` from the sandboxed card frame.
+   * Empty: derived from the request (Host / X-Forwarded-* behind the proxy).
+   */
+  apiPublicUrl: process.env.API_PUBLIC_URL ?? "",
   jwtSecret: process.env.JWT_SECRET ?? "dev-jwt-secret-change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
@@ -22,3 +37,6 @@ export const config = {
   smtpPassword: process.env.SMTP_PASSWORD ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "LearnForge <office@learnforge.eu>",
 } as const;
+
+/** Signs media URLs; derived from the JWT secret, so rotating that secret also revokes every issued media URL. */
+export const mediaUrlSecret = createHmac("sha256", config.jwtSecret).update("learnforge-media-url").digest("hex");

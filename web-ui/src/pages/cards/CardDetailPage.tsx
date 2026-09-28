@@ -148,7 +148,7 @@ export default function CardDetailPage() {
             <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">
               {t('cardDetail.noteType')}: {card.note.noteTypeName}
               {card.note.noteTypeKind === 'cloze' && ` · c${card.clozeNumber}`}
-              {card.suspended && ` · ${t('cardDetail.suspended')}`}
+              {card.suspended && ` · ${t(`cardDetail.suspendedBy.${card.suspendedBy ?? 'user'}`, { defaultValue: t('cardDetail.suspended') })}`}
             </h2>
             {card.note.siblings.length > 1 && (
               <p className="text-sm text-text-muted flex flex-wrap gap-2">

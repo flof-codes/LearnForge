@@ -1,5 +1,5 @@
-import { pgTable, uuid, text, jsonb, timestamp, index } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, uuid, text, jsonb, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { users } from "./users.js";
 import { topics } from "./topics.js";
 import { noteTypes } from "./noteTypes.js";
@@ -23,6 +23,8 @@ export const notes = pgTable("notes", {
 }, (t) => [
   index("notes_user_idx").on(t.userId),
   index("notes_topic_idx").on(t.topicId),
+  /** A guid names one note per user: re-importing a deck updates instead of duplicating. */
+  uniqueIndex("notes_user_guid_uq").on(t.userId, t.ankiGuid).where(sql`anki_guid IS NOT NULL`),
 ]);
 
 export const notesRelations = relations(notes, ({ one }) => ({

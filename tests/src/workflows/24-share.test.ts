@@ -361,8 +361,9 @@ describe("Share Cards - Copy Mode", () => {
       const { backHtml } = await findImportedCardBackHtml();
 
       // Back HTML should reference a NEW image id (not the sharer's)
-      expect(backHtml).not.toContain(`/images/${imageId}`);
-      const match = backHtml.match(/\/images\/([0-9a-f-]{36})/);
+      expect(backHtml).not.toContain(imageId);
+      // responses carry signed /media/<id>/<sig> URLs for the stored /images/<id> form
+      const match = backHtml.match(/\/media\/([0-9a-f-]{36})\//);
       expect(match).toBeTruthy();
       const newImageId = match![1];
       expect(newImageId).not.toBe(imageId);
@@ -380,7 +381,8 @@ describe("Share Cards - Copy Mode", () => {
 
     it("deleting recipient's image does not break sharer's original", async () => {
       const { backHtml } = await findImportedCardBackHtml();
-      const match = backHtml.match(/\/images\/([0-9a-f-]{36})/);
+      // responses carry signed /media/<id>/<sig> URLs for the stored /images/<id> form
+      const match = backHtml.match(/\/media\/([0-9a-f-]{36})\//);
       const newImageId = match![1];
 
       const delRes = await userBApi.delete(`/images/${newImageId}`);

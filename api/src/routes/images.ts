@@ -1,4 +1,4 @@
-import { type FastifyInstance } from "fastify";
+import { type FastifyInstance, type FastifyReply } from "fastify";
 import "@fastify/multipart";
 import { randomUUID } from "node:crypto";
 import { createReadStream } from "node:fs";
@@ -8,8 +8,8 @@ import { createWriteStream } from "node:fs";
 import path from "node:path";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/connection.js";
-import { images, extFromMime } from "@learnforge/core";
-import { config } from "../config.js";
+import { images, extFromMime, verifyMediaSignature } from "@learnforge/core";
+import { config, mediaUrlSecret } from "../config.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { getUserId } from "../lib/auth-helpers.js";
 
@@ -26,8 +26,34 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function ensureImageDir(): Promise<void> {
   await mkdir(config.imagePath, { recursive: true });
+}
+
+/**
+ * Streams a stored file. SVG may not run scripts; files of unknown type
+ * (kept from Anki packages for a lossless round trip) only download.
+ */
+async function sendStoredFile(reply: FastifyReply, row: { id: string; mimeType: string; filename: string }) {
+  const filePath = path.join(config.imagePath, `${row.id}${extFromMime(row.mimeType)}`);
+  try {
+    await stat(filePath);
+  } catch {
+    throw new NotFoundError(`Image file for ${row.id} not found on disk`);
+  }
+  if (row.mimeType === "image/svg+xml") {
+    reply.header("Content-Security-Policy", "script-src 'none'");
+  }
+  if (row.mimeType === "application/octet-stream") {
+    reply.header("Content-Disposition", "attachment");
+  }
+  return reply
+    .type(row.mimeType)
+    .header("Cache-Control", "public, max-age=31536000, immutable")
+    .header("X-Content-Type-Options", "nosniff")
+    .send(createReadStream(filePath));
 }
 
 export default async function imageRoutes(app: FastifyInstance) {
@@ -83,6 +109,7 @@ export default async function imageRoutes(app: FastifyInstance) {
         userId,
         filename: data.filename,
         mimeType: data.mimetype,
+        sizeBytes: (await stat(filePath)).size, // counts toward the per-user media quota
       })
       .returning();
 
@@ -110,25 +137,20 @@ export default async function imageRoutes(app: FastifyInstance) {
     if (!row) {
       throw new NotFoundError(`Image ${id} not found`);
     }
+    return sendStoredFile(reply, row);
+  });
 
-    const filePath = path.join(config.imagePath, `${row.id}${extFromMime(row.mimeType)}`);
-
-    // Verify the file still exists on disk
-    try {
-      await stat(filePath);
-    } catch {
-      throw new NotFoundError(`Image file for ${id} not found on disk`);
-    }
-
-    const stream = createReadStream(filePath);
-    if (row.mimeType === "image/svg+xml") {
-      reply.header("Content-Security-Policy", "script-src 'none'");
-    }
-    return reply
-      .type(row.mimeType)
-      .header("Cache-Control", "public, max-age=31536000, immutable")
-      .header("X-Content-Type-Options", "nosniff")
-      .send(stream);
+  // GET /media/:id/:sig  —  the same file for card HTML, which runs in a sandboxed
+  // frame without the login token. Public; the HMAC signature is the credential.
+  app.get<{ Params: { id: string; sig: string } }>("/media/:id/:sig", async (request, reply) => {
+    const { id, sig } = request.params;
+    if (!UUID_RE.test(id)) throw new NotFoundError("Media not found");
+    const [row] = await db.select().from(images).where(eq(images.id, id)).limit(1);
+    // The signature binds id and owner: a URL is only ever issued to the file's owner.
+    if (!row || !verifyMediaSignature(id, row.userId, sig, mediaUrlSecret)) throw new NotFoundError("Media not found");
+    // Fonts load cross-origin only with CORS; the card frame has an opaque origin.
+    reply.header("Access-Control-Allow-Origin", "*");
+    return sendStoredFile(reply, row);
   });
 
   // DELETE /images/:id  —  remove image from DB and disk

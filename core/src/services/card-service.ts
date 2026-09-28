@@ -29,6 +29,7 @@ const cardColumns = {
   templateId: cards.templateId,
   clozeNumber: cards.clozeNumber,
   suspended: cards.suspended,
+  suspendedBy: cards.suspendedBy,
   createdAt: cards.createdAt,
   updatedAt: cards.updatedAt,
 };
@@ -149,6 +150,7 @@ export async function getCard(db: Db, userId: string, cardId: string) {
       templateId: cards.templateId,
       clozeNumber: cards.clozeNumber,
       suspended: cards.suspended,
+      suspendedBy: cards.suspendedBy,
       createdAt: cards.createdAt,
       updatedAt: cards.updatedAt,
       bloomCardId: bloomState.cardId,
@@ -201,6 +203,7 @@ export async function getCard(db: Db, userId: string, cardId: string) {
     templateId: row.templateId,
     clozeNumber: row.clozeNumber,
     suspended: row.suspended,
+    suspendedBy: row.suspendedBy,
     note,
     changeRate: row.changeRate,
     effectiveChangeRate: effective.changeRate,

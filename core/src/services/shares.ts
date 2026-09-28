@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { copyFile } from "node:fs/promises";
 import path from "node:path";
-import { eq, and, isNull, sql, inArray } from "drizzle-orm";
+import { eq, and, or, isNull, sql, inArray } from "drizzle-orm";
 import { textArray } from "../lib/sql-array.js";
 import type { Db } from "../db/types.js";
 import { shareLinks, topics, cards, bloomState, fsrsState, images } from "../db/schema/index.js";
@@ -10,6 +10,8 @@ import { extFromMime } from "../lib/image-utils.js";
 import { createInitialFsrsState } from "./fsrs.js";
 import { loadTopicRates, resolveTopicRate } from "./change-rate.js";
 import { getNoteType, listNoteTypes, ensureBuiltinTypes, saveNoteType, type NoteType } from "./note-types.js";
+
+const IMAGE_REF = /\/images\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi;
 
 function generateToken(): string {
   return randomBytes(24).toString("base64url");
@@ -154,10 +156,6 @@ export async function acceptShareLink(
 
   const cardIds = sourceCards.map(c => c.id);
 
-  const sourceImages = cardIds.length > 0
-    ? await db.select().from(images).where(inArray(images.cardId, cardIds))
-    : [];
-
   // Typed cards render from notes; copy each note once with its type. An
   // uncustomized built-in maps onto the recipient's own copy, anything else is cloned.
   const sourceNoteIds = [...new Set(sourceCards.map(c => c.noteId).filter((id): id is string => !!id))];
@@ -171,6 +169,25 @@ export async function acceptShareLink(
   for (const id of sourceTypeIds) sourceTypes.set(id, await getNoteType(db, link.ownerId, id));
   await ensureBuiltinTypes(db, recipientUserId);
   const recipientTypes = await listNoteTypes(db, recipientUserId);
+
+  // Media travel when a card owns them or when anything copied references them:
+  // imported Anki media are shared by many notes and belong to no single card.
+  const referenced = new Set<string>();
+  const scan = (text: string | null | undefined) => {
+    for (const m of (text ?? "").matchAll(IMAGE_REF)) referenced.add(m[1].toLowerCase());
+  };
+  for (const c of sourceCards) { scan(c.frontHtml); scan(c.backHtml); }
+  for (const n of sourceNotes.rows) scan(JSON.stringify(n.fields));
+  for (const t of sourceTypes.values()) { scan(t.css); for (const x of t.templates) { scan(x.frontTemplate); scan(x.backTemplate); } }
+  const sourceImages = cardIds.length > 0 || referenced.size > 0
+    ? await db.select().from(images).where(and(
+        eq(images.userId, link.ownerId),
+        or(
+          cardIds.length > 0 ? inArray(images.cardId, cardIds) : undefined,
+          referenced.size > 0 ? inArray(images.id, [...referenced]) : undefined,
+        ),
+      ))
+    : [];
 
   const initialFsrs = createInitialFsrsState();
 
@@ -237,7 +254,9 @@ export async function acceptShareLink(
       if (!newTopicId || !type) continue;
       const ins = await tx.execute<{ id: string }>(sql`
         INSERT INTO notes (user_id, note_type_id, topic_id, fields, tags, anki_guid)
-        VALUES (${recipientUserId}, ${type.id}, ${newTopicId}, ${JSON.stringify(n.fields)}::jsonb, ${textArray(n.tags ?? [])}, ${n.anki_guid})
+        VALUES (${recipientUserId}, ${type.id}, ${newTopicId}, ${JSON.stringify(n.fields)}::jsonb, ${textArray(n.tags ?? [])},
+                -- the recipient may already hold this guid from an own import; a guid names one note per user
+                CASE WHEN EXISTS (SELECT 1 FROM notes WHERE user_id = ${recipientUserId} AND anki_guid = ${n.anki_guid}) THEN NULL ELSE ${n.anki_guid}::text END)
         RETURNING id
       `);
       noteIdMap.set(n.id, ins.rows[0].id);
@@ -267,6 +286,7 @@ export async function acceptShareLink(
           templateId: newNoteId ? newTemplateId : null,
           clozeNumber: srcCard.clozeNumber,
           suspended: srcCard.suspended,
+          suspendedBy: srcCard.suspendedBy,
           rendererVersion: srcCard.rendererVersion,
           embedding: srcCard.embedding ?? undefined,
         })
@@ -291,10 +311,12 @@ export async function acceptShareLink(
       });
     }
 
+    const newTopicIds = [...topicIdMap.values()];
+    const newNoteIds = [...noteIdMap.values()];
+    const clonedTypeIds = [...new Set([...typeIdMap.entries()].filter(([, t]) => !t.builtinKey).map(([, t]) => t.id))];
     for (const img of sourceImages) {
-      if (!img.cardId) continue;
-      const newCardId = cardIdMap.get(img.cardId);
-      if (!newCardId) continue;
+      const newCardId = img.cardId ? cardIdMap.get(img.cardId) ?? null : null;
+      if (img.cardId && !newCardId && !referenced.has(img.id)) continue;
       const [newImage] = await tx
         .insert(images)
         .values({
@@ -302,6 +324,8 @@ export async function acceptShareLink(
           userId: recipientUserId,
           filename: img.filename,
           mimeType: img.mimeType,
+          contentHash: img.contentHash,
+          sizeBytes: img.sizeBytes,
         })
         .returning({ id: images.id });
 
@@ -317,18 +341,27 @@ export async function acceptShareLink(
 
       const oldUrl = `/images/${img.id}`;
       const newUrl = `/images/${newImage.id}`;
+      const like = `%${oldUrl}%`;
       await tx.execute(sql`
         UPDATE cards
         SET front_html = REPLACE(front_html, ${oldUrl}, ${newUrl}),
             back_html = REPLACE(back_html, ${oldUrl}, ${newUrl})
-        WHERE id = ${newCardId}
-           OR note_id = (SELECT note_id FROM cards WHERE id = ${newCardId} AND note_id IS NOT NULL)
+        WHERE topic_id = ANY(${textArray(newTopicIds)}::uuid[]) AND (front_html LIKE ${like} OR back_html LIKE ${like})
       `);
-      // Note fields carry the same URLs; the rendered cards above are already rewritten.
-      await tx.execute(sql`
-        UPDATE notes SET fields = REPLACE(fields::text, ${oldUrl}, ${newUrl})::jsonb
-        WHERE id = (SELECT note_id FROM cards WHERE id = ${newCardId}) AND fields::text LIKE ${"%" + oldUrl + "%"}
-      `);
+      // Note fields and cloned designs carry the same URLs.
+      if (newNoteIds.length > 0) {
+        await tx.execute(sql`
+          UPDATE notes SET fields = REPLACE(fields::text, ${oldUrl}, ${newUrl})::jsonb
+          WHERE id = ANY(${textArray(newNoteIds)}::uuid[]) AND fields::text LIKE ${like}
+        `);
+      }
+      if (clonedTypeIds.length > 0) {
+        await tx.execute(sql`UPDATE note_types SET css = REPLACE(css, ${oldUrl}, ${newUrl}) WHERE id = ANY(${textArray(clonedTypeIds)}::uuid[]) AND css LIKE ${like}`);
+        await tx.execute(sql`
+          UPDATE card_templates SET front_template = REPLACE(front_template, ${oldUrl}, ${newUrl}), back_template = REPLACE(back_template, ${oldUrl}, ${newUrl})
+          WHERE note_type_id = ANY(${textArray(clonedTypeIds)}::uuid[]) AND (front_template LIKE ${like} OR back_template LIKE ${like})
+        `);
+      }
     }
 
     return { topicId: topicIdMap.get(link.topicId)! };

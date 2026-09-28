@@ -72,7 +72,7 @@ function fieldsByName(type: NoteType, fields: Record<string, string>): Record<st
   return out;
 }
 
-function deriveConcept(type: NoteType, fields: Record<string, string>): string {
+export function deriveConcept(type: NoteType, fields: Record<string, string>): string {
   const sortKey = type.sortFieldKey ?? type.fields[0]?.key;
   const plain = (v: string) => stripHtml(plainClozeText(v)).trim();
   const primary = sortKey ? plain(fields[sortKey] ?? "") : "";
@@ -85,41 +85,52 @@ function embeddingTextFor(concept: string, tags: string[], type: NoteType, field
   return [concept, tags.join(", "), body].join("\n").slice(0, 4000);
 }
 
-/** Fields a cloze template actually renders with the cloze filter; all fields when it names none. */
-function clozeFieldKeys(type: NoteType): string[] {
-  const named = new Set<string>();
-  for (const t of type.templates) {
-    for (const m of (t.frontTemplate + t.backTemplate).matchAll(/\{\{(?:[^{}]*:)?cloze:([^{}]+)\}\}/g)) named.add(m[1].trim());
-  }
-  const keys = type.fields.filter(f => named.has(f.name)).map(f => f.key);
-  return keys.length > 0 ? keys : type.fields.map(f => f.key);
-}
+export interface PlannedCard { templateId: string; templateOrd: number; clozeNumber: number; frontHtml: string; backHtml: string }
 
-/** Cards a note must have: (template, clozeNumber) pairs. Cloze types produce one card per number. */
-function plannedCards(type: NoteType, fields: Record<string, string>, deck: string, tags: string[]) {
+/**
+ * Cards a note must have: (template, clozeNumber) pairs. Cloze types produce
+ * one card per number found in any field, as Anki does. `keepOne` follows
+ * Anki's rule that a note never loses its last card: when nothing renders, the
+ * first template (or gap 1) is kept instead of refusing the note. Editors
+ * leave it off, so a user is told that the note would be empty.
+ */
+export function plannedCards(type: NoteType, fields: Record<string, string>, deck: string, tags: string[], opts: { keepOne?: boolean } = {}): PlannedCard[] {
   const byName = fieldsByName(type, fields);
-  const out: Array<{ templateId: string; templateOrd: number; clozeNumber: number; frontHtml: string; backHtml: string }> = [];
+  const out: PlannedCard[] = [];
+  const render = (t: NoteType["templates"][number], n: number) => renderCardTemplate(t.frontTemplate, t.backTemplate, type.css, {
+    fields: byName, clozeNumber: n, tags, deck, templateOrd: t.ord + 1,
+  });
+  const numbers = type.kind === "cloze" ? clozeNumbersIn(type.fields.map(f => fields[f.key] ?? "").join("\n")) : [0];
+  if (type.kind === "cloze" && numbers.length === 0 && !opts.keepOne) throw new ValidationError("A cloze note needs at least one {{c1::…}} gap");
   for (const t of type.templates) {
-    const numbers = type.kind === "cloze"
-      ? clozeNumbersIn(clozeFieldKeys(type).map(k => fields[k] ?? "").join("\n"))
-      : [0];
-    if (type.kind === "cloze" && numbers.length === 0) throw new ValidationError("A cloze note needs at least one {{c1::…}} gap");
     for (const n of numbers) {
-      const r = renderCardTemplate(t.frontTemplate, t.backTemplate, type.css, {
-        fields: byName, clozeNumber: n, tags, deck, templateOrd: t.ord + 1,
-      });
-      if (r.frontIsEmpty) continue; // Anki's empty-card rule
+      const r = render(t, n);
+      if (type.kind !== "cloze" && r.frontIsEmpty) continue; // Anki's empty-card rule
       out.push({ templateId: t.id, templateOrd: t.ord, clozeNumber: n, frontHtml: r.frontHtml, backHtml: r.backHtml });
     }
+  }
+  if (out.length === 0 && opts.keepOne && type.templates.length > 0) {
+    const t = type.templates[0];
+    const n = type.kind === "cloze" ? 1 : 0;
+    const r = render(t, n);
+    out.push({ templateId: t.id, templateOrd: t.ord, clozeNumber: n, frontHtml: r.frontHtml, backHtml: r.backHtml });
   }
   if (out.length === 0) throw new ValidationError("The note renders no card: fill at least one field the front template uses");
   return out;
 }
 
-async function topicName(db: Db, userId: string, topicId: string): Promise<string> {
-  const t = await db.execute<{ name: string }>(sql`SELECT name FROM topics WHERE id = ${topicId} AND user_id = ${userId}`);
-  if (t.rows.length === 0) throw new NotFoundError("Topic not found");
-  return t.rows[0].name;
+/** The topic's full path, parts joined by "::" like an Anki deck name, for `{{Deck}}`. */
+export async function topicPath(db: Db, userId: string, topicId: string): Promise<string> {
+  const rows = await db.execute<{ name: string }>(sql`
+    WITH RECURSIVE up AS (
+      SELECT id, parent_id, name, 0 AS depth FROM topics WHERE id = ${topicId} AND user_id = ${userId}
+      UNION ALL
+      SELECT t.id, t.parent_id, t.name, up.depth + 1 FROM topics t JOIN up ON t.id = up.parent_id WHERE up.depth < 50
+    )
+    SELECT name FROM up ORDER BY depth DESC
+  `);
+  if (rows.rows.length === 0) throw new NotFoundError("Topic not found");
+  return rows.rows.map(r => r.name).join("::");
 }
 
 export interface CreateNoteInput {
@@ -138,7 +149,7 @@ export async function createNote(db: Db, userId: string, input: CreateNoteInput)
   const type = await resolveNoteType(db, userId, input.note_type);
   const fields = normalizeFields(type, input.fields);
   const tags = input.tags ?? [];
-  const deck = await topicName(db, userId, input.topic_id);
+  const deck = await topicPath(db, userId, input.topic_id);
   const cardsToMake = plannedCards(type, fields, deck, tags);
   const concept = (input.concept?.trim() || deriveConcept(type, fields)).slice(0, MAX_CONCEPT);
   const embedding = await computeEmbedding(embeddingTextFor(concept, tags, type, fields));
@@ -174,7 +185,7 @@ export async function createNote(db: Db, userId: string, input: CreateNoteInput)
  * The original question of a typed card is derived from its rendered front,
  * regenerated on every edit and therefore never stale.
  */
-async function refreshDerivedOriginals(db: Db, userId: string, noteId: string): Promise<void> {
+export async function refreshDerivedOriginals(db: Db, userId: string, noteId: string): Promise<void> {
   const cards = await db.execute<{ id: string; front_html: string; back_html: string }>(sql`
     SELECT id, front_html, back_html FROM cards WHERE note_id = ${noteId} AND suspended = false
   `);
@@ -228,7 +239,7 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
   const fields = input.fields ? { ...current.fields, ...normalizeFields(type, input.fields, true) } : current.fields;
   const tags = input.tags ?? current.tags;
   const topicId = input.topic_id ?? current.topicId;
-  const deck = await topicName(db, userId, topicId);
+  const deck = await topicPath(db, userId, topicId);
   const planned = plannedCards(type, fields, deck, tags);
   const contentChanged = input.fields !== undefined || input.tags !== undefined || input.concept !== undefined;
   const concept = (input.concept?.trim() || (input.fields ? deriveConcept(type, fields) : current.cards[0]?.concept) || deriveConcept(type, fields)).slice(0, MAX_CONCEPT);
@@ -252,7 +263,9 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
       if (row) {
         await tx.execute(sql`
           UPDATE cards SET front_html = ${c.frontHtml}, back_html = ${c.backHtml}, concept = ${concept}, tags = ${textArray(tags)},
-            topic_id = ${topicId}, renderer_version = ${RENDERER_VERSION}, suspended = false, updated_at = NOW()
+            topic_id = ${topicId}, renderer_version = ${RENDERER_VERSION}, updated_at = NOW(),
+            suspended = CASE WHEN suspended_by = 'gap' THEN false ELSE suspended END,
+            suspended_by = CASE WHEN suspended_by = 'gap' THEN NULL ELSE suspended_by END
             ${embedding ? sql`, embedding = ${`[${embedding.join(",")}]`}::vector` : sql``}
           WHERE id = ${row.id}
         `);
@@ -273,7 +286,7 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
     }
     for (const c of existing.rows) {
       if (!wanted.has(`${c.template_id}:${c.cloze_number}`) && !c.suspended) {
-        await tx.execute(sql`UPDATE cards SET suspended = true, topic_id = ${topicId}, updated_at = NOW() WHERE id = ${c.id}`);
+        await tx.execute(sql`UPDATE cards SET suspended = true, suspended_by = 'gap', topic_id = ${topicId}, updated_at = NOW() WHERE id = ${c.id}`);
       } else if (!wanted.has(`${c.template_id}:${c.cloze_number}`)) {
         await tx.execute(sql`UPDATE cards SET topic_id = ${topicId} WHERE id = ${c.id}`);
       }

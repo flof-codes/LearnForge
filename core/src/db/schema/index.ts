@@ -15,3 +15,4 @@ export { studyQuestions } from "./studyQuestions.js";
 export { noteTypes, noteTypeFields, cardTemplates, noteTypesRelations, noteTypeFieldsRelations, cardTemplatesRelations } from "./noteTypes.js";
 export { notes, notesRelations } from "./notes.js";
 export { glassesPairCodes, glassesTokens, glassesQuestions } from "./glasses.js";
+export { ankiImports, ankiRecords } from "./ankiImport.js";

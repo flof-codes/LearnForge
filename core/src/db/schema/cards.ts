@@ -35,6 +35,8 @@ export const cards = pgTable("cards", {
   /** Cloze cards: the gap number this card hides; 0 on every other card so the uniqueness below holds. */
   clozeNumber: smallint("cloze_number").notNull().default(0),
   suspended: boolean("suspended").notNull().default(false),
+  /** Why: gap (its cloze gap vanished, comes back with the gap), user, anki (suspended in Anki), unsupported (note type LearnForge cannot render). */
+  suspendedBy: text("suspended_by"),
   rendererVersion: smallint("renderer_version"),
   embedding: vector("embedding"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

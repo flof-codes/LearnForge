@@ -1,4 +1,3 @@
-import { stripHtml } from "./strip-html.js";
 import { ValidationError } from "./errors.js";
 
 /**
@@ -10,14 +9,22 @@ import { ValidationError } from "./errors.js";
  * the answer), `{{type:cloze:Field}}`, `{{Tags}}`, `{{Deck}}`. Unknown filters
  * (`text:`, `furigana:`, `tts …`) fall back to the plain field. Field values are
  * HTML and are not escaped; the sandboxed iframe is the trust boundary.
+ *
+ * Emptiness follows Anki: a field is empty only when it holds nothing but
+ * whitespace, `<br>` and `<div>` tags, so an `<img>`-only or `&nbsp;` field
+ * counts as filled. Cloze gaps may name several cards (`{{c1,2::…}}`); `c0`
+ * belongs to card 1 without being hidden on it, as in Anki.
  */
 
-export const RENDERER_VERSION = 1;
+/** 2: Anki's empty-field rule, multi-number gaps, `{{Deck}}` as the full path. */
+export const RENDERER_VERSION = 2;
 
 /** Budgets: a field longer than this, deeper cloze nesting or more gaps is refused, not rendered. */
-export const MAX_FIELD_LENGTH = 20_000;
+export const MAX_FIELD_LENGTH = 200_000;
 export const MAX_CLOZE_DEPTH = 4;
 export const MAX_CLOZE_SPANS = 200;
+/** Anki caps a note at 500 cloze cards; higher numbers make no card. */
+export const MAX_CLOZE_NUMBER = 500;
 
 export interface RenderContext {
   /** Field values keyed by field NAME (the template addresses names). */
@@ -25,6 +32,7 @@ export interface RenderContext {
   /** Cloze cards: the gap number this card hides; 0 on standard cards. */
   clozeNumber: number;
   tags: string[];
+  /** The full topic path, parts joined by "::" as in Anki. */
   deck: string;
   /** 1-based template ordinal, for Anki's `.card1` CSS class. */
   templateOrd: number;
@@ -38,7 +46,9 @@ export interface RenderResult {
 }
 
 export interface ClozeSpan {
+  /** The first number of the gap; `numbers` has all of them (`{{c1,2::…}}`). */
   number: number;
+  numbers: number[];
   answer: string;
   hint: string | null;
   start: number;
@@ -53,10 +63,11 @@ export function findClozeSpans(text: string, depth = 0): ClozeSpan[] {
   if (depth > MAX_CLOZE_DEPTH) throw new ValidationError(`Cloze gaps nest deeper than ${MAX_CLOZE_DEPTH} levels`);
   if (text.length > MAX_FIELD_LENGTH) throw new ValidationError(`A field must be at most ${MAX_FIELD_LENGTH} characters`);
   const spans: ClozeSpan[] = [];
-  const open = /\{\{c(\d+)::/g;
+  const open = /\{\{c(\d+(?:\s*,\s*\d+)*)::/g;
   let m: RegExpExecArray | null;
   while ((m = open.exec(text)) !== null) {
-    const number = parseInt(m[1], 10);
+    const numbers = [...new Set(m[1].split(",").map(n => parseInt(n.trim(), 10)))];
+    const number = numbers[0];
     let depth = 1;
     let i = m.index + m[0].length;
     let end = -1;
@@ -76,7 +87,7 @@ export function findClozeSpans(text: string, depth = 0): ClozeSpan[] {
       else if (inner.startsWith("{{", k)) d--;
       else if (d === 0 && inner.startsWith("::", k)) { answer = inner.slice(0, k); hint = inner.slice(k + 2); break; }
     }
-    spans.push({ number, answer, hint, start: m.index, end: end + 2 });
+    spans.push({ number, numbers, answer, hint, start: m.index, end: end + 2 });
     if (spans.length > MAX_CLOZE_SPANS) throw new ValidationError(`A field must have at most ${MAX_CLOZE_SPANS} cloze gaps`);
     open.lastIndex = end + 2;
   }
@@ -96,14 +107,17 @@ export function plainClozeText(text: string, depth = 0): string {
   return out + text.slice(cursor);
 }
 
-/** Distinct cloze numbers in a field, ascending. */
+/** Card numbers a field's gaps produce, ascending: `c0` counts as card 1, numbers past the cap make none. */
 export function clozeNumbersIn(text: string): number[] {
   const numbers = new Set<number>();
   const walk = (t: string, depth: number) => {
-    for (const s of findClozeSpans(t, depth)) { numbers.add(s.number); walk(s.answer, depth + 1); }
+    for (const s of findClozeSpans(t, depth)) {
+      for (const n of s.numbers) numbers.add(Math.max(n, 1));
+      walk(s.answer, depth + 1);
+    }
   };
   walk(text, 0);
-  return [...numbers].filter(n => n >= 1).sort((a, b) => a - b);
+  return [...numbers].filter(n => n <= MAX_CLOZE_NUMBER).sort((a, b) => a - b);
 }
 
 /** Renders a cloze field for one gap number; `back` reveals the active gap. */
@@ -117,7 +131,7 @@ export function renderClozeField(text: string, active: number, back: boolean): {
     for (const s of spans) {
       out += t.slice(cursor, s.start);
       const answer = render(s.answer, depth + 1);
-      if (s.number === active) {
+      if (s.numbers.includes(active)) {
         hasActive = true;
         out += back
           ? `<span class="cloze">${answer}</span>`
@@ -133,7 +147,9 @@ export function renderClozeField(text: string, active: number, back: boolean): {
   return { html, hasActive };
 }
 
-const isBlank = (html: string) => stripHtml(html).trim().length === 0;
+/** Anki's `field_is_empty`: only whitespace, `<br>` and `<div>` tags. */
+const EMPTY_FIELD = /^(?:\s|<\/?(?:br|div)\s*\/?>)*$/i;
+const isBlank = (html: string) => EMPTY_FIELD.test(html);
 
 interface Pass {
   ctx: RenderContext;
@@ -173,7 +189,8 @@ function renderReplacement(spec: string, p: Pass): string {
 
   if (name === "FrontSide") return p.back ? p.frontSide : "";
   if (name === "Tags") return p.ctx.tags.join(" ");
-  if (name === "Deck" || name === "Subdeck") return p.ctx.deck;
+  if (name === "Deck") return p.ctx.deck;
+  if (name === "Subdeck") return p.ctx.deck.split("::").pop() ?? "";
   if (name === "Card") return `Card ${p.ctx.templateOrd}`;
 
   const raw = p.ctx.fields[name];

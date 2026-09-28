@@ -185,7 +185,9 @@ npm run test:integration:down  # tear down
 - **bloom_state** — 1:1 with cards (CASCADE), levels 0-5
 - **fsrs_state** — 1:1 with cards (CASCADE), spaced repetition scheduling
 - **reviews** — many per card (CASCADE), rating 1-4, modality (chat/web/mcq)
-- **images** — optional card association (SET NULL), stored on disk
+- **images** — optional card association (SET NULL), stored on disk; `content_hash` + `size_bytes` for imported media (one file per distinct content per user)
+- **anki_imports** — one uploaded package and its job state (analyzing → staged → queued → running → done | failed)
+- **anki_records** — everything from Anki that LearnForge does not model (raw note/card columns, review log per card, deck options, note type configs), unique per (user, kind, anki_key)
 
 ## API Endpoints
 
@@ -203,6 +205,9 @@ POST /reviews
 GET /study/due?topic_id=&limit= GET /study/summary?topic_id=
 GET /context/topic/:id?depth=   GET /context/similar/:card_id?limit=
 POST /images                    GET/DELETE /images/:id
+GET /media/:id/:sig             (public, HMAC-signed; see Media URLs)
+POST/GET /import/anki           GET/DELETE /import/anki/:id
+POST /import/anki/:id/commit
 POST/GET /shares                DELETE /shares/:id
 GET /shares/preview/:token      POST /shares/accept/:token
 POST /glasses/pair/start        POST /glasses/pair/poll     (public, rate limited)
@@ -243,6 +248,19 @@ GET /health
 - Image files stored on disk at `IMAGE_PATH` (container: `/data/images`, MCP local: `~/.learnforge/images`).
 - FSRS intervals are adjusted by study modality: chat (1.2x), web (0.95x), mcq (1.05x).
 - Topic sharing is **copy-only**: `acceptShareLink` deep-copies topic tree + cards into recipient's account with fresh bloom/fsrs state. Image files are copied on disk (new UUID filenames, independent DB rows). Revoking a link blocks new imports; already-imported copies remain untouched. Link tokens are 24-byte url-safe random.
+
+## Media URLs
+
+- The database stores media as `/images/<id>`. Card HTML renders in a sandboxed iframe that cannot send the login token, so an `onSend` hook in `api/src/app.ts` rewrites those references in every JSON response to `<API_PUBLIC_URL or request origin>/media/<id>/<sig>` (HMAC of id + owner from core `lib/media-url.ts`, secret derived from `JWT_SECRET`). Only ids the requesting user owns are signed; the request host is used only when it is a plain host name. A `preValidation` hook turns signed URLs in request bodies back, so they never reach the database. `/export` keeps the stored form.
+
+## Anki Import
+
+- Upload (`POST /import/anki`, 200 MB, `.apkg`/`.colpkg`) → analysis job → preview → `commit` with `schedule: keep | fresh` → import job. Jobs run one at a time in a worker thread (`api/src/workers/anki-import-worker.ts`, 30 min timeout); a restart marks in-flight jobs failed (`recoverAnkiImports`), and an hourly sweep expires uploads left staged for 24 h. Job rows are handled in core `anki-import-jobs.ts`. Staged files live under `IMPORT_PATH` (default `IMAGE_PATH/.imports`, so they survive a recreated container).
+- Reader in `core/src/lib/apkg/`: all package versions (legacy 1/2, latest zstd + protobuf), own zip reader with inflate caps, `node:sqlite` on a temp copy (Anki's `unicase` collation is stripped from the schema first).
+- Mapping in `core/src/services/anki-import.ts`: decks → topics (filtered decks never; cards go home via `odid`), note types → own types reused by (`anki_key`, `anki_schema`), notes by guid (newer `mod` wins, `notes_user_guid_uq`), schedule from `cards.data` FSRS state → revlog replay → SM-2 estimate, Anki's due date always kept. Review log stays in `anki_records` only (no `reviews` rows). Image occlusion is imported with `suspended_by = 'unsupported'`. Embeddings are filled in the background afterwards.
+- `cards.suspended_by`: `gap` (cloze gap vanished; un-suspended when it returns), `user`, `anki`, `unsupported`. Only `gap` is lifted automatically.
+- Fixtures from real Anki: `tests/fixtures/anki/` (regenerate with `make_fixtures.py`, needs `pip install anki`).
+- The reverse proxy in front of the API must allow 200 MB request bodies for the upload.
 
 ## Glasses (Even Realities G2)
 

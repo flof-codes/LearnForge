@@ -245,6 +245,12 @@
     "navLabel": "Seitennavigation"
   },
   "cardDetail": {
+    "suspendedBy": {
+      "gap": "pausiert: die Lücke wurde entfernt",
+      "user": "pausiert",
+      "anki": "in Anki pausiert",
+      "unsupported": "in LearnForge noch nicht anzeigbar"
+    },
     "noteType": "Kartendesign",
     "suspended": "pausiert",
     "front": "Vorderseite",
@@ -303,6 +309,7 @@
     "createCard": "Karte erstellen"
   },
   "topics": {
+    "importAnki": "Aus Anki importieren",
     "title": "Themen",
     "newTopic": "Neues Thema",
     "noTopicsYet": "Noch keine Themen. Erstelle eines, um loszulegen.",
@@ -592,5 +599,78 @@
     "hintFree": "Alles, was die Idee pr\u00fcft.",
     "sameAs": "Wie \u201e{{name}}\u201c ({{word}})",
     "sameAsDefault": "Wie Standard ({{word}})"
+  },
+  "ankiImport": {
+    "title": "Aus Anki importieren",
+    "back": "Zurück zu den Themen",
+    "intro": "Hol ein Anki-Deck nach LearnForge: Decks werden zu Themen, Notiztypen behalten Felder, Vorlagen und Gestaltung, und jede Karte behält ihren Lernplan. Medien, Lernverlauf und Anki-Einstellungen bleiben ebenfalls erhalten.",
+    "pickHint": "Exportiere ein Deck in Anki (Datei → Exportieren → Anki-Stapelpaket) und wähle die Datei hier aus.",
+    "choose": ".apkg oder .colpkg wählen",
+    "uploading": "Wird hochgeladen … {{percent}} %",
+    "limits": "Bis 200 MB und 100.000 Notizen. Alle Anki-Versionen werden unterstützt.",
+    "uploadFailed": "Das Hochladen ist fehlgeschlagen. Bitte versuch es noch einmal.",
+    "startFailed": "Der Import konnte nicht gestartet werden.",
+    "discardFailed": "Der Import konnte nicht entfernt werden.",
+    "analyzing": "Paket wird gelesen …",
+    "importing": "Notizen werden importiert … {{done}} von {{total}}",
+    "version": {
+      "legacy1": "Anki-Paket im Format von Anki 2.0",
+      "legacy2": "Anki-Paket im Format von Anki 2.1",
+      "latest": "Anki-Paket im aktuellen Format"
+    },
+    "count": {
+      "notes": "Notizen",
+      "cards": "Karten",
+      "reviews": "Wiederholungen im Verlauf",
+      "media": "Mediendateien"
+    },
+    "states": "{{new}} neu, {{learning}} im Lernen, {{review}} in Wiederholung, {{suspended}} pausiert",
+    "decks": "Decks → Themen",
+    "noteTypes": "Notiztypen",
+    "cardCount_one": "{{count}} Karte",
+    "cardCount_other": "{{count}} Karten",
+    "noteCount_one": "{{count}} Notiz",
+    "noteCount_other": "{{count}} Notizen",
+    "cloze": "Lückentext",
+    "known": "schon importiert",
+    "unsupported": "noch nicht anzeigbar",
+    "unsupportedHint": "Bildverdeckungs-Notizen werden importiert und aufbewahrt, aber nicht abgefragt, bis LearnForge sie darstellen kann.",
+    "duplicates": "{{total}} Notizen sind schon in LearnForge. {{newer}} davon wurden seither in Anki geändert und werden aktualisiert; Lernplan und Stufe bleiben.",
+    "schedule": "Lernplan",
+    "scheduleOption": {
+      "keep": "Lernplan aus Anki übernehmen",
+      "fresh": "Neu beginnen"
+    },
+    "scheduleHint": {
+      "keep": "Empfohlen. Fälligkeiten und Gedächtnisstand werden übernommen, du machst dort weiter, wo Anki aufgehört hat.",
+      "fresh": "Jede Karte beginnt als neu. Pausierte Karten bleiben pausiert."
+    },
+    "start_one": "{{count}} Notiz importieren",
+    "start_other": "{{count}} Notizen importieren",
+    "discard": "Verwerfen",
+    "doneTitle": "Import abgeschlossen",
+    "done": {
+      "notes": "Notizen: {{created}} neu, {{updated}} aktualisiert, {{unchanged}} unverändert",
+      "cards": "Karten: {{created}} neu, {{suspended}} pausiert wie in Anki",
+      "topics": "Themen: {{created}} neu, {{reused}} wiederverwendet",
+      "media": "Mediendateien: {{stored}} gespeichert, {{reused}} schon vorhanden",
+      "unsupported": "{{count}} Bildverdeckungs-Karten sind aufbewahrt, werden aber noch nicht abgefragt.",
+      "overQuota": "{{count}} Mediendateien wurden übersprungen: dein Speicher ist voll.",
+      "failed_one": "{{count}} Notiz konnte nicht importiert werden",
+      "failed_other": "{{count}} Notizen konnten nicht importiert werden",
+      "embeddings": "Die Suche nach ähnlichen Karten wird in den nächsten Minuten im Hintergrund vorbereitet."
+    },
+    "toTopics": "Zu den Themen",
+    "another": "Weitere Datei importieren",
+    "failedTitle": "Der Import ist fehlgeschlagen",
+    "history": "Letzte Importe",
+    "status": {
+      "analyzing": "wird gelesen",
+      "staged": "bereit zum Import",
+      "queued": "wartet",
+      "running": "wird importiert",
+      "done": "fertig",
+      "failed": "fehlgeschlagen"
+    }
   }
 }

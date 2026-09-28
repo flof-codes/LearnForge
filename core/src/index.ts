@@ -49,6 +49,19 @@ export {
   type Note, type NoteCardSummary, type CreateNoteInput, type UpdateNoteInput,
 } from "./services/note-service.js";
 export { convertLegacyClozeCards, type LegacyClozeReport } from "./services/legacy-cloze.js";
+export { readAnkiPackage, type AnkiPackage, type PackageVersion as AnkiPackageVersion } from "./lib/apkg/package.js";
+export { textArray } from "./lib/sql-array.js";
+export {
+  previewAnkiPackage, importAnkiPackage,
+  type AnkiPreview, type AnkiImportStats, type AnkiImportOptions, type ScheduleMode as AnkiScheduleMode,
+} from "./services/anki-import.js";
+export { verifyMediaSignature, signMediaRefs, unsignMediaRefsDeep, referencedMediaIds } from "./lib/media-url.js";
+export {
+  assertCanStartImport, createImportJob, getImportJob, listImportJobs, claimImportJob, deleteImportJob,
+  markImportStaged, markImportRunning, setImportProgress, markImportDone, markImportFailed, importStatus,
+  clearStagedPath, sweepAnkiImports, usersMissingEmbeddings,
+  type AnkiImportJob, type AnkiImportStatus,
+} from "./services/anki-import-jobs.js";
 export { renderCardTemplate, renderClozeField, clozeNumbersIn, findClozeSpans, plainClozeText, RENDERER_VERSION, type RenderContext, type RenderResult } from "./lib/note-renderer.js";
 export {
   setOriginal, getCardOriginal, getCurrentOriginals, disputeOriginal, resolveDispute, markOriginalStale,

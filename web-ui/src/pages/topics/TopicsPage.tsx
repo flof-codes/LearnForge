@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, FolderTree } from 'lucide-react';
+import { Plus, FolderTree, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTopics, useDeleteTopic } from '../../hooks/useTopics';
 import TopicTreeNode from './TopicTreeNode';
@@ -37,13 +38,22 @@ export default function TopicsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-medium">{t('topics.title')}</h1>
-        <button
-          onClick={() => handleCreate()}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
-        >
-          <Plus size={16} />
-          {t('topics.newTopic')}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/dashboard/import/anki"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm border border-border hover:bg-bg-hover transition-colors"
+          >
+            <Upload size={16} />
+            {t('topics.importAnki')}
+          </Link>
+          <button
+            onClick={() => handleCreate()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
+          >
+            <Plus size={16} />
+            {t('topics.newTopic')}
+          </button>
+        </div>
       </div>
 
       <div className="bg-bg-secondary rounded-xl border border-border p-3">

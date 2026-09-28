@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import TopicsPage from './pages/topics/TopicsPage';
 import TopicDetailPage from './pages/topics/TopicDetailPage';
+import AnkiImportPage from './pages/topics/AnkiImportPage';
 import CardBrowserPage from './pages/cards/CardBrowserPage';
 import CardCreatorPage from './pages/cards/CardCreatorPage';
 import CardDetailPage from './pages/cards/CardDetailPage';
@@ -71,6 +72,7 @@ export function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="topics" element={<TopicsPage />} />
         <Route path="topics/:id" element={<TopicDetailPage />} />
+        <Route path="import/anki" element={<AnkiImportPage />} />
         <Route path="cards/browse" element={<CardBrowserPage />} />
         <Route path="cards/new" element={<CardCreatorPage />} />
         <Route path="cards/:id" element={<CardDetailPage />} />

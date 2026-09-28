@@ -105,6 +105,7 @@ export function registerImageTools(server: McpServer, db: Db, userId: string, im
             userId,
             filename: path.basename(file_path),
             mimeType,
+            sizeBytes: fileData.length,
           })
           .returning();
 

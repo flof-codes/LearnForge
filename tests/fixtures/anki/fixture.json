@@ -1,0 +1,275 @@
+{
+  "anki_version": "26.09.3",
+  "crt": 1790560800,
+  "notes": {
+    "reversed": {
+      "guid": "ktU#ui+@yB",
+      "model": "Basic (and reversed card)",
+      "fields": {
+        "Front": "hola <img src=\"hola.png\">",
+        "Back": "hello [sound:hola.mp3]"
+      },
+      "tags": [
+        "spanish::vocab",
+        "greeting"
+      ],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 2,
+          "queue": 2,
+          "due": 2,
+          "ivl": 2,
+          "reps": 2,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": false,
+          "stability": 2.30649995803833,
+          "difficulty": 2.1110000610351562,
+          "revlog": 2
+        },
+        {
+          "ord": 1,
+          "type": 2,
+          "queue": 2,
+          "due": 2,
+          "ivl": 2,
+          "reps": 2,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": false,
+          "stability": 2.30649995803833,
+          "difficulty": 2.1110000610351562,
+          "revlog": 2
+        }
+      ]
+    },
+    "image_only": {
+      "guid": "j?neK}*{[2",
+      "model": "Basic",
+      "fields": {
+        "Front": "<img src=\"perro%20gato.png\">",
+        "Back": "dog &amp; cat"
+      },
+      "tags": [
+        "spanish::vocab"
+      ],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 2,
+          "queue": 2,
+          "due": 7,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 1
+        }
+      ]
+    },
+    "cloze": {
+      "guid": "HIvc=a@JLl",
+      "model": "Cloze",
+      "fields": {
+        "Text": "{{c1::Paris}} is the capital of {{c2::France::country}}",
+        "Back Extra": "Europe"
+      },
+      "tags": [
+        "geo"
+      ],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 1,
+          "queue": 1,
+          "due": 1790600531,
+          "ivl": 0,
+          "reps": 2,
+          "lapses": 0,
+          "deck": "Geography",
+          "in_filtered": false,
+          "stability": 0.2467000037431717,
+          "difficulty": 6.4019999504089355,
+          "revlog": 2
+        },
+        {
+          "ord": 1,
+          "type": 0,
+          "queue": 0,
+          "due": 3,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Geography",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        }
+      ]
+    },
+    "multi": {
+      "guid": "P!n*4Y.<[j",
+      "model": "Cloze",
+      "fields": {
+        "Text": "{{c1::Ser}} and {{c2::estar}} both mean {{c1,2::to be}}",
+        "Back Extra": ""
+      },
+      "tags": [
+        "grammar"
+      ],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 0,
+          "queue": 0,
+          "due": 4,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Grammar",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        },
+        {
+          "ord": 1,
+          "type": 0,
+          "queue": 0,
+          "due": 4,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Grammar",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        }
+      ]
+    },
+    "typed": {
+      "guid": "IVD1}=1[U{",
+      "model": "Basic (type in the answer)",
+      "fields": {
+        "Front": "perro",
+        "Back": "dog"
+      },
+      "tags": [],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 0,
+          "queue": -1,
+          "due": 5,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        }
+      ]
+    },
+    "optional": {
+      "guid": "Mk~~h6M];M",
+      "model": "Basic (optional reversed card)",
+      "fields": {
+        "Front": "gato",
+        "Back": "cat",
+        "Add Reverse": "&nbsp;"
+      },
+      "tags": [],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 0,
+          "queue": 0,
+          "due": 6,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        },
+        {
+          "ord": 1,
+          "type": 0,
+          "queue": 0,
+          "due": 6,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": false,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        }
+      ]
+    },
+    "custom": {
+      "guid": "bdHvaF<};S",
+      "model": "LF Custom",
+      "fields": {
+        "Word": "casa",
+        "Meaning": "house",
+        "Example": "mi casa"
+      },
+      "tags": [
+        "custom"
+      ],
+      "cards": [
+        {
+          "ord": 0,
+          "type": 2,
+          "queue": 2,
+          "due": -99999,
+          "ivl": 10,
+          "reps": 1,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": true,
+          "stability": 8.295599937438965,
+          "difficulty": 1.0,
+          "revlog": 1
+        },
+        {
+          "ord": 1,
+          "type": 0,
+          "queue": 0,
+          "due": -100000,
+          "ivl": 0,
+          "reps": 0,
+          "lapses": 0,
+          "deck": "Spanish::Vocab",
+          "in_filtered": true,
+          "stability": null,
+          "difficulty": null,
+          "revlog": 0
+        }
+      ]
+    }
+  },
+  "media": [
+    "_logo.png",
+    "hola.mp3",
+    "hola.png",
+    "perro gato.png"
+  ],
+  "occlusion": {
+    "guid": "t-xoDjcP?D",
+    "cards": 2,
+    "stock_kind": 6
+  }
+}

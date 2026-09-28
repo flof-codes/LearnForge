@@ -3,9 +3,11 @@ import { runMigrations } from "./db/migrate.js";
 import { config } from "./config.js";
 import { db } from "./db/connection.js";
 import { createMcpHttpApp } from "learnforge-mcp/http";
+import { recoverAnkiImports } from "./services/anki-import-runner.js";
 
 async function main() {
   await runMigrations();
+  await recoverAnkiImports();
 
   const app = buildApp();
   await app.listen({ port: config.port, host: "0.0.0.0" });

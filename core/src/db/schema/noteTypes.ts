@@ -19,11 +19,15 @@ export const noteTypes = pgTable("note_types", {
   css: text("css").notNull().default(""),
   /** Field whose text names the note in lists and seeds `concept` when none is given. */
   sortFieldKey: text("sort_field_key"),
+  /** Imported types: Anki's notetype id and a hash of its field/template layout; a re-import reuses the type only when both match. */
+  ankiKey: text("anki_key"),
+  ankiSchema: text("anki_schema"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (t) => [
   unique("note_types_user_builtin_uq").on(t.userId, t.builtinKey),
   index("note_types_user_idx").on(t.userId),
+  index("note_types_anki_idx").on(t.userId, t.ankiKey),
 ]);
 
 /** Fields are addressed by a short stable key (f1, f2 …) so renames never move note content. */
