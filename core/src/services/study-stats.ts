@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
-import { NOT_DISPUTED } from "./study-filters.js";
+import { STUDYABLE } from "./study-filters.js";
 
 // Forecast and Anki-style statistics, split out of study-service.ts to keep that file readable.
 
@@ -27,7 +27,7 @@ export async function getDueForecast(db: Db, userId: string, topicId?: string, r
     SELECT COUNT(*)::int AS count
     FROM cards c
     JOIN fsrs_state fs ON fs.card_id = c.id
-    WHERE fs.due <= NOW() AND fs.state > 0 AND ${NOT_DISPUTED}
+    WHERE fs.due <= NOW() AND fs.state > 0 AND ${STUDYABLE}
     ${cardFilter}
   `);
   const overdue = overdueResult.rows[0]?.count ?? 0;
@@ -40,7 +40,7 @@ export async function getDueForecast(db: Db, userId: string, topicId?: string, r
       JOIN fsrs_state fs ON fs.card_id = c.id
       WHERE fs.due > NOW()
         AND fs.due <= NOW() + INTERVAL '30 days'
-        AND ${NOT_DISPUTED}
+        AND ${STUDYABLE}
         ${cardFilter}
       GROUP BY DATE(fs.due)
       ORDER BY due_date
@@ -70,7 +70,7 @@ export async function getDueForecast(db: Db, userId: string, topicId?: string, r
       JOIN fsrs_state fs ON fs.card_id = c.id
       WHERE fs.due > NOW()
         AND fs.due <= NOW() + INTERVAL '12 months'
-        AND ${NOT_DISPUTED}
+        AND ${STUDYABLE}
         ${cardFilter}
       GROUP BY DATE_TRUNC('month', fs.due)
       ORDER BY due_month
@@ -111,7 +111,7 @@ export async function getStudyStats(db: Db, userId: string, topicId?: string) {
             COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS short_term_count,
             COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90)::int AS mid_term_count,
             COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 90)::int AS long_term_count,
-            COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0 AND ${NOT_DISPUTED})::int AS due_count,
+            COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0 AND ${STUDYABLE})::int AS due_count,
             COUNT(*) FILTER (WHERE c.created_at::date = CURRENT_DATE)::int AS cards_created_today
           FROM cards c
           JOIN fsrs_state fs ON fs.card_id = c.id
@@ -137,7 +137,7 @@ export async function getStudyStats(db: Db, userId: string, topicId?: string) {
             COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability < 21)::int AS short_term_count,
             COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 21 AND fs.stability < 90)::int AS mid_term_count,
             COUNT(*) FILTER (WHERE fs.state = 2 AND fs.stability >= 90)::int AS long_term_count,
-            COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0 AND ${NOT_DISPUTED})::int AS due_count,
+            COUNT(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0 AND ${STUDYABLE})::int AS due_count,
             COUNT(*) FILTER (WHERE c.created_at::date = CURRENT_DATE)::int AS cards_created_today
           FROM cards c
           JOIN fsrs_state fs ON fs.card_id = c.id

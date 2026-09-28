@@ -97,14 +97,15 @@ describe("Card Lifecycle", () => {
       expect(res.data.error).toMatch(/concept/i);
     });
 
-    it("rejects missing concept field", async () => {
+    it("derives a missing concept from the front", async () => {
       const res = await api.post("/cards", {
         topic_id: TOPICS.EMPTY_TOPIC,
         front_html: "<p>Q</p>",
         back_html: "<p>A</p>",
       });
-      expect(res.status).toBe(400);
-      expect(res.data.error).toMatch(/concept/i);
+      expect(res.status).toBe(201);
+      expect(res.data.concept).toBe("Q");
+      freshCardIds.push(res.data.id);
     });
 
     it("rejects empty front_html", async () => {

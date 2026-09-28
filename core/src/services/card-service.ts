@@ -8,6 +8,8 @@ import { validateCardHtml } from "../lib/sanitize-card-html.js";
 import { verifyCardOwnership } from "../lib/card-ownership.js";
 import { validateClozeData, renderClozeHtml, type ClozeData } from "../lib/cloze-parser.js";
 import { markOriginalStale, getCurrentOriginals } from "./originals-service.js";
+import { createNote, updateNote } from "./note-service.js";
+import { stripHtml } from "../lib/strip-html.js";
 import { loadTopicRates, resolveCardRate, resolveTopicRate, validateChangeRate } from "./change-rate.js";
 import { sql } from "drizzle-orm";
 
@@ -23,13 +25,24 @@ const cardColumns = {
   clozeData: cards.clozeData,
   changeRate: cards.changeRate,
   currentOriginalId: cards.currentOriginalId,
+  noteId: cards.noteId,
+  templateId: cards.templateId,
+  clozeNumber: cards.clozeNumber,
+  suspended: cards.suspended,
   createdAt: cards.createdAt,
   updatedAt: cards.updatedAt,
 };
 
+const MAX_CONCEPT = 200;
+
+/** `concept` is optional since release 2; a missing one is the first line of text on the front. */
+function conceptFromFront(frontHtml: string): string {
+  return stripHtml(frontHtml).replace(/\s+/g, " ").trim().slice(0, MAX_CONCEPT) || "Card";
+}
+
 export interface CreateCardInput {
   topic_id: string;
-  concept: string;
+  concept?: string;
   front_html?: string;
   back_html?: string;
   tags?: string[];
@@ -38,11 +51,11 @@ export interface CreateCardInput {
 }
 
 export async function createCard(db: Db, userId: string, input: CreateCardInput) {
-  const { topic_id, concept, tags, card_type, cloze_data } = input;
-  let { front_html, back_html } = input;
+  const { topic_id, tags, card_type, cloze_data } = input;
+  const { front_html, back_html } = input;
 
   if (!topic_id) throw new ValidationError("topic_id is required");
-  if (!concept) throw new ValidationError("concept is required");
+  if (input.concept !== undefined && !input.concept.trim()) throw new ValidationError("concept must not be empty");
 
   const cardType = card_type ?? "standard";
 
@@ -55,12 +68,16 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
   }
 
   if (cardType === "cloze") {
+    // Since release 2 a cloze is a Cloze note with one card per gap; the first
+    // card is returned with its siblings so the old callers keep working.
     if (!validateClozeData(cloze_data)) {
       throw new ValidationError("Invalid cloze_data structure");
     }
-    const rendered = renderClozeHtml(cloze_data);
-    front_html = rendered.frontHtml;
-    back_html = rendered.backHtml;
+    const note = await createNote(db, userId, {
+      topic_id, note_type: "cloze", fields: { Text: escapeClozeSource(cloze_data.sourceText) }, tags, concept: input.concept,
+    });
+    const first = await getCard(db, userId, note.cards[0].id);
+    return { ...first, siblingIds: note.cards.map(c => c.id), noteId: note.id };
   } else {
     if (!front_html) throw new ValidationError("front_html is required");
     if (!back_html) throw new ValidationError("back_html is required");
@@ -72,6 +89,7 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
   const [topic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topic_id), eq(topics.userId, userId)));
   if (!topic) throw new NotFoundError("Topic not found");
 
+  const concept = (input.concept?.trim() || conceptFromFront(front_html!)).slice(0, MAX_CONCEPT);
   const embeddingText = buildEmbeddingText(concept, tags ?? [], front_html!, back_html!);
   const embedding = await computeEmbedding(embeddingText);
   const initialFsrs = createInitialFsrsState();
@@ -109,6 +127,11 @@ export async function createCard(db: Db, userId: string, input: CreateCardInput)
   return result;
 }
 
+/** Old cloze sources were plain text; note fields are HTML. */
+function escapeClozeSource(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export async function getCard(db: Db, userId: string, cardId: string) {
   // Single JOIN: card + ownership check + bloom + fsrs (replaces 4 sequential queries)
   const [row] = await db
@@ -122,6 +145,10 @@ export async function getCard(db: Db, userId: string, cardId: string) {
       cardType: cards.cardType,
       clozeData: cards.clozeData,
       changeRate: cards.changeRate,
+      noteId: cards.noteId,
+      templateId: cards.templateId,
+      clozeNumber: cards.clozeNumber,
+      suspended: cards.suspended,
       createdAt: cards.createdAt,
       updatedAt: cards.updatedAt,
       bloomCardId: bloomState.cardId,
@@ -159,6 +186,7 @@ export async function getCard(db: Db, userId: string, cardId: string) {
   const effective = resolveCardRate({ changeRate: row.changeRate, topicId: row.topicId }, topicRates);
   const inherited = resolveTopicRate(row.topicId, topicRates);
   const originals = await getCurrentOriginals(db, userId, [cardId]);
+  const note = row.noteId ? await noteSummary(db, row.noteId) : null;
 
   return {
     id: row.id,
@@ -169,6 +197,11 @@ export async function getCard(db: Db, userId: string, cardId: string) {
     tags: row.tags,
     cardType: row.cardType,
     clozeData: row.clozeData,
+    noteId: row.noteId,
+    templateId: row.templateId,
+    clozeNumber: row.clozeNumber,
+    suspended: row.suspended,
+    note,
     changeRate: row.changeRate,
     effectiveChangeRate: effective.changeRate,
     rateSource: effective.rateSource,
@@ -180,6 +213,27 @@ export async function getCard(db: Db, userId: string, cardId: string) {
     bloomState: bloom,
     fsrsState: fsrs,
     reviews: cardReviews,
+  };
+}
+
+/** Type, template and siblings of a typed card, for the detail view. */
+async function noteSummary(db: Db, noteId: string) {
+  const rows = await db.execute<{ id: string; note_type_id: string; type_name: string; type_kind: string; fields: Record<string, string>; field_defs: Array<{ key: string; name: string; ord: number }> }>(sql`
+    SELECT n.id, n.note_type_id, nt.name AS type_name, nt.kind AS type_kind, n.fields,
+      (SELECT json_agg(json_build_object('key', f.key, 'name', f.name, 'ord', f.ord) ORDER BY f.ord) FROM note_type_fields f WHERE f.note_type_id = nt.id) AS field_defs
+    FROM notes n JOIN note_types nt ON nt.id = n.note_type_id WHERE n.id = ${noteId}
+  `);
+  const n = rows.rows[0];
+  if (!n) return null;
+  const siblings = await db.execute<{ id: string; template_name: string | null; cloze_number: number; suspended: boolean }>(sql`
+    SELECT c.id, ct.name AS template_name, c.cloze_number, c.suspended
+    FROM cards c LEFT JOIN card_templates ct ON ct.id = c.template_id
+    WHERE c.note_id = ${noteId} ORDER BY ct.ord NULLS LAST, c.cloze_number
+  `);
+  return {
+    id: n.id, noteTypeId: n.note_type_id, noteTypeName: n.type_name, noteTypeKind: n.type_kind, fields: n.fields,
+    fieldDefs: n.field_defs ?? [],
+    siblings: siblings.rows.map(sb => ({ id: sb.id, templateName: sb.template_name, clozeNumber: sb.cloze_number, suspended: sb.suspended })),
   };
 }
 
@@ -209,6 +263,23 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
   // Fetch current card to check card type when cloze_data is provided
   const [currentCard] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
   if (!currentCard) throw new NotFoundError("Card not found");
+
+  // Typed cards render from their note: content, concept and tags change there.
+  // The topic moves the whole note, so siblings never split.
+  if (currentCard.noteId) {
+    if (concept !== undefined || front_html !== undefined || back_html !== undefined || tags !== undefined || cloze_data !== undefined) {
+      throw new ValidationError("This card belongs to a note; edit its fields, tags or concept through the note");
+    }
+    if (topic_id !== undefined) {
+      // {{Deck}} is part of the rendered HTML, so the note renders again.
+      await updateNote(db, userId, currentCard.noteId, { topic_id });
+    }
+    if (change_rate !== undefined) {
+      await db.execute(sql`UPDATE cards SET change_rate = ${validateChangeRate(change_rate)} WHERE id = ${cardId}`);
+    }
+    const [updated] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
+    return updated;
+  }
 
   // Handle cloze_data updates
   if (cloze_data !== undefined) {
@@ -261,6 +332,14 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
 
 export async function deleteCard(db: Db, userId: string, cardId: string) {
   await verifyCardOwnership(db, cardId, userId);
+
+  // A typed card is one rendering of its note. As in Anki, deleting it deletes
+  // the note and every sibling; suspending a single gap happens through the note.
+  const [typed] = await db.select(cardColumns).from(cards).where(eq(cards.id, cardId));
+  if (typed?.noteId) {
+    await db.execute(sql`DELETE FROM notes WHERE id = ${typed.noteId}`);
+    return typed;
+  }
 
   const [deleted] = await db.delete(cards).where(eq(cards.id, cardId)).returning(cardColumns);
   if (!deleted) throw new NotFoundError("Card not found");

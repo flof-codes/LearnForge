@@ -143,6 +143,24 @@ export default function CardDetailPage() {
       <div className="bg-bg-secondary rounded-xl border border-border p-5">
         <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.concept')}</h2>
         <p className="text-sm text-text-primary">{card.concept}</p>
+        {card.note && (
+          <div className="mt-4 space-y-2">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              {t('cardDetail.noteType')}: {card.note.noteTypeName}
+              {card.note.noteTypeKind === 'cloze' && ` · c${card.clozeNumber}`}
+              {card.suspended && ` · ${t('cardDetail.suspended')}`}
+            </h2>
+            {card.note.siblings.length > 1 && (
+              <p className="text-sm text-text-muted flex flex-wrap gap-2">
+                {card.note.siblings.map(s => (
+                  s.id === card.id
+                    ? <span key={s.id} className="font-medium text-text-primary">{s.templateName ?? 'Card'}{s.clozeNumber ? ` c${s.clozeNumber}` : ''}</span>
+                    : <Link key={s.id} to={`/dashboard/cards/${s.id}`} className="hover:text-text-primary underline">{s.templateName ?? 'Card'}{s.clozeNumber ? ` c${s.clozeNumber}` : ''}{s.suspended ? ' ⏸' : ''}</Link>
+                ))}
+              </p>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2 mt-3">
           {bloom && <BloomBadge level={bloom.currentLevel} />}
           {card.tags.map(tag => (

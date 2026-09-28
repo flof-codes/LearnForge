@@ -18,11 +18,11 @@ import { getUserId } from "../lib/auth-helpers.js";
 export default async function cardRoutes(app: FastifyInstance) {
 
   // POST /cards — create a new card with bloom + fsrs state
-  app.post<{ Body: { topic_id: string; concept: string; front_html?: string; back_html?: string; tags?: string[]; card_type?: "standard" | "cloze"; cloze_data?: ClozeData } }>("/cards", {
+  app.post<{ Body: { topic_id: string; concept?: string; front_html?: string; back_html?: string; tags?: string[]; card_type?: "standard" | "cloze"; cloze_data?: ClozeData } }>("/cards", {
     schema: {
       body: {
         type: "object",
-        required: ["topic_id", "concept"],
+        required: ["topic_id"],
         properties: {
           topic_id: { type: "string", format: "uuid" },
           concept: { type: "string", minLength: 1 },

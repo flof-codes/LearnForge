@@ -245,6 +245,8 @@
     "navLabel": "Seitennavigation"
   },
   "cardDetail": {
+    "noteType": "Kartendesign",
+    "suspended": "pausiert",
     "front": "Vorderseite",
     "back": "R\u00fcckseite",
     "concept": "Konzept",
@@ -281,6 +283,9 @@
     "deleteReviewConfirm": "L\u00f6schen"
   },
   "cardEditor": {
+    "typedHint": "Diese Karte wird aus einer {{type}}-Notiz gerendert. Bearbeite die Felder, das HTML folgt.",
+    "siblings": "{{count}} Karten teilen diese Notiz",
+    "previewNote": "Vorschau der gespeicherten Vorderseite. Aktualisiert sich nach dem Speichern.",
     "createTitle": "Karte erstellen",
     "editTitle": "Karte bearbeiten",
     "concept": "Konzept",

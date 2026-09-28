@@ -245,6 +245,8 @@
     "navLabel": "Pagination"
   },
   "cardDetail": {
+    "noteType": "Card design",
+    "suspended": "suspended",
     "front": "Front",
     "back": "Back",
     "concept": "Concept",
@@ -281,6 +283,9 @@
     "deleteReviewConfirm": "Delete"
   },
   "cardEditor": {
+    "typedHint": "This card renders from a {{type}} note. Edit the fields; the HTML follows.",
+    "siblings": "{{count}} cards share this note",
+    "previewNote": "Preview of the saved front. It updates after saving.",
     "createTitle": "Create Card",
     "editTitle": "Edit Card",
     "concept": "Concept",

@@ -4,7 +4,7 @@ import { loadTopicRates, resolveCardRate } from "./change-rate.js";
 import { getCurrentOriginals } from "./originals-service.js";
 import { getSession } from "./session-service.js";
 
-import { NOT_DISPUTED } from "./study-filters.js";
+import { STUDYABLE, NOT_BURIED } from "./study-filters.js";
 
 export interface GetStudyCardsOptions {
   /** A tutor session: the server issues one question ticket per served card. */
@@ -26,16 +26,22 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
         )
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
                c.card_type, c.cloze_data, c.change_rate, c.current_original_id,
+               c.note_id, c.template_id, c.cloze_number, ct.name AS template_name, nt.kind AS note_type_kind,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state, fs.last_review,
-               bs.current_level, bs.highest_reached, bs.progress
+               bs.current_level, bs.highest_reached, bs.progress,
+               ROW_NUMBER() OVER (PARTITION BY COALESCE(c.note_id, c.id) ORDER BY fs.due ASC, c.cloze_number ASC, c.id ASC) AS sibling_rank,
+               ROW_NUMBER() OVER (ORDER BY fs.due ASC, c.id ASC) AS pos
         FROM cards c
         JOIN fsrs_state fs ON fs.card_id = c.id
         LEFT JOIN bloom_state bs ON bs.card_id = c.id
+        LEFT JOIN card_templates ct ON ct.id = c.template_id
+        LEFT JOIN note_types nt ON nt.id = ct.note_type_id
         WHERE fs.due <= NOW()
           AND c.topic_id IN (SELECT id FROM topic_tree)
-          AND ${NOT_DISPUTED}
+          AND ${STUDYABLE}
+          AND ${NOT_BURIED}
         ORDER BY fs.due ASC
-        LIMIT ${limit}
+        LIMIT ${limit * 5}
       `
     : sql`
         WITH RECURSIVE active_focus AS (
@@ -57,27 +63,35 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
         )
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
                c.card_type, c.cloze_data, c.change_rate, c.current_original_id,
+               c.note_id, c.template_id, c.cloze_number, ct.name AS template_name, nt.kind AS note_type_kind,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state, fs.last_review,
-               bs.current_level, bs.highest_reached, bs.progress
+               bs.current_level, bs.highest_reached, bs.progress,
+               ROW_NUMBER() OVER (PARTITION BY COALESCE(c.note_id, c.id) ORDER BY fs.due ASC, c.cloze_number ASC, c.id ASC) AS sibling_rank,
+               ROW_NUMBER() OVER (ORDER BY tp.priority ASC NULLS LAST, fs.due ASC, c.id ASC) AS pos
         FROM cards c
         JOIN fsrs_state fs ON fs.card_id = c.id
         LEFT JOIN bloom_state bs ON bs.card_id = c.id
+        LEFT JOIN card_templates ct ON ct.id = c.template_id
+        LEFT JOIN note_types nt ON nt.id = ct.note_type_id
         JOIN topics t ON c.topic_id = t.id
         LEFT JOIN topic_priority tp ON tp.topic_id = c.topic_id
         WHERE fs.due <= NOW()
           AND t.user_id = ${userId}
-          AND ${NOT_DISPUTED}
+          AND ${STUDYABLE}
+          AND ${NOT_BURIED}
         ORDER BY tp.priority ASC NULLS LAST, fs.due ASC
-        LIMIT ${limit}
+        LIMIT ${limit * 5}
       `;
 
+  // One card per note per batch (Anki's sibling rule); the window ranks siblings by due date.
   const result = await db.execute<{
     id: string; concept: string; front_html: string; back_html: string;
     topic_id: string; tags: string[] | null;
     card_type: string; cloze_data: unknown; change_rate: number | null; current_original_id: string | null;
+    note_id: string | null; template_id: string | null; cloze_number: number; template_name: string | null; note_type_kind: string | null;
     stability: number; difficulty: number; due: string; reps: number; lapses: number; state: number; last_review: string | null;
-    current_level: number | null; highest_reached: number | null; progress: number | null;
-  }>(topicFilter);
+    current_level: number | null; highest_reached: number | null; progress: number | null; sibling_rank: number; pos: number;
+  }>(sql`SELECT * FROM (${topicFilter}) ranked WHERE sibling_rank = 1 ORDER BY pos LIMIT ${limit}`);
 
   const cardIds = result.rows.map((r) => r.id);
 
@@ -139,6 +153,11 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
     tags: row.tags ?? [],
     cardType: row.card_type,
     clozeData: row.cloze_data,
+    noteId: row.note_id,
+    templateId: row.template_id,
+    templateName: row.template_name,
+    clozeNumber: row.cloze_number,
+    noteTypeKind: row.note_type_kind,
     bloomState: {
       currentLevel: row.current_level ?? 0,
       highestReached: row.highest_reached ?? 0,
@@ -186,8 +205,8 @@ export async function getStudySummary(db: Db, userId: string, topicId?: string) 
     ${topicCte}
     SELECT
       count(*)::int AS total_cards,
-      count(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0 AND ${NOT_DISPUTED})::int AS due_count,
-      count(*) FILTER (WHERE fs.state = 0 AND ${NOT_DISPUTED})::int AS new_count
+      count(*) FILTER (WHERE fs.due <= NOW() AND fs.state > 0 AND ${STUDYABLE})::int AS due_count,
+      count(*) FILTER (WHERE fs.state = 0 AND ${STUDYABLE})::int AS new_count
     FROM cards c
     JOIN fsrs_state fs ON fs.card_id = c.id
     ${cardFilter}

@@ -8,11 +8,13 @@ import TopicSelector from '../../components/TopicSelector';
 import TagInput from '../../components/TagInput';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import VariationSlider from '../../components/VariationSlider';
-import type { CardWithState, CreateCardInput, UpdateCardInput } from '../../types';
+import type { CardWithState, CreateCardInput, UpdateCardInput, UpdateNoteInput } from '../../types';
 
 interface Props {
   initialData?: CardWithState;
   onSubmit: (data: CreateCardInput | UpdateCardInput) => void;
+  /** Typed cards: the note's fields are edited instead of the HTML. */
+  onSubmitNote?: (data: UpdateNoteInput, changeRate: number | null) => void;
   isPending?: boolean;
   onDirty?: () => void;
 }
@@ -49,7 +51,81 @@ function useCodeMirror(initialValue: string, onChange: (value: string) => void) 
   return containerRef;
 }
 
-export default function CardEditor({ initialData, onSubmit, isPending, onDirty }: Props) {
+/** Field-by-field editor for a card that renders from a note; the HTML is derived and read-only. */
+function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: CardWithState; onSubmitNote?: (data: UpdateNoteInput, changeRate: number | null) => void; isPending?: boolean; onDirty?: () => void }) {
+  const { t } = useTranslation('app');
+  const note = card.note!;
+  const [fields, setFields] = useState<Record<string, string>>(note.fields);
+  const [tags, setTags] = useState<string[]>(card.tags);
+  const [topicId, setTopicId] = useState(card.topicId);
+  const [changeRate, setChangeRate] = useState<number | null>(card.changeRate ?? null);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmitNote?.({ fields, tags, topic_id: topicId }, changeRate);
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col lg:flex-row gap-6">
+      <div className="flex-[3] min-w-0 space-y-4">
+        <p className="text-sm text-text-muted">
+          {t('cardEditor.typedHint', { type: note.noteTypeName })}
+          {note.siblings.length > 1 && ` · ${t('cardEditor.siblings', { count: note.siblings.length })}`}
+        </p>
+        {note.fieldDefs.map(f => (
+          <div key={f.key}>
+            <label htmlFor={`note-field-${f.key}`} className="block text-sm text-text-muted mb-1">{f.name}</label>
+            <textarea
+              id={`note-field-${f.key}`}
+              value={fields[f.key] ?? ''}
+              onChange={e => { setFields({ ...fields, [f.key]: e.target.value }); onDirty?.(); }}
+              className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-text-primary text-sm focus:outline-none focus:border-accent-blue resize-y"
+              rows={note.noteTypeKind === 'cloze' && f.ord === 0 ? 4 : 2}
+            />
+          </div>
+        ))}
+        <label className="block">
+          <span className="block text-sm text-text-muted mb-1">{t('cardEditor.topic')}</span>
+          <TopicSelector value={topicId} onChange={setTopicId} />
+        </label>
+        <label className="block">
+          <span className="block text-sm text-text-muted mb-1">{t('cardEditor.tags')}</span>
+          <TagInput tags={tags} onChange={setTags} />
+        </label>
+        <VariationSlider
+          idPrefix="edit-card"
+          value={changeRate}
+          inheritedValue={card.inheritedChangeRate ?? 0.8}
+          inheritedFrom={card.inheritedFrom ?? null}
+          onChange={v => { setChangeRate(v); onDirty?.(); }}
+        />
+        <button
+          type="submit"
+          disabled={!topicId || isPending}
+          className="px-6 py-2.5 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {isPending ? t('cardEditor.saving') : t('cardEditor.saveChanges')}
+        </button>
+      </div>
+      <div className="flex-[2] min-w-0 space-y-3">
+        <label className="text-sm text-text-muted">{t('cardEditor.preview')}</label>
+        <div className="bg-bg-secondary rounded-xl border border-border p-5 min-h-[200px]">
+          <CardHtmlRender html={card.frontHtml} />
+        </div>
+        <p className="text-xs text-text-muted">{t('cardEditor.previewNote')}</p>
+      </div>
+    </form>
+  );
+}
+
+export default function CardEditor({ initialData, onSubmit, onSubmitNote, isPending, onDirty }: Props) {
+  if (initialData?.note) {
+    return <NoteFieldsEditor card={initialData} onSubmitNote={onSubmitNote} isPending={isPending} onDirty={onDirty} />;
+  }
+  return <FreeformEditor initialData={initialData} onSubmit={onSubmit} isPending={isPending} onDirty={onDirty} />;
+}
+
+function FreeformEditor({ initialData, onSubmit, isPending, onDirty }: Omit<Props, 'onSubmitNote'>) {
   const { t } = useTranslation('app');
   const [concept, setConcept] = useState(initialData?.concept ?? '');
   const [topicId, setTopicId] = useState(initialData?.topicId ?? '');

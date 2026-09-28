@@ -1,6 +1,8 @@
-import { pgTable, uuid, text, varchar, real, timestamp, jsonb, customType, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, real, smallint, boolean, timestamp, jsonb, customType, check, unique, index } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { topics } from "./topics.js";
+import { notes } from "./notes.js";
+import { cardTemplates } from "./noteTypes.js";
 
 const vector = customType<{ data: number[]; driverParam: string }>({
   dataType() {
@@ -27,11 +29,20 @@ export const cards = pgTable("cards", {
   changeRate: real("change_rate"),
   /** The current anchor question (card_originals.id). No FK to avoid a cycle; the originals table cascades from cards. */
   currentOriginalId: uuid("current_original_id"),
+  /** Typed cards: the note and template they render from. NULL = Freeform, the card's own HTML is the truth. */
+  noteId: uuid("note_id").references(() => notes.id, { onDelete: "cascade" }),
+  templateId: uuid("template_id").references(() => cardTemplates.id, { onDelete: "cascade" }),
+  /** Cloze cards: the gap number this card hides; 0 on every other card so the uniqueness below holds. */
+  clozeNumber: smallint("cloze_number").notNull().default(0),
+  suspended: boolean("suspended").notNull().default(false),
+  rendererVersion: smallint("renderer_version"),
   embedding: vector("embedding"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (t) => [
   check("cards_change_rate_range", sql`${t.changeRate} IS NULL OR (${t.changeRate} >= 0 AND ${t.changeRate} <= 1)`),
+  unique("cards_note_template_cloze_uq").on(t.noteId, t.templateId, t.clozeNumber),
+  index("cards_note_idx").on(t.noteId),
 ]);
 
 export const cardsRelations = relations(cards, ({ one }) => ({

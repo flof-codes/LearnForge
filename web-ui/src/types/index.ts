@@ -54,10 +54,57 @@ export interface Card {
   updatedAt: string;
 }
 
+export interface NoteFieldDef { key: string; name: string; ord: number }
+export interface NoteSibling { id: string; templateName: string | null; clozeNumber: number; suspended: boolean }
+export interface CardNoteInfo {
+  id: string;
+  noteTypeId: string;
+  noteTypeName: string;
+  noteTypeKind: 'standard' | 'cloze';
+  fields: Record<string, string>;
+  fieldDefs: NoteFieldDef[];
+  siblings: NoteSibling[];
+}
+
+export interface Note {
+  id: string;
+  noteTypeId: string;
+  noteTypeName: string;
+  noteTypeKind: 'standard' | 'cloze';
+  topicId: string;
+  fields: Record<string, string>;
+  tags: string[];
+  cards: Array<{ id: string; templateName: string | null; clozeNumber: number; suspended: boolean; concept: string }>;
+}
+
+export interface NoteType {
+  id: string;
+  builtinKey: string | null;
+  customized: boolean;
+  name: string;
+  kind: 'standard' | 'cloze';
+  css: string;
+  fields: NoteFieldDef[];
+  templates: Array<{ id: string; ord: number; name: string; frontTemplate: string; backTemplate: string }>;
+  noteCount?: number;
+}
+
+export interface UpdateNoteInput {
+  fields?: Record<string, string>;
+  tags?: string[];
+  topic_id?: string;
+  concept?: string;
+}
+
 export interface CardWithState extends Card {
   bloomState: BloomState;
   fsrsState: FsrsState;
   reviews: Review[];
+  noteId?: string | null;
+  templateId?: string | null;
+  clozeNumber?: number;
+  suspended?: boolean;
+  note?: CardNoteInfo | null;
   changeRate?: number | null;
   effectiveChangeRate?: number;
   rateSource?: 'card' | 'topic' | 'default';
@@ -67,7 +114,7 @@ export interface CardWithState extends Card {
 
 export interface CreateCardInput {
   topic_id: string;
-  concept: string;
+  concept?: string;
   front_html: string;
   back_html: string;
   tags?: string[];

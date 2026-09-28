@@ -80,7 +80,7 @@ export async function listCards(
   } else if (input.status === "learning") {
     conds.push(sql`fs.state IN (1, 3)`);
   } else if (input.status === "due") {
-    conds.push(sql`fs.state IS NOT NULL AND fs.state <> 0 AND fs.due <= NOW()`);
+    conds.push(sql`fs.state IS NOT NULL AND fs.state <> 0 AND fs.due <= NOW() AND c.suspended = false`);
   }
   const whereSql = conds.length > 0 ? sql`WHERE ${sql.join(conds, sql` AND `)}` : sql``;
 
