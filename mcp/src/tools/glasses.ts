@@ -30,7 +30,7 @@ async function requireAdmin(db: Db, userId: string): Promise<void> {
 export function registerGlassesTools(server: McpServer, db: Db, userId: string) {
   server.tool(
     "get_glasses_compile_queue",
-    `Cards due soon that have no compiled question for the Even Realities G2 glasses at their current Bloom level. Each entry carries everything needed to compile in one step: concept, card type, cloze data, plain-text front and back, the current original question, change rate, and for level 3+ up to three similar cards. Compile each entry with store_glasses_question, or skip it when it cannot be compressed. Caps: stem ${GLASSES_CAPS.stem} chars on ${GLASSES_CAPS.stemLines} lines, ${GLASSES_CAPS.options} options of ${GLASSES_CAPS.option} chars, explanation ${GLASSES_CAPS.explanation} chars, Latin text only. Admin only.`,
+    `Cards due soon that have no compiled question for the Even Realities G2 glasses at their current Bloom level. Each entry carries everything needed to compile in one step: concept, card type, cloze data, plain-text front and back, the current original question, change rate, and for level 3+ up to three similar cards. Compile each entry with store_glasses_question, or skip it when it cannot be compressed. Caps: stem ${GLASSES_CAPS.stem} chars on ${GLASSES_CAPS.stemLines} lines, ${GLASSES_CAPS.options} options of ${GLASSES_CAPS.option} chars, explanation ${GLASSES_CAPS.explanation} chars, the card's language with its real characters (umlauts, accents, typographic quotes). Admin only.`,
     {
       limit: z.number().int().min(1).max(50).optional().describe("Entries to return, default 10"),
       topic_id: z.string().uuid().optional().describe("Restrict to a topic and its descendants"),

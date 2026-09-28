@@ -250,7 +250,7 @@ GET /health
 - Pairing: the glasses generate a secret, send its SHA-256 to `POST /glasses/pair/start`, show the 6-char code; the admin claims it in Settings → Glasses; poll returns only a status. Tokens live hashed in `glasses_tokens`, 90 days, revocable.
 - `glasses_questions` is keyed by (card_id, bloom_level, prompt_version) and is fresh only while `card_updated_at` and `original_id` match the card. `updateCard` deletes a card's rows. Bump `GLASSES_PROMPT_VERSION` in core when the compile rules change.
 - Serving uses study sessions (`client: glasses`, difficulty 0.3) and question tickets; `POST /glasses/reviews` sends letters plus the ticket and the review service grades (`style` single/multiple from the correct count).
-- Display caps (core `GLASSES_CAPS`, mirrored in `glasses/src/text.ts`): stem 96 chars / 2 lines, 4 options × 28, explanation 190, Latin text only.
+- Display caps (core `GLASSES_CAPS`, mirrored in `glasses/src/text.ts`): stem 96 chars / 2 lines, 4 options × 28, explanation 190. Characters are checked against Even's font metrics (`@evenrealities/pretext`, `requireDrawable` in core): umlauts, accents, typographic quotes pass; ✓ ► µ and backticks are refused.
 
 ## Conventions
 

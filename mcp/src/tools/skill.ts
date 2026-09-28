@@ -468,7 +468,7 @@ LearnForge runs on Even Realities G2 glasses as tiny multiple-choice questions a
 2. \`store_glasses_question\` — one call per entry. Or \`skip: true\` with a reason when the card cannot be compressed.
 
 ### Rules
-- **Caps are hard**: stem ≤ 96 chars on 2 lines, exactly 4 options ≤ 28 chars each, explanation ≤ 190 chars. Latin letters, digits and punctuation only — the firmware font drops other glyphs silently. No KaTeX, no HTML, no Unicode arrows or ticks.
+- **Caps are hard**: stem ≤ 96 chars on 2 lines, exactly 4 options ≤ 28 chars each, explanation ≤ 190 chars. Write in the card's language with its real characters: ä ö ü ß, accents, „quotes“ or “quotes”, – and … all show (never "ae" for "ä"). The font lacks ✓ ✗ ► ◄ µ, the backtick and most emoji; the store rejects them, and the firmware would skip them silently. No KaTeX, no HTML.
 - **Level style** follows the standard question table: level 0 remembers a fact, 1 understands why, 2 applies to a scenario, 3+ compares with the similarCards. The stem must still be answerable from the four options alone.
 - **changeRate 0** means word for word: stem = original.questionText, options = original.options texts. Trim only, never rephrase.
 - **Cloze cards**: pick the deletion for the level (rotating), build the sentence with \`[...]\`, distractors from different categories at level 0 and the same category at level 1.

@@ -20,6 +20,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@evenrealities/pretext": "^0.1.4",
     "@huggingface/transformers": "^3.8.1",
     "@open-spaced-repetition/binding": "^0.3.0",
     "drizzle-orm": "^0.38.4",

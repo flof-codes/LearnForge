@@ -7,7 +7,7 @@ import { NotFoundError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
 
 /** Bump when the compile rules in mcp/src/tools/skill.ts change; older rows are dropped on the next store. */
-export const GLASSES_PROMPT_VERSION = 1;
+export const GLASSES_PROMPT_VERSION = 2; // 2: real umlauts and typography instead of ASCII
 
 /**
  * Support for the server-side glasses compiler.

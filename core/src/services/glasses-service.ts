@@ -24,6 +24,7 @@ import { getStudySummary } from "./study-service.js";
  */
 
 import { GLASSES_PROMPT_VERSION, countPendingCompile } from "./glasses-compile.js";
+import { getAdvW } from "@evenrealities/pretext";
 export { GLASSES_PROMPT_VERSION };
 
 /** Display caps shared with glasses/src/text.ts. */
@@ -47,8 +48,8 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 6;
 const HASH_RE = /^[0-9a-f]{64}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** Printable ASCII plus Latin-1 supplement: the glyphs the firmware font is known to carry. */
-const LATIN1_RE = /^[\u0020-\u007E\u00A0-\u00FF]*$/;
+/** Listed by Even's font metrics, but not drawn by the glasses (checked on device, 2026-09-25). */
+const NOT_DRAWN = new Set(["\u2584"]); // ▄
 
 export function hashGlassesToken(rawToken: string): string {
   return createHash("sha256").update(rawToken).digest("hex");
@@ -330,9 +331,15 @@ function countWrappedLines(text: string, cols: number): number {
   return lines;
 }
 
-function requireLatin1(field: string, value: string): void {
-  if (!LATIN1_RE.test(value)) {
-    throw new ValidationError(`${field} contains characters the glasses font cannot show; use plain Latin text`);
+/**
+ * The glasses font has Latin with umlauts and accents, Greek, Cyrillic, CJK, typographic
+ * quotes and dashes, but not every symbol (no check marks, no ► ◄, no µ, no backtick).
+ * Even's own metrics tell which: the firmware skips a missing glyph without a trace.
+ */
+function requireDrawable(field: string, value: string): void {
+  const missing = [...new Set([...value].filter(ch => NOT_DRAWN.has(ch) || getAdvW(ch.codePointAt(0)!) === 0))];
+  if (missing.length) {
+    throw new ValidationError(`${field} contains characters the glasses font cannot show: ${missing.join(" ")}`);
   }
 }
 
@@ -344,7 +351,7 @@ export function validateGlassesQuestion(input: { stem: string; options: string[]
 
   if (!stem) throw new ValidationError("stem is required");
   if (stem.length > GLASSES_CAPS.stem) throw new ValidationError(`stem must be at most ${GLASSES_CAPS.stem} characters`);
-  requireLatin1("stem", stem);
+  requireDrawable("stem", stem);
   if (countWrappedLines(stem, GLASSES_CAPS.cols) > GLASSES_CAPS.stemLines) {
     throw new ValidationError(`stem must fit ${GLASSES_CAPS.stemLines} lines of ${GLASSES_CAPS.cols} characters`);
   }
@@ -353,7 +360,7 @@ export function validateGlassesQuestion(input: { stem: string; options: string[]
   options.forEach((o, i) => {
     if (!o) throw new ValidationError(`option ${OPTION_LETTERS[i]} is empty`);
     if (o.length > GLASSES_CAPS.option) throw new ValidationError(`option ${OPTION_LETTERS[i]} must be at most ${GLASSES_CAPS.option} characters`);
-    requireLatin1(`option ${OPTION_LETTERS[i]}`, o);
+    requireDrawable(`option ${OPTION_LETTERS[i]}`, o);
   });
   if (new Set(options.map(o => o.toLowerCase())).size !== options.length) throw new ValidationError("options must be distinct");
 
@@ -364,7 +371,7 @@ export function validateGlassesQuestion(input: { stem: string; options: string[]
 
   if (!explanation) throw new ValidationError("explanation is required");
   if (explanation.length > GLASSES_CAPS.explanation) throw new ValidationError(`explanation must be at most ${GLASSES_CAPS.explanation} characters`);
-  requireLatin1("explanation", explanation);
+  requireDrawable("explanation", explanation);
 
   return { stem, options, correct, explanation };
 }

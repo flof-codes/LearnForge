@@ -186,7 +186,7 @@ describe("Glasses — token scope, compile queue, batch and answers", () => {
     const result = await mcp.callTool("get_glasses_compile_queue", { topic_id: TOPICS.EMPTY_TOPIC, limit: 10 });
     expect(result.isError).toBeFalsy();
     const parsed = mcp.parseToolResult<{ promptVersion: number; entries: Array<Record<string, unknown>> }>(result);
-    expect(parsed.promptVersion).toBe(1);
+    expect(parsed.promptVersion).toBe(2);
     const ids = parsed.entries.map(e => e.cardId);
     expect(ids).toEqual(expect.arrayContaining([cardA, cardB, cardC]));
     const entry = parsed.entries.find(e => e.cardId === cardA)!;
@@ -218,6 +218,7 @@ describe("Glasses — token scope, compile queue, batch and answers", () => {
     const glyph = await mcp.callTool("store_glasses_question", { ...base, stem: "Which is conserved ✓?" });
     expect(glyph.isError).toBe(true);
     expect(glyph.content[0].text).toMatch(/font/);
+    expect(glyph.content[0].text).toContain("✓");
 
     const threeLines = await mcp.callTool("store_glasses_question", { ...base, stem: `${"a".repeat(40)} ${"b".repeat(40)} ${"c".repeat(10)}` });
     expect(threeLines.isError).toBe(true);
@@ -225,6 +226,14 @@ describe("Glasses — token scope, compile queue, batch and answers", () => {
   });
 
   it("store accepts a single-correct question, a multi-correct question and a skip", async () => {
+    const german = await mcp.callTool("store_glasses_question", {
+      card_id: cardA, bloom_level: 0,
+      stem: "Welche Größe bleibt beim „elastischen“ Stoß erhalten?",
+      options: ["Kinetische Energie", "Nur die Masse", "Die Wärme", "Keine – alles ändert sich"], correct: [0],
+      explanation: "Beim elastischen Stoß geht keine Energie in Wärme über … also bleibt die kinetische Energie.",
+    });
+    expect(german.isError).toBeFalsy();
+
     const single = await mcp.callTool("store_glasses_question", {
       card_id: cardA, bloom_level: 0,
       stem: "Which quantity is conserved in an elastic collision only?",

@@ -18,7 +18,7 @@ The G2 glasses show one fixed-font screen (about 48 characters per line, 10 line
 2. Call `get_glasses_compile_queue` with `limit: 10` (and `topic_id` if Florian named a topic, `horizon_days` if he said how far ahead).
 3. For every entry, write one question that fits the caps and call `store_glasses_question`:
    - `stem` ≤ 96 chars, 2 lines; `options` exactly 4 × ≤ 28 chars; `correct` zero-based indices; `explanation` ≤ 190 chars.
-   - Latin text only. No formulas, HTML, arrows, ticks or emoji.
+   - The card's language with its real characters (ä ö ü ß, accents, typographic quotes and dashes). No formulas, HTML, arrows, ticks, µ, backticks or emoji; the store rejects glyphs the font lacks.
    - `changeRate` 0: copy the original question and options word for word.
    - Prefer one correct option. Use two or three only when the card asks for a set.
    - When the card cannot be compressed (formula, diagram, image-dependent), call `store_glasses_question` with `skip: true` and a one-sentence `reason`.

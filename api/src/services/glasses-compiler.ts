@@ -56,7 +56,7 @@ const ALLOWED_TOOLS = [
 function prompt(batch: number): string {
   return [
     "You are compiling LearnForge cards into questions for the Even Realities G2 glasses.",
-    "1. Call get_instructions and follow its 'Glasses Compile Flow' section exactly: the caps, the per-level style, Latin text only, changeRate 0 verbatim, single-correct by default.",
+    "1. Call get_instructions and follow its 'Glasses Compile Flow' section exactly: the caps, the per-level style, real characters (umlauts, accents), changeRate 0 verbatim, single-correct by default.",
     `2. Call get_glasses_compile_queue with limit ${batch}.`,
     "3. For every entry call store_glasses_question once: a compiled question inside the caps, or skip: true with a one-sentence reason when the card cannot be compressed (formulas, diagrams, image-dependent, options over 28 characters).",
     "4. Stop when the queue is empty or every entry of this batch is stored.",
