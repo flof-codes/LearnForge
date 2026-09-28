@@ -42,10 +42,9 @@ describe("Cloze Card Lifecycle", () => {
       freshCardIds.push(res.data.id);
 
       expect(res.data.id).toBeDefined();
-      expect(res.data.cardType).toBe("cloze");
-      expect(res.data.clozeData).toBeDefined();
-      expect(res.data.clozeData.deletions).toHaveLength(2);
-      expect(res.data.clozeData.sourceText).toContain("{{c1::");
+      expect(res.data.noteId).toBeTruthy();
+      expect(res.data.siblingIds).toHaveLength(2); // one card per gap
+      expect(res.data.clozeNumber).toBe(1);
       expect(res.data.topicId).toBe(TOPICS.EMPTY_TOPIC);
       expect(res.data.concept).toBe("Cloze lifecycle test");
 
@@ -79,33 +78,24 @@ describe("Cloze Card Lifecycle", () => {
       freshCardIds.push(res.data.id);
 
       expect(res.data.tags).toEqual(["biology", "energy"]);
-      expect(res.data.cardType).toBe("cloze");
+      expect(res.data.noteId).toBeTruthy();
     });
   });
 
   describe("Read", () => {
-    it("reads cloze card with full clozeData structure", async () => {
+    it("reads cloze card with its note behind it", async () => {
       const card = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "read-test");
       freshCardIds.push(card.id);
 
       const res = await api.get(`/cards/${card.id}`);
       expect(res.status).toBe(200);
 
-      expect(res.data.cardType).toBe("cloze");
-      expect(res.data.clozeData).toBeDefined();
-      expect(res.data.clozeData.deletions).toHaveLength(2);
-      expect(res.data.clozeData.sourceText).toContain("{{c1::");
-
-      // Verify deletion structure
-      const d1 = res.data.clozeData.deletions.find((d: any) => d.index === 1);
-      expect(d1).toBeDefined();
-      expect(d1.answer).toBe("mitochondria");
-      expect(d1.hint).toBe("organelle");
-
-      const d2 = res.data.clozeData.deletions.find((d: any) => d.index === 2);
-      expect(d2).toBeDefined();
-      expect(d2.answer).toBe("powerhouse");
-      expect(d2.hint).toBeNull();
+      expect(res.data.noteId).toBeTruthy();
+      expect(res.data.note.noteTypeKind).toBe("cloze");
+      expect(res.data.note.fields.f1).toContain("{{c1::mitochondria::organelle}}");
+      expect(res.data.note.fields.f1).toContain("{{c2::powerhouse}}");
+      expect(res.data.note.siblings).toHaveLength(2);
+      expect(res.data.clozeNumber).toBe(1);
 
       // Reviews should be present (empty for fresh card)
       expect(res.data.reviews).toBeDefined();
@@ -124,13 +114,11 @@ describe("Cloze Card Lifecycle", () => {
       expect(card.frontHtml).toContain("powerhouse");
     });
 
-    it("back_html contains revealed answers with <mark> tags", async () => {
+    it("back_html reveals the active answer in a cloze span", async () => {
       const card = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "back-html");
       freshCardIds.push(card.id);
 
-      // Back should have the active answer in a <mark> tag
-      expect(card.backHtml).toContain("<mark>");
-      expect(card.backHtml).toContain("mitochondria");
+      expect(card.backHtml).toContain('<span class="cloze">mitochondria</span>');
     });
 
     it("front_html uses [...] when no hint is provided", async () => {
@@ -152,46 +140,35 @@ describe("Cloze Card Lifecycle", () => {
   });
 
   describe("Update", () => {
-    it("updates cloze_data and re-renders HTML", async () => {
+    it("updates the note text and re-renders every gap card", async () => {
       const card = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "update-cloze");
       freshCardIds.push(card.id);
 
-      const newClozeData = {
-        deletions: [
-          { index: 1, answer: "ribosome", hint: "protein factory" },
-          { index: 2, answer: "proteins", hint: null },
-        ],
-        sourceText:
-          "The {{c1::ribosome::protein factory}} synthesizes {{c2::proteins}} from mRNA.",
-      };
+      // Content of a typed card is edited on its note, not on the card
+      const refused = await api.put(`/cards/${card.id}`, { cloze_data: { deletions: [], sourceText: "x" } });
+      expect(refused.status).toBe(400);
 
-      const res = await api.put(`/cards/${card.id}`, {
-        cloze_data: newClozeData,
+      const res = await api.put(`/notes/${card.noteId}`, {
+        fields: { Text: "The {{c1::ribosome::protein factory}} synthesizes {{c2::proteins}} from mRNA." },
       });
-      expect(res.status).toBe(200);
+      expect(res.status, JSON.stringify(res.data)).toBe(200);
 
-      expect(res.data.clozeData.deletions).toHaveLength(2);
-      expect(res.data.clozeData.deletions[0].answer).toBe("ribosome");
-      expect(res.data.clozeData.sourceText).toContain("{{c1::ribosome");
-
-      // Verify HTML was re-rendered from new data
-      expect(res.data.frontHtml).toContain("[protein factory]");
-      expect(res.data.backHtml).toContain("ribosome");
+      const updated = await api.get(`/cards/${card.id}`);
+      expect(updated.data.frontHtml).toContain("[protein factory]");
+      expect(updated.data.backHtml).toContain("ribosome");
     });
 
-    it("updates concept on cloze card", async () => {
+    it("updates concept on a cloze note", async () => {
       const card = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "update-concept");
       freshCardIds.push(card.id);
 
-      const res = await api.put(`/cards/${card.id}`, {
+      const res = await api.put(`/notes/${card.noteId}`, {
         concept: "Updated cloze concept about cell biology",
       });
       expect(res.status).toBe(200);
-      expect(res.data.concept).toBe("Updated cloze concept about cell biology");
-
-      // clozeData should remain unchanged
-      expect(res.data.clozeData).toBeDefined();
-      expect(res.data.clozeData.deletions).toHaveLength(2);
+      const updated = await api.get(`/cards/${card.id}`);
+      expect(updated.data.concept).toBe("Updated cloze concept about cell biology");
+      expect(updated.data.note.siblings).toHaveLength(2);
     });
 
     it("moves cloze card to different topic", async () => {
@@ -268,10 +245,9 @@ describe("Cloze Card Lifecycle", () => {
       expect(resetRes.data.fsrsState.lapses).toBe(0);
       expect(resetRes.data.reviews).toEqual([]);
 
-      // clozeData should still be intact
-      expect(resetRes.data.cardType).toBe("cloze");
-      expect(resetRes.data.clozeData).toBeDefined();
-      expect(resetRes.data.clozeData.deletions).toHaveLength(2);
+      // The note behind the card is untouched by a reset
+      const after = await api.get(`/cards/${card.id}`);
+      expect(after.data.noteId).toBe(card.noteId);
     });
   });
 
@@ -368,14 +344,12 @@ describe("Cloze Card Lifecycle", () => {
       freshCardIds.push(res.data.id);
 
       expect(res.data.cardType).toBe("standard");
-      expect(res.data.clozeData).toBeNull();
     });
 
     it("existing seed cards have cardType standard and null clozeData", async () => {
       const res = await api.get(`/cards/${CARDS.NEW_ADDITION}`);
       expect(res.status).toBe(200);
       expect(res.data.cardType).toBe("standard");
-      expect(res.data.clozeData).toBeNull();
     });
 
     it("all seed cards report standard type", async () => {
@@ -391,7 +365,6 @@ describe("Cloze Card Lifecycle", () => {
         const res = await api.get(`/cards/${cardId}`);
         expect(res.status).toBe(200);
         expect(res.data.cardType).toBe("standard");
-        expect(res.data.clozeData).toBeNull();
       }
     });
 
@@ -405,7 +378,6 @@ describe("Cloze Card Lifecycle", () => {
       });
       expect(updateRes.status).toBe(200);
       expect(updateRes.data.cardType).toBe("standard");
-      expect(updateRes.data.clozeData).toBeNull();
 
       // Read
       const getRes = await api.get(`/cards/${card.id}`);

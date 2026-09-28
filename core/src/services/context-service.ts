@@ -79,12 +79,13 @@ export async function getSimilarCards(db: Db, userId: string, cardId: string, li
         'reviewedAt', r.reviewed_at
       ) ORDER BY r.reviewed_at) FILTER (WHERE r.id IS NOT NULL) as reviews
     FROM cards c
-    CROSS JOIN (SELECT embedding FROM cards WHERE id = ${cardId}) target
+    CROSS JOIN (SELECT embedding, note_id FROM cards WHERE id = ${cardId}) target
     JOIN topics t ON c.topic_id = t.id
     LEFT JOIN bloom_state bs ON bs.card_id = c.id
     LEFT JOIN reviews r ON r.card_id = c.id
     WHERE c.id != ${cardId} AND c.embedding IS NOT NULL AND t.user_id = ${userId}
-    GROUP BY c.id, c.concept, c.tags, c.topic_id, bs.current_level, bs.highest_reached, target.embedding, c.embedding
+      AND (target.note_id IS NULL OR c.note_id IS DISTINCT FROM target.note_id) -- a note's own siblings share its embedding
+    GROUP BY c.id, c.concept, c.tags, c.topic_id, bs.current_level, bs.highest_reached, target.embedding, target.note_id, c.embedding
     ORDER BY c.embedding <=> target.embedding
     LIMIT ${maxLimit}
   `);

@@ -17,6 +17,7 @@ import adminRoutes from "./routes/admin.js";
 import shareRoutes from "./routes/shares.js";
 import focusRoutes from "./routes/focus.js";
 import glassesRoutes from "./routes/glasses.js";
+import noteRoutes from "./routes/notes.js";
 import { sql } from "drizzle-orm";
 import { db } from "./db/connection.js";
 import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
@@ -73,6 +74,7 @@ export function buildApp() {
   app.register(authRoutes);
   app.register(topicRoutes);
   app.register(cardRoutes);
+  app.register(noteRoutes);
   app.register(reviewRoutes);
   app.register(studyRoutes);
   app.register(contextRoutes);

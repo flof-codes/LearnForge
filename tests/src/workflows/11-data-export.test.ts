@@ -1,14 +1,21 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { AxiosInstance } from "axios";
 import AdmZip from "adm-zip";
 import { login, getApi, getUnauthApi } from "../helpers/api-client.js";
 import { SEED, TOPICS, CARDS, IMAGES } from "../helpers/fixtures.js";
 
 let api: AxiosInstance;
+let exportNoteId: string;
 
 beforeAll(async () => {
   await login();
   api = getApi();
+  const note = await api.post("/notes", { topic_id: TOPICS.EMPTY_TOPIC, note_type: "cloze", fields: { Text: "{{c1::export}} me" } });
+  exportNoteId = note.data.id;
+});
+
+afterAll(async () => {
+  if (exportNoteId) await api.delete(`/notes/${exportNoteId}`);
 });
 
 /** Parse the ZIP from an arraybuffer response and extract the JSON export. */
@@ -58,7 +65,19 @@ describe("Data Export", () => {
     const res = await api.get("/export", { responseType: "arraybuffer" });
     const { exportData } = parseExportZip(res.data);
 
-    expect(exportData.version).toBe(2); // 2 since release 1 of the dials: change_rate, progress, review log columns
+    expect(exportData.version).toBe(3); // 2: dials columns; 3: note types and notes
+    const v3 = exportData as any;
+    expect(Array.isArray(v3.noteTypes)).toBe(true);
+    expect(v3.noteTypes.map((t: any) => t.builtinKey)).toEqual(expect.arrayContaining(["open", "choice", "cloze"]));
+    expect(v3.noteTypes[0].fields.length).toBeGreaterThan(0);
+    expect(v3.noteTypes[0].templates[0]).toHaveProperty("frontTemplate");
+    // a note created for this test must appear with its fields, and its card with the note columns
+    const exportedNote = v3.notes.find((n: any) => n.id === exportNoteId);
+    expect(exportedNote).toBeDefined();
+    expect(exportedNote.fields.f1).toContain("{{c1::export}}");
+    const exportedCard = v3.cards.find((c: any) => c.noteId === exportNoteId);
+    expect(exportedCard).toMatchObject({ clozeNumber: 1, suspended: false });
+    expect(exportedCard.templateId).toBeTruthy();
     expect(exportData.exportedAt).toBeDefined();
     expect(exportData.topics[0]).toHaveProperty("changeRate");
     const reviewed = exportData.cards.find((c: any) => c.reviews.length > 0)!;

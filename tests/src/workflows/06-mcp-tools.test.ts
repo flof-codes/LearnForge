@@ -229,15 +229,13 @@ describe("MCP Tools", () => {
 
       const card = mcp.parseToolResult<any>(result);
       expect(card.id).toBeDefined();
-      expect(card.cardType).toBe("cloze");
-      expect(card.clozeData).toBeDefined();
-      expect(card.clozeData.deletions).toHaveLength(2);
-      expect(card.clozeData.sourceText).toContain("{{c1::");
+      expect(card.noteId).toBeTruthy();
       expect(card.bloomState.currentLevel).toBe(0);
       expect(card.fsrsState.state).toBe(0);
       // Auto-rendered HTML
       expect(card.frontHtml).toContain("[organelle]");
-      expect(card.backHtml).toContain("<mark>");
+      expect(card.backHtml).toContain('<span class="cloze">mitochondria</span>');
+      expect(card.siblingIds).toHaveLength(2);
       createdCardIds.push(card.id);
     });
 
@@ -249,24 +247,22 @@ describe("MCP Tools", () => {
       expect(result.isError).toBeFalsy();
 
       const card = mcp.parseToolResult<any>(result);
-      expect(card.cardType).toBe("cloze");
-      expect(card.clozeData).toBeDefined();
-      expect(card.clozeData.deletions).toHaveLength(2);
+      expect(card.noteId).toBeTruthy();
       expect(card.frontHtml).toContain("[organelle]");
-      expect(card.backHtml).toContain("<mark>");
+      expect(card.backHtml).toContain('<span class="cloze">mitochondria</span>');
+      expect(card.note.noteTypeKind).toBe("cloze");
     });
 
     it("get_study_cards returns cloze cards with proper shape", async () => {
       const result = await mcp.callTool("get_study_cards", { limit: 100 });
       const cards = mcp.parseToolResult<any[]>(result);
 
-      const clozeCards = cards.filter((c: any) => c.cardType === "cloze");
+      const clozeCards = cards.filter((c: any) => c.noteTypeKind === "cloze");
       expect(clozeCards.length).toBeGreaterThan(0);
 
       for (const card of clozeCards) {
-        expect(card.clozeData).toBeDefined();
-        expect(card.clozeData.deletions).toBeDefined();
-        expect(card.clozeData.sourceText).toBeDefined();
+        expect(card.clozeNumber).toBeGreaterThan(0);
+        expect(card.original?.questionText).toBeTruthy();
       }
     });
 
@@ -523,15 +519,16 @@ describe("MCP Tools", () => {
       expect(text).toMatch(/card/i);
     });
 
-    it("create_card with missing concept returns error", async () => {
+    it("create_card without a concept derives one from the front", async () => {
       const result = await mcp.callTool("create_card", {
         topic_id: TOPICS.EMPTY_TOPIC,
         front_html: "<p>Q</p>",
         back_html: "<p>A</p>",
       });
-      expect(result.isError).toBe(true);
-      const text = getErrorText(result);
-      expect(text).toMatch(/concept/i);
+      expect(result.isError).toBeFalsy();
+      const card = mcp.parseToolResult<any>(result);
+      expect(card.concept).toBe("Q");
+      createdCardIds.push(card.id);
     });
 
     it("create_card with missing front_html returns error", async () => {

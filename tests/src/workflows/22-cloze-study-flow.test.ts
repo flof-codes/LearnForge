@@ -24,7 +24,7 @@ afterAll(async () => {
 
 describe("Cloze Study Flow", () => {
   describe("Due Queue", () => {
-    it("cloze card appears in due queue with cardType and clozeData", async () => {
+    it("cloze card appears in due queue as a cloze note card", async () => {
       const card = await createFreshClozeCard(api, TOPICS.EMPTY_TOPIC, "due-queue");
       freshCardIds.push(card.id);
 
@@ -33,10 +33,7 @@ describe("Cloze Study Flow", () => {
 
       const clozeCard = res.data.find((c: any) => c.id === card.id);
       expect(clozeCard).toBeDefined();
-      expect(clozeCard.cardType).toBe("cloze");
-      expect(clozeCard.clozeData).toBeDefined();
-      expect(clozeCard.clozeData.deletions).toHaveLength(2);
-      expect(clozeCard.clozeData.sourceText).toContain("{{c1::");
+      expect(clozeCard.noteTypeKind).toBe("cloze");
     });
 
     it("topic-filtered due includes cloze cards under topic (recursive)", async () => {
@@ -60,9 +57,9 @@ describe("Cloze Study Flow", () => {
       const res = await api.get("/study/due", { params: { limit: 100 } });
       expect(res.status).toBe(200);
 
-      const types = new Set(res.data.map((c: any) => c.cardType));
-      expect(types.has("standard")).toBe(true);
-      expect(types.has("cloze")).toBe(true);
+      const kinds = new Set(res.data.map((c: any) => c.noteTypeKind ?? "freeform"));
+      expect(kinds.has("freeform")).toBe(true);
+      expect(kinds.has("cloze")).toBe(true);
 
       // Should still be sorted by due date ASC
       const dues = res.data.map((c: any) => new Date(c.fsrsState.due).getTime());
@@ -84,8 +81,7 @@ describe("Cloze Study Flow", () => {
       expect(clozeCard).toHaveProperty("backHtml");
       expect(clozeCard).toHaveProperty("topicId");
       expect(clozeCard).toHaveProperty("tags");
-      expect(clozeCard).toHaveProperty("cardType");
-      expect(clozeCard).toHaveProperty("clozeData");
+      expect(clozeCard).toHaveProperty("noteTypeKind");
       expect(clozeCard).toHaveProperty("bloomState");
       expect(clozeCard).toHaveProperty("fsrsState");
       expect(clozeCard).toHaveProperty("reviews");
@@ -175,8 +171,8 @@ describe("Cloze Study Flow", () => {
       // Summary should now include the new cloze card
       const res = await api.get("/study/summary");
       expect(res.status).toBe(200);
-      expect(res.data.totalCards).toBe(baseTotalCards + 1);
-      expect(res.data.newCount).toBe(baseNewCount + 1);
+      expect(res.data.totalCards).toBe(baseTotalCards + 2); // two gaps, two cards
+      expect(res.data.newCount).toBe(baseNewCount + 2);
     });
 
     it("study stats includes cloze cards in cardStates distribution", async () => {
@@ -228,7 +224,7 @@ describe("Cloze Study Flow", () => {
         params: { topic_id: TOPICS.BIOLOGY },
       });
       expect(res.status).toBe(200);
-      expect(res.data.totalCards).toBe(SEED.bioTreeCards + 1);
+      expect(res.data.totalCards).toBe(SEED.bioTreeCards + 2); // two gaps, two cards
     });
   });
 
@@ -265,8 +261,10 @@ describe("Cloze Study Flow", () => {
       freshCardIds.push(res.data.id);
 
       // Wait a moment for embedding computation, then check similarity
+      // Every cloze note in this file renders two near-identical cards, so the
+      // neighbourhood is crowded; a wider window keeps the test about ranking, not count.
       const similarRes = await api.get(`/context/similar/${card1.id}`, {
-        params: { limit: 20 },
+        params: { limit: 50 },
       });
       expect(similarRes.status).toBe(200);
 

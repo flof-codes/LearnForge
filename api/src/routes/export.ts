@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import { sql, eq } from "drizzle-orm";
-import { images, extFromMime } from "@learnforge/core";
+import { images, extFromMime, listNoteTypes } from "@learnforge/core";
 import { config } from "../config.js";
 import { getUserId } from "../lib/auth-helpers.js";
 import archiver from "archiver";
@@ -24,7 +24,7 @@ export default async function exportRoutes(app: FastifyInstance) {
     // 2. Query all cards with bloom_state, fsrs_state, and reviews
     const cardResult = await db.execute(sql`
       SELECT c.id, c.topic_id, c.concept, c.front_html, c.back_html, c.tags,
-        c.card_type, c.cloze_data, c.change_rate,
+        c.card_type, c.cloze_data, c.change_rate, c.note_id, c.template_id, c.cloze_number, c.suspended,
         c.created_at, c.updated_at,
         bs.current_level, bs.highest_reached, bs.progress,
         fs.stability, fs.difficulty, fs.due, fs.state as fsrs_state,
@@ -54,15 +54,19 @@ export default async function exportRoutes(app: FastifyInstance) {
       LEFT JOIN reviews r ON r.card_id = c.id
       WHERE t.user_id = ${userId}
       GROUP BY c.id, c.topic_id, c.concept, c.front_html, c.back_html, c.tags,
-        c.card_type, c.cloze_data, c.change_rate,
+        c.card_type, c.cloze_data, c.change_rate, c.note_id, c.template_id, c.cloze_number, c.suspended,
         c.created_at, c.updated_at,
         bs.current_level, bs.highest_reached, bs.progress,
         fs.stability, fs.difficulty, fs.due, fs.state, fs.last_review, fs.reps, fs.lapses
       ORDER BY c.created_at
     `);
 
-    // 3. Query image metadata
+    // 3. Query image metadata, notes and note types
     const imageRows = await db.select().from(images).where(eq(images.userId, userId));
+    const noteRows = await db.execute(sql`
+      SELECT id, note_type_id, topic_id, fields, tags, anki_guid, created_at, updated_at FROM notes WHERE user_id = ${userId} ORDER BY created_at
+    `);
+    const noteTypeRows = await listNoteTypes(db, userId, { ensureBuiltins: false }); // export must not write
 
     // 4. Build export JSON
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- raw SQL result rows
@@ -86,6 +90,10 @@ export default async function exportRoutes(app: FastifyInstance) {
       cardType: row.card_type,
       clozeData: row.cloze_data,
       changeRate: row.change_rate,
+      noteId: row.note_id,
+      templateId: row.template_id,
+      clozeNumber: row.cloze_number,
+      suspended: row.suspended,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       bloomState: {
@@ -115,10 +123,22 @@ export default async function exportRoutes(app: FastifyInstance) {
       createdAt: row.createdAt,
     }));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- raw SQL result rows
+    const notes = noteRows.rows.map((row: any) => ({
+      id: row.id, noteTypeId: row.note_type_id, topicId: row.topic_id, fields: row.fields, tags: row.tags,
+      ankiGuid: row.anki_guid, createdAt: row.created_at, updatedAt: row.updated_at,
+    }));
+    const noteTypes = noteTypeRows.map((t) => ({
+      id: t.id, builtinKey: t.builtinKey, customized: t.customized, name: t.name, kind: t.kind, css: t.css,
+      sortFieldKey: t.sortFieldKey, fields: t.fields, templates: t.templates,
+    }));
+
     const exportData = {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       topics,
+      noteTypes,
+      notes,
       cards,
       images: imageMeta,
     };

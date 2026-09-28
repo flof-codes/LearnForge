@@ -59,9 +59,10 @@ describe("Error Handling", () => {
   });
 
   describe("Validation", () => {
-    it("400 when creating card without concept", async () => {
+    it("400 when creating card with an empty concept", async () => {
       const res = await api.post("/cards", {
         topic_id: TOPICS.EMPTY_TOPIC,
+        concept: "",
         front_html: "<p>Q</p>",
         back_html: "<p>A</p>",
       });

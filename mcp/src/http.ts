@@ -22,6 +22,7 @@ import { registerSkillTools } from "./tools/skill.js";
 import { registerFocusTools } from "./tools/focus.js";
 import { registerDialTools } from "./tools/dials.js";
 import { registerGlassesTools } from "./tools/glasses.js";
+import { registerNoteTools } from "./tools/notes.js";
 import { LearnForgeOAuthProvider, handleLogin, cleanupExpiredOAuth } from "./auth/oauth-provider.js";
 
 export interface McpHttpConfig {
@@ -45,7 +46,7 @@ export function createMcpHttpApp(db: Db, mcpConfig: McpHttpConfig): {
 Session start: Call get_instructions to load the tutor workflow before doing anything else.
 Study session: get_study_summary → start_session (ask the learner for the difficulty: Commute / Desk / Deep) → get_study_cards with session_id → [question loop: show the next question, then submit_review with the previous card's question_id ticket].
 Every question derives from the card's original question; at change rate 0 ask it word for word with the options in their stored order. Show the difficulty on every question.
-Card creation: Generate preview → wait for user approval → create_card. Call get_templates for HTML templates.
+Card creation: typed notes (open / choice / cloze) through create_note after the learner approved the fields; Freeform HTML cards through create_card. Call get_templates for HTML templates.
 Cross-concept questions (Bloom 3+): Use get_similar_cards for context.
 Question presentation: Print the stem and full lettered options as chat text; where the client has the visualizer, collect the answer with show_widget and the mcq-selector template, otherwise let the learner type the letters.`,
       },
@@ -60,6 +61,7 @@ Question presentation: Print the stem and full lettered options as chat text; wh
     registerFocusTools(server, db, userId);
     registerDialTools(server, db, userId);
     registerGlassesTools(server, db, userId);
+    registerNoteTools(server, db, userId);
     return server;
   }
 

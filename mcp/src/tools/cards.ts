@@ -7,10 +7,10 @@ export function registerCardTools(server: McpServer, db: Db, userId: string) {
   // ── create_card ──────────────────────────────────────────────────────
   server.tool(
     "create_card",
-    "Create a flashcard. For cloze cards, provide cloze_source with {{c1::answer::hint}} syntax instead of front_html/back_html.",
+    "Create a Freeform flashcard from your own front_html/back_html. For typed cards (open, choice, cloze) use create_note instead; cloze_source is kept for compatibility and creates a Cloze note with one card per gap.",
     {
       topic_id: z.string().uuid(),
-      concept: z.string(),
+      concept: z.string().optional().describe("Short label for search; defaults to the first line of the front"),
       front_html: z.string().optional(),
       back_html: z.string().optional(),
       tags: z.array(z.string()).optional(),
@@ -87,7 +87,7 @@ export function registerCardTools(server: McpServer, db: Db, userId: string) {
   // ── delete_card ──────────────────────────────────────────────────────
   server.tool(
     "delete_card",
-    "Delete a card. Bloom state, FSRS state, and reviews cascade-delete via FK",
+    "Delete a card. A typed card is one rendering of its note: deleting it deletes the note and all its sibling cards (as in Anki); use update_note to drop a single gap instead. Freeform cards are deleted alone; Bloom state, FSRS state and reviews cascade-delete via FK",
     { card_id: z.string().uuid() },
     async ({ card_id }) => {
       try {

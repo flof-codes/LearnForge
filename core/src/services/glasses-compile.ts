@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import { oauthClients, oauthTokens } from "../db/schema/index.js";
-import { NOT_DISPUTED } from "./study-filters.js";
+import { STUDYABLE } from "./study-filters.js";
 import { NotFoundError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
 
@@ -61,7 +61,7 @@ export async function countPendingCompile(db: Db, userId: string): Promise<numbe
     JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
     JOIN fsrs_state fs ON fs.card_id = c.id
     LEFT JOIN bloom_state bs ON bs.card_id = c.id
-    WHERE fs.due <= NOW() AND ${NOT_DISPUTED}
+    WHERE fs.due <= NOW() AND ${STUDYABLE}
       AND NOT EXISTS (
         SELECT 1 FROM glasses_questions gq
         WHERE gq.card_id = c.id AND gq.bloom_level = COALESCE(bs.current_level, 0)

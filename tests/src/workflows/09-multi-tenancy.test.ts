@@ -199,7 +199,7 @@ describe("Multi-Tenancy Isolation", () => {
     it("User B summary shows only their own cards", async () => {
       const res = await userBApi.get("/study/summary");
       expect(res.status).toBe(200);
-      expect(res.data.totalCards).toBe(2); // 1 standard card + 1 cloze card created in beforeAll
+      expect(res.data.totalCards).toBe(2); // 1 standard card + a one-gap cloze note created in beforeAll
     });
   });
 
@@ -244,7 +244,7 @@ describe("Multi-Tenancy Isolation", () => {
       const check = await userBApi.get(`/cards/${userBClozeCardId}`);
       expect(check.status).toBe(200);
       expect(check.data.concept).toBe("User B cloze card");
-      expect(check.data.cardType).toBe("cloze");
+      expect(check.data.noteId).toBeTruthy();
     });
 
     it("User A cannot delete User B's cloze card", async () => {
@@ -270,13 +270,11 @@ describe("Multi-Tenancy Isolation", () => {
       // Verify both cloze cards exist for their respective owners
       const resA = await userAApi.get(`/cards/${userAClozeCardId}`);
       expect(resA.status).toBe(200);
-      expect(resA.data.cardType).toBe("cloze");
-      expect(resA.data.clozeData).toBeDefined();
+      expect(resA.data.note.noteTypeKind).toBe("cloze");
 
       const resB = await userBApi.get(`/cards/${userBClozeCardId}`);
       expect(resB.status).toBe(200);
-      expect(resB.data.cardType).toBe("cloze");
-      expect(resB.data.clozeData).toBeDefined();
+      expect(resB.data.note.noteTypeKind).toBe("cloze");
     });
   });
 

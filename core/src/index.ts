@@ -41,6 +41,16 @@ export {
   type StudySession, type StartSessionInput,
 } from "./services/session-service.js";
 export {
+  listNoteTypes, getNoteType, resolveNoteType, saveNoteType, deleteNoteType, ensureBuiltinTypes, BUILTIN_TYPES,
+  type NoteType, type SaveNoteTypeInput, type NoteTypeFieldDef, type CardTemplateDef,
+} from "./services/note-types.js";
+export {
+  createNote, getNote, updateNote, deleteNote, listNotes, normalizeFields, rerenderNotesOfType,
+  type Note, type NoteCardSummary, type CreateNoteInput, type UpdateNoteInput,
+} from "./services/note-service.js";
+export { convertLegacyClozeCards, type LegacyClozeReport } from "./services/legacy-cloze.js";
+export { renderCardTemplate, renderClozeField, clozeNumbersIn, findClozeSpans, plainClozeText, RENDERER_VERSION, type RenderContext, type RenderResult } from "./lib/note-renderer.js";
+export {
   setOriginal, getCardOriginal, getCurrentOriginals, disputeOriginal, resolveDispute, markOriginalStale,
   type CardOriginal, type OriginalOption, type SetOriginalInput,
 } from "./services/originals-service.js";

@@ -5,7 +5,7 @@ import { glassesPairCodes, glassesTokens, users } from "../db/schema/index.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
 import { verifyCardOwnership } from "../lib/card-ownership.js";
-import { NOT_DISPUTED } from "./study-filters.js";
+import { STUDYABLE, NOT_BURIED } from "./study-filters.js";
 import { loadTopicRates, resolveCardRate } from "./change-rate.js";
 import { getCurrentOriginals, type CardOriginal } from "./originals-service.js";
 import { getSimilarCards } from "./context-service.js";
@@ -244,7 +244,7 @@ export async function getGlassesCompileQueue(db: Db, userId: string, opts: Glass
     JOIN fsrs_state fs ON fs.card_id = c.id
     LEFT JOIN bloom_state bs ON bs.card_id = c.id
     WHERE fs.due <= NOW() + (${horizon} || ' days')::interval
-      AND ${NOT_DISPUTED}
+      AND ${STUDYABLE}
       ${topicFilter}
       AND NOT EXISTS (
         SELECT 1 FROM glasses_questions gq
@@ -477,7 +477,8 @@ export async function getGlassesBatch(db: Db, userId: string, opts: GlassesBatch
       AND gq.status = 'ready'
       AND ${FRESH_ROW}
     WHERE fs.due <= NOW()
-      AND ${NOT_DISPUTED}
+      AND ${STUDYABLE}
+      AND ${NOT_BURIED}
       ${modeFilter}
       ${excludeFilter}
     ORDER BY fs.due ASC
