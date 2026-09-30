@@ -6,15 +6,19 @@ interface CardHtmlRenderProps {
   interactive?: boolean;
 }
 
-// The API signs media as relative /media/<id>/<sig>; the card frame resolves
-// those against the API, not against the web app's own host.
-const API_BASE = `${(api.defaults.baseURL ?? '').replace(/\/+$/, '')}/`;
+// The API signs media as relative /media/<id>/<sig>. The API may live under a
+// path of the web app's own host (e.g. https://host/api), where a root-relative
+// link would miss it, so every media link gets the full API address in front.
+const API_BASE = (api.defaults.baseURL ?? '').replace(/\/+$/, '');
+
+function resolveMediaLinks(html: string): string {
+  return html.replace(/(["'(=\s])\/media\//g, `$1${API_BASE}/media/`);
+}
 
 function buildSrcdoc(html: string): string {
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<base href="${API_BASE}">
 <style>
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
 </style>
@@ -36,7 +40,7 @@ export default function CardHtmlRender({ html }: CardHtmlRenderProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(60);
 
-  const srcdoc = useMemo(() => buildSrcdoc(html), [html]);
+  const srcdoc = useMemo(() => buildSrcdoc(resolveMediaLinks(html)), [html]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
