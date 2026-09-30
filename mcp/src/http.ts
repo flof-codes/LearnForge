@@ -44,11 +44,11 @@ export function createMcpHttpApp(db: Db, mcpConfig: McpHttpConfig): {
         instructions: `LearnForge spaced repetition tutor with Bloom's Taxonomy progression.
 
 Session start: Call get_instructions to load the tutor workflow before doing anything else.
-Study session: get_study_summary → start_session (ask the learner for the difficulty: Commute / Desk / Deep) → get_study_cards with session_id → [question loop: submit_review for the previous card with its question_id ticket, then show the next question].
+Study session: get_study_summary → start_session (ask the learner for the difficulty: Commute / Desk / Deep) → get_study_cards with session_id → [question loop: show the next question, then submit_review with the previous card's question_id ticket].
 Every question derives from the card's original question; at change rate 0 ask it word for word with the options in their stored order. Show the difficulty on every question.
 Card creation: typed notes (open / choice / cloze) through create_note after the learner approved the fields; Freeform HTML cards through create_card. Call get_templates for HTML templates.
 Cross-concept questions (Bloom 3+): Use get_similar_cards for context.
-Question presentation: where the client has the visualizer, render each choice card entirely inside show_widget with the mcq-selector template (header, feedback on the previous answer, stem, options, Don't know, term chips) and write no question or option text in chat, since text before a tool call can be collapsed. Without the visualizer, print the stem and full lettered options as chat text after the last tool call and let the learner type the letters.`,
+Question presentation: where the client has the visualizer, render each choice card entirely inside show_widget with the mcq-selector template (header, feedback on the previous answer, stem, options, Don't know, term chips) and write no question or option text in chat, since text before a tool call can be collapsed. Without the visualizer, print the stem and full lettered options as chat text and let the learner type the letters.`,
       },
     );
     registerTopicTools(server, db, userId);

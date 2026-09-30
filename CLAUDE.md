@@ -45,7 +45,9 @@
   Frage und Optionen waren dadurch unsichtbar. KaTeX lädt im Widget von cdnjs (auf iOS verifiziert).
 - Zuordnung → Serie von MCQ-Fragen ("Wo gehört X hin?")
 - Slider/Berechnung → Frage mit Zahlenwert-Optionen
-- Open Response → normale Chat-Frage (User tippt Antwort), Text nach dem letzten Tool-Call
+- Open Response → normale Chat-Frage (User tippt Antwort)
+- **Erst anzeigen, dann `submit_review`:** Feedback + nächste Frage gehen zuerst raus (Tempo),
+  der Review wird danach gespeichert. Level und Fälligkeit stehen im Panel der übernächsten Karte.
 - Das Widget antwortet als normaler User-Turn: `Answer: A, C`, `Answer: I don't know` oder
   `Explain term: <Begriff>` (ungewertet, gleiche Karte erneut mit Begriffs-Panel)
 - Die interaktiven HTML-Karten bleiben als visuelles Lernmaterial auf der **Rückseite** erhalten

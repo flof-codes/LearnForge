@@ -59,7 +59,7 @@ Keep the tone direct and adult. Do not patronize the learner. These rules preser
 
 #### Text-only mode
 
-**One widget per turn, and it holds everything.** After a choice answer: call submit_review, then make one \`show_widget\` call that renders the feedback on that answer and the next card together. Emit no question or option text in chat: clients such as the claude.ai iOS app fold text written before a tool call into the collapsed tool-activity row, so only the widget is reliably visible. This is the #1 rule for text-only sessions.
+**Show first, submit after.** The learner must see the feedback and the next question IMMEDIATELY after answering; submit_review happens AFTER, while they read. For a choice answer, the first tool call is one \`show_widget\` that renders the feedback on that answer and the next card together; submit_review for the answered card follows. You know right and wrong from the options you wrote, so the feedback does not wait for the server. **One widget per turn, and it holds everything:** emit no question or option text in chat, because clients such as the claude.ai iOS app fold text written before a tool call into the collapsed tool-activity row. This is the #1 rule for text-only sessions.
 
 For each card, read: \`concept\`, \`backHtml\` (answer content), \`original\` (the anchor question), \`changeRate\`, \`bloomState.currentLevel\`, \`reviews\` (to avoid repeating a recent variant), \`tags\`, and \`noteTypeKind\` / \`clozeNumber\` for typed cards (a cloze card tests one gap).
 For Bloom 3+: also call \`get_similar_cards(card_id, limit=15)\` for cross-concept context.
@@ -99,8 +99,16 @@ CARD 1 (first card — nothing to submit yet):
 
 USER ANSWERS CARD 1: "Answer: A, B"
 
+  Read cards[1]: concept="Chloroplasts", bloomState.currentLevel=0; generate, apply optionShuffle
   TOOL CALLS (in this exact order):
-    1. submit_review({
+    1. show_widget(mcq-selector, CARD={           ← FIRST, so the learner sees it at once
+         header: 'Desk · card 2 of 5 · Remember',
+         panel: {kind:'wrong', title:'Card 1: not quite (you picked A, B; correct: A, D)',
+                 html:\`A is right: ... B describes chloroplasts, not mitochondria: ... C ... D is also right: ...\`},
+         stem: \`Which of the following are found in chloroplasts?\`,
+         options: [...], mode: 'multi', terms: ['thylakoid', ...]
+       })
+    2. submit_review({                          ← AFTER the widget
          question_id: cards[0].questionId,      ← the ticket from get_study_cards
          bloom_level: 1,                        ← cards[0].bloomState.currentLevel
          style: "multiple",
@@ -110,15 +118,7 @@ USER ANSWERS CARD 1: "Answer: A, B"
          answer_expected: "A, D",
          user_answer: "A, B"
        })
-    2. Read cards[1]: concept="Chloroplasts", bloomState.currentLevel=0; generate, apply optionShuffle
-    3. show_widget(mcq-selector, CARD={
-         header: 'Desk · card 2 of 5 · Remember',
-         panel: {kind:'wrong', title:'Card 1: not quite (you picked A, B; correct: A, D)',
-                 html:\`A is right: ... B describes chloroplasts, not mitochondria: ... C ... D is also right: ...\`},
-         stem: \`Which of the following are found in chloroplasts?\`,
-         options: [...], mode: 'multi', terms: ['thylakoid', ...]
-       })
-  The submit_review response carries the new level, progress and due date; put them in the panel.
+  The response tells you the new level and progress ("grading.levelStep", "bloomState") and the next due date; mention them in the NEXT panel, not now.
 
 USER TAPS A CHIP: "Explain term: thylakoid"
 
@@ -132,37 +132,37 @@ USER TAPS A CHIP: "Explain term: thylakoid"
 USER ANSWERS CARD 2: "Answer: A" — correct
 
   Read cards[2] (last in batch): concept="Cell Wall", bloomState.currentLevel=2 → an open question
-  TOOL CALLS:
-    1. submit_review({ question_id: cards[1].questionId, bloom_level: 0, style: "single", correct_option_ids: ["A"], selected_option_ids: ["A"], option_term_lookup: true, ... })
-  CHAT TEXT (after the last tool call, so it stays visible):
+  YOUR OUTPUT (chat text first):
     "Desk · card 2 of 5 · Remember
      Correct! Thylakoids contain chlorophyll for light reactions.
      ---
      Desk · card 3 of 5 · Apply
      A plant cell is placed in a hypertonic solution. What happens
      to the cell wall compared to the plasma membrane?"
+  TOOL CALLS:
+    1. submit_review({ question_id: cards[1].questionId, bloom_level: 0, style: "single", correct_option_ids: ["A"], selected_option_ids: ["A"], option_term_lookup: true, ... })
 
-USER ANSWERS CARD 3 (last in batch):
+USER ANSWERS CARD 3 (last in batch — there is no next card to show yet):
 
   TOOL CALLS:
     1. submit_review({ question_id: cards[2].questionId, bloom_level: 2, style: "open", correctness: 0.85, ... })
     2. get_study_cards({ topic_id: "...", limit: 5, session_id: "..." })  ← refetch
   New choice card → one widget: feedback on card 3 as a \`correct\` panel + the new card.
-  New open card → feedback and the next question as chat text after the last tool call.
+  New open card → feedback and the next question as chat text.
   Empty → feedback and the session summary as chat text.
 \`\`\`
 
 ### Open Response Flow
 
-No widget for the open question itself (the user types free-form). Call submit_review first, then write the feedback and the next question as chat text **after the last tool call**; text before a tool call can be collapsed by the client. If the next card is a choice card, the feedback goes into its widget panel instead. Example:
+Same ordering: feedback + next question FIRST, then submit_review. No widget for the open question itself (the user types free-form). If the next card is a choice card, the feedback goes into its widget panel instead. Example:
 
 \`\`\`
-TOOL CALLS:
-  1. submit_review({ question_id: ..., bloom_level: ..., style: "open", correctness: 0.7, question_text: ..., answer_expected: ..., user_answer: ... })
-YOUR OUTPUT (after the tool call):
+YOUR OUTPUT:
   "[feedback on current card]
    ---
    Next question: Explain how osmosis differs from diffusion."
+TOOL CALLS:
+  1. submit_review({ question_id: ..., bloom_level: ..., style: "open", correctness: 0.7, question_text: ..., answer_expected: ..., user_answer: ... })
 (user types their answer as a normal message)
 \`\`\`
 
@@ -201,7 +201,7 @@ The widget answers as a normal user turn:
 
 | Reply | Sent by | You do |
 |-------|---------|--------|
-| \`Answer: B\` | option tap (single) | submit_review, then one widget: feedback panel + next card |
+| \`Answer: B\` | option tap (single) | one widget (feedback panel + next card), then submit_review |
 | \`Answer: A, C\` | Submit (multi), letters sorted | same |
 | \`Answer: I don't know\` | Don't know button | see "I Don't Know" Responses |
 | \`Explain term: <term>\` | term link or chip | no submit_review; see Term Lookups |
@@ -215,7 +215,7 @@ Example: options [W, X, Y, Z], optionShuffle [3, 1, 6, 2] → order X, Z, W, Y �
 
 **Choice scoring is done by the server** from correct_option_ids and selected_option_ids; you only report what was shown and picked.
 
-Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, print the stem and the full lettered options as chat text after your last tool call and let the learner type the letters, or use \`ask_user_input_v0\` with the letters as options (it truncates labels at 105 chars, which is why letters are all it gets).
+Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, print the stem and the full lettered options as chat text and let the learner type the letters, or use \`ask_user_input_v0\` with the letters as options (it truncates labels at 105 chars, which is why letters are all it gets).
 
 ### Handling Mid-Quiz Exploration
 
@@ -283,7 +283,8 @@ CARD: noteTypeKind="cloze", clozeNumber=1, bloomState.currentLevel=0
 USER ANSWERS: "Answer: B" — correct
 
   TOOL CALLS:
-    1. submit_review({
+    1. show_widget(...) with a \`correct\` panel ("Correct! The mitochondria is the organelle...") + the next card
+    2. submit_review({
          question_id: "...",
          bloom_level: 0,
          style: "single",
@@ -293,7 +294,6 @@ USER ANSWERS: "Answer: B" — correct
          answer_expected: "mitochondria",
          user_answer: "mitochondria"
        })
-    2. show_widget(...) with a \`correct\` panel ("Correct! The mitochondria is the organelle...") + the next card
 \`\`\`
 
 ### Two-Part Interaction (Bloom 3-4)
@@ -463,8 +463,8 @@ When the answer reveals a fundamental misunderstanding — not just a slip — r
 \`Answer: I don't know\` (the widget's Don't know button) or a typed "I don't know":
 
 1. Explain at once, no hints: every term in the question and the options, then the correct answer and why.
-2. submit_review with \`selected_option_ids: []\` for a choice question, or \`correctness: 0\` for an open one; \`user_answer: "I don't know"\`.
-3. Show that explanation as a \`dontknow\` panel above the next card, in the same widget.
+2. Show that explanation as a \`dontknow\` panel above the next card, in the same widget.
+3. Then submit_review with \`selected_option_ids: []\` for a choice question, or \`correctness: 0\` for an open one; \`user_answer: "I don't know"\`.
 
 A term lookup (\`Explain term: …\`) is not "I don't know": see Term Lookups.
 </review_evaluation>

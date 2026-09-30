@@ -443,6 +443,7 @@ describe("MCP Tools", () => {
       expect(textContent!.text).toContain("Record, then give feedback");
       expect(textContent!.text).toContain("Continue immediately");
       expect(textContent!.text).toContain("Text-only mode");
+      expect(textContent!.text).toContain("Show first, submit after.");
       expect(textContent!.text).toContain("One widget per turn, and it holds everything");
       expect(textContent!.text).toContain("Emit no question or option text in chat");
       expect(textContent!.text).toContain("(0.8 + 0.4 × change rate) × (0.8 + 0.4 × difficulty)");
