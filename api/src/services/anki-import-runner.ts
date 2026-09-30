@@ -91,7 +91,7 @@ export function startEmbeddingBackfill(userId: string) {
   backfilling.add(userId);
   void (async () => {
     try {
-      const run = backfillEmbeddings(db, { userId, batchSize: 20 });
+      const run = backfillEmbeddings(db, { userId, batchSize: 20, importedOnly: true });
       for (let step = await run.next(); !step.done; step = await run.next()) { /* runs to completion */ }
     } catch (err) {
       console.error("[anki-import] embedding backfill failed:", err);

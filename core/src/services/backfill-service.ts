@@ -6,6 +6,8 @@ export interface BackfillOptions {
   batchSize?: number;
   userId?: string;
   dryRun?: boolean;
+  /** Only cards of notes that came from an Anki import; the import leaves their embeddings empty on purpose. */
+  importedOnly?: boolean;
 }
 
 export interface BackfillProgress {
@@ -22,9 +24,10 @@ export async function* backfillEmbeddings(
   const batchSize = options?.batchSize ?? 10;
   const dryRun = options?.dryRun ?? false;
 
-  const userFilter = options?.userId
-    ? sql`AND t.user_id = ${options.userId}`
-    : sql``;
+  const userFilter = sql.join([
+    options?.userId ? sql`AND t.user_id = ${options.userId}` : sql``,
+    options?.importedOnly ? sql`AND c.note_id IN (SELECT id FROM notes WHERE anki_guid IS NOT NULL)` : sql``,
+  ], sql` `);
 
   // Count total cards needing backfill
   const countResult = await db.execute<{ count: string }>(sql`
