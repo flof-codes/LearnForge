@@ -138,7 +138,7 @@ export default function EditTopicModal({ open, topic, onClose }: Props) {
           <VariationSlider
             idPrefix="edit-topic"
             value={changeRate}
-            inheritedValue={topic.inheritedChangeRate ?? 0.8}
+            inheritedValue={topic.inheritedChangeRate ?? 0.6}
             inheritedFrom={topic.inheritedFrom ?? null}
             onChange={v => { setChangeRate(v); setRateTouched(true); }}
           />

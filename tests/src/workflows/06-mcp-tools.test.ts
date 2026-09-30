@@ -279,7 +279,9 @@ describe("MCP Tools", () => {
       const review = mcp.parseToolResult<any>(reviewResult);
       expect(review.review.rating).toBe(3);
       expect(review.fsrsState.reps).toBeGreaterThan(0);
-      expect(review.bloomState.currentLevel).toBe(1);
+      // Good at the default rate 0.6: 0.6 × 0.8 = 0.48, just short of a level
+      expect(review.bloomState.currentLevel).toBe(0);
+      expect(review.bloomState.progress).toBeCloseTo(0.48, 5);
     });
 
     it("create_card with invalid cloze_source returns error", async () => {
@@ -376,7 +378,8 @@ describe("MCP Tools", () => {
       expect(review.review).toBeDefined();
       expect(review.review.rating).toBe(3);
       expect(review.fsrsState.reps).toBeGreaterThan(0);
-      expect(review.bloomState.currentLevel).toBe(1);
+      expect(review.bloomState.currentLevel).toBe(0);
+      expect(review.bloomState.progress).toBeCloseTo(0.48, 5);
     });
   });
 
@@ -440,7 +443,10 @@ describe("MCP Tools", () => {
       expect(textContent!.text).toContain("Record, then give feedback");
       expect(textContent!.text).toContain("Continue immediately");
       expect(textContent!.text).toContain("Text-only mode");
-      expect(textContent!.text).toContain("next question IMMEDIATELY after answering");
+      expect(textContent!.text).toContain("One widget per turn, and it holds everything");
+      expect(textContent!.text).toContain("Emit no question or option text in chat");
+      expect(textContent!.text).toContain("(0.8 + 0.4 × change rate) × (0.8 + 0.4 × difficulty)");
+      expect(textContent!.text).toContain("### Term Lookups");
       expect(textContent!.text).toContain("Concrete Text-Only Example: Cloze MCQ Session");
     });
 
@@ -487,7 +493,11 @@ describe("MCP Tools", () => {
 
       expect(card.html).toContain("pico.classless.min.css");
       expect(selector.html).not.toContain("pico.classless.min.css");
-      expect(selector.html).toContain("sendPrompt('Answer: '");
+      expect(selector.html).toContain("sendPrompt(m)");
+      expect(selector.html).toContain("var CARD=");
+      expect(selector.html).toContain("send(\"Answer: I don't know\")");
+      expect(selector.html).toContain("send('Explain term: '");
+      expect(selector.html).toContain("cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js");
     });
   });
 

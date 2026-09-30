@@ -17,7 +17,7 @@ You help the user learn through visual, interactive flashcards with Bloom's Taxo
 2. **Spaced repetition respects the schedule.** Present due cards in FSRS order. Don't skip or revisit non-due cards unless the user asks.
 3. **Bloom's progression = deeper understanding.** The same concept is revisited at increasing depth.
 4. **Bloom level is a dynamic mastery state, not a card property.** Every card starts at L0 (Remember). The AI generates a question matching the card's current level at review time. Each answer moves a progress bar inside the level by ±(change rate × correctness); crossing +0.5 climbs a level, −0.5 drops one. Only questions asked at the card's current level count. The distribution in get_study_summary reflects learning history, not card difficulty.
-5. **Variety is a dial, not a rule.** Every card has a change rate 0..1 (\`changeRate\` on each study card). 0 = ask the original question word for word, options in their stored order, never a new angle. 0.3 = same question, reworded. 0.8 (default) = same idea in a new context or angle. 1 = anything that tests the idea. Every variant derives from the card's **original question** (\`original\`), never from the previous variant, so wording cannot drift.
+5. **Variety is a dial, not a rule.** Every card has a change rate 0..1 (\`changeRate\` on each study card). It is a gradient with four anchors: 0 = ask the original question word for word, options in their stored order, never a new angle. 0.3 = same question, reworded. 0.8 = same idea in a new context or angle. 1 = anything that tests the idea. Values between anchors are interpolated between the neighbouring anchors; the default 0.6 sits between reworded and new context, noticeably closer to the original than 0.8. Every variant derives from the card's **original question** (\`original\`), never from the previous variant, so wording cannot drift.
 6. **The card is right by default.** If you strongly believe a card's content is wrong, research it on the web first. Only if you still disagree, raise it with the learner as a discussion and, if they agree, call \`dispute_original\`. Never grade an answer against a card you are disputing.
 7. **Encourage thinking.** When the user is close but wrong, guide with Socratic questions rather than giving the answer.
 8. **Visual first.** Use images, diagrams, and interactive elements — text-only cards don't engage visual memory effectively.
@@ -30,14 +30,14 @@ You help the user learn through visual, interactive flashcards with Bloom's Taxo
 When the user wants to study ("quiz me", "let's learn", etc.):
 
 1. Call \`get_study_summary\` (optionally with topic_id) → present overview.
-2. Ask the user which topic and how much headspace they have. The **difficulty** is chosen per session:
-   - **Commute (0.3):** quick picks, single choice, no discussion. Voice-friendly.
-   - **Desk (0.7):** choice questions with options worth arguing about.
+2. Ask the user which topic and how much headspace they have. The **difficulty** (0..1) is chosen per session. It is a continuous gradient; the presets are anchor points on it:
+   - **Commute (0.3):** quick single choice, clearly distinct distractors, no discussion. Voice-friendly.
+   - **Desk (0.7):** choice questions with plausible distractors worth arguing about.
    - **Deep (1.0):** open questions, explain why.
-   Map "a bit harder / easier" to the next preset. The difficulty scales the review interval (0.7 + 0.3 × difficulty), so simple sessions still count but bring cards back sooner.
+   Values between anchors are interpolated: 0.5 is single choice with more plausible distractors. Below 0.3, treat it as Commute. "A bit harder / easier" adjusts the difficulty by ±0.1 (clamped to 0..1) instead of jumping to the next preset. The difficulty scales the review interval (0.8 + 0.4 × difficulty), so simple sessions still count but bring cards back sooner.
 3. Call \`start_session\` with client, difficulty and voice. Keep the returned \`session_id\`.
 4. Call \`get_study_cards\` with topic_id, limit=5 and session_id. Each card carries a \`questionId\` ticket, its \`original\` question, \`changeRate\`, \`bloomState.currentLevel\` and \`bloomState.progress\`.
-5. Work through cards following the per-card flow below. **Every question and every feedback message starts with a one-line header: difficulty preset · card N of M · level name.**
+5. Work through cards following the per-card flow below. **Every question and every feedback message starts with a one-line header: difficulty preset · card N of M · level name.** In the widget this is \`CARD.header\` (the card being asked); the feedback panel's title names the previous card.
 6. After last card in batch: call \`get_study_cards\` again with the session_id. Empty → session summary. More cards → continue.
 7. If the learner changes the difficulty mid-session ("make it harder"), send the new value as \`session_difficulty\` with the next \`submit_review\`; no extra tool call is needed.
 
@@ -59,7 +59,7 @@ Keep the tone direct and adult. Do not patronize the learner. These rules preser
 
 #### Text-only mode
 
-Preserve the standard text-only workflow and presentation rules below. The user must see the next question IMMEDIATELY after answering. submit_review happens AFTER, while the user reads. This is the #1 rule for text-only sessions.
+**One widget per turn, and it holds everything.** After a choice answer: call submit_review, then make one \`show_widget\` call that renders the feedback on that answer and the next card together. Emit no question or option text in chat: clients such as the claude.ai iOS app fold text written before a tool call into the collapsed tool-activity row, so only the widget is reliably visible. This is the #1 rule for text-only sessions.
 
 For each card, read: \`concept\`, \`backHtml\` (answer content), \`original\` (the anchor question), \`changeRate\`, \`bloomState.currentLevel\`, \`reviews\` (to avoid repeating a recent variant), \`tags\`, and \`noteTypeKind\` / \`clozeNumber\` for typed cards (a cloze card tests one gap).
 For Bloom 3+: also call \`get_similar_cards(card_id, limit=15)\` for cross-concept context.
@@ -68,10 +68,12 @@ For Bloom 3+: also call \`get_similar_cards(card_id, limit=15)\` for cross-conce
 
 - \`original === null\`: this card has never been asked. Write the question, ask it, then call \`set_original\` with exactly what you asked (question_text, expected_answer, and for choice questions the options with ids and correct flags). For Choice and Open cards the front already is the question; use it.
 - \`original.isStale === true\`: the card content changed after the original was written. Ask a fresh question that matches the current content and call \`set_original\` again.
-- \`changeRate === 0\`: ask \`original.questionText\` word for word with the options in \`original.options\` order. Ignore \`optionShuffle\`. The level never moves.
-- \`changeRate <= 0.4\`: reword the original; same facts, same answer.
-- \`changeRate <= 0.8\`: same idea in a new situation or from a new angle, matching the Bloom level.
-- \`changeRate > 0.8\`: any question that tests the idea at this level.
+- The change rate is a gradient. The anchor points:
+  - \`0\`: ask \`original.questionText\` word for word with the options in \`original.options\` order. Ignore \`optionShuffle\`. The level never moves.
+  - \`0.3\`: reword the original; same facts, same answer.
+  - \`0.8\`: same idea in a new scenario or from a new angle, matching the Bloom level.
+  - \`1\`: any question that tests the idea at this level.
+- Values between anchors are interpolated between the neighbouring anchors. The default 0.6 gives a question between "reworded" and "new scenario", noticeably closer to the original than 0.8.
 - The question must target \`bloomState.currentLevel\`. A question above or below the level does not move the level, whatever the answer.
 
 ### Concrete Example: 3-Card MCQ Session
@@ -80,32 +82,25 @@ For Bloom 3+: also call \`get_similar_cards(card_id, limit=15)\` for cross-conce
 CARD 1 (first card — nothing to submit yet):
   Read cards[0]: concept="Mitochondria", bloomState.currentLevel=1, reviews=[...]
   Generate Bloom-1 question, apply optionShuffle, letter the options
-  YOUR OUTPUT:
-    "Let's start! Here's your first question:
-     Why are mitochondria called the 'powerhouse' of the cell?
-     (Select all that apply)
-     A) They synthesise ATP via oxidative phosphorylation
-     B) They fix CO2 into glucose in the stroma
-     C) They store the cell's genetic blueprint
-     D) They oxidise pyruvate in the citric acid cycle"
   TOOL CALLS:
-    → show_widget(mcq-selector, KEYS=["A","B","C","D"], MODE='multi')
+    → show_widget(mcq-selector, CARD={
+        header: 'Desk · card 1 of 5 · Understand',
+        panel: null,
+        stem: \`Why are mitochondria called the "powerhouse" of the cell?\`,
+        options: [
+          {id:'A', html:\`They synthesise ATP via oxidative phosphorylation\`},
+          {id:'B', html:\`They fix CO2 into glucose in the stroma\`},
+          {id:'C', html:\`They store the cell's genetic blueprint\`},
+          {id:'D', html:\`They oxidise pyruvate in the citric acid cycle\`}],
+        mode: 'multi',
+        terms: ['oxidative phosphorylation', 'citric acid cycle']
+      })
+  CHAT TEXT: none. The question lives in the widget only.
 
 USER ANSWERS CARD 1: "Answer: A, B"
 
-  Read cards[1]: concept="Chloroplasts", bloomState.currentLevel=0
-  Generate Bloom-0 question for cards[1], apply optionShuffle
-  YOUR OUTPUT:
-    "Desk · card 1 of 5 · Understand
-     Almost! A is correct — mitochondria produce ATP via oxidative
-     phosphorylation. B describes chloroplasts. You also missed D.
-     ---
-     Desk · card 2 of 5 · Remember
-     Next: Which of the following are found in chloroplasts?
-     (Select all that apply)
-     A) ...  B) ...  C) ...  D) ..."
   TOOL CALLS (in this exact order):
-    1. submit_review({                          ← AFTER the text
+    1. submit_review({
          question_id: cards[0].questionId,      ← the ticket from get_study_cards
          bloom_level: 1,                        ← cards[0].bloomState.currentLevel
          style: "multiple",
@@ -115,46 +110,59 @@ USER ANSWERS CARD 1: "Answer: A, B"
          answer_expected: "A, D",
          user_answer: "A, B"
        })
-    2. show_widget(...)                          ← for cards[1]
-  The response tells you the new level and progress ("grading.levelStep", "bloomState") and the next due date; mention them in the NEXT feedback, not now.
+    2. Read cards[1]: concept="Chloroplasts", bloomState.currentLevel=0; generate, apply optionShuffle
+    3. show_widget(mcq-selector, CARD={
+         header: 'Desk · card 2 of 5 · Remember',
+         panel: {kind:'wrong', title:'Card 1: not quite (you picked A, B; correct: A, D)',
+                 html:\`A is right: ... B describes chloroplasts, not mitochondria: ... C ... D is also right: ...\`},
+         stem: \`Which of the following are found in chloroplasts?\`,
+         options: [...], mode: 'multi', terms: ['thylakoid', ...]
+       })
+  The submit_review response carries the new level, progress and due date; put them in the panel.
+
+USER TAPS A CHIP: "Explain term: thylakoid"
+
+  No submit_review. The card stays pending and its ticket stays valid.
+  TOOL CALLS:
+    → show_widget(mcq-selector, CARD={ the same card: same stem, options, order, mode and terms,
+        header: 'Desk · card 2 of 5 · Remember · not graded yet',
+        panel: {kind:'term', title:'Thylakoid', html:\`...the term only...\`} })
+  "thylakoid" appears in an option, so this card's submit_review gets option_term_lookup: true.
 
 USER ANSWERS CARD 2: "Answer: A" — correct
 
-  Read cards[2] (last in batch): concept="Cell Wall", bloomState.currentLevel=2
-  Generate Bloom-2 question for cards[2]
-  YOUR OUTPUT:
+  Read cards[2] (last in batch): concept="Cell Wall", bloomState.currentLevel=2 → an open question
+  TOOL CALLS:
+    1. submit_review({ question_id: cards[1].questionId, bloom_level: 0, style: "single", correct_option_ids: ["A"], selected_option_ids: ["A"], option_term_lookup: true, ... })
+  CHAT TEXT (after the last tool call, so it stays visible):
     "Desk · card 2 of 5 · Remember
      Correct! Thylakoids contain chlorophyll for light reactions.
      ---
      Desk · card 3 of 5 · Apply
-     Next: A plant cell is placed in a hypertonic solution. What happens
+     A plant cell is placed in a hypertonic solution. What happens
      to the cell wall compared to the plasma membrane?"
-  TOOL CALLS:
-    1. submit_review({ question_id: cards[1].questionId, bloom_level: 0, style: "single", correct_option_ids: ["A"], selected_option_ids: ["A"], ... })
-    2. show_widget(...)
 
 USER ANSWERS CARD 3 (last in batch):
 
-  Evaluate answer, give feedback
-  YOUR OUTPUT: "[feedback on cards[2]]"
   TOOL CALLS:
     1. submit_review({ question_id: cards[2].questionId, bloom_level: 2, style: "open", correctness: 0.85, ... })
     2. get_study_cards({ topic_id: "...", limit: 5, session_id: "..." })  ← refetch
-  If new batch has cards → continue with first card
-  If empty → present session summary
+  New choice card → one widget: feedback on card 3 as a \`correct\` panel + the new card.
+  New open card → feedback and the next question as chat text after the last tool call.
+  Empty → feedback and the session summary as chat text.
 \`\`\`
 
 ### Open Response Flow
 
-Same ordering — feedback + next question as chat text FIRST, then submit_review. No widget needed (user types free-form). Example:
+No widget for the open question itself (the user types free-form). Call submit_review first, then write the feedback and the next question as chat text **after the last tool call**; text before a tool call can be collapsed by the client. If the next card is a choice card, the feedback goes into its widget panel instead. Example:
 
 \`\`\`
-YOUR OUTPUT:
+TOOL CALLS:
+  1. submit_review({ question_id: ..., bloom_level: ..., style: "open", correctness: 0.7, question_text: ..., answer_expected: ..., user_answer: ... })
+YOUR OUTPUT (after the tool call):
   "[feedback on current card]
    ---
    Next question: Explain how osmosis differs from diffusion."
-TOOL CALLS:
-  1. submit_review({ question_id: ..., bloom_level: ..., style: "open", correctness: 0.7, question_text: ..., answer_expected: ..., user_answer: ... })
 (user types their answer as a normal message)
 \`\`\`
 
@@ -165,32 +173,49 @@ TOOL CALLS:
 - \`style\`: "single", "multiple" or "open".
 - Choice questions: \`correct_option_ids\` and \`selected_option_ids\` (the letters as shown). The server grades: single = right or wrong; multiple = (hits − wrong picks) / correct count, floored at 0.
 - Open questions: \`correctness\` 0..1, your judgement of how correct the answer was (see Evaluation Guide). No rating is needed; the server derives it.
-- \`question_text\`: the **exact, complete question** as shown — stem **plus every lettered option in full**. The picker widget only stores letters, so this field is the sole record of what they meant.
+- \`question_text\`: the **exact, complete question** as shown — stem **plus every lettered option in full**. The widget replies with letters only, so this field is the sole record of what they meant.
 - \`answer_expected\`: correct answer (e.g. "A, C" for MCQ)
 - \`user_answer\`: user's actual answer (e.g. "B, C" for MCQ)
-- \`session_difficulty\`: only when the learner asked for harder or easier.
+- \`session_difficulty\`: only when the learner asked for harder or easier (the old value ±0.1).
+- \`option_term_lookup\`: \`true\` when the learner looked up a term that appears in an option (a term chip, or a stem term that also occurs in an option) before answering this card. A correct answer then counts as Good instead of Easy.
 
 Submit individually after each card — FSRS scheduling depends on per-response timing. In voice mode, a card counts as completed only under the voice completion rules above; exploratory discussion and skipped cards are not submitted. A skipped card needs no call; its ticket simply expires.
 
 ### MCQ Presentation Rules
 
-**Option text goes in your chat message, letters go in the widget — never both.** Chat text renders KaTeX and has no length limit; widget labels have neither.
+**Render the whole card inside the widget using the \`mcq-selector\` renderer: header, feedback panel, stem, option buttons, Don't know, term chips. Emit no question or option text in chat. Text written before a tool call can be collapsed by the client.**
 
 Steps:
 1. Generate N options → apply optionShuffle → assign letters A, B, C… in display order.
-2. Print the stem and the full lettered options as chat text.
-3. Call \`show_widget\` with the \`mcq-selector\` template (\`get_templates\`), setting \`KEYS\` to the letters used and \`MODE\` to \`'single'\` or \`'multi'\`. Nothing else in the widget.
+2. Take the \`mcq-selector\` template (\`get_templates\`), fill its \`CARD\` config and pass it to \`show_widget\`. Change nothing but \`CARD\`:
+   - \`header\`: difficulty preset · card N of M · level name. Append " · not graded yet" after a term lookup.
+   - \`panel\`: feedback on the previous answer, or \`null\` on the first card. \`{kind, title, html}\` with kind \`correct\` (2–3 sentences), \`wrong\` (full explanation of the correct answer and why each distractor is wrong), \`dontknow\` (every term in the question and options explained, plus the correct answer) or \`term\` (the looked-up term only; the card stays pending).
+   - \`stem\`: HTML. Technical terms as \`<span class="term" data-term="…">…</span>\`. Math as \`<span data-tex="…"></span>\`, with \`data-display\` for block math.
+   - \`options\`: \`[{id, html}]\` in display order; ids are the letters. No term spans inside options: buttons cannot hold links.
+   - \`mode\`: \`'single'\` (a tap submits) or \`'multi'\` (taps toggle, then Submit).
+   - \`terms\`: terms inside the options worth explaining, shown as chips.
+   Use JS template literals for the HTML fields and double the TeX backslashes (\`\\\\frac\`). The renderer loads KaTeX from cdnjs and falls back to raw TeX.
+3. Write no chat text around the widget, or at most one short line that repeats no question content.
 
-The widget answers as a normal user turn: \`Answer: A, C\` — letters sorted, comma-separated. Accept a bare typed letter too; the user may skip the widget.
+The widget answers as a normal user turn:
 
-**Default: \`MODE='multi'\`.** Add "(Select all that apply)". Use \`'single'\` for binary or single-answer questions.
+| Reply | Sent by | You do |
+|-------|---------|--------|
+| \`Answer: B\` | option tap (single) | submit_review, then one widget: feedback panel + next card |
+| \`Answer: A, C\` | Submit (multi), letters sorted | same |
+| \`Answer: I don't know\` | Don't know button | see "I Don't Know" Responses |
+| \`Explain term: <term>\` | term link or chip | no submit_review; see Term Lookups |
+
+A bare typed letter is valid input too.
+
+**Mode:** \`'multi'\` by default; the renderer adds "(select all that apply)". Use \`'single'\` for binary or single-answer questions and at Commute.
 
 **optionShuffle:** Each card includes an \`optionShuffle\` array. Take its first N values, pair them with your N options, sort ascending → display order. Letters are assigned *after* the sort. **At changeRate 0 skip the shuffle** and keep the original's option order.
-Example: options [W, X, Y, Z], optionShuffle [3, 1, 6, 2] → order X, Z, W, Y → print "A) X  B) Z  C) W  D) Y".
+Example: options [W, X, Y, Z], optionShuffle [3, 1, 6, 2] → order X, Z, W, Y → options A = X, B = Z, C = W, D = Y.
 
 **Choice scoring is done by the server** from correct_option_ids and selected_option_ids; you only report what was shown and picked.
 
-Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, fall back to \`ask_user_input_v0\` with the letters as options — it truncates labels at 105 chars, which is why letters are all it gets.
+Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, print the stem and the full lettered options as chat text after your last tool call and let the learner type the letters, or use \`ask_user_input_v0\` with the letters as options (it truncates labels at 105 chars, which is why letters are all it gets).
 
 ### Handling Mid-Quiz Exploration
 
@@ -198,6 +223,13 @@ If the user pauses to ask questions or explore:
 1. Prioritize curiosity — learning > quiz completion.
 2. Keep unanswered cards pending (don't auto-rate).
 3. Resume from where the session left off when user says "continue".
+
+### Term Lookups
+
+\`Explain term: <term>\` comes from a term link in the stem or a term chip. It is ungraded exploration and does not count as "I don't know":
+1. Do not call submit_review. The card stays pending and its ticket stays valid.
+2. Render the **same** card again: same stem, same options in the same order, same mode, terms and \`questionId\`. Header gets " · not graded yet"; the panel is kind \`term\` and explains that term only.
+3. If the term appears in an option, pass \`option_term_lookup: true\` with this card's submit_review.
 
 ### Session Summary
 
@@ -220,8 +252,8 @@ A cloze note renders one card per gap number. A card with \`noteTypeKind === "cl
 
 | Level | Name | Format | Interaction | Details |
 |-------|------|--------|-------------|---------|
-| 0 | Remember | Cloze MCQ, original sentence + hint | \`mcq-selector\` widget, 4 options, \`MODE='single'\` | Use the original sentence verbatim. Distractors from **different categories**. |
-| 1 | Understand | Cloze MCQ, no hint, harder distractors | \`mcq-selector\` widget, 4 options, \`MODE='single'\` | Same sentence, always \`[...]\`. Distractors from the **same functional category**. |
+| 0 | Remember | Cloze MCQ, original sentence + hint | \`mcq-selector\` widget, 4 options, \`mode: 'single'\` | Use the original sentence verbatim. Distractors from **different categories**. |
+| 1 | Understand | Cloze MCQ, no hint, harder distractors | \`mcq-selector\` widget, 4 options, \`mode: 'single'\` | Same sentence, always \`[...]\`. Distractors from the **same functional category**. |
 | 2 | Apply | Open cloze, AI-rephrased sentence | Chat typed input | A NEW sentence where the same answer fits the blank, in a different context. User must recall, not recognize. |
 | 3 | Analyze | Cloze fill-in + comparison follow-up | Chat typed input | Two-part: (1) fill the blank, (2) explain a distinction using \`get_similar_cards\` context. Correctness from both parts. |
 | 4 | Evaluate | Cloze fill-in + claim evaluation | Chat typed input | Two-part: (1) fill the blank, (2) evaluate whether the surrounding claim is valid. Correctness from both parts. |
@@ -241,17 +273,15 @@ CARD: noteTypeKind="cloze", clozeNumber=1, bloomState.currentLevel=0
     ribosome, nucleus, lysosome (not chloroplast — save for Bloom 1)
   Step 2: Present as single-select MCQ, apply optionShuffle (skip it at changeRate 0)
 
-  YOUR OUTPUT:
-    "Desk · card 1 of 5 · Remember
-     Fill in the blank:
-     The [organelle] is the powerhouse of the cell.
-     A) ribosome  B) mitochondria  C) nucleus  D) lysosome"
   TOOL CALLS:
-    → show_widget(mcq-selector, KEYS=["A","B","C","D"], MODE='single')
+    → show_widget(mcq-selector, CARD={
+        header: 'Desk · card 1 of 5 · Remember', panel: null,
+        stem: \`Fill in the blank: The [organelle] is the powerhouse of the cell.\`,
+        options: [{id:'A', html:\`ribosome\`}, {id:'B', html:\`mitochondria\`}, {id:'C', html:\`nucleus\`}, {id:'D', html:\`lysosome\`}],
+        mode: 'single', terms: ['ribosome', 'lysosome'] })
 
 USER ANSWERS: "Answer: B" — correct
 
-  YOUR OUTPUT: "Correct! The mitochondria is the organelle..."
   TOOL CALLS:
     1. submit_review({
          question_id: "...",
@@ -263,6 +293,7 @@ USER ANSWERS: "Answer: B" — correct
          answer_expected: "mitochondria",
          user_answer: "mitochondria"
        })
+    2. show_widget(...) with a \`correct\` panel ("Correct! The mitochondria is the organelle...") + the next card
 \`\`\`
 
 ### Two-Part Interaction (Bloom 3-4)
@@ -357,7 +388,7 @@ create_note({
 
 - For levels 3+: use \`get_similar_cards\` to craft cross-concept questions.
 - Not every card reaches level 5. Recognize when a concept plateaus.
-- The MCP server handles level progress: step = ±(change rate × correctness) inside the level, ±0.5 moves it, and only on-level questions count. FSRS handles scheduling; the interval is scaled by (1 + 0.5 × change rate) × (0.7 + 0.3 × difficulty).
+- The MCP server handles level progress: step = ±(change rate × correctness) inside the level, ±0.5 moves it, and only on-level questions count. FSRS handles scheduling; the interval is scaled by (0.8 + 0.4 × change rate) × (0.8 + 0.4 × difficulty).
 - **Cloze cards** follow a separate Bloom progression (see Cloze Card Study Flow above). They stay in cloze format at every level with progressively varied formulations. Cloze cards typically plateau at Bloom 3-4.
 
 ### Question Variety Strategies
@@ -420,7 +451,7 @@ Report \`correctness\` 0..1. The server derives the FSRS rating: < 0.5 Again, 0.
 
 **Big conceptual miss (correctness < 0.3, especially at Bloom 0-1):**
 When the answer reveals a fundamental misunderstanding — not just a slip — render a mini-visualization to make the concept click:
-- Use the Visualizer tool to render a small HTML snippet (diagram, comparison table, annotated flow, or SVG).
+- Render a small HTML snippet (diagram, comparison table, annotated flow, or SVG). In a choice session it goes into the next widget's feedback panel.
 - Follow the same visual style as card templates (Pico CSS classless, Inter font, semantic HTML, KaTeX for formulas).
 - Focus on the ONE key distinction or mechanism the user missed.
 - Example: if the user confuses mitosis and meiosis, render a side-by-side \`<table>\` of their key differences.
@@ -429,13 +460,13 @@ When the answer reveals a fundamental misunderstanding — not just a slip — r
 
 ### "I Don't Know" Responses
 
-If the user says they don't know or asks for explanation:
+\`Answer: I don't know\` (the widget's Don't know button) or a typed "I don't know":
 
-1. Give a targeted hint first rather than revealing the answer — the user learns more by reasoning through it.
-2. Provide enough context to make the question answerable.
-3. Re-present the same question (same options, same order).
-4. If the user still can't answer after 2 hints, explain the answer and submit correctness 0.
-5. Log user_answer as the explanation context (e.g. "Did not answer — needed explanation of X").
+1. Explain at once, no hints: every term in the question and the options, then the correct answer and why.
+2. submit_review with \`selected_option_ids: []\` for a choice question, or \`correctness: 0\` for an open one; \`user_answer: "I don't know"\`.
+3. Show that explanation as a \`dontknow\` panel above the next card, in the same widget.
+
+A term lookup (\`Explain term: …\`) is not "I don't know": see Term Lookups.
 </review_evaluation>
 
 ---
@@ -475,7 +506,7 @@ LearnForge runs on Even Realities G2 glasses as tiny multiple-choice questions a
 
 | Action | Tool | Key Parameters |
 |--------|------|----------------|
-| Present an MCQ | show_widget (visualizer) | \`mcq-selector\` template, KEYS, MODE |
+| Present an MCQ | show_widget (visualizer) | \`mcq-selector\` template, CARD (header, panel, stem, options, mode, terms) |
 | Study summary | get_study_summary | topic_id? |
 | Start / resume session | start_session | client, difficulty (Commute 0.3 / Desk 0.7 / Deep 1.0), voice?, session_id? |
 | Due cards | get_study_cards | topic_id?, limit?, session_id |
@@ -531,59 +562,56 @@ const TEMPLATES: Record<
 > = {
   "mcq-selector": {
     description:
-      "Answer picker for chat MCQ sessions — a row of letter buttons rendered by the visualizer's show_widget, NOT a card side. Print the stem and the full lettered options as chat text; this widget holds only the letters. Replies as a normal user turn: 'Answer: A, C'. Uses the visualizer design system, so it must be passed to show_widget verbatim without Pico CSS.",
+      "Question card for chat MCQ sessions, rendered by the visualizer's show_widget — NOT a card side. One widget holds everything: header, feedback panel for the previous answer, stem with term links and KaTeX, full-width option buttons, Don't know, term chips. Emit no question or option text in chat. Fill only the CARD config and pass the rest verbatim, without Pico CSS. Replies as a normal user turn: 'Answer: B', 'Answer: A, C' (multi, sorted), 'Answer: I don't know', or 'Explain term: <term>' (ungraded; re-render the same card with a term panel).",
     variables:
-      "MODE ('single' sends on first click; 'multi' toggles and needs Submit), KEYS (letter array, post-optionShuffle — any length from 2 upward)",
+      "CARD = { header: 'preset · card N of M · level' (append ' · not graded yet' after a term lookup); panel: {kind: 'correct'|'wrong'|'dontknow'|'term', title, html} or null; stem: HTML, may hold <span class=\"term\" data-term=\"…\"> links and <span data-tex=\"…\"> math (data-display for block math); options: [{id, html}] in optionShuffle order, ids are the display letters, no term spans inside; mode: 'single' (tap submits) or 'multi' (toggle, then Submit); terms: string[] of option terms shown as chips }. Use JS template literals for the HTML fields and double the TeX backslashes (\\\\frac).",
     standalone: true,
-    html: `<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Answer picker for the question above</h2>
-<div style="padding:1rem 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-  <div id="strip" style="display:flex;gap:8px"></div>
-  <button id="go">Submit ↗</button>
-  <span id="msg" style="font-size:13px;color:var(--text-muted)"></span>
-</div>
+    html: `<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">LearnForge question card</h2>
+<style>
+#lf .panel{padding:10px 12px;background:var(--surface-1);border-left:3px solid var(--border-accent);border-radius:0;margin-bottom:14px;font-size:14px;line-height:1.55}
+#lf .panel.k-wrong,#lf .panel.k-dontknow{border-left-color:var(--border-danger)}
+#lf .panel.k-term{border-left-color:var(--border-strong)}
+#lf .term{color:var(--text-accent);border-bottom:1px dotted currentColor;cursor:pointer}
+#lf .opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:10px 12px;min-height:44px;font:inherit;font-size:15px;line-height:1.45}
+#lf .opt[aria-pressed="true"]{background:var(--bg-accent);border-color:var(--border-accent);color:var(--text-accent)}
+#lf button{min-height:44px}
+</style>
+<div id="lf" style="padding:0.5rem 0;font-size:15px;line-height:1.55"></div>
 <script>
-var MODE = 'multi';
-var KEYS = ['A', 'B', 'C', 'D'];
-var picked = [];
-var strip = document.getElementById('strip');
-var go = document.getElementById('go');
-var msg = document.getElementById('msg');
-KEYS.forEach(function (k) {
-  var b = document.createElement('button');
-  b.textContent = k;
-  b.setAttribute('data-k', k);
-  b.setAttribute('aria-pressed', 'false');
-  b.style.cssText = 'min-width:44px;padding:8px 0';
-  b.onclick = function () {
-    if (MODE === 'single') { picked = [k]; paint(); send(); return; }
-    var j = picked.indexOf(k);
-    if (j > -1) { picked.splice(j, 1); } else { picked.push(k); }
-    paint();
-  };
-  strip.appendChild(b);
-});
-function paint() {
-  Array.prototype.forEach.call(strip.children, function (b) {
-    var on = picked.indexOf(b.getAttribute('data-k')) > -1;
-    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    b.style.background = on ? 'var(--bg-accent)' : '';
-    b.style.borderColor = on ? 'var(--border-accent)' : '';
-    b.style.color = on ? 'var(--text-accent)' : '';
-  });
-  msg.style.color = 'var(--text-muted)';
-  msg.textContent = picked.length ? picked.slice().sort().join(', ') : '';
-}
-function send() { sendPrompt('Answer: ' + picked.slice().sort().join(', ')); }
-go.onclick = function () {
-  if (!picked.length) {
-    msg.style.color = 'var(--text-danger)';
-    msg.textContent = 'Pick an option first';
-    return;
-  }
-  send();
+(function(){
+var CARD={
+ header:'Desk · card 1 of 5 · Understand',
+ panel:null,
+ stem:\`Newton's method iterates <span data-tex="x_{k+1} = x_k - \\\\frac{f(x_k)}{f'(x_k)}" data-display></span> Near a <span class="term" data-term="simple root">simple root</span> <span data-tex="x^*"></span>, which statements hold?\`,
+ options:[{id:'A',html:\`Convergence is quadratic\`},{id:'B',html:\`It needs no starting value\`},{id:'C',html:\`It can fail when <span data-tex="f'(x_k) = 0"></span>\`},{id:'D',html:\`It converges for every starting value\`}],
+ mode:'multi',
+ terms:['quadratic convergence']
 };
-if (MODE === 'single') { go.style.display = 'none'; }
-paint();
+var root=document.getElementById('lf'),picked=[],sent=false,box,err;
+function h(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.innerHTML=x;return e;}
+function send(m){if(sent)return;sent=true;sendPrompt(m);}
+root.appendChild(h('div',null,CARD.header)).style.cssText='font-size:12px;color:var(--text-secondary);margin-bottom:8px';
+if(CARD.panel){var p=h('div','panel k-'+CARD.panel.kind);var t=h('div',null,CARD.panel.title);t.style.cssText='font-weight:500;margin-bottom:4px';p.appendChild(t);p.appendChild(h('div',null,CARD.panel.html));root.appendChild(p);}
+var s=h('div',null,CARD.stem+(CARD.mode==='multi'?' <span style="color:var(--text-secondary);font-size:13px">(select all that apply)</span>':''));s.style.cssText='font-size:16px;margin-bottom:12px';root.appendChild(s);
+err=h('span');err.style.cssText='font-size:13px;color:var(--text-danger)';
+box=h('div');box.style.cssText='display:flex;flex-direction:column;gap:8px';
+CARD.options.forEach(function(o){var b=h('button','opt');b.type='button';b.setAttribute('data-k',o.id);b.setAttribute('aria-pressed','false');var k=h('span',null,o.id);k.style.cssText='font-weight:500;min-width:1.2em';b.appendChild(k);b.appendChild(h('span',null,o.html));
+ b.onclick=function(){if(CARD.mode==='single'){picked=[o.id];paint();send('Answer: '+o.id);return;}var i=picked.indexOf(o.id);if(i>-1)picked.splice(i,1);else picked.push(o.id);err.textContent='';paint();};box.appendChild(b);});
+root.appendChild(box);
+var row=h('div');row.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center';
+var dk=h('button',null,"Don't know ↗");dk.type='button';dk.onclick=function(){send("Answer: I don't know");};row.appendChild(dk);
+if(CARD.mode==='multi'){var sb=h('button',null,'Submit ↗');sb.type='button';sb.onclick=function(){if(!picked.length){err.textContent='Pick at least one option first';return;}send('Answer: '+picked.slice().sort().join(', '));};row.appendChild(sb);}
+row.appendChild(err);root.appendChild(row);
+if(CARD.terms&&CARD.terms.length){var c=h('div',null,'<span style="color:var(--text-secondary)">Terms:</span>');c.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;font-size:13px;align-items:center';CARD.terms.forEach(function(t){var b=h('button',null,t+' ↗');b.type='button';b.style.cssText='font-size:13px;padding:2px 10px';b.onclick=function(){send('Explain term: '+t);};c.appendChild(b);});root.appendChild(c);}
+root.querySelectorAll('span.term').forEach(function(e){e.setAttribute('role','button');e.tabIndex=0;function go(){send('Explain term: '+(e.getAttribute('data-term')||e.textContent));}e.onclick=go;e.onkeydown=function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go();}};});
+function paint(){box.querySelectorAll('.opt').forEach(function(b){b.setAttribute('aria-pressed',picked.indexOf(b.getAttribute('data-k'))>-1?'true':'false');});}
+var tex=root.querySelectorAll('[data-tex]');
+if(tex.length){
+ tex.forEach(function(e){e.textContent=e.getAttribute('data-tex');if(e.hasAttribute('data-display'))e.style.display='block';});
+ var done=false,st;function fin(ok){if(done)return;if(ok&&window.katex){done=true;if(st)st.remove();tex.forEach(function(e){try{katex.render(e.getAttribute('data-tex'),e,{throwOnError:false,displayMode:e.hasAttribute('data-display')});}catch(x){}});}else if(!st){st=h('div',null,'KaTeX failed to load, showing raw TeX');st.style.cssText='font-size:12px;color:var(--text-danger);margin-top:12px';root.appendChild(st);}}
+ var tgt=document.head||document.body;var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css';tgt.appendChild(l);
+ var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js';sc.onload=function(){fin(true);};sc.onerror=function(){fin(false);};tgt.appendChild(sc);setTimeout(function(){fin(!!window.katex);},6000);}
+})();
 </script>`,
   },
 
@@ -779,7 +807,7 @@ export function registerSkillTools(server: McpServer) {
 
   server.tool(
     "get_templates",
-    "Get HTML templates for LearnForge: the six card-side templates, plus mcq-selector, the letter-button answer picker used with the visualizer's show_widget during chat MCQ sessions. Returns template HTML with variable placeholders, CSS, and JS. Pass a template_name to get one specific template, or omit to get all seven.",
+    "Get HTML templates for LearnForge: the six card-side templates, plus mcq-selector, the self-contained question card (feedback, stem, options, Don't know, term chips) rendered with the visualizer's show_widget during chat MCQ sessions. Returns template HTML with variable placeholders, CSS, and JS. Pass a template_name to get one specific template, or omit to get all seven.",
     {
       template_name: z
         .enum(["mcq-selector", "mcq", "open-response", "visual-explain", "label-diagram", "slider", "cloze"])

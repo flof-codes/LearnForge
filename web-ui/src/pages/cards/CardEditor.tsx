@@ -95,7 +95,7 @@ function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: Ca
         <VariationSlider
           idPrefix="edit-card"
           value={changeRate}
-          inheritedValue={card.inheritedChangeRate ?? 0.8}
+          inheritedValue={card.inheritedChangeRate ?? 0.6}
           inheritedFrom={card.inheritedFrom ?? null}
           onChange={v => { setChangeRate(v); onDirty?.(); }}
         />
@@ -210,7 +210,7 @@ function FreeformEditor({ initialData, onSubmit, isPending, onDirty }: Omit<Prop
           <VariationSlider
             idPrefix="edit-card"
             value={changeRate}
-            inheritedValue={initialData.inheritedChangeRate ?? 0.8}
+            inheritedValue={initialData.inheritedChangeRate ?? 0.6}
             inheritedFrom={initialData.inheritedFrom ?? null}
             onChange={v => { setChangeRate(v); onDirty?.(); }}
           />

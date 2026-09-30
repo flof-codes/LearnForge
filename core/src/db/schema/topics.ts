@@ -9,7 +9,7 @@ export const topics = pgTable("topics", {
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  /** Question variation 0..1 for cards below this topic; NULL inherits from the parent (root default 0.8). */
+  /** Question variation 0..1 for cards below this topic; NULL inherits from the parent (root default 0.6). */
   changeRate: real("change_rate"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [

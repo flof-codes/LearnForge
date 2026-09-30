@@ -226,7 +226,7 @@ describe("Card Lifecycle", () => {
       freshCardIds.push(card.id);
 
       // Advance bloom and add reviews
-      await submitReview(api, card.id, 0, 3);
+      await submitReview(api, card.id, 0, 4);
       await submitReview(api, card.id, 1, 4);
 
       // Verify card has reviews and advanced bloom

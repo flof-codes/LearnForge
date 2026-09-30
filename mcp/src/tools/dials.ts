@@ -36,7 +36,7 @@ export function registerDialTools(server: McpServer, db: Db, userId: string) {
 
   server.tool(
     "set_change_rate",
-    "Set how much the tutor may vary a card's question: 0 = word for word (pure memorising, never changes level), 0.3 = reworded, 0.8 = new context (default), 1 = free. Set it on a topic (inherited by everything below) or on one card (wins over the topic). null clears the value so it inherits again.",
+    "Set how much the tutor may vary a card's question: 0 = word for word (pure memorising, never changes level), 0.3 = reworded, 0.8 = new context, 1 = free; values in between blend the neighbouring anchors. Default 0.6. Set it on a topic (inherited by everything below) or on one card (wins over the topic). null clears the value so it inherits again.",
     {
       topic_id: z.string().uuid().optional(),
       card_id: z.string().uuid().optional(),

@@ -24,19 +24,24 @@ afterAll(async () => {
  */
 async function advanceToLevel(cardId: string, targetLevel: number): Promise<void> {
   for (let level = 0; level < targetLevel; level++) {
-    await submitReview(api, cardId, level, 3); // Good at current level
+    await submitReview(api, cardId, level, 4); // Easy at current level: 0.6 × 1 crosses +0.5
   }
 }
 
 describe("Bloom Progression", () => {
 
-  it("advances on Good review at current level", async () => {
+  it("advances after two Good reviews at current level", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "bloom-good");
     freshCardIds.push(card.id);
 
-    const result = await submitReview(api, card.id, 0, 3); // bloom_level=0, rating=Good
-    expect(result.bloomState.currentLevel).toBe(1);
-    expect(result.bloomState.highestReached).toBe(1);
+    // Good counts as 80 % correct: 0.6 × 0.8 = 0.48, just below the +0.5 edge
+    const first = await submitReview(api, card.id, 0, 3);
+    expect(first.bloomState.currentLevel).toBe(0);
+    expect(first.bloomState.progress).toBeCloseTo(0.48, 2);
+
+    const second = await submitReview(api, card.id, 0, 3);
+    expect(second.bloomState.currentLevel).toBe(1);
+    expect(second.bloomState.highestReached).toBe(1);
   });
 
   it("advances on Easy review at current level", async () => {
@@ -78,10 +83,10 @@ describe("Bloom Progression", () => {
     // Advance to level 2
     await advanceToLevel(card.id, 2);
 
-    // Hard counts as 40 % correct: step −0.8 × 0.6 = −0.48, just above the −0.5 edge
+    // Hard counts as 40 % correct: step −0.6 × 0.6 = −0.36, above the −0.5 edge
     const first = await submitReview(api, card.id, 2, 2);
     expect(first.bloomState.currentLevel).toBe(2);
-    expect(first.bloomState.progress).toBeCloseTo(-0.48, 2);
+    expect(first.bloomState.progress).toBeCloseTo(-0.36, 2);
 
     const second = await submitReview(api, card.id, 2, 2);
     expect(second.bloomState.currentLevel).toBe(1);
@@ -127,7 +132,7 @@ describe("Bloom Progression", () => {
     expect(getRes.data.bloomState.highestReached).toBe(3); // Still 3
 
     // Advance back to 3
-    await submitReview(api, card.id, 2, 3);
+    await submitReview(api, card.id, 2, 4);
     getRes = await api.get(`/cards/${card.id}`);
     expect(getRes.data.bloomState.currentLevel).toBe(3);
     expect(getRes.data.bloomState.highestReached).toBe(3); // Still 3
@@ -141,7 +146,7 @@ describe("Bloom Progression", () => {
     await advanceToLevel(card.id, 3);
 
     // Advance to 4 (new peak)
-    const result = await submitReview(api, card.id, 3, 3);
+    const result = await submitReview(api, card.id, 3, 4);
     expect(result.bloomState.currentLevel).toBe(4);
     expect(result.bloomState.highestReached).toBe(4);
   });
@@ -163,9 +168,9 @@ describe("Bloom Progression", () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "bloom-full-climb");
     freshCardIds.push(card.id);
 
-    // 6 sequential Good reviews at matching levels: 0→1→2→3→4→5
+    // 5 sequential Easy reviews at matching levels: 0→1→2→3→4→5
     for (let level = 0; level <= 4; level++) {
-      const result = await submitReview(api, card.id, level, 3);
+      const result = await submitReview(api, card.id, level, 4);
       expect(result.bloomState.currentLevel).toBe(level + 1);
     }
 

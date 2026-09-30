@@ -15,7 +15,8 @@ let mcp: McpTestClient;
 const freshCardIds: string[] = [];
 const freshTopicIds: string[] = [];
 
-const DEFAULT_TUTOR_FACTOR = (1 + 0.5 * 0.8) * (0.7 + 0.3 * 1); // 1.4
+const tutorFactor = (c: number, d: number) => (0.8 + 0.4 * c) * (0.8 + 0.4 * d);
+const DEFAULT_TUTOR_FACTOR = tutorFactor(0.6, 1); // 1.248
 
 async function loginOther(): Promise<AxiosInstance> {
   const url = process.env.TEST_API_URL ?? TEST_CONFIG.apiUrl;
@@ -74,7 +75,7 @@ describe("Change rate inheritance", () => {
 
     let res = await api.get(`/cards/${card.id}`);
     expect(res.data.changeRate).toBeNull();
-    expect(res.data.effectiveChangeRate).toBe(0.8);
+    expect(res.data.effectiveChangeRate).toBe(0.6);
     expect(res.data.rateSource).toBe("default");
 
     expect((await api.put(`/topics/${parent}`, { changeRate: 0.3 })).status).toBe(200);
@@ -143,7 +144,7 @@ describe("Level progress", () => {
     expect(first.bloomState.currentLevel).toBe(0);
     expect(first.bloomState.progress).toBeCloseTo(0.3, 5);
     expect(first.review.levelStep).toBeCloseTo(0.3, 5);
-    expect(first.review.rulesVersion).toBe(2);
+    expect(first.review.rulesVersion).toBe(3);
 
     const second = await submitReview(api, card.id, 0, 4);
     expect(second.bloomState.currentLevel).toBe(1);
@@ -153,11 +154,11 @@ describe("Level progress", () => {
   it("subtracts rate × (1 − correctness) on a wrong answer and drops at −0.5", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "level-drop");
     freshCardIds.push(card.id);
-    await submitReview(api, card.id, 0, 3); // 0.8 × 0.8 = 0.64 → level 1
-    const again = await submitReview(api, card.id, 1, 1); // −0.8 × 1 = −0.8 → level 0
+    await submitReview(api, card.id, 0, 4); // 0.6 × 1 = 0.6 → level 1
+    const again = await submitReview(api, card.id, 1, 1); // −0.6 × 1 = −0.6 → level 0
     expect(again.bloomState.currentLevel).toBe(0);
     expect(again.bloomState.progress).toBe(0);
-    expect(again.review.levelStep).toBeCloseTo(-0.8, 5);
+    expect(again.review.levelStep).toBeCloseTo(-0.6, 5);
   });
 
   it("never moves at change rate 0", async () => {
@@ -183,7 +184,7 @@ describe("Level progress", () => {
   it("does not count a question asked below the level either", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "level-below");
     freshCardIds.push(card.id);
-    await submitReview(api, card.id, 0, 3); // → level 1
+    await submitReview(api, card.id, 0, 4); // → level 1
     const r = await submitReview(api, card.id, 0, 4); // asked at level 0, card is at 1
     expect(r.review.onLevel).toBe(false);
     expect(r.review.levelStep).toBe(0);
@@ -193,7 +194,7 @@ describe("Level progress", () => {
   it("does not build up outwards at the highest level", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "level-ceiling");
     freshCardIds.push(card.id);
-    for (let level = 0; level < 5; level++) await submitReview(api, card.id, level, 3);
+    for (let level = 0; level < 5; level++) await submitReview(api, card.id, level, 4);
     const top = await submitReview(api, card.id, 5, 4);
     expect(top.bloomState.currentLevel).toBe(5);
     expect(top.bloomState.progress).toBe(0);
@@ -203,14 +204,14 @@ describe("Level progress", () => {
   it("does not build up outwards at the lowest level", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "level-floor");
     freshCardIds.push(card.id);
-    const r = await submitReview(api, card.id, 0, 1); // −0.8 at level 0
+    const r = await submitReview(api, card.id, 0, 1); // −0.6 at level 0
     expect(r.bloomState.currentLevel).toBe(0);
     expect(r.bloomState.progress).toBe(0);
   });
 });
 
 describe("Interval factor", () => {
-  it("web self-rating keeps 0.95; a tutor review at the default rate gets 1.4", async () => {
+  it("web self-rating keeps 0.95; a tutor review at the default rate gets 1.248", async () => {
     const web = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "factor-web");
     const chat = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "factor-chat");
     freshCardIds.push(web.id, chat.id);
@@ -244,7 +245,83 @@ describe("Interval factor", () => {
     }));
     expect(result.grading.correctness).toBe(1);
     expect(result.grading.gradedBy).toBe("server");
-    expect(result.review.intervalFactor).toBeCloseTo((1 + 0.5 * 0.8) * (0.7 + 0.3 * 0.3), 5);
+    expect(result.review.intervalFactor).toBeCloseTo(tutorFactor(0.6, 0.3), 5);
+  });
+
+  it("reproduces the rules-v3 factor table for every rate and preset", async () => {
+    // Change request 2026-09-30, table 2.2: rows = change rate, columns = Commute / Desk / Deep
+    const table: Array<[number, [number, number, number]]> = [
+      [0.0, [0.736, 0.864, 0.960]],
+      [0.5, [0.920, 1.080, 1.200]],
+      [0.6, [0.957, 1.123, 1.248]],
+      [0.8, [1.030, 1.210, 1.344]],
+      [1.0, [1.104, 1.296, 1.440]],
+    ];
+    const presets = [0.3, 0.7, 1.0];
+    const topic = await createTopic("dials-factor-table");
+    for (const [rate, factors] of table) {
+      for (let i = 0; i < presets.length; i++) {
+        const card = await createFreshCard(api, topic, `factor-${rate}-${presets[i]}`);
+        freshCardIds.push(card.id);
+        await api.put(`/cards/${card.id}`, { change_rate: rate });
+        const res = await api.post("/reviews", {
+          card_id: card.id, bloom_level: 0, correctness: 1, question_text: "Factor table",
+          modality: "chat", session_difficulty: presets[i],
+        });
+        expect(res.status).toBe(201);
+        const label = `c=${rate} d=${presets[i]}`;
+        expect(res.data.review.rulesVersion, label).toBe(3);
+        expect(res.data.review.changeRate, label).toBeCloseTo(rate, 5);
+        expect(Number(res.data.review.intervalFactor.toFixed(3)), label).toBe(factors[i]);
+      }
+    }
+  });
+
+  it("is neutral at change rate and difficulty 0.5", async () => {
+    const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "factor-neutral");
+    freshCardIds.push(card.id);
+    await api.put(`/cards/${card.id}`, { change_rate: 0.5 });
+    const res = await api.post("/reviews", {
+      card_id: card.id, bloom_level: 0, correctness: 1, question_text: "Neutral", modality: "chat", session_difficulty: 0.5,
+    });
+    expect(res.status).toBe(201);
+    expect(res.data.review.intervalFactor).toBeCloseTo(1, 5);
+  });
+});
+
+describe("Option term lookup", () => {
+  it("caps a correct choice answer at Good and leaves other ratings alone", async () => {
+    const topic = await createTopic("dials-term-lookup");
+    const cases: Array<[string[], boolean | undefined, number]> = [
+      [["A"], true, 3],       // correct + lookup → Good instead of Easy
+      [["A"], undefined, 4],  // correct without lookup stays Easy
+      [["B"], true, 1],       // wrong stays Again
+    ];
+    for (const [selected, lookup, rating] of cases) {
+      const card = await createFreshCard(api, topic, `term-${selected.join("")}-${lookup}`);
+      freshCardIds.push(card.id);
+      const sessionId = await startSession(0.3);
+      const served = await ticketFor(sessionId, card.id, topic);
+      const r = mcp.parseToolResult<any>(await mcp.callTool("submit_review", {
+        question_id: served.questionId, bloom_level: 0, ...choiceAnswer(selected),
+        ...(lookup === undefined ? {} : { option_term_lookup: lookup }),
+      }));
+      const label = `${selected.join(",")} lookup=${lookup}`;
+      expect(r.review.rating, label).toBe(rating);
+      expect(r.grading.rating, label).toBe(rating);
+    }
+  });
+
+  it("is accepted by the API route", async () => {
+    const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "term-api");
+    freshCardIds.push(card.id);
+    const res = await api.post("/reviews", {
+      card_id: card.id, bloom_level: 0, correctness: 1, question_text: "?", modality: "chat", option_term_lookup: true,
+    });
+    expect(res.status).toBe(201);
+    expect(res.data.review.rating).toBe(3);
+    // The level step still uses the full correctness
+    expect(res.data.review.levelStep).toBeCloseTo(0.6, 5);
   });
 });
 
@@ -357,7 +434,7 @@ describe("Question tickets", () => {
       question_id: served.questionId, bloom_level: 0, session_difficulty: 0.3, ...choiceAnswer(["A"]),
     }));
     expect(r.review.sessionDifficulty).toBeCloseTo(0.3, 5);
-    expect(r.review.intervalFactor).toBeCloseTo((1 + 0.5 * 0.8) * (0.7 + 0.3 * 0.3), 5);
+    expect(r.review.intervalFactor).toBeCloseTo(tutorFactor(0.6, 0.3), 5);
     const resumed = mcp.parseToolResult<any>(await mcp.callTool("start_session", { session_id: sessionId }));
     expect(resumed.session.sessionDifficulty).toBeCloseTo(0.3, 5);
   });
@@ -454,11 +531,11 @@ describe("Originals", () => {
 });
 
 describe("Undo and web study", () => {
-  it("deleting a v2 review replays the stored level steps and factors", async () => {
+  it("deleting a review replays the stored level steps and factors", async () => {
     const card = await createFreshCard(api, TOPICS.EMPTY_TOPIC, "undo");
     freshCardIds.push(card.id);
-    const first = await submitReview(api, card.id, 0, 3); // → level 1
-    const second = await submitReview(api, card.id, 1, 3); // → level 2
+    const first = await submitReview(api, card.id, 0, 4); // 0.6 → level 1
+    const second = await submitReview(api, card.id, 1, 4); // 0.6 → level 2
     expect(second.bloomState.currentLevel).toBe(2);
 
     const del = await api.delete(`/reviews/${second.review.id}`);
@@ -498,7 +575,7 @@ describe("Undo and web study", () => {
     freshCardIds.push(card.id);
     const sessionId = await startSession(1);
     const served = await ticketFor(sessionId, card.id, topic);
-    const reviewed = await submitReview(api, card.id, 0, 3); // 0.64 → level 1
+    const reviewed = await submitReview(api, card.id, 0, 4); // 0.6 → level 1
     expect(reviewed.bloomState.currentLevel).toBe(1);
     const reset = await api.post(`/cards/${card.id}/reset`, {});
     expect(reset.status, JSON.stringify(reset.data)).toBe(200);

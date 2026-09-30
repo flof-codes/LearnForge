@@ -68,7 +68,8 @@ describe("MCP ↔ API Cross-Interface", () => {
     const getResult = await mcp.callTool("get_card", { card_id: card.id });
     const mcpCard = mcp.parseToolResult<any>(getResult);
 
-    expect(mcpCard.bloomState.currentLevel).toBe(1); // Advanced from 0
+    expect(mcpCard.bloomState.currentLevel).toBe(0); // Good at rate 0.6 adds 0.48, short of a level
+    expect(mcpCard.bloomState.progress).toBeCloseTo(0.48, 5);
     expect(mcpCard.fsrsState.reps).toBeGreaterThan(0);
     expect(mcpCard.reviews.length).toBe(1);
     expect(mcpCard.reviews[0].rating).toBe(3);

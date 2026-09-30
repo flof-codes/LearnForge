@@ -36,9 +36,10 @@ export function computeBloomTransition(
 }
 
 // --- Rules version 2: graded progress inside a level ---
+// Version 3: interval factor (0.8 + 0.4c)(0.8 + 0.4d), default change rate 0.6.
 
-export const RULES_VERSION = 2;
-export const DEFAULT_CHANGE_RATE = 0.8;
+export const RULES_VERSION = 3;
+export const DEFAULT_CHANGE_RATE = 0.6;
 export const LEVEL_THRESHOLD = 0.5;
 export const PASS_MARK = 0.5;
 export const MIN_LEVEL = 0;

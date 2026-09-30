@@ -180,7 +180,7 @@ describe("Error Handling", () => {
       expect(getRes.data.fsrsState.reps).toBe(0);
 
       // Submit a new review — should succeed and advance from bloom 0
-      const postResetReview = await submitReview(api, card.id, 0, 3);
+      const postResetReview = await submitReview(api, card.id, 0, 4);
       expect(postResetReview.bloomState.currentLevel).toBe(1);
       expect(postResetReview.fsrsState.reps).toBe(1);
     });

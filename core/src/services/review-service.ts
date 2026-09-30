@@ -39,6 +39,8 @@ export interface SubmitReviewInput {
   session_difficulty?: number;
   answer_expected?: string;
   user_answer?: string;
+  /** The learner looked up a term shown in an option before answering: a correct answer counts as Good, not Easy. */
+  option_term_lookup?: boolean;
 }
 
 interface CardStateRow extends Record<string, unknown> {
@@ -108,7 +110,8 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
   } else {
     throw new ValidationError("rating or correctness is required");
   }
-  const rating = (rawCorrectness !== undefined || gradedBy === "server") ? ratingFromCorrectness(correctness) : (rawRating as 1 | 2 | 3 | 4);
+  const derivedRating = (rawCorrectness !== undefined || gradedBy === "server") ? ratingFromCorrectness(correctness) : (rawRating as 1 | 2 | 3 | 4);
+  const rating = input.option_term_lookup && derivedRating === 4 ? 3 : derivedRating;
 
   const result = await db.transaction(async (tx) => {
     // 1. Take the row locks first. The state is read in a second statement so a

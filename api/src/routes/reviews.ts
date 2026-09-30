@@ -29,6 +29,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
           modality: { type: "string", enum: ["chat", "web", "mcq"] },
           answer_expected: { type: "string" },
           user_answer: { type: "string" },
+          option_term_lookup: { type: "boolean" },
         },
         additionalProperties: false,
       },

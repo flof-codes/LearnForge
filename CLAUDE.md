@@ -37,14 +37,17 @@
 - Vorderseite = clean, fokussiert: Begriff + Frage(n)
 
 ## Review-Flow im Chat (PFLICHT)
-- Beim Abfragen von Karten im Chat: **keine HTML-Karten zeigen** — Frage als Chat-Text stellen
-- MCQ → Fragestamm + vollständige Optionen als Chat-Text (A, B, C, …), Antwort über
-  `visualize:show_widget` mit dem `mcq-selector`-Template (nur die Buchstaben im Widget)
+- Beim Abfragen von Karten im Chat: **keine HTML-Karten zeigen**
+- MCQ → die ganze Karte im Widget: `visualize:show_widget` mit dem `mcq-selector`-Template
+  (Header, Feedback-Panel zur vorigen Antwort, Fragestamm, Options-Buttons, „Don't know", Begriffs-Chips).
+  **Kein Fragen- oder Optionstext im Chat.**
+- **Warum alles im Widget:** die claude.ai-iOS-App klappt Text vor einem Tool-Call in die Tool-Zeile ein,
+  Frage und Optionen waren dadurch unsichtbar. KaTeX lädt im Widget von cdnjs (auf iOS verifiziert).
 - Zuordnung → Serie von MCQ-Fragen ("Wo gehört X hin?")
 - Slider/Berechnung → Frage mit Zahlenwert-Optionen
-- Open Response → normale Chat-Frage (User tippt Antwort)
-- **Warum Optionen im Chat-Text:** dort greift die KaTeX-Pipeline, und es gibt kein Längenlimit
-- Das Widget antwortet als normaler User-Turn: `Answer: A, C`
+- Open Response → normale Chat-Frage (User tippt Antwort), Text nach dem letzten Tool-Call
+- Das Widget antwortet als normaler User-Turn: `Answer: A, C`, `Answer: I don't know` oder
+  `Explain term: <Begriff>` (ungewertet, gleiche Karte erneut mit Begriffs-Panel)
 - Die interaktiven HTML-Karten bleiben als visuelles Lernmaterial auf der **Rückseite** erhalten
 
 ## Git Conventions

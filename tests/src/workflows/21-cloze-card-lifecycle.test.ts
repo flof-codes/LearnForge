@@ -220,7 +220,7 @@ describe("Cloze Card Lifecycle", () => {
       await api.post("/reviews", {
         card_id: card.id,
         bloom_level: 0,
-        rating: 3,
+        rating: 4,
         question_text: "Cloze reset test",
       });
       await api.post("/reviews", {

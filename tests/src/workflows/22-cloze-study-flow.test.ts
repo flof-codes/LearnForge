@@ -101,7 +101,9 @@ describe("Cloze Study Flow", () => {
       expect(new Date(result.fsrsState.due).getTime()).toBeGreaterThan(
         beforeDue.getTime(),
       );
-      expect(result.bloomState.currentLevel).toBe(1);
+      // Good at the default rate 0.6: 0.6 × 0.8 = 0.48, just short of a level
+      expect(result.bloomState.currentLevel).toBe(0);
+      expect(result.bloomState.progress).toBeCloseTo(0.48, 5);
     });
 
     it("cloze card no longer immediately due after Good review", async () => {

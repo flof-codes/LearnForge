@@ -68,19 +68,20 @@ export function applyModalityMultiplier(
   return scaleInterval(fsrsResult, MODALITY_MULTIPLIERS[modality]);
 }
 
-// --- Interval factor (rules version 2) ---
+// --- Interval factor (rules version 3) ---
 
 /** Web self-rating keeps its old multiplier; the dials do not apply there. */
 export const WEB_INTERVAL_FACTOR = 0.95;
 
 /**
- * Change rate 0..1 maps onto 1.0..1.5: an unchanged question is plain FSRS,
- * a varied one earns a longer interval. Difficulty 0..1 maps onto 0.7..1.0.
+ * Change rate and difficulty each map 0..1 onto 0.8..1.2, neutral at 0.5, so
+ * the factor spans 0.64..1.44 and is 1 at c = d = 0.5. Reviews stored under
+ * rules version 2 carry the old factor (1 + 0.5c)(0.7 + 0.3d); replay reads it from the row.
  */
 export function tutorIntervalFactor(changeRate: number, sessionDifficulty: number): number {
   const rate = Math.min(1, Math.max(0, changeRate));
   const diff = Math.min(1, Math.max(0, sessionDifficulty));
-  return (1 + 0.5 * rate) * (0.7 + 0.3 * diff);
+  return (0.8 + 0.4 * rate) * (0.8 + 0.4 * diff);
 }
 
 /**
