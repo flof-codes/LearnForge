@@ -228,10 +228,25 @@ export async function updateTopic(db: Db, userId: string, topicId: string, input
   return updated;
 }
 
-export async function deleteTopic(db: Db, userId: string, topicId: string) {
+export async function deleteTopic(db: Db, userId: string, topicId: string, opts: { withCards?: boolean } = {}) {
   // Verify topic belongs to user
-  const [topic] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.id, topicId), eq(topics.userId, userId)));
+  const [topic] = await db.select().from(topics).where(and(eq(topics.id, topicId), eq(topics.userId, userId)));
   if (!topic) throw new NotFoundError("Topic not found");
+
+  // Explicit opt-in: remove the whole subtree in one statement. Cards, notes,
+  // their state and review history cascade via FK.
+  if (opts.withCards) {
+    const result = await db.execute<{ id: string }>(sql`
+      WITH RECURSIVE tree AS (
+        SELECT id FROM topics WHERE id = ${topicId} AND user_id = ${userId}
+        UNION ALL
+        SELECT t.id FROM topics t JOIN tree ON t.parent_id = tree.id WHERE t.user_id = ${userId}
+      )
+      DELETE FROM topics WHERE id IN (SELECT id FROM tree) RETURNING id
+    `);
+    if (result.rows.length === 0) throw new NotFoundError("Topic not found");
+    return topic;
+  }
 
   // Guard: block deletion if topic still has cards
   const [{ count }] = await db

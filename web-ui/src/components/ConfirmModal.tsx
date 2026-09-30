@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,11 +8,13 @@ interface ConfirmModalProps {
   message: string;
   confirmLabel?: string;
   danger?: boolean;
+  confirmDisabled?: boolean;
+  children?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function ConfirmModal({ open, title, message, confirmLabel, danger = false, onConfirm, onCancel }: ConfirmModalProps) {
+export default function ConfirmModal({ open, title, message, confirmLabel, danger = false, confirmDisabled = false, children, onConfirm, onCancel }: ConfirmModalProps) {
   const { t } = useTranslation('app');
   const resolvedConfirmLabel = confirmLabel ?? t('confirmModal.confirm');
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -84,7 +86,8 @@ export default function ConfirmModal({ open, title, message, confirmLabel, dange
             <X size={18} />
           </button>
         </div>
-        <p className="text-text-muted text-sm mb-6">{message}</p>
+        <p className={`text-text-muted text-sm ${children ? 'mb-4' : 'mb-6'}`}>{message}</p>
+        {children && <div className="space-y-4 mb-6">{children}</div>}
         <div className="flex justify-end gap-3">
           <button
             ref={cancelBtnRef}
@@ -95,7 +98,8 @@ export default function ConfirmModal({ open, title, message, confirmLabel, dange
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90 ${
+            disabled={confirmDisabled}
+            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed ${
               danger ? 'bg-danger' : 'bg-accent-blue'
             }`}
           >

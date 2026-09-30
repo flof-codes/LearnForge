@@ -195,6 +195,33 @@ describe("Topic Hierarchy", () => {
       // Cleanup child
       await api.delete(`/topics/${childRes.data.id}`);
     });
+
+    it("deletes a topic with its subtopics and cards when with_cards=true", async () => {
+      const parentRes = await api.post("/topics", { name: "Delete With Cards" });
+      const childRes = await api.post("/topics", { name: "Delete With Cards Child", parentId: parentRes.data.id });
+      const card = (topicId: string, concept: string) =>
+        api.post("/cards", { topic_id: topicId, concept, front_html: "<p>Q</p>", back_html: "<p>A</p>" });
+      const parentCard = await card(parentRes.data.id, "Parent card");
+      const childCard = await card(childRes.data.id, "Child card");
+      expect(parentCard.status).toBe(201);
+      expect(childCard.status).toBe(201);
+
+      // Without the flag the guard still applies
+      const blocked = await api.delete(`/topics/${parentRes.data.id}`);
+      expect(blocked.status).toBeGreaterThanOrEqual(400);
+
+      const res = await api.delete(`/topics/${parentRes.data.id}`, { params: { with_cards: true } });
+      expect(res.status).toBe(204);
+
+      for (const path of [
+        `/topics/${parentRes.data.id}`,
+        `/topics/${childRes.data.id}`,
+        `/cards/${parentCard.data.id}`,
+        `/cards/${childCard.data.id}`,
+      ]) {
+        expect((await api.get(path)).status).toBe(404);
+      }
+    });
   });
 
   describe("Validation", () => {

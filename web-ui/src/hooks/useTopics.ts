@@ -33,7 +33,13 @@ export const useUpdateTopic = () => {
 export const useDeleteTopic = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => topicService.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['topics'] }),
+    mutationFn: ({ id, withCards = false }: { id: string; withCards?: boolean }) => topicService.delete(id, withCards),
+    onSuccess: (_data, { id }) => {
+      // Drop the deleted topic before refetching, so its detail query does not 404
+      qc.removeQueries({ queryKey: ['topics', id] });
+      qc.invalidateQueries({ queryKey: ['topics'] });
+      qc.invalidateQueries({ queryKey: ['cards'] });
+      qc.invalidateQueries({ queryKey: ['study'] });
+    },
   });
 };

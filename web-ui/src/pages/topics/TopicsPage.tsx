@@ -6,9 +6,10 @@ import { useTopics, useDeleteTopic } from '../../hooks/useTopics';
 import TopicTreeNode from './TopicTreeNode';
 import CreateTopicModal from './CreateTopicModal';
 import EditTopicModal from './EditTopicModal';
-import ConfirmModal from '../../components/ConfirmModal';
+import DeleteTopicModal from './DeleteTopicModal';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
+import { extractErrorMessage } from '../../utils/extractErrorMessage';
 import type { Topic } from '../../types';
 
 export default function TopicsPage() {
@@ -20,15 +21,25 @@ export default function TopicsPage() {
   const [createParentId, setCreateParentId] = useState<string | undefined>();
   const [editTopic, setEditTopic] = useState<Topic | null>(null);
   const [deletingTopic, setDeletingTopic] = useState<Topic | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleCreate = (parentId?: string) => {
     setCreateParentId(parentId);
     setCreateOpen(true);
   };
 
-  const handleDelete = () => {
+  const openDelete = (topic: Topic) => {
+    setDeleteError(null);
+    setDeletingTopic(topic);
+  };
+
+  const handleDelete = (withCards: boolean) => {
     if (!deletingTopic) return;
-    deleteTopic.mutate(deletingTopic.id, { onSuccess: () => setDeletingTopic(null) });
+    setDeleteError(null);
+    deleteTopic.mutate({ id: deletingTopic.id, withCards }, {
+      onSuccess: () => setDeletingTopic(null),
+      onError: (err) => setDeleteError(extractErrorMessage(err) || t('errors.deleteTopicFailed')),
+    });
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -63,7 +74,7 @@ export default function TopicsPage() {
               key={topic.id}
               topic={topic}
               onEdit={setEditTopic}
-              onDelete={setDeletingTopic}
+              onDelete={openDelete}
               onCreate={handleCreate}
             />
           ))
@@ -85,12 +96,10 @@ export default function TopicsPage() {
         topic={editTopic}
         onClose={() => setEditTopic(null)}
       />
-      <ConfirmModal
-        open={!!deletingTopic}
-        title={t('topics.deleteTitle')}
-        message={t('topics.deleteMessage', { name: deletingTopic?.name })}
-        confirmLabel={t('topics.deleteConfirm')}
-        danger
+      <DeleteTopicModal
+        topic={deletingTopic}
+        pending={deleteTopic.isPending}
+        error={deleteError}
         onConfirm={handleDelete}
         onCancel={() => setDeletingTopic(null)}
       />

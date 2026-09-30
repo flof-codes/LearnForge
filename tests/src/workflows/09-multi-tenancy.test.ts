@@ -121,6 +121,13 @@ describe("Multi-Tenancy Isolation", () => {
       const res = await userBApi.get(`/topics/${TOPICS.MATHEMATICS}`);
       expect(res.status).toBe(404);
     });
+
+    it("User B cannot delete User A's topic with its cards", async () => {
+      const res = await userBApi.delete(`/topics/${TOPICS.MATHEMATICS}`, { params: { with_cards: true } });
+      expect(res.status).toBe(404);
+      const still = await userAApi.get(`/topics/${TOPICS.MATHEMATICS}`);
+      expect(still.status).toBe(200);
+    });
   });
 
   describe("Cards", () => {

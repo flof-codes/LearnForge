@@ -73,9 +73,8 @@ export default function TopicTreeNode({ topic, onEdit, onDelete, onCreate, depth
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(topic); }}
-            disabled={topic.cardCount > 0}
-            className="p-2 text-text-muted hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-muted"
-            title={topic.cardCount > 0 ? t('topics.deleteCardFirst', { count: topic.cardCount }) : t('topics.delete')}
+            className="p-2 text-text-muted hover:text-danger"
+            title={t('topics.delete')}
           >
             <Trash2 size={14} />
           </button>

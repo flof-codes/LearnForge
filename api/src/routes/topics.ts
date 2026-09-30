@@ -69,10 +69,19 @@ export default async function topicRoutes(app: FastifyInstance) {
     return updateTopic(db, userId, req.params.id, req.body);
   });
 
-  // DELETE /topics/:id — only allowed when topic has no cards
-  app.delete<{ Params: { id: string } }>("/topics/:id", async (req, reply) => {
+  // DELETE /topics/:id — refuses a topic with cards unless ?with_cards=true,
+  // which deletes the topic, its subtopics and all their cards
+  app.delete<{ Params: { id: string }; Querystring: { with_cards?: boolean } }>("/topics/:id", {
+    schema: {
+      querystring: {
+        type: "object",
+        properties: { with_cards: { type: "boolean" } },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const userId = getUserId(req);
-    await deleteTopic(db, userId, req.params.id);
+    await deleteTopic(db, userId, req.params.id, { withCards: req.query.with_cards === true });
     reply.status(204);
   });
 }

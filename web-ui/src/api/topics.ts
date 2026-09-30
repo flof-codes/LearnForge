@@ -8,5 +8,5 @@ export const topicService = {
   getBreadcrumb: (id: string)                     => api.get<{ id: string; name: string }[]>(`/topics/${id}/breadcrumb`),
   create:  (data: CreateTopicInput)              => api.post<Topic>('/topics', data),
   update:  (id: string, data: UpdateTopicInput)  => api.put<Topic>(`/topics/${id}`, data),
-  delete:  (id: string)                          => api.delete(`/topics/${id}`),
+  delete:  (id: string, withCards = false)      => api.delete(`/topics/${id}`, { params: withCards ? { with_cards: true } : undefined }),
 };

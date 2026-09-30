@@ -8,7 +8,7 @@ import { cardService, type CardListSort, type CardListStatus } from '../../api/c
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import EditTopicModal from './EditTopicModal';
 import ShareTopicModal from './ShareTopicModal';
-import ConfirmModal from '../../components/ConfirmModal';
+import DeleteTopicModal from './DeleteTopicModal';
 import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -86,11 +86,11 @@ export default function TopicDetailPage() {
   if (isError) return <ErrorFallback message={(error as Error).message} onReset={() => refetch()} />;
   if (!topic) return <p className="text-text-muted">{t('topics.notFound')}</p>;
 
-  const handleDelete = () => {
+  const handleDelete = (withCards: boolean) => {
     setDeleteError(null);
-    deleteTopic.mutate(id!, {
+    deleteTopic.mutate({ id: id!, withCards }, {
       onSuccess: () => navigate('/dashboard/topics'),
-      onError: (err) => { setDeleteOpen(false); setDeleteError(extractErrorMessage(err) || t('errors.deleteTopicFailed')); },
+      onError: (err) => setDeleteError(extractErrorMessage(err) || t('errors.deleteTopicFailed')),
     });
   };
 
@@ -136,21 +136,14 @@ export default function TopicDetailPage() {
             <Pencil size={16} />
           </button>
           <button
-            onClick={() => setDeleteOpen(true)}
-            disabled={topic.cardCount > 0}
-            className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-danger transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-muted"
-            title={topic.cardCount > 0 ? t('topics.deleteCardFirst', { count: topic.cardCount }) : t('topics.delete')}
+            onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
+            className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-danger transition-colors"
+            title={t('topics.delete')}
           >
             <Trash2 size={16} />
           </button>
         </div>
       </div>
-
-      {deleteError && (
-        <div className="rounded-lg px-3 py-2 text-sm bg-danger/15 text-danger">
-          {deleteError}
-        </div>
-      )}
 
       {/* Subtopics */}
       {topic.children && topic.children.length > 0 && (
@@ -275,12 +268,10 @@ export default function TopicDetailPage() {
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <EditTopicModal open={editOpen} topic={topic as any} onClose={() => setEditOpen(false)} />
       <ShareTopicModal open={shareOpen} topicId={id!} topicName={topic.name} onClose={() => setShareOpen(false)} />
-      <ConfirmModal
-        open={deleteOpen}
-        title={t('topics.deleteTitle')}
-        message={t('topics.deleteMessage', { name: topic.name })}
-        confirmLabel={t('topics.deleteConfirm')}
-        danger
+      <DeleteTopicModal
+        topic={deleteOpen ? topic : null}
+        pending={deleteTopic.isPending}
+        error={deleteError}
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}
       />
