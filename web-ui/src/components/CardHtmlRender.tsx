@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import api from '../api/client';
 
 interface CardHtmlRenderProps {
   html: string;
   interactive?: boolean;
 }
 
+// The API signs media as relative /media/<id>/<sig>; the card frame resolves
+// those against the API, not against the web app's own host.
+const API_BASE = `${(api.defaults.baseURL ?? '').replace(/\/+$/, '')}/`;
+
 function buildSrcdoc(html: string): string {
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
+<base href="${API_BASE}">
 <style>
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
 </style>

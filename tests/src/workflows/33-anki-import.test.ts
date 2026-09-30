@@ -147,11 +147,12 @@ describe("Anki import: current package format from real Anki", () => {
     const { cards } = await cardsOf(api, fixture.notes.reversed.guid);
     const front = cards.find(c => c.note.siblings.length === 2 && c.frontHtml.includes("hola"))!;
     const img = /<img src="([^"]+)"/.exec(front.frontHtml)![1];
-    expect(img).toMatch(/^http:\/\/[^/]+\/media\/[0-9a-f-]{36}\/[\w-]{22}$/);
-    const res = await axios.get(img, { responseType: "arraybuffer", validateStatus: () => true });
+    // relative: the web app's card frame resolves it against the API address
+    expect(img).toMatch(/^\/media\/[0-9a-f-]{36}\/[\w-]{22}$/);
+    const res = await axios.get(apiUrl + img, { responseType: "arraybuffer", validateStatus: () => true });
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/png");
-    expect(front.backHtml).toMatch(/<audio controls src="[^"]+\/media\/[^"]+"><\/audio>/);
+    expect(front.backHtml).toMatch(/<audio controls src="[^"]*\/media\/[^"]+"><\/audio>/);
     // the database keeps the stored form
     const stored = await query<{ fields: Record<string, string> }>("SELECT fields FROM notes WHERE anki_guid = $1", [fixture.notes.reversed.guid]);
     expect(Object.values(stored[0].fields).join(" ")).toMatch(/src="\/images\/[0-9a-f-]{36}"/);
@@ -382,7 +383,7 @@ describe("Media URLs", () => {
     const api = await newUser("forge");
     await importAll(api, pkg("basic-latest.apkg"));
     const { cards } = await cardsOf(api, fixture.notes.reversed.guid);
-    const signed = /src="([^"]+\/media\/[^"]+)"/.exec(cards[0].frontHtml)![1];
+    const signed = /src="([^"]*\/media\/[^"]+)"/.exec(cards[0].frontHtml)![1];
     const [, id, sig] = /\/media\/([0-9a-f-]{36})\/([\w-]{22})$/.exec(signed)!;
     const other = await query<{ id: string }>("SELECT id FROM images WHERE content_hash IS NOT NULL AND id <> $1 LIMIT 1", [id]);
     const unauth = axios.create({ baseURL: apiUrl, validateStatus: () => true });
@@ -420,7 +421,7 @@ describe("Media URLs", () => {
     const ownerNote = await noteByGuid(owner, fixture.notes.reversed.guid);
     const ownerImg = /\/media\/([0-9a-f-]{36})\//.exec(Object.values(ownerNote.fields)[0] as string)![1];
     expect(img).not.toContain(ownerImg);
-    expect((await axios.get(img, { validateStatus: () => true })).status).toBe(200);
+    expect((await axios.get(apiUrl + img, { validateStatus: () => true })).status).toBe(200);
   });
 
   it("sharing into an account that imported the same deck keeps one note per guid there", async () => {

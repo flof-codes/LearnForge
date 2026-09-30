@@ -15,8 +15,9 @@ export const config = {
   /** Media storage per user; an import stops storing files past it. */
   mediaQuotaBytes: parseInt(process.env.MEDIA_QUOTA_MB ?? "5120", 10) * 1024 * 1024,
   /**
-   * Origin card HTML uses to reach `/media/…` from the sandboxed card frame.
-   * Empty: derived from the request (Host / X-Forwarded-* behind the proxy).
+   * Optional origin for the signed `/media/…` links in card HTML. Empty (the
+   * default) keeps them relative; the web app resolves them against the API
+   * address it already uses. Set it only for a client that cannot do that.
    */
   apiPublicUrl: process.env.API_PUBLIC_URL ?? "",
   jwtSecret: process.env.JWT_SECRET ?? "dev-jwt-secret-change-me",

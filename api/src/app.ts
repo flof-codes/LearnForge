@@ -25,17 +25,6 @@ import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } fro
 import { signMediaRefs, unsignMediaRefsDeep, referencedMediaIds, textArray } from "@learnforge/core";
 import { config, mediaUrlSecret } from "./config.js";
 
-const HOST_RE = /^[a-z0-9.-]+(:\d{1,5})?$/i;
-
-/** Origin for signed media URLs: API_PUBLIC_URL, else the request's own host when it is a plain host name. */
-function mediaBaseUrl(request: FastifyRequest): string | null {
-  if (config.apiPublicUrl) return config.apiPublicUrl;
-  const host = request.host;
-  if (!HOST_RE.test(host)) return null; // X-Forwarded-Host is client-controlled behind trustProxy
-  const proto = request.protocol === "https" ? "https" : "http";
-  return `${proto}://${host}`;
-}
-
 export function buildApp() {
   // trustProxy: the api sits behind a reverse proxy; without it request.ip is the
   // proxy and every per-IP limit (glasses pairing) collapses into one global bucket.
@@ -89,8 +78,9 @@ export function buildApp() {
     if (request.url.startsWith("/export")) return payload; // exports keep the stored form
     const userId = requester(request);
     if (!userId) return payload;
-    const base = mediaBaseUrl(request);
-    if (!base) return payload;
+    // Relative by default: the web app resolves /media/… against its own API address
+    // (a <base> in the card frame), so the proxy's Host handling cannot misdirect it.
+    const base = config.apiPublicUrl;
     const ids = referencedMediaIds(payload);
     if (ids.length === 0) return payload;
     // Only the requester's own files get a URL: an id copied from someone else stays inert.
