@@ -27,6 +27,11 @@ export const config = {
   stripePriceIdMonthly: process.env.STRIPE_PRICE_ID_MONTHLY ?? "",
   stripePriceIdAnnual: process.env.STRIPE_PRICE_ID_ANNUAL ?? "",
   appUrl: process.env.APP_URL ?? "http://localhost:5173",
+  /** Browser origins allowed to call the API: the web app, plus CORS_ORIGINS (comma separated). */
+  corsOrigins: [
+    process.env.APP_URL ?? "http://localhost:5173",
+    ...(process.env.CORS_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean),
+  ],
   mcpPort: parseInt(process.env.MCP_PORT ?? "3001", 10),
   mcpPublicUrl: process.env.MCP_PUBLIC_URL ?? "http://localhost:3001/mcp",
   // SMTP_HOST is the on/off switch for outgoing mail: unset means the mailer

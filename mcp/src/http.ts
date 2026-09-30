@@ -52,9 +52,9 @@ Question presentation: where the client has the visualizer, render each choice c
       },
     );
     registerTopicTools(server, db, userId);
-    registerCardTools(server, db, userId);
+    registerCardTools(server, db, userId, imagePath);
     registerReviewTools(server, db, userId);
-    registerStudyTools(server, db, userId);
+    registerStudyTools(server, db, userId, imagePath);
     registerContextTools(server, db, userId);
     registerImageTools(server, db, userId, imagePath);
     registerSkillTools(server);

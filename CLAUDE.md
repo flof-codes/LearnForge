@@ -232,7 +232,7 @@ GET /health
 | Due cards | get_study_cards | topic_id?, limit? |
 | Submit review | submit_review | card_id, bloom_level, rating, question_text, modality? |
 | Create card | create_card | topic_id, concept, front_html, back_html, tags? |
-| Get/Update/Delete card | get_card, update_card, delete_card | card_id |
+| Get/Update/Delete card | get_card, update_card, delete_card | card_id (get_card and get_study_cards attach the card's pictures as image blocks, resized by core `lib/card-media.ts`; `media` lists all files, audio is listed only) |
 | List/Create/Update/Delete topics | list_topics, create_topic, update_topic, delete_topic | various |
 | Topic tree | get_topic_tree | topic_id |
 | Similar cards | get_similar_cards | card_id, limit? |
@@ -257,6 +257,8 @@ GET /health
 ## Media URLs
 
 - The database stores media as `/images/<id>`. Card HTML renders in a sandboxed iframe that cannot send the login token, so an `onSend` hook in `api/src/app.ts` rewrites those references in every JSON response to `/media/<id>/<sig>` (HMAC of id + owner from core `lib/media-url.ts`, secret derived from `JWT_SECRET`), prefixed with `API_PUBLIC_URL` only when that is set. Only ids the requesting user owns are signed. The links are relative on purpose: `CardHtmlRender.resolveMediaLinks` puts the web app's full API address (`VITE_API_URL`, which may include a path such as `/api`) in front of them before the card frame is built, so neither the proxy's Host handling nor a path prefix can misdirect them. A `preValidation` hook turns signed URLs in request bodies back, so they never reach the database. `/export` keeps the stored form.
+
+- CORS: browsers may call the API only from `APP_URL` plus `CORS_ORIGINS`; `/glasses/*` and `/health` accept any origin because Even's app webview has no web origin (the bearer token is the credential there).
 
 ## Anki Import
 

@@ -1,3 +1,6 @@
+/** A tool result block: JSON text, or an image (base64 `data` + `mimeType`). */
+export interface McpContent { type: string; text?: string; data?: string; mimeType?: string }
+
 import axios, { type AxiosInstance } from "axios";
 import { TEST_CONFIG } from "./fixtures.js";
 
@@ -90,7 +93,7 @@ export class McpTestClient {
   async callTool(
     name: string,
     args: Record<string, unknown> = {},
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  ): Promise<{ content: Array<McpContent>; isError?: boolean }> {
     const res = await this.sendRequest("tools/call", { name, arguments: args });
     return res;
   }
@@ -100,11 +103,11 @@ export class McpTestClient {
    * Most MCP tools return JSON-stringified results in the text field.
    */
   parseToolResult<T = unknown>(
-    result: { content: Array<{ type: string; text: string }>; isError?: boolean },
+    result: { content: Array<McpContent>; isError?: boolean },
   ): T {
-    const textContent = result.content.find((c) => c.type === "text");
+    const textContent = result.content.find((c) => c.type === "text" && typeof c.text === "string");
     if (!textContent) throw new Error("No text content in MCP tool result");
-    return JSON.parse(textContent.text) as T;
+    return JSON.parse(textContent.text!) as T;
   }
 
   /**

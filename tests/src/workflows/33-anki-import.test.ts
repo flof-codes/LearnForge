@@ -519,6 +519,43 @@ describe("Anki import: re-importing a changed deck", () => {
   });
 });
 
+describe("MCP: a card's pictures travel with it", () => {
+  // The MCP key belongs to the seed user, so this scenario imports as that user.
+  it("get_card attaches the picture and lists the audio as not playable", async () => {
+    const { login, getApi } = await import("../helpers/api-client.js");
+    const { McpTestClient } = await import("../helpers/mcp-client.js");
+    await login();
+    const seedApi = getApi();
+    const done = await importAll(seedApi, pkg("basic-latest.apkg"), "mcp-media.apkg");
+    expect(done.stats.notes.created).toBe(7);
+    const note = await noteByGuid(seedApi, fixture.notes.reversed.guid);
+    const mcp = new McpTestClient();
+    await mcp.initialize();
+    try {
+      const front = note.cards[0];
+      const result = await mcp.callTool("get_card", { card_id: front.id });
+      expect(result.isError).toBeFalsy();
+      const image = result.content.find(c => c.type === "image");
+      expect(image?.mimeType).toBe("image/png");
+      expect(Buffer.from(image!.data!, "base64").subarray(0, 4)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+      const card = mcp.parseToolResult<{ media: Array<{ kind: string; attached: boolean; filename: string }> }>(result);
+      expect(card.media.map(m => [m.kind, m.attached])).toEqual([["image", true], ["audio", false]]);
+      expect(card.media.find(m => m.kind === "audio")!.filename).toBe("hola.mp3");
+
+      const batch = await mcp.callTool("get_study_cards", { limit: 50 });
+      const cards = mcp.parseToolResult<Array<{ media: Array<{ kind: string; imageIndex: number | null }> }>>(batch);
+      const withPicture = cards.filter(c => c.media.some(m => m.kind === "image" && m.imageIndex !== null));
+      expect(withPicture.length).toBeGreaterThan(0);
+      expect(batch.content.filter(c => c.type === "image").length).toBe(withPicture.flatMap(c => c.media.filter(m => m.imageIndex !== null)).length);
+    } finally {
+      await mcp.close();
+      // The seed user is shared with the other test files: take the imported topics away again.
+      const topics = (await seedApi.get("/topics")).data as Array<{ id: string; name: string }>;
+      for (const t of topics.filter(x => ["Spanish", "Geography"].includes(x.name))) await seedApi.delete(`/topics/${t.id}?with_cards=true`);
+    }
+  });
+});
+
 describe("Anki import: restart recovery (restarts the API, keep last)", () => {
   it("fails jobs that were running when the server stopped", async () => {
     const api = await newUser("restart");

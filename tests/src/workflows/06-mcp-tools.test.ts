@@ -428,7 +428,7 @@ describe("MCP Tools", () => {
 
       expect(textContent).toBeDefined();
       expect(textContent!.text).toContain("LearnForge");
-      expect(textContent!.text.length).toBeGreaterThan(100);
+      expect(textContent!.text!.length).toBeGreaterThan(100);
       expect(textContent!.text).toContain("Voice mode only");
       expect(textContent!.text).toContain("interaction overlay for every card type");
       expect(textContent!.text).toContain("including standard and cloze cards");

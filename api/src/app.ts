@@ -1,5 +1,5 @@
 import Fastify, { type FastifyRequest } from "fastify";
-import cors from "@fastify/cors";
+import cors, { type FastifyCorsOptions } from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import rawBody from "fastify-raw-body";
 import authPlugin from "./plugins/auth.js";
@@ -30,10 +30,17 @@ export function buildApp() {
   // proxy and every per-IP limit (glasses pairing) collapses into one global bucket.
   const app = Fastify({ logger: true, trustProxy: true });
 
-  app.register(cors, {
-    origin: true,
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
+  // Browsers may call the API from the web app only (APP_URL plus CORS_ORIGINS).
+  // The glasses run in Even's app, whose webview has no web origin, so their
+  // routes take any origin; the bearer token is their credential.
+  app.register(cors, () => (request: FastifyRequest, callback: (err: Error | null, options: FastifyCorsOptions) => void) => {
+    const path = request.url.split("?")[0];
+    const open = path.startsWith("/glasses/") || path === "/health";
+    callback(null, {
+      origin: open ? true : [...config.corsOrigins],
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+    });
   });
   app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
   app.register(rawBody, { field: "rawBody", global: false, runFirst: true });

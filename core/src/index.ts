@@ -170,6 +170,7 @@ export {
 
 // Image utils
 export { extFromMime } from "./lib/image-utils.js";
+export { loadCardMedia, mediaIdsIn, type CardMedia, type CardMediaEntry, type AttachedImage } from "./lib/card-media.js";
 
 // Services - Glasses (Even Realities G2)
 export {

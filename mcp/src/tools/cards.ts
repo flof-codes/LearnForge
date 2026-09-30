@@ -1,9 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Db } from "@learnforge/core";
-import { createCard, getCard, updateCard, deleteCard, resetCard, parseClozeText } from "@learnforge/core";
+import { createCard, getCard, updateCard, deleteCard, resetCard, parseClozeText, loadCardMedia } from "@learnforge/core";
+import { withCardMedia } from "./media-blocks.js";
 
-export function registerCardTools(server: McpServer, db: Db, userId: string) {
+export function registerCardTools(server: McpServer, db: Db, userId: string, imagePath: string) {
   // ── create_card ──────────────────────────────────────────────────────
   server.tool(
     "create_card",
@@ -43,12 +44,13 @@ export function registerCardTools(server: McpServer, db: Db, userId: string) {
   // ── get_card ─────────────────────────────────────────────────────────
   server.tool(
     "get_card",
-    "Get a card with its bloom state, FSRS scheduling state, and review history",
+    "Get a card with its bloom state, FSRS scheduling state, and review history. Pictures the card shows come along as images; `media` lists every file the card has, and audio cannot be played in chat (say so, and ask the learner to listen in the web app).",
     { card_id: z.string().uuid() },
     async ({ card_id }) => {
       try {
         const result = await getCard(db, userId, card_id);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const media = await loadCardMedia(db, userId, [result.frontHtml, result.backHtml], { imagePath });
+        return withCardMedia({ ...result, media: media.entries }, media.images);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };

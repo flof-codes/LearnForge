@@ -25,6 +25,7 @@
     "@open-spaced-repetition/binding": "^0.3.0",
     "drizzle-orm": "^0.38.4",
     "pg": "^8.13.1",
+    "sharp": "^0.34.5",
     "ts-fsrs": "^4.6.0"
   },
   "devDependencies": {
