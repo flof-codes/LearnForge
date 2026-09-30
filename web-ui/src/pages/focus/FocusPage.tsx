@@ -57,16 +57,19 @@ export default function FocusPage() {
     if (focusList) setLocalList(focusList); // eslint-disable-line react-hooks/set-state-in-effect
   }, [focusList]);
 
-  const dirty = useMemo(() => {
-    if (!focusList) return false;
-    if (focusList.length !== localList.length) return true;
-    return focusList.some((f, i) => {
-      const l = localList[i];
-      return f.topic_id !== l.topic_id || f.expires_at !== l.expires_at;
-    });
-  }, [focusList, localList]);
-
   const existingTopicIds = useMemo(() => new Set(localList.map((f) => f.topic_id)), [localList]);
+
+  // Every change is saved at once; the list updates optimistically and falls back to the server state on error.
+  const persist = (next: FocusTopic[]) => {
+    setLocalList(next);
+    const input: FocusTopicInput[] = next.map((f) => ({
+      topic_id: f.topic_id,
+      expires_at: f.expires_at,
+    }));
+    setFocus.mutate(input, {
+      onError: () => setLocalList(focusList ?? []),
+    });
+  };
 
   if (isLoading) return <LoadingSpinner />;
   if (isError) return <ErrorFallback message={(error as Error).message} onReset={() => refetch()} />;
@@ -76,17 +79,17 @@ export default function FocusPage() {
     if (target < 0 || target >= localList.length) return;
     const next = [...localList];
     [next[idx], next[target]] = [next[target], next[idx]];
-    setLocalList(next.map((f, i) => ({ ...f, priority: i + 1 })));
+    persist(next.map((f, i) => ({ ...f, priority: i + 1 })));
   };
 
   const handleRemove = (idx: number) => {
-    setLocalList(localList.filter((_, i) => i !== idx).map((f, i) => ({ ...f, priority: i + 1 })));
+    persist(localList.filter((_, i) => i !== idx).map((f, i) => ({ ...f, priority: i + 1 })));
   };
 
   const handleSetExpiry = (idx: number, preset: ExpiryPreset) => {
     const next = [...localList];
     next[idx] = { ...next[idx], expires_at: presetToIso(preset) };
-    setLocalList(next);
+    persist(next);
   };
 
   const handleAdd = (topicId: string, topicName: string) => {
@@ -99,16 +102,8 @@ export default function FocusPage() {
       expires_at: null,
       created_at: new Date().toISOString(),
     };
-    setLocalList([...localList, newEntry]);
+    persist([...localList, newEntry]);
     setAddOpen(false);
-  };
-
-  const handleSave = () => {
-    const input: FocusTopicInput[] = localList.map((f) => ({
-      topic_id: f.topic_id,
-      expires_at: f.expires_at,
-    }));
-    setFocus.mutate(input);
   };
 
   const handleClearAll = () => {
@@ -129,15 +124,6 @@ export default function FocusPage() {
           <p className="text-sm text-text-muted mt-1">{t('focus.description')}</p>
         </div>
         <div className="flex items-center gap-2">
-          {dirty && (
-            <button
-              onClick={handleSave}
-              disabled={setFocus.isPending}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {t('focus.save')}
-            </button>
-          )}
           {localList.length > 0 && (
             <button
               onClick={handleClearAll}
