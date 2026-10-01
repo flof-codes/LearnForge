@@ -228,7 +228,7 @@ export default function McpSettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-8">
+    <div className="md:p-6 max-w-2xl mx-auto space-y-6 md:space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-text-primary">{t('app:settings.title')}</h1>
         <p className="text-text-muted mt-1">{t('app:settings.subtitle')}</p>
@@ -247,7 +247,7 @@ export default function McpSettingsPage() {
       )}
 
       {/* Profile */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <User size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.profile.title')}</h2>
@@ -310,7 +310,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Change Password */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <Key size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.profile.changePassword')}</h2>
@@ -371,7 +371,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Language */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <Globe size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.language.title')}</h2>
@@ -380,23 +380,23 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Theme */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <Sun size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.theme.title')}</h2>
         </div>
-        <div className="flex items-center rounded-lg border border-border overflow-hidden w-fit">
+        <div className="grid grid-cols-3 md:flex md:w-fit items-center rounded-lg border border-border overflow-hidden">
           {themeOptions.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
               onClick={() => setTheme(value)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+              className={`flex items-center justify-center gap-2 px-2 md:px-4 py-2 text-sm transition-colors ${
                 theme === value
                   ? 'bg-accent-blue/15 text-accent-blue font-medium'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <Icon size={16} />
+              <Icon size={16} className="hidden md:block" />
               {label}
             </button>
           ))}
@@ -404,7 +404,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Subscription Status */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <CreditCard size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.subscription.title')}</h2>
@@ -527,7 +527,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Donation */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-3">
+      <section className="lf-panel space-y-3">
         <div className="flex items-center gap-3">
           <Heart size={20} className="text-accent-purple" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.donation.title')}</h2>
@@ -546,7 +546,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Data Export */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <Download size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.export.title')}</h2>
@@ -564,7 +564,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Claude Web Tutorial */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <Globe size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.claude.title')}</h2>
@@ -586,7 +586,7 @@ export default function McpSettingsPage() {
       </section>
 
       {/* Key Status */}
-      <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <section className="lf-panel space-y-4">
         <div className="flex items-center gap-3">
           <Key size={20} className="text-accent-blue" />
           <h2 className="text-lg font-medium text-text-primary">{t('app:settings.apiKey.title')}</h2>
@@ -627,7 +627,7 @@ export default function McpSettingsPage() {
 
       {/* Show new key (only once) */}
       {newKey && (
-        <section className="bg-bg-secondary rounded-xl border border-yellow-600/30 p-6 space-y-4">
+        <section className="lf-panel border-yellow-600/30 space-y-4">
           <div className="flex items-center gap-2 text-yellow-500">
             <AlertTriangle size={18} />
             <h3 className="font-medium">{t('app:settings.apiKey.saveTitle')}</h3>
@@ -654,7 +654,7 @@ export default function McpSettingsPage() {
       {user?.role === 'admin' && <GlassesSection />}
 
       {/* Delete Account */}
-      <section className="bg-bg-secondary rounded-xl border border-danger/30 p-6 space-y-4">
+      <section className="lf-panel border-danger/30 space-y-4">
         <div className="flex items-center gap-3">
           <Trash2 size={20} className="text-danger" />
           <h2 className="text-lg font-medium text-danger">{t('app:settings.deleteAccount.title')}</h2>

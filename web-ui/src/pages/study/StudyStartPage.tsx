@@ -8,9 +8,10 @@ import { BLOOM_COLORS } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
+import { formatPercent } from '../../utils/format';
 
 export default function StudyStartPage() {
-  const { t } = useTranslation('app');
+  const { t, i18n } = useTranslation('app');
   const [topicId, setTopicId] = useState('');
   const { data: topics, isError: topicsError, error: topicsErr, refetch: refetchTopics } = useTopics();
   const { data: summary, isLoading, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useStudySummary(topicId || undefined);
@@ -37,7 +38,7 @@ export default function StudyStartPage() {
       <h1 className="text-2xl font-medium">{t('study.title')}</h1>
 
       {/* Topic selector */}
-      <div className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+      <div className="lf-panel space-y-4">
         <div>
           <label htmlFor="study-topic" className="block text-sm text-text-muted mb-1">{t('study.topic')}</label>
           <select
@@ -57,8 +58,8 @@ export default function StudyStartPage() {
 
       {/* Stats */}
       {summary && (
-        <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <div className="grid grid-cols-4 gap-4 text-center mb-4">
+        <div className="lf-panel">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 text-center mb-4">
             <div>
               <p className="text-2xl font-light tabular-nums">{summary.totalCards}</p>
               <p className="text-xs text-text-muted">{t('study.total')}</p>
@@ -72,7 +73,7 @@ export default function StudyStartPage() {
               <p className="text-xs text-text-muted">{t('study.due')}</p>
             </div>
             <div>
-              <p className="text-2xl font-light tabular-nums">{summary.accuracy7d != null ? `${summary.accuracy7d}%` : '--'}</p>
+              <p className="text-2xl font-light tabular-nums">{summary.accuracy7d != null ? formatPercent(summary.accuracy7d, i18n.language) : '--'}</p>
               <p className="text-xs text-text-muted">{t('study.accuracy7d')}</p>
             </div>
           </div>

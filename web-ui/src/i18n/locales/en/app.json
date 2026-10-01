@@ -7,7 +7,8 @@
     "focus": "Focus",
     "settings": "Settings",
     "admin": "Admin",
-    "logout": "Logout"
+    "logout": "Logout",
+    "more": "More"
   },
   "focus": {
     "title": "Focus Topics",
@@ -202,7 +203,8 @@
     "bloomChange": "Bloom: {{from}} \u2192 {{to}}",
     "nextReview": "Next review: {{date}}",
     "clickToContinue": "Click to continue",
-    "manualReview": "Manual review"
+    "manualReview": "Manual review",
+    "flip": "Flip"
   },
   "sessionSummary": {
     "title": "Session Complete",
@@ -309,6 +311,9 @@
   },
   "topics": {
     "importAnki": "Import from Anki",
+    "importShort": "Import",
+    "newShort": "New",
+    "actions": "Actions",
     "title": "Topics",
     "newTopic": "New Topic",
     "noTopicsYet": "No topics yet. Create one to get started.",
@@ -514,7 +519,9 @@
     "title": "Due Forecast",
     "overdue": "{{count}} overdue",
     "thirtyDays": "30 Days",
-    "twelveMonths": "12 Months"
+    "twelveMonths": "12 Months",
+    "cardsDue": "{{count}} card due",
+    "cardsDue_other": "{{count}} cards due"
   },
   "topicPieChart": {
     "title": "Cards by Topic",

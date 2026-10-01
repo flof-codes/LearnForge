@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Info } from 'lucide-react';
+import { Info, Repeat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import RatingButtons from '../../components/RatingButtons';
+import { useIsPhone } from '../../hooks/useIsPhone';
 import type { DueCard } from '../../types';
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 export default function InteractiveCard({ card, onRate, onViewDetail, disabled }: Props) {
   const { t } = useTranslation('app');
   const [flipped, setFlipped] = useState(false);
+  const isPhone = useIsPhone();
 
   // Reset flip state when card changes
   useEffect(() => {
@@ -38,8 +40,8 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
 
   return (
     <>
-      {/* Card */}
-      <div className="bg-bg-secondary rounded-xl border border-border p-6 relative pb-16 overflow-y-auto max-h-[calc(100vh-12rem)]">
+      {/* Card — a boxed, self-scrolling panel from md up; on a phone it is plain page content, so the text gets the full width and the page is the only scroll area */}
+      <div className="relative md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-6 md:pb-16 md:overflow-y-auto md:max-h-[calc(100vh-12rem)]">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             {flipped ? t('study.back') : t('study.front')}
@@ -55,16 +57,18 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
           )}
         </div>
 
-        {flipped ? (
-          <CardHtmlRender html={card.backHtml} interactive />
-        ) : (
-          <CardHtmlRender html={card.frontHtml} interactive />
-        )}
+        {/* Keyed per side: the frame only ever grows, so a short side after a long one needs a fresh frame */}
+        <CardHtmlRender
+          key={`${card.id}-${flipped ? 'back' : 'front'}`}
+          html={flipped ? card.backHtml : card.frontHtml}
+          interactive
+          flat={isPhone}
+        />
 
-        {/* Page-peel flip corner */}
+        {/* Page-peel flip corner — on a phone the flip button sits in the bottom bar instead */}
         <button
           onClick={() => setFlipped(prev => !prev)}
-          className="absolute bottom-0 right-0 group"
+          className="hidden md:block absolute bottom-0 right-0 group"
           title={t('study.flipCard')}
         >
           {/* Folded corner triangle */}
@@ -108,9 +112,20 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
       </div>
 
       {/* Rating buttons — fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary/90 backdrop-blur-sm border-t border-border py-3 px-4 z-40">
-        <div className="max-w-2xl mx-auto">
-          <RatingButtons onRate={onRate} disabled={disabled} />
+      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary/90 backdrop-blur-sm border-t border-border pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] px-4 z-40">
+        <div className="max-w-2xl mx-auto flex gap-2">
+          <button
+            type="button"
+            onClick={() => setFlipped(prev => !prev)}
+            className="md:hidden shrink-0 w-12 flex items-center justify-center rounded-lg bg-bg-surface border border-border text-text-muted"
+            aria-label={t('study.flip')}
+            title={t('study.flip')}
+          >
+            <Repeat size={18} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <RatingButtons onRate={onRate} disabled={disabled} />
+          </div>
         </div>
       </div>
     </>

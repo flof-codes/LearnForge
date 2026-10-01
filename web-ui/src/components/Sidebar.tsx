@@ -5,6 +5,7 @@ import { LayoutDashboard, FolderTree, Layers, GraduationCap, Star, Settings, Log
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LogoIcon from './public/LogoIcon';
+import MobileNav from './MobileNav';
 
 export default function Sidebar() {
   const { t } = useTranslation('app');
@@ -27,6 +28,19 @@ export default function Sidebar() {
     }
     return base;
   }, [t, isAdmin]);
+
+  // Phone: four tabs, the rest sits behind "More".
+  const { mobilePrimary, mobileSecondary } = useMemo(() => {
+    const byPath = (to: string) => links.find(l => l.to === to)!;
+    return {
+      mobilePrimary: ['/dashboard', '/dashboard/topics', '/dashboard/study', '/dashboard/cards/browse'].map(byPath),
+      mobileSecondary: [
+        byPath('/dashboard/focus'),
+        { to: '/dashboard/settings', icon: Settings, label: t('nav.settings') },
+        ...links.filter(l => l.to === '/dashboard/admin'),
+      ],
+    };
+  }, [links, t]);
 
   const handleLogout = () => {
     queryClient.clear();
@@ -92,42 +106,8 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile bottom tab bar — hidden during study sessions to avoid overlap with rating buttons */}
-      {!isStudySession && <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-bg-secondary shadow-[0_-1px_3px_rgba(0,0,0,0.3)] flex z-50">
-        {links.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/dashboard'}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-1 py-2 text-xs transition-colors ${
-                isActive ? 'text-accent-blue' : 'text-text-muted'
-              }`
-            }
-          >
-            <Icon size={20} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
-        <NavLink
-          to="/dashboard/settings"
-          className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-1 py-2 text-xs transition-colors ${
-              isActive ? 'text-accent-blue' : 'text-text-muted'
-            }`
-          }
-        >
-          <Settings size={20} />
-          <span>{t('nav.settings')}</span>
-        </NavLink>
-        <button
-          onClick={handleLogout}
-          className="flex-1 flex flex-col items-center gap-1 py-2 text-xs text-text-muted transition-colors"
-        >
-          <LogOut size={20} />
-          <span>{t('nav.logout')}</span>
-        </button>
-      </nav>}
+      {/* Phone tab bar — hidden during study sessions to avoid overlap with rating buttons */}
+      {!isStudySession && <MobileNav primary={mobilePrimary} secondary={mobileSecondary} onLogout={handleLogout} />}
     </>
   );
 }

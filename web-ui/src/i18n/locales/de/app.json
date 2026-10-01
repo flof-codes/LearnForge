@@ -7,7 +7,8 @@
     "focus": "Fokus",
     "settings": "Einstellungen",
     "admin": "Admin",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "more": "Mehr"
   },
   "focus": {
     "title": "Fokus-Themen",
@@ -202,7 +203,8 @@
     "bloomChange": "Bloom: {{from}} \u2192 {{to}}",
     "nextReview": "N\u00e4chste Wiederholung: {{date}}",
     "clickToContinue": "Klicken zum Fortfahren",
-    "manualReview": "Manuelle Wiederholung"
+    "manualReview": "Manuelle Wiederholung",
+    "flip": "Umdrehen"
   },
   "sessionSummary": {
     "title": "Sitzung abgeschlossen",
@@ -309,6 +311,9 @@
   },
   "topics": {
     "importAnki": "Aus Anki importieren",
+    "importShort": "Import",
+    "newShort": "Neu",
+    "actions": "Aktionen",
     "title": "Themen",
     "newTopic": "Neues Thema",
     "noTopicsYet": "Noch keine Themen. Erstelle eines, um loszulegen.",
@@ -514,7 +519,9 @@
     "title": "F\u00e4lligkeitsvorhersage",
     "overdue": "{{count}} \u00fcberf\u00e4llig",
     "thirtyDays": "30 Tage",
-    "twelveMonths": "12 Monate"
+    "twelveMonths": "12 Monate",
+    "cardsDue": "{{count}} Karte fällig",
+    "cardsDue_other": "{{count}} Karten fällig"
   },
   "topicPieChart": {
     "title": "Karten nach Thema",

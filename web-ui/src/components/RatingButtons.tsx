@@ -54,7 +54,7 @@ export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) 
   }, []);
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-2 md:gap-3">
       {ratings.map(({ value, labelKey, bg, shortcut }) => (
         <button
           key={value}
@@ -66,7 +66,8 @@ export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) 
           style={{ backgroundColor: bg }}
         >
           {t(labelKey)}
-          <span className="block text-xs opacity-70 mt-0.5">{shortcut}</span>
+          {/* Keyboard hint, no use on a touch screen */}
+          <span className="hidden md:block text-xs opacity-70 mt-0.5">{shortcut}</span>
         </button>
       ))}
     </div>

@@ -10,6 +10,7 @@ import BloomBadge from '../../components/BloomBadge';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
+import { useIsPhone } from '../../hooks/useIsPhone';
 import { FSRS_STATE_LABELS, BLOOM_COLORS } from '../../types';
 
 interface LocationState {
@@ -32,6 +33,7 @@ export default function CardDetailPage() {
   const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isPhone = useIsPhone();
 
   const cardIds = state.cardIds ?? [];
   const currentIdx = cardIds.indexOf(id!);
@@ -129,18 +131,18 @@ export default function CardDetailPage() {
 
       {/* Card content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
+        <div className="lf-panel md:p-5">
           <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.front')}</h2>
-          <CardHtmlRender html={card.frontHtml} interactive />
+          <CardHtmlRender html={card.frontHtml} interactive flat={isPhone} />
         </div>
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
+        <div className="lf-panel md:p-5">
           <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.back')}</h2>
-          <CardHtmlRender html={card.backHtml} interactive />
+          <CardHtmlRender html={card.backHtml} interactive flat={isPhone} />
         </div>
       </div>
 
       {/* Concept */}
-      <div className="bg-bg-secondary rounded-xl border border-border p-5">
+      <div className="lf-panel md:p-5">
         <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.concept')}</h2>
         <p className="text-sm text-text-primary">{card.concept}</p>
         {card.note && (
@@ -161,7 +163,7 @@ export default function CardDetailPage() {
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           {bloom && <BloomBadge level={bloom.currentLevel} />}
           {card.tags.map(tag => (
             <span key={tag} className="text-xs text-text-muted bg-bg-surface px-1.5 py-0.5 rounded">{tag}</span>
@@ -170,9 +172,9 @@ export default function CardDetailPage() {
       </div>
 
       {/* State info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {bloom && (
-          <div className="bg-bg-secondary rounded-xl border border-border p-5">
+          <div className="lf-panel md:p-5">
             <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.bloomState')}</h2>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -187,7 +189,7 @@ export default function CardDetailPage() {
           </div>
         )}
         {fsrs && (
-          <div className="bg-bg-secondary rounded-xl border border-border p-5">
+          <div className="lf-panel md:p-5">
             <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.fsrsState')}</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-text-muted">{t('cardDetail.state')}</span><span>{t(FSRS_STATE_LABELS[fsrs.state as number] ?? 'fsrs.unknown')}</span></div>
@@ -203,9 +205,47 @@ export default function CardDetailPage() {
 
       {/* Review history */}
       {card.reviews && card.reviews.length > 0 && (
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
+        <div className="lf-panel md:p-5">
           <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('cardDetail.reviewHistory')}</h2>
-          <div className="overflow-x-auto">
+          {/* Phone: one stacked entry per review. Six columns do not fit 375px. */}
+          <ul className="md:hidden divide-y divide-border/50">
+            {card.reviews.map((review, i) => {
+              const isExpanded = expandedRow === i;
+              return (
+                <li
+                  key={review.id ?? i}
+                  className="py-2.5 first:pt-0 last:pb-0 cursor-pointer"
+                  onClick={() => setExpandedRow(isExpanded ? null : i)}
+                >
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-text-muted tabular-nums">{new Date(review.reviewedAt).toLocaleString()}</span>
+                    <BloomBadge level={review.bloomLevel} />
+                    <span className={`font-medium ml-auto ${
+                      review.rating >= 3 ? 'text-accent-green' : review.rating === 2 ? 'text-warning' : 'text-danger'
+                    }`}>
+                      {ratingLabels[review.rating]}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteReviewId(review.id); }}
+                      className="p-1 -mr-1 rounded text-text-muted hover:text-danger transition-colors"
+                      title={t('cardDetail.deleteReviewTitle')}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <p className={`text-sm mt-1 ${isExpanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2'}`}>
+                    {review.questionText}
+                  </p>
+                  {review.userAnswer && (
+                    <p className={`text-sm text-text-muted mt-1 ${isExpanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2'}`}>
+                      {review.userAnswer}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-text-muted border-b border-border">

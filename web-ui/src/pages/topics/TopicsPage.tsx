@@ -47,27 +47,33 @@ export default function TopicsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-medium">{t('topics.title')}</h1>
-        <div className="flex items-center gap-2">
+        {/* Short labels on a phone, so the buttons stay on one line next to the title */}
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/dashboard/import/anki"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm border border-border hover:bg-bg-hover transition-colors"
+            title={t('topics.importAnki')}
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm whitespace-nowrap border border-border hover:bg-bg-hover transition-colors"
           >
             <Upload size={16} />
-            {t('topics.importAnki')}
+            <span className="md:hidden">{t('topics.importShort')}</span>
+            <span className="hidden md:inline">{t('topics.importAnki')}</span>
           </Link>
           <button
             onClick={() => handleCreate()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity"
+            title={t('topics.newTopic')}
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap bg-accent-blue text-white hover:opacity-90 transition-opacity"
           >
             <Plus size={16} />
-            {t('topics.newTopic')}
+            <span className="md:hidden">{t('topics.newShort')}</span>
+            <span className="hidden md:inline">{t('topics.newTopic')}</span>
           </button>
         </div>
       </div>
 
-      <div className="bg-bg-secondary rounded-xl border border-border p-3">
+      {/* Phone: rows run edge to edge and carry their own hairline, so the panel drops its padding and bottom border */}
+      <div className="lf-panel p-0 max-md:border-b-0 md:p-3">
         {topics && topics.length > 0 ? (
           topics.map(topic => (
             <TopicTreeNode
