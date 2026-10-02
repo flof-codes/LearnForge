@@ -109,7 +109,7 @@ function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: Ca
       </div>
       <div className="flex-[2] min-w-0 space-y-3">
         <label className="text-sm text-text-muted">{t('cardEditor.preview')}</label>
-        <div className="bg-bg-secondary rounded-xl border border-border p-5 min-h-[200px]">
+        <div className="lf-panel md:p-5 min-h-[200px]">
           <CardHtmlRender html={card.frontHtml} />
         </div>
         <p className="text-xs text-text-muted">{t('cardEditor.previewNote')}</p>
@@ -246,7 +246,7 @@ function FreeformEditor({ initialData, onSubmit, isPending, onDirty }: Omit<Prop
             </button>
           </div>
         </div>
-        <div className="bg-bg-secondary rounded-xl border border-border p-5 min-h-[200px]">
+        <div className="lf-panel md:p-5 min-h-[200px]">
           <CardHtmlRender html={previewSide === 'front' ? frontHtml : backHtml} />
         </div>
       </div>

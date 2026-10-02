@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Topic } from '../types';
+import { formatPercent } from '../utils/format';
 
 const TOPIC_COLORS = [
   '#58a6ff', // blue
@@ -17,7 +18,7 @@ interface TopicPieChartProps {
 }
 
 export default function TopicPieChart({ topics }: TopicPieChartProps) {
-  const { t } = useTranslation('app');
+  const { t, i18n } = useTranslation('app');
   const withCards = topics
     .filter(t => t.cardCount > 0)
     .sort((a, b) => b.cardCount - a.cardCount);
@@ -54,12 +55,12 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
   }
 
   return (
-    <div className="bg-bg-secondary rounded-xl border border-border p-6">
+    <div className="lf-panel">
       <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-4">
         {t('topicPieChart.title')}
       </h2>
       <div className="flex flex-col items-center">
-        <svg viewBox="0 0 200 200" className="w-48 h-48">
+        <svg viewBox="0 0 200 200" className="w-36 h-36 md:w-48 md:h-48">
           <g transform="rotate(-90 100 100)">
             {sliceData.map((d, i) => (
               <circle
@@ -97,17 +98,19 @@ export default function TopicPieChart({ topics }: TopicPieChartProps) {
             {t('topicPieChart.cards')}
           </text>
         </svg>
-        <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-4">
+        {/* Phone: one full-width row per topic with the whole name. From md up: the compact wrapped legend. */}
+        <div className="w-full divide-y divide-border mt-4 md:w-auto md:divide-y-0 md:flex md:flex-wrap md:justify-center md:gap-x-5 md:gap-y-1.5">
           {slices.map((slice, i) => {
             const pct = Math.round((slice.count / totalCards) * 1000) / 10;
             return (
-              <div key={i} className="flex items-center gap-2 text-xs text-text-muted">
+              <div key={i} className="flex items-center gap-2 py-2 text-xs text-text-muted md:py-0">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: TOPIC_COLORS[i % TOPIC_COLORS.length] }}
                 />
-                <span className="truncate max-w-[120px]">{slice.name}</span>
-                <span className="tabular-nums">{pct}%</span>
+                <span className="flex-1 min-w-0 text-sm text-text-primary md:flex-none md:text-xs md:text-text-muted md:truncate md:max-w-[120px]">{slice.name}</span>
+                <span className="tabular-nums md:hidden">{slice.count}</span>
+                <span className="tabular-nums w-12 text-right md:w-auto">{formatPercent(pct, i18n.language)}</span>
               </div>
             );
           })}

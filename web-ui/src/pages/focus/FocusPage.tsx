@@ -136,7 +136,7 @@ export default function FocusPage() {
         </div>
       </div>
 
-      <div className="bg-bg-secondary rounded-xl border border-border p-3 space-y-2">
+      <div className="lf-panel py-1 md:p-3 md:space-y-2">
         {localList.length === 0 ? (
           <div className="text-center py-12 text-text-muted">
             <Star size={40} className="mx-auto mb-3 opacity-40" />
@@ -149,15 +149,16 @@ export default function FocusPage() {
             return (
               <div
                 key={f.id}
-                className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg border ${
-                  expired ? 'border-danger/30 bg-danger/5' : 'border-border bg-bg-surface'
+                className={`group flex flex-wrap items-center gap-2 py-3 border-b md:px-3 md:py-2.5 md:rounded-lg md:border ${
+                  expired ? 'border-danger/30 bg-danger/5' : 'border-border md:bg-bg-surface'
                 }`}
               >
                 <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-warning/20 text-warning font-medium text-sm shrink-0">
                   {f.priority}
                 </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm truncate">{f.topic_name}</div>
+                {/* Phone: the name takes the first line, the controls wrap to a second one */}
+                <div className="flex-1 min-w-0 basis-[calc(100%-2.75rem)] md:basis-0">
+                  <div className="text-sm break-words md:truncate">{f.topic_name}</div>
                   <div className="text-xs text-text-muted flex items-center gap-1.5 mt-0.5">
                     <Clock size={11} />
                     <span className={expired ? 'text-danger' : ''}>{formatExpiry(f.expires_at, now, t)}</span>
@@ -167,7 +168,7 @@ export default function FocusPage() {
                 <select
                   value={isoToPreset(f.expires_at, now)}
                   onChange={(e) => handleSetExpiry(idx, e.target.value as ExpiryPreset)}
-                  className="text-xs bg-bg-primary border border-border rounded px-2 py-1.5 text-text-primary"
+                  className="ml-9 md:ml-0 text-xs bg-bg-primary border border-border rounded px-2 py-1.5 text-text-primary"
                   aria-label={t('focus.changeExpiry')}
                 >
                   {EXPIRY_PRESETS.map((p) => (
@@ -177,7 +178,7 @@ export default function FocusPage() {
                   ))}
                 </select>
 
-                <div className="flex items-center gap-0.5 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0 ml-auto md:ml-0">
                   <button
                     onClick={() => handleMove(idx, -1)}
                     disabled={idx === 0}
@@ -210,7 +211,7 @@ export default function FocusPage() {
         <button
           onClick={() => setAddOpen(true)}
           disabled={localList.length >= 20}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-border text-sm text-text-muted hover:text-text-primary hover:border-text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 my-3 md:my-0 rounded-lg border border-dashed border-border text-sm text-text-muted hover:text-text-primary hover:border-text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={14} />
           {t('focus.addTopic')}

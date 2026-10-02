@@ -113,7 +113,7 @@ export default function AnkiImportPage() {
       )}
 
       {!job && (
-        <div className="rounded-xl border border-dashed border-border bg-bg-secondary p-8 text-center">
+        <div className="lf-panel border-dashed py-8 md:p-8 text-center">
           <Layers size={36} className="mx-auto mb-3 text-text-muted" />
           <p className="text-sm text-text-muted mb-4">{t('ankiImport.pickHint')}</p>
           <input
@@ -138,7 +138,7 @@ export default function AnkiImportPage() {
       )}
 
       {job && ACTIVE.has(job.status) && (
-        <div className="rounded-xl border border-border bg-bg-secondary p-5 space-y-3">
+        <div className="lf-panel md:p-5 space-y-3">
           <div className="flex items-center gap-2 text-sm">
             <Loader2 size={16} className="animate-spin text-accent-blue" />
             {job.status === 'analyzing' ? t('ankiImport.analyzing') : t('ankiImport.importing', { done: job.progress.done, total: job.progress.total })}
@@ -152,7 +152,7 @@ export default function AnkiImportPage() {
       )}
 
       {job?.status === 'staged' && job.preview && (
-        <div className="rounded-xl border border-border bg-bg-secondary p-5 space-y-5">
+        <div className="lf-panel md:p-5 space-y-5">
           <div>
             <div className="text-sm font-medium">{job.filename}</div>
             <div className="text-xs text-text-muted">{t(`ankiImport.version.${job.preview.version}`)}</div>
@@ -246,7 +246,7 @@ export default function AnkiImportPage() {
       )}
 
       {job?.status === 'done' && job.stats && (
-        <div className="rounded-xl border border-border bg-bg-secondary p-5 space-y-4">
+        <div className="lf-panel md:p-5 space-y-4">
           <div className="flex items-center gap-2 font-medium">
             <CheckCircle2 size={18} className="text-accent-green" />
             {t('ankiImport.doneTitle')}
@@ -276,7 +276,7 @@ export default function AnkiImportPage() {
       )}
 
       {job?.status === 'failed' && (
-        <div className="rounded-xl border border-border bg-bg-secondary p-5 space-y-3">
+        <div className="lf-panel md:p-5 space-y-3">
           <div className="flex items-center gap-2 font-medium">
             <XCircle size={18} className="text-danger" />
             {t('ankiImport.failedTitle')}

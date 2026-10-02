@@ -16,12 +16,12 @@ export default function SessionSummary({ cardsReviewed, ratings }: Props) {
       <Trophy size={48} className="mx-auto text-accent-green" />
       <h2 className="text-2xl font-medium">{t('sessionSummary.title')}</h2>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
+      <div className="grid grid-cols-2 lf-bleed border-y border-border bg-bg-secondary divide-x divide-border md:gap-4 md:border-y-0 md:bg-transparent md:divide-x-0">
+        <div className="p-4 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-5">
           <p className="text-2xl font-light tabular-nums">{cardsReviewed}</p>
           <p className="text-xs text-text-muted">{t('sessionSummary.reviewed')}</p>
         </div>
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
+        <div className="p-4 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-5">
           <p className="text-2xl font-light tabular-nums">{avgRating}</p>
           <p className="text-xs text-text-muted">{t('sessionSummary.avgRating')}</p>
         </div>

@@ -1,0 +1,14 @@
+{
+  "name": "LearnForge",
+  "short_name": "LearnForge",
+  "description": "Spaced repetition with Bloom's Taxonomy progression",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#161b22",
+  "theme_color": "#161b22",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

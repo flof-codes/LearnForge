@@ -11,6 +11,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
 import Pagination from '../../components/Pagination';
 import { BLOOM_COLORS } from '../../types';
+import { useIsPhone } from '../../hooks/useIsPhone';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
@@ -36,6 +37,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function CardBrowserPage() {
   const { t } = useTranslation('app');
+  const isPhone = useIsPhone();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [topicFilter, setTopicFilter] = useState('');
@@ -98,6 +100,36 @@ export default function CardBrowserPage() {
     bloomFilter !== '' ||
     statusFilter !== 'all';
 
+  // One set of filter controls, placed and styled per layout: boxed selects next
+  // to the search field from md up, compact ones in the scrolling chip row on a phone.
+  const filterSelectClass = isPhone
+    ? 'shrink-0 max-w-[10rem] text-xs bg-bg-surface text-text-muted rounded-lg px-2 py-1 border-none outline-none'
+    : 'px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue';
+  const topicSelect = (
+    <select
+      value={topicFilter}
+      onChange={e => setTopicFilter(e.target.value)}
+      className={filterSelectClass}
+    >
+      <option value="">{t('cards.allTopics')}</option>
+      {(topics ?? []).map(tp => (
+        <option key={tp.id} value={tp.id}>{tp.name}</option>
+      ))}
+    </select>
+  );
+  const bloomSelect = (
+    <select
+      value={bloomFilter}
+      onChange={e => setBloomFilter(e.target.value === '' ? '' : Number(e.target.value))}
+      className={filterSelectClass}
+    >
+      <option value="">{t('cards.allBloomLevels')}</option>
+      {[0, 1, 2, 3, 4, 5].map(l => (
+        <option key={l} value={l}>{t(BLOOM_COLORS[l].labelKey)}</option>
+      ))}
+    </select>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -121,30 +153,12 @@ export default function CardBrowserPage() {
             placeholder={t('cards.searchPlaceholder')}
           />
         </div>
-        <select
-          value={topicFilter}
-          onChange={e => setTopicFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"
-        >
-          <option value="">{t('cards.allTopics')}</option>
-          {(topics ?? []).map(tp => (
-            <option key={tp.id} value={tp.id}>{tp.name}</option>
-          ))}
-        </select>
-        <select
-          value={bloomFilter}
-          onChange={e => setBloomFilter(e.target.value === '' ? '' : Number(e.target.value))}
-          className="px-3 py-2 rounded-lg bg-bg-surface border border-border text-sm text-text-primary focus:outline-none focus:border-accent-blue"
-        >
-          <option value="">{t('cards.allBloomLevels')}</option>
-          {[0, 1, 2, 3, 4, 5].map(l => (
-            <option key={l} value={l}>{t(BLOOM_COLORS[l].labelKey)}</option>
-          ))}
-        </select>
+        {!isPhone && topicSelect}
+        {!isPhone && bloomSelect}
       </div>
 
-      {/* Status filter + Sort */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Status filter + Sort. On a phone the topic and Bloom filters join this row and it scrolls sideways on its own. */}
+      <div className={isPhone ? 'lf-bleed px-4 flex items-center gap-2 overflow-x-auto [scrollbar-width:none]' : 'flex flex-wrap items-center gap-2'}>
         {([
           { key: 'all', labelKey: 'cards.filterAll' },
           { key: 'new', labelKey: 'cards.filterNew' },
@@ -154,7 +168,7 @@ export default function CardBrowserPage() {
           <button
             key={f.key}
             onClick={() => setStatusFilter(f.key)}
-            className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
+            className={`shrink-0 whitespace-nowrap text-xs px-2.5 py-1 rounded-lg transition-colors ${
               statusFilter === f.key
                 ? 'bg-accent-blue/20 text-accent-blue'
                 : 'bg-bg-surface text-text-muted hover:text-text'
@@ -164,10 +178,12 @@ export default function CardBrowserPage() {
           </button>
         ))}
         <span className="text-border">|</span>
+        {isPhone && topicSelect}
+        {isPhone && bloomSelect}
         <select
           value={sort}
           onChange={e => setSort(e.target.value as CardListSort)}
-          className="text-xs bg-bg-surface text-text-muted rounded-lg px-2 py-1 border-none outline-none cursor-pointer hover:text-text transition-colors"
+          className="shrink-0 text-xs bg-bg-surface text-text-muted rounded-lg px-2 py-1 border-none outline-none cursor-pointer hover:text-text transition-colors"
         >
           <option value="newest">{t('cards.sortNewest')}</option>
           <option value="oldest">{t('cards.sortOldest')}</option>

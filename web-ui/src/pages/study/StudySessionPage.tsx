@@ -142,7 +142,7 @@ export default function StudySessionPage() {
       {/* Feedback overlay — click to skip */}
       {feedback && (
         <div
-          className="bg-bg-secondary rounded-xl border border-border p-5 text-center space-y-2 cursor-pointer hover:bg-bg-surface transition-colors"
+          className="lf-panel md:p-5 text-center space-y-2 cursor-pointer hover:bg-bg-surface transition-colors"
           onClick={() => {
             if (feedbackTimer) clearTimeout(feedbackTimer);
             setFeedback(null);

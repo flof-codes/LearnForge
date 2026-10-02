@@ -49,6 +49,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
+    // The browser and the installed app tint their chrome with this colour.
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', resolvedTheme === 'dark' ? '#161b22' : '#ffffff');
   }, [resolvedTheme]);
 
   const setTheme = useCallback((next: ThemePreference) => {

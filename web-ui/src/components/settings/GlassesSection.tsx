@@ -40,7 +40,7 @@ export default function GlassesSection() {
   const normalized = code.replace(/[\s-]/g, '').toUpperCase();
 
   return (
-    <section className="bg-bg-secondary rounded-xl border border-border p-6 space-y-4">
+    <section className="lf-panel space-y-4">
       <div className="flex items-center gap-3">
         <Glasses size={20} className="text-accent-blue" />
         <h2 className="text-lg font-medium text-text-primary">{t('app:settings.glasses.title')}</h2>

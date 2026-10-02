@@ -104,9 +104,9 @@ export default function TopicDetailPage() {
       <SubscriptionBanner />
       <TopicBreadcrumb topicId={id} />
 
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-medium">{topic.name}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-medium break-words">{topic.name}</h1>
           {topic.description && <p className="text-text-muted mt-1">{topic.description}</p>}
           <div className="flex items-center gap-3 mt-2">
             {newCount > 0 && (
@@ -124,7 +124,7 @@ export default function TopicDetailPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShareOpen(true)}
             className="p-2 rounded-lg bg-bg-surface text-text-muted hover:text-accent-blue transition-colors"
@@ -147,17 +147,17 @@ export default function TopicDetailPage() {
 
       {/* Subtopics */}
       {topic.children && topic.children.length > 0 && (
-        <div className="bg-bg-secondary rounded-xl border border-border p-5">
+        <div className="lf-panel md:p-5">
           <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">{t('topics.subtopics')}</h2>
           <div className="space-y-1">
             {topic.children.map(child => (
               <Link
                 key={child.id}
                 to={`/dashboard/topics/${child.id}`}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-bg-surface transition-colors"
+                className="flex items-center gap-2 py-2 md:px-3 rounded-lg hover:bg-bg-surface transition-colors"
               >
-                <FolderTree size={14} className="text-text-muted" />
-                <span className="text-sm">{child.name}</span>
+                <FolderTree size={14} className="text-text-muted shrink-0" />
+                <span className="text-sm min-w-0 break-words">{child.name}</span>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {(child as any).cardCount > 0 && (
                   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -226,12 +226,13 @@ export default function TopicDetailPage() {
 
         {pageCards.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Phone: edge-to-edge rows with hairlines. From md up: the card grid. */}
+            <div className="lf-bleed bg-bg-secondary border-y border-border divide-y divide-border md:bg-transparent md:border-y-0 md:divide-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3">
               {pageCards.map(card => (
                 <Link
                   key={card.id}
                   to={`/dashboard/cards/${card.id}`}
-                  className="bg-bg-secondary rounded-xl border border-border p-4 hover:bg-bg-surface transition-colors"
+                  className="block px-4 py-3 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-4 hover:bg-bg-surface transition-colors"
                 >
                   <p className="text-sm line-clamp-2 mb-2">{card.concept}</p>
                   <div className="flex items-center gap-2">
@@ -255,11 +256,11 @@ export default function TopicDetailPage() {
             </div>
           </>
         ) : total === 0 && filter !== 'all' ? (
-          <div className="text-center py-8 text-text-muted bg-bg-secondary rounded-xl border border-border">
+          <div className="lf-panel py-8 text-center text-text-muted">
             <p className="text-sm">{t('topics.noCardsFilter')}</p>
           </div>
         ) : (
-          <div className="text-center py-8 text-text-muted bg-bg-secondary rounded-xl border border-border">
+          <div className="lf-panel py-8 text-center text-text-muted">
             <p className="text-sm">{t('topics.noCardsInTopic')}</p>
           </div>
         )}
