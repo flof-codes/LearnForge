@@ -444,7 +444,8 @@ describe("MCP Tools", () => {
       expect(textContent!.text).toContain("Continue immediately");
       expect(textContent!.text).toContain("Text-only mode");
       expect(textContent!.text).toContain("Show first, submit after.");
-      expect(textContent!.text).toContain("One widget per turn, and it holds everything");
+      expect(textContent!.text).toContain("Two widgets per turn, feedback first");
+      expect(textContent!.text).toContain("Never put the feedback and the next card into one widget");
       expect(textContent!.text).toContain("Emit no question or option text in chat");
       expect(textContent!.text).toContain("(0.8 + 0.4 × change rate) × (0.8 + 0.4 × difficulty)");
       expect(textContent!.text).toContain("### Term Lookups");
@@ -455,9 +456,10 @@ describe("MCP Tools", () => {
       const result = await mcp.callTool("get_templates", {});
       const templates = mcp.parseToolResult<any[]>(result);
 
-      expect(templates.length).toBe(7);
+      expect(templates.length).toBe(8);
       const names = templates.map((t: any) => t.name);
       expect(names).toContain("mcq-selector");
+      expect(names).toContain("mcq-feedback");
       expect(names).toContain("mcq");
       expect(names).toContain("open-response");
       expect(names).toContain("visual-explain");
@@ -499,6 +501,24 @@ describe("MCP Tools", () => {
       expect(selector.html).toContain("send(\"Answer: I don't know\")");
       expect(selector.html).toContain("send('Explain term: '");
       expect(selector.html).toContain("cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js");
+      expect(selector.html).not.toContain("CARD.panel");
+    });
+
+    // Feedback is its own widget so it paints while it streams: the markup is
+    // static, and the only script is the KaTeX loader.
+    it("mcq-feedback is static markup that sends nothing back", async () => {
+      const feedback = mcp.parseToolResult<any>(
+        await mcp.callTool("get_templates", { template_name: "mcq-feedback" }),
+      );
+
+      expect(feedback.html).not.toContain("pico.classless.min.css");
+      expect(feedback.html).not.toContain("sendPrompt");
+      expect(feedback.html).toContain('<div id="lf-fb" class="k-{{KIND}}">');
+      expect(feedback.html).toContain("{{TITLE}}");
+      expect(feedback.html).toContain("{{BODY}}");
+      expect(feedback.html.indexOf("{{BODY}}")).toBeLessThan(feedback.html.indexOf("<script>"));
+      expect(feedback.html).toContain("e.getAttribute('data-tex')||e.textContent");
+      expect(feedback.html).toContain("cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js");
     });
   });
 

@@ -39,17 +39,20 @@
 ## Review-Flow im Chat (PFLICHT)
 - Beim Abfragen von Karten im Chat: **keine HTML-Karten zeigen**
 - MCQ → die ganze Karte im Widget: `visualize:show_widget` mit dem `mcq-selector`-Template
-  (Header, Feedback-Panel zur vorigen Antwort, Fragestamm, Options-Buttons, „Don't know", Begriffs-Chips).
+  (Header, Fragestamm, Options-Buttons, „Don't know", Begriffs-Chips).
   **Kein Fragen- oder Optionstext im Chat.**
+- **Zwei Widgets pro Turn, Feedback zuerst:** das Feedback zur vorigen Antwort ist ein eigener
+  `show_widget`-Call mit dem `mcq-feedback`-Template (statisches HTML, erscheint schon beim Streamen),
+  danach folgt die Karte als zweiter Call. Nie beides in einem Widget: die Karte hält das Feedback sonst auf.
 - **Warum alles im Widget:** die claude.ai-iOS-App klappt Text vor einem Tool-Call in die Tool-Zeile ein,
   Frage und Optionen waren dadurch unsichtbar. KaTeX lädt im Widget von cdnjs (auf iOS verifiziert).
 - Zuordnung → Serie von MCQ-Fragen ("Wo gehört X hin?")
 - Slider/Berechnung → Frage mit Zahlenwert-Optionen
 - Open Response → normale Chat-Frage (User tippt Antwort)
 - **Erst anzeigen, dann `submit_review`:** Feedback + nächste Frage gehen zuerst raus (Tempo),
-  der Review wird danach gespeichert. Level und Fälligkeit stehen im Panel der übernächsten Karte.
-- Das Widget antwortet als normaler User-Turn: `Answer: A, C`, `Answer: I don't know` oder
-  `Explain term: <Begriff>` (ungewertet, gleiche Karte erneut mit Begriffs-Panel)
+  der Review wird danach gespeichert. Level und Fälligkeit stehen im Feedback-Widget vor der übernächsten Karte.
+- Das Karten-Widget antwortet als normaler User-Turn: `Answer: A, C`, `Answer: I don't know` oder
+  `Explain term: <Begriff>` (ungewertet: Begriff im Feedback-Widget, dann die gleiche Karte erneut)
 - Die interaktiven HTML-Karten bleiben als visuelles Lernmaterial auf der **Rückseite** erhalten
 
 ## Git Conventions

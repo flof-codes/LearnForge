@@ -296,7 +296,7 @@ All MCP tools tested via StreamableHTTP transport.
 | **get_topic_context** | Returns cards with bloom/fsrs/reviews for topic tree |
 | **get_similar_cards** | Returns cards sorted by cosine similarity, excludes self and NULL embeddings |
 | **get_instructions** | Returns non-empty markdown string |
-| **get_templates (all)** | Returns all 5 templates with description, variables, html |
+| **get_templates (all)** | Returns all 8 templates with description, variables, html |
 | **get_templates (single)** | Returns only the requested template |
 | **Error: invalid UUID** | Returns isError: true with message |
 | **Auth: missing API key** | POST /mcp without Bearer → 401 |

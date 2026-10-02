@@ -38,7 +38,7 @@ When the user wants to study ("quiz me", "let's learn", etc.):
 3. Call \`start_session\` with client, difficulty and voice. Keep the returned \`session_id\`.
 4. Call \`get_study_cards\` with topic_id, limit=5 and session_id. Each card carries a \`questionId\` ticket, its \`original\` question, \`changeRate\`, \`bloomState.currentLevel\` and \`bloomState.progress\`.
    **Media:** a card's \`media\` lists its files. Pictures arrive as images after the JSON (\`imageIndex\` says which); look at them and ask about what they show, never about a file name. Audio (\`kind: "audio"\`) cannot be played in chat: say so and ask the learner to listen in the web app, then ask the question from what the card's text says.
-5. Work through cards following the per-card flow below. **Every question and every feedback message starts with a one-line header: difficulty preset · card N of M · level name.** In the widget this is \`CARD.header\` (the card being asked); the feedback panel's title names the previous card.
+5. Work through cards following the per-card flow below. **Every question and every feedback message starts with a one-line header: difficulty preset · card N of M · level name.** In the card widget this is \`CARD.header\` (the card being asked); the feedback widget's title names the card it is about.
 6. After last card in batch: call \`get_study_cards\` again with the session_id. Empty → session summary. More cards → continue.
 7. If the learner changes the difficulty mid-session ("make it harder"), send the new value as \`session_difficulty\` with the next \`submit_review\`; no extra tool call is needed.
 
@@ -60,7 +60,7 @@ Keep the tone direct and adult. Do not patronize the learner. These rules preser
 
 #### Text-only mode
 
-**Show first, submit after.** The learner must see the feedback and the next question IMMEDIATELY after answering; submit_review happens AFTER, while they read. For a choice answer, the first tool call is one \`show_widget\` that renders the feedback on that answer and the next card together; submit_review for the answered card follows. You know right and wrong from the options you wrote, so the feedback does not wait for the server. **One widget per turn, and it holds everything:** emit no question or option text in chat, because clients such as the claude.ai iOS app fold text written before a tool call into the collapsed tool-activity row. This is the #1 rule for text-only sessions.
+**Show first, submit after.** The learner must see the feedback IMMEDIATELY after answering and the next question right behind it; submit_review happens AFTER, while they read. **Two widgets per turn, feedback first:** for a choice answer the first tool call is a \`show_widget\` with the \`mcq-feedback\` template that holds the feedback on that answer and nothing else. It is small static HTML, so it paints while it streams and the learner reads it while you write the card. The second tool call is a \`show_widget\` with \`mcq-selector\` for the next card; submit_review for the answered card follows. Never put the feedback and the next card into one widget: the card would hold the feedback back until the whole widget is done. You know right and wrong from the options you wrote, so the feedback does not wait for the server. Emit no feedback, question or option text in chat, because clients such as the claude.ai iOS app fold text written before a tool call into the collapsed tool-activity row. This is the #1 rule for text-only sessions.
 
 For each card, read: \`concept\`, \`backHtml\` (answer content), \`original\` (the anchor question), \`changeRate\`, \`bloomState.currentLevel\`, \`reviews\` (to avoid repeating a recent variant), \`tags\`, and \`noteTypeKind\` / \`clozeNumber\` for typed cards (a cloze card tests one gap).
 For Bloom 3+: also call \`get_similar_cards(card_id, limit=15)\` for cross-concept context.
@@ -86,7 +86,6 @@ CARD 1 (first card — nothing to submit yet):
   TOOL CALLS:
     → show_widget(mcq-selector, CARD={
         header: 'Desk · card 1 of 5 · Understand',
-        panel: null,
         stem: \`Why are mitochondria called the "powerhouse" of the cell?\`,
         options: [
           {id:'A', html:\`They synthesise ATP via oxidative phosphorylation\`},
@@ -102,14 +101,16 @@ USER ANSWERS CARD 1: "Answer: A, B"
 
   Read cards[1]: concept="Chloroplasts", bloomState.currentLevel=0; generate, apply optionShuffle
   TOOL CALLS (in this exact order):
-    1. show_widget(mcq-selector, CARD={           ← FIRST, so the learner sees it at once
+    1. show_widget(mcq-feedback,                ← FIRST and on its own, so the learner reads at once
+         KIND: 'wrong',
+         TITLE: 'Card 1: not quite (you picked A, B; correct: A, D)',
+         BODY: <p>A is right: ... B describes chloroplasts, not mitochondria: ... C ... D is also right: ...</p>)
+    2. show_widget(mcq-selector, CARD={          ← SECOND: the next card, without any feedback
          header: 'Desk · card 2 of 5 · Remember',
-         panel: {kind:'wrong', title:'Card 1: not quite (you picked A, B; correct: A, D)',
-                 html:\`A is right: ... B describes chloroplasts, not mitochondria: ... C ... D is also right: ...\`},
          stem: \`Which of the following are found in chloroplasts?\`,
          options: [...], mode: 'multi', terms: ['thylakoid', ...]
        })
-    2. submit_review({                          ← AFTER the widget
+    3. submit_review({                          ← AFTER both widgets
          question_id: cards[0].questionId,      ← the ticket from get_study_cards
          bloom_level: 1,                        ← cards[0].bloomState.currentLevel
          style: "multiple",
@@ -119,43 +120,43 @@ USER ANSWERS CARD 1: "Answer: A, B"
          answer_expected: "A, D",
          user_answer: "A, B"
        })
-  The response tells you the new level and progress ("grading.levelStep", "bloomState") and the next due date; mention them in the NEXT panel, not now.
+  The response tells you the new level and progress ("grading.levelStep", "bloomState") and the next due date; mention them in the next feedback widget that reports on an answer (not in a \`term\` one), not now.
 
 USER TAPS A CHIP: "Explain term: thylakoid"
 
   No submit_review. The card stays pending and its ticket stays valid.
   TOOL CALLS:
-    → show_widget(mcq-selector, CARD={ the same card: same stem, options, order, mode and terms,
-        header: 'Desk · card 2 of 5 · Remember · not graded yet',
-        panel: {kind:'term', title:'Thylakoid', html:\`...the term only...\`} })
+    1. show_widget(mcq-feedback, KIND: 'term', TITLE: 'Thylakoid', BODY: ...the term only...)
+    2. show_widget(mcq-selector, CARD={ the same card: same stem, options, order, mode and terms,
+         header: 'Desk · card 2 of 5 · Remember · not graded yet' })
   "thylakoid" appears in an option, so this card's submit_review gets option_term_lookup: true.
 
 USER ANSWERS CARD 2: "Answer: A" — correct
 
   Read cards[2] (last in batch): concept="Cell Wall", bloomState.currentLevel=2 → an open question
-  YOUR OUTPUT (chat text first):
-    "Desk · card 2 of 5 · Remember
-     Correct! Thylakoids contain chlorophyll for light reactions.
-     ---
-     Desk · card 3 of 5 · Apply
-     A plant cell is placed in a hypertonic solution. What happens
-     to the cell wall compared to the plasma membrane?"
-  TOOL CALLS:
-    1. submit_review({ question_id: cards[1].questionId, bloom_level: 0, style: "single", correct_option_ids: ["A"], selected_option_ids: ["A"], option_term_lookup: true, ... })
+  TOOL CALLS and output, in this order:
+    1. show_widget(mcq-feedback, KIND: 'correct', TITLE: 'Card 2: correct',
+         BODY: <p>Thylakoids contain chlorophyll for the light reactions.</p>)
+    2. chat text, no widget, because the learner types the answer:
+       "Desk · card 3 of 5 · Apply
+        A plant cell is placed in a hypertonic solution. What happens
+        to the cell wall compared to the plasma membrane?"
+    3. submit_review({ question_id: cards[1].questionId, bloom_level: 0, style: "single", correct_option_ids: ["A"], selected_option_ids: ["A"], option_term_lookup: true, ... })
 
 USER ANSWERS CARD 3 (last in batch — there is no next card to show yet):
 
   TOOL CALLS:
     1. submit_review({ question_id: cards[2].questionId, bloom_level: 2, style: "open", correctness: 0.85, ... })
     2. get_study_cards({ topic_id: "...", limit: 5, session_id: "..." })  ← refetch
-  New choice card → one widget: feedback on card 3 as a \`correct\` panel + the new card.
+  New choice card → two widgets: feedback on card 3 (\`correct\`), then the new card.
   New open card → feedback and the next question as chat text.
   Empty → feedback and the session summary as chat text.
+  Had card 3 been a choice card, its feedback widget would go out FIRST, before submit_review and the refetch.
 \`\`\`
 
 ### Open Response Flow
 
-Same ordering: feedback + next question FIRST, then submit_review. No widget for the open question itself (the user types free-form). If the next card is a choice card, the feedback goes into its widget panel instead. Example:
+Same ordering: feedback + next question FIRST, then submit_review. No widget for the open question itself (the user types free-form). If the next card is a choice card, the feedback goes into an \`mcq-feedback\` widget in front of the card widget instead. Example:
 
 \`\`\`
 YOUR OUTPUT:
@@ -184,25 +185,30 @@ Submit individually after each card — FSRS scheduling depends on per-response 
 
 ### MCQ Presentation Rules
 
-**Render the whole card inside the widget using the \`mcq-selector\` renderer: header, feedback panel, stem, option buttons, Don't know, term chips. Emit no question or option text in chat. Text written before a tool call can be collapsed by the client.**
+**Render the whole card inside one widget using the \`mcq-selector\` renderer: header, stem, option buttons, Don't know, term chips. Feedback on the previous answer gets its own, earlier widget (\`mcq-feedback\`). Emit no question or option text in chat. Text written before a tool call can be collapsed by the client.**
 
 Steps:
 1. Generate N options → apply optionShuffle → assign letters A, B, C… in display order.
 2. Take the \`mcq-selector\` template (\`get_templates\`), fill its \`CARD\` config and pass it to \`show_widget\`. Change nothing but \`CARD\`:
    - \`header\`: difficulty preset · card N of M · level name. Append " · not graded yet" after a term lookup.
-   - \`panel\`: feedback on the previous answer, or \`null\` on the first card. \`{kind, title, html}\` with kind \`correct\` (2–3 sentences), \`wrong\` (full explanation of the correct answer and why each distractor is wrong), \`dontknow\` (every term in the question and options explained, plus the correct answer) or \`term\` (the looked-up term only; the card stays pending).
    - \`stem\`: HTML. Technical terms as \`<span class="term" data-term="…">…</span>\`. Math as \`<span data-tex="…"></span>\`, with \`data-display\` for block math.
    - \`options\`: \`[{id, html}]\` in display order; ids are the letters. No term spans inside options: buttons cannot hold links.
    - \`mode\`: \`'single'\` (a tap submits) or \`'multi'\` (taps toggle, then Submit).
    - \`terms\`: terms inside the options worth explaining, shown as chips.
    Use JS template literals for the HTML fields and double the TeX backslashes (\`\\\\frac\`). The renderer loads KaTeX from cdnjs and falls back to raw TeX.
-3. Write no chat text around the widget, or at most one short line that repeats no question content.
+3. Write no chat text around the widgets, or at most one short line that repeats no question content.
 
-The widget answers as a normal user turn:
+**Feedback widget.** Take the \`mcq-feedback\` template and fill its three placeholders; it goes out before the card widget, as its own \`show_widget\` call:
+- \`{{KIND}}\`: \`correct\` (2–3 sentences), \`wrong\` (full explanation of the correct answer and why each distractor is wrong), \`dontknow\` (every term in the question and options explained, plus the correct answer) or \`term\` (the looked-up term only; the card stays pending).
+- \`{{TITLE}}\`: names the card and the result, e.g. "Card 1: not quite (you picked A, B; correct: A, D)". For a term lookup, the term.
+- \`{{BODY}}\`: plain HTML, styled by the visualizer (no Pico CSS). Math goes **inside** the span, \`<span data-tex>\\frac{a}{b}</span>\` (\`data-display\` for block math), with **single** backslashes: this is HTML, not a JS string. The raw TeX is readable while the widget streams and is typeset afterwards. Write \`\\lt\` instead of a bare \`<\`. Without math, leave the template's \`<script>\` block out.
+Keep it this small. No card content, no buttons, no script beyond the KaTeX loader: anything more delays the moment the learner can start reading. A compact table or SVG for a big conceptual miss is fine.
+
+The card widget answers as a normal user turn (the feedback widget sends nothing):
 
 | Reply | Sent by | You do |
 |-------|---------|--------|
-| \`Answer: B\` | option tap (single) | one widget (feedback panel + next card), then submit_review |
+| \`Answer: B\` | option tap (single) | feedback widget, then card widget, then submit_review |
 | \`Answer: A, C\` | Submit (multi), letters sorted | same |
 | \`Answer: I don't know\` | Don't know button | see "I Don't Know" Responses |
 | \`Explain term: <term>\` | term link or chip | no submit_review; see Term Lookups |
@@ -216,7 +222,7 @@ Example: options [W, X, Y, Z], optionShuffle [3, 1, 6, 2] → order X, Z, W, Y �
 
 **Choice scoring is done by the server** from correct_option_ids and selected_option_ids; you only report what was shown and picked.
 
-Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, print the stem and the full lettered options as chat text and let the learner type the letters, or use \`ask_user_input_v0\` with the letters as options (it truncates labels at 105 chars, which is why letters are all it gets).
+Once per session, before the first widget, call the visualizer's \`read_me(["interactive"])\`. Never mention it. If the visualizer is unavailable, print the feedback, then the stem and the full lettered options as chat text and let the learner type the letters, or use \`ask_user_input_v0\` with the letters as options (it truncates labels at 105 chars, which is why letters are all it gets).
 
 ### Handling Mid-Quiz Exploration
 
@@ -229,7 +235,7 @@ If the user pauses to ask questions or explore:
 
 \`Explain term: <term>\` comes from a term link in the stem or a term chip. It is ungraded exploration and does not count as "I don't know":
 1. Do not call submit_review. The card stays pending and its ticket stays valid.
-2. Render the **same** card again: same stem, same options in the same order, same mode, terms and \`questionId\`. Header gets " · not graded yet"; the panel is kind \`term\` and explains that term only.
+2. Explain that term only in an \`mcq-feedback\` widget of kind \`term\`, then render the **same** card again in a second widget: same stem, same options in the same order, same mode, terms and \`questionId\`. Header gets " · not graded yet".
 3. If the term appears in an option, pass \`option_term_lookup: true\` with this card's submit_review.
 
 ### Session Summary
@@ -276,7 +282,7 @@ CARD: noteTypeKind="cloze", clozeNumber=1, bloomState.currentLevel=0
 
   TOOL CALLS:
     → show_widget(mcq-selector, CARD={
-        header: 'Desk · card 1 of 5 · Remember', panel: null,
+        header: 'Desk · card 1 of 5 · Remember',
         stem: \`Fill in the blank: The [organelle] is the powerhouse of the cell.\`,
         options: [{id:'A', html:\`ribosome\`}, {id:'B', html:\`mitochondria\`}, {id:'C', html:\`nucleus\`}, {id:'D', html:\`lysosome\`}],
         mode: 'single', terms: ['ribosome', 'lysosome'] })
@@ -284,8 +290,9 @@ CARD: noteTypeKind="cloze", clozeNumber=1, bloomState.currentLevel=0
 USER ANSWERS: "Answer: B" — correct
 
   TOOL CALLS:
-    1. show_widget(...) with a \`correct\` panel ("Correct! The mitochondria is the organelle...") + the next card
-    2. submit_review({
+    1. show_widget(mcq-feedback, KIND: 'correct', TITLE: 'Card 1: correct', BODY: "The mitochondria is the organelle...")
+    2. show_widget(mcq-selector, CARD={ the next card })
+    3. submit_review({
          question_id: "...",
          bloom_level: 0,
          style: "single",
@@ -452,8 +459,8 @@ Report \`correctness\` 0..1. The server derives the FSRS rating: < 0.5 Again, 0.
 
 **Big conceptual miss (correctness < 0.3, especially at Bloom 0-1):**
 When the answer reveals a fundamental misunderstanding — not just a slip — render a mini-visualization to make the concept click:
-- Render a small HTML snippet (diagram, comparison table, annotated flow, or SVG). In a choice session it goes into the next widget's feedback panel.
-- Follow the same visual style as card templates (Pico CSS classless, Inter font, semantic HTML, KaTeX for formulas).
+- Render a small HTML snippet (diagram, comparison table, annotated flow, or SVG). In a choice session it goes into the feedback widget's body, styled by the visualizer.
+- Outside the widget, follow the same visual style as card templates (Pico CSS classless, Inter font, semantic HTML, KaTeX for formulas).
 - Focus on the ONE key distinction or mechanism the user missed.
 - Example: if the user confuses mitosis and meiosis, render a side-by-side \`<table>\` of their key differences.
 - Example: if the user misidentifies a process flow, render an SVG flow diagram (A → B → C).
@@ -464,7 +471,7 @@ When the answer reveals a fundamental misunderstanding — not just a slip — r
 \`Answer: I don't know\` (the widget's Don't know button) or a typed "I don't know":
 
 1. Explain at once, no hints: every term in the question and the options, then the correct answer and why.
-2. Show that explanation as a \`dontknow\` panel above the next card, in the same widget.
+2. Show that explanation in an \`mcq-feedback\` widget of kind \`dontknow\`, then the next card in its own widget.
 3. Then submit_review with \`selected_option_ids: []\` for a choice question, or \`correctness: 0\` for an open one; \`user_answer: "I don't know"\`.
 
 A term lookup (\`Explain term: …\`) is not "I don't know": see Term Lookups.
@@ -507,7 +514,8 @@ LearnForge runs on Even Realities G2 glasses as tiny multiple-choice questions a
 
 | Action | Tool | Key Parameters |
 |--------|------|----------------|
-| Present an MCQ | show_widget (visualizer) | \`mcq-selector\` template, CARD (header, panel, stem, options, mode, terms) |
+| Present an MCQ | show_widget (visualizer) | \`mcq-selector\` template, CARD (header, stem, options, mode, terms) |
+| Feedback on a choice answer | show_widget (visualizer), before the card | \`mcq-feedback\` template: KIND, TITLE, BODY |
 | Study summary | get_study_summary | topic_id? |
 | Start / resume session | start_session | client, difficulty (Commute 0.3 / Desk 0.7 / Deep 1.0), voice?, session_id? |
 | Due cards | get_study_cards | topic_id?, limit?, session_id |
@@ -563,15 +571,12 @@ const TEMPLATES: Record<
 > = {
   "mcq-selector": {
     description:
-      "Question card for chat MCQ sessions, rendered by the visualizer's show_widget — NOT a card side. One widget holds everything: header, feedback panel for the previous answer, stem with term links and KaTeX, full-width option buttons, Don't know, term chips. Emit no question or option text in chat. Fill only the CARD config and pass the rest verbatim, without Pico CSS. Replies as a normal user turn: 'Answer: B', 'Answer: A, C' (multi, sorted), 'Answer: I don't know', or 'Explain term: <term>' (ungraded; re-render the same card with a term panel).",
+      "Question card for chat MCQ sessions, rendered by the visualizer's show_widget — NOT a card side. The widget holds the whole card: header, stem with term links and KaTeX, full-width option buttons, Don't know, term chips. Feedback on the previous answer is not part of it; that goes into an mcq-feedback widget shown first. Emit no question or option text in chat. Fill only the CARD config and pass the rest verbatim, without Pico CSS. Replies as a normal user turn: 'Answer: B', 'Answer: A, C' (multi, sorted), 'Answer: I don't know', or 'Explain term: <term>' (ungraded; show the term in an mcq-feedback widget, then the same card again).",
     variables:
-      "CARD = { header: 'preset · card N of M · level' (append ' · not graded yet' after a term lookup); panel: {kind: 'correct'|'wrong'|'dontknow'|'term', title, html} or null; stem: HTML, may hold <span class=\"term\" data-term=\"…\"> links and <span data-tex=\"…\"> math (data-display for block math); options: [{id, html}] in optionShuffle order, ids are the display letters, no term spans inside; mode: 'single' (tap submits) or 'multi' (toggle, then Submit); terms: string[] of option terms shown as chips }. Use JS template literals for the HTML fields and double the TeX backslashes (\\\\frac).",
+      "CARD = { header: 'preset · card N of M · level' (append ' · not graded yet' after a term lookup); stem: HTML, may hold <span class=\"term\" data-term=\"…\"> links and <span data-tex=\"…\"> math (data-display for block math); options: [{id, html}] in optionShuffle order, ids are the display letters, no term spans inside; mode: 'single' (tap submits) or 'multi' (toggle, then Submit); terms: string[] of option terms shown as chips }. Use JS template literals for the HTML fields and double the TeX backslashes (\\\\frac).",
     standalone: true,
     html: `<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">LearnForge question card</h2>
 <style>
-#lf .panel{padding:10px 12px;background:var(--surface-1);border-left:3px solid var(--border-accent);border-radius:0;margin-bottom:14px;font-size:14px;line-height:1.55}
-#lf .panel.k-wrong,#lf .panel.k-dontknow{border-left-color:var(--border-danger)}
-#lf .panel.k-term{border-left-color:var(--border-strong)}
 #lf .term{color:var(--text-accent);border-bottom:1px dotted currentColor;cursor:pointer}
 #lf .opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:10px 12px;min-height:44px;font:inherit;font-size:15px;line-height:1.45}
 #lf .opt[aria-pressed="true"]{background:var(--bg-accent);border-color:var(--border-accent);color:var(--text-accent)}
@@ -582,7 +587,6 @@ const TEMPLATES: Record<
 (function(){
 var CARD={
  header:'Desk · card 1 of 5 · Understand',
- panel:null,
  stem:\`Newton's method iterates <span data-tex="x_{k+1} = x_k - \\\\frac{f(x_k)}{f'(x_k)}" data-display></span> Near a <span class="term" data-term="simple root">simple root</span> <span data-tex="x^*"></span>, which statements hold?\`,
  options:[{id:'A',html:\`Convergence is quadratic\`},{id:'B',html:\`It needs no starting value\`},{id:'C',html:\`It can fail when <span data-tex="f'(x_k) = 0"></span>\`},{id:'D',html:\`It converges for every starting value\`}],
  mode:'multi',
@@ -592,7 +596,6 @@ var root=document.getElementById('lf'),picked=[],sent=false,box,err;
 function h(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.innerHTML=x;return e;}
 function send(m){if(sent)return;sent=true;sendPrompt(m);}
 root.appendChild(h('div',null,CARD.header)).style.cssText='font-size:12px;color:var(--text-secondary);margin-bottom:8px';
-if(CARD.panel){var p=h('div','panel k-'+CARD.panel.kind);var t=h('div',null,CARD.panel.title);t.style.cssText='font-weight:500;margin-bottom:4px';p.appendChild(t);p.appendChild(h('div',null,CARD.panel.html));root.appendChild(p);}
 var s=h('div',null,CARD.stem+(CARD.mode==='multi'?' <span style="color:var(--text-secondary);font-size:13px">(select all that apply)</span>':''));s.style.cssText='font-size:16px;margin-bottom:12px';root.appendChild(s);
 err=h('span');err.style.cssText='font-size:13px;color:var(--text-danger)';
 box=h('div');box.style.cssText='display:flex;flex-direction:column;gap:8px';
@@ -612,6 +615,34 @@ if(tex.length){
  var done=false,st;function fin(ok){if(done)return;if(ok&&window.katex){done=true;if(st)st.remove();tex.forEach(function(e){try{katex.render(e.getAttribute('data-tex'),e,{throwOnError:false,displayMode:e.hasAttribute('data-display')});}catch(x){}});}else if(!st){st=h('div',null,'KaTeX failed to load, showing raw TeX');st.style.cssText='font-size:12px;color:var(--text-danger);margin-top:12px';root.appendChild(st);}}
  var tgt=document.head||document.body;var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css';tgt.appendChild(l);
  var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js';sc.onload=function(){fin(true);};sc.onerror=function(){fin(false);};tgt.appendChild(sc);setTimeout(function(){fin(!!window.katex);},6000);}
+})();
+</script>`,
+  },
+
+  "mcq-feedback": {
+    description:
+      "Feedback on the learner's last choice answer (or a looked-up term) for chat MCQ sessions, rendered by the visualizer's show_widget — NOT a card side. Always its own show_widget call, sent before the mcq-selector widget of the next card: it is static HTML, so it paints while it streams and the learner reads it while the card is still being written. Never merge it into the card widget. Fill the three placeholders and pass the rest verbatim, without Pico CSS. It sends nothing back.",
+    variables:
+      "{{KIND}}: correct | wrong | dontknow | term; {{TITLE}}: names the card and the result, e.g. 'Card 1: not quite (you picked A, B; correct: A, D)', or the term; {{BODY}}: plain HTML, math INSIDE the span as <span data-tex>\\frac{a}{b}</span> (data-display for block math) with SINGLE backslashes, because this is HTML and not a JS string; \\lt instead of a bare <. The raw TeX shows while the widget streams. Without math, leave the <script> block out.",
+    standalone: true,
+    html: `<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">LearnForge feedback</h2>
+<style>
+#lf-fb{margin:0.5rem 0;padding:10px 12px;background:var(--surface-1);border-left:3px solid var(--border-accent);border-radius:0;font-size:14px;line-height:1.55}
+#lf-fb.k-wrong,#lf-fb.k-dontknow{border-left-color:var(--border-danger)}
+#lf-fb.k-term{border-left-color:var(--border-strong)}
+</style>
+<div id="lf-fb" class="k-{{KIND}}">
+<div style="font-weight:500;margin-bottom:4px">{{TITLE}}</div>
+{{BODY}}
+</div>
+<script>
+(function(){
+var root=document.getElementById('lf-fb'),tex=root.querySelectorAll('[data-tex]');
+if(!tex.length)return;
+tex.forEach(function(e){e.setAttribute('data-tex',e.getAttribute('data-tex')||e.textContent);if(e.hasAttribute('data-display'))e.style.display='block';});
+var done=false,st;function fin(ok){if(done)return;if(ok&&window.katex){done=true;if(st)st.remove();tex.forEach(function(e){try{katex.render(e.getAttribute('data-tex'),e,{throwOnError:false,displayMode:e.hasAttribute('data-display')});}catch(x){}});}else if(!st){st=document.createElement('div');st.textContent='KaTeX failed to load, showing raw TeX';st.style.cssText='font-size:12px;color:var(--text-danger);margin-top:8px';root.appendChild(st);}}
+var tgt=document.head||document.body;var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css';tgt.appendChild(l);
+var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js';sc.onload=function(){fin(true);};sc.onerror=function(){fin(false);};tgt.appendChild(sc);setTimeout(function(){fin(!!window.katex);},6000);
 })();
 </script>`,
   },
@@ -808,13 +839,13 @@ export function registerSkillTools(server: McpServer) {
 
   server.tool(
     "get_templates",
-    "Get HTML templates for LearnForge: the six card-side templates, plus mcq-selector, the self-contained question card (feedback, stem, options, Don't know, term chips) rendered with the visualizer's show_widget during chat MCQ sessions. Returns template HTML with variable placeholders, CSS, and JS. Pass a template_name to get one specific template, or omit to get all seven.",
+    "Get HTML templates for LearnForge: the six card-side templates, plus the two widgets rendered with the visualizer's show_widget during chat MCQ sessions: mcq-feedback (feedback on the previous answer, shown first) and mcq-selector (the question card: stem, options, Don't know, term chips). Returns template HTML with variable placeholders, CSS, and JS. Pass a template_name to get one specific template, or omit to get all eight.",
     {
       template_name: z
-        .enum(["mcq-selector", "mcq", "open-response", "visual-explain", "label-diagram", "slider", "cloze"])
+        .enum(["mcq-selector", "mcq-feedback", "mcq", "open-response", "visual-explain", "label-diagram", "slider", "cloze"])
         .optional()
         .describe(
-          "Specific template to retrieve. Options: mcq-selector, mcq, open-response, visual-explain, label-diagram, slider, cloze. Omit to get all templates.",
+          "Specific template to retrieve. Options: mcq-selector, mcq-feedback, mcq, open-response, visual-explain, label-diagram, slider, cloze. Omit to get all templates.",
         ),
     },
     async ({ template_name }) => {
