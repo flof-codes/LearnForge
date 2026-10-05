@@ -51,6 +51,18 @@ body {
    no side border, no radius, and they cancel the 1rem gutter of <main>.
    Only for full-width blocks, never for grid cells. */
 @layer components {
+  .lf-connect-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-align: center;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
+  }
   .lf-panel {
     background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border);

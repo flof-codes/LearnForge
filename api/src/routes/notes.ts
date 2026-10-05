@@ -28,6 +28,7 @@ export default async function noteRoutes(app: FastifyInstance) {
           tags: { type: "array", items: { type: "string" } },
           concept: { type: "string", minLength: 1 },
           anki_guid: { type: "string" },
+          source_ref: { type: "string", minLength: 1, maxLength: 200 },
         },
         additionalProperties: false,
       },

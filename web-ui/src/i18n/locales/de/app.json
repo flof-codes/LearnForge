@@ -474,22 +474,23 @@
       "saveDescription": "Dieser Schl\u00fcssel wird nur einmal angezeigt. Kopiere ihn jetzt und bewahre ihn sicher auf.",
       "copyToClipboard": "In Zwischenablage kopieren"
     },
+    "apps": {
+      "title": "Verbundene Apps",
+      "description": "Apps und Ger\u00e4te mit eigenem Zugang zu diesem Konto. Entfernen meldet sie sofort ab.",
+      "none": "Noch nichts verbunden",
+      "created": "Verbunden am {{date}}",
+      "lastUsed": "Zuletzt genutzt am {{date}}",
+      "neverUsed": "Noch nicht genutzt",
+      "remove": "Entfernen"
+    },
     "glasses": {
       "title": "Brille",
-      "description": "Verbindet die Even Realities G2 App. Öffne LearnForge auf der Brille und gib den angezeigten Code ein. Nur für Admins.",
+      "description": "Verbindet die Even Realities G2 App. \u00d6ffne LearnForge auf der Brille und gib den angezeigten Code ein. Gekoppelte Brillen stehen unter Verbundene Apps. Nur f\u00fcr Admins.",
       "codeLabel": "Kopplungscode",
       "codePlaceholder": "z.B. K7F42Q",
       "connect": "Verbinden",
       "connecting": "Verbinden...",
-      "connected": "Brille verbunden. Die App auf der Brille macht von selbst weiter.",
-      "devices": "Gekoppelte Geräte",
-      "noDevices": "Noch keine Brille gekoppelt",
-      "created": "Gekoppelt am {{date}}",
-      "lastUsed": "Zuletzt genutzt am {{date}}",
-      "neverUsed": "Noch nicht genutzt",
-      "expires": "Gültig bis {{date}}",
-      "revoke": "Widerrufen",
-      "revoking": "Widerrufen..."
+      "connected": "Brille verbunden. Die App auf der Brille macht von selbst weiter."
     },
     "claude": {
       "title": "Claude (claude.ai) Einrichtung",
@@ -685,5 +686,24 @@
       "done": "fertig",
       "failed": "fehlgeschlagen"
     }
+  },
+  "connect": {
+    "pageTitle": "App verbinden \u00b7 LearnForge",
+    "title": "{{app}} verbinden?",
+    "compare": "Pr\u00fcfe, ob {{app}} denselben Code zeigt.",
+    "canRead": "Deine Themen und die Fragen darin sehen",
+    "canCreate": "Themen und Karten anlegen",
+    "cannot": "Die App kann nicht lernen, keine Karten \u00e4ndern oder l\u00f6schen und nicht auf dein Konto zugreifen.",
+    "connect": "Verbinden",
+    "connecting": "Verbinden...",
+    "cancel": "Abbrechen",
+    "doneTitle": "{{app}} ist verbunden",
+    "doneBody": "Du kannst diesen Tab schlie\u00dfen.",
+    "manage": "Verbundene Apps verwalten",
+    "expiredTitle": "Dieser Code gilt nicht mehr",
+    "expiredBody": "Codes gelten 10 Minuten und nur einmal. Starte in der App neu.",
+    "noCode": "Im Link fehlt der Code. Starte in der App neu.",
+    "signInFirst": "Melde dich an, um die App zu verbinden, die diesen Code zeigt.",
+    "signIn": "Anmelden"
   }
 }

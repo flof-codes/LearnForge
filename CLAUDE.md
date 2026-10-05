@@ -172,6 +172,13 @@ npm run test:integration:down  # tear down
 - `/health` endpoint is public
 - Stdio transport requires `--api-key <key>` argument
 
+### Connected apps (app tokens)
+- Lecture Scribe connects by a pairing modelled on the glasses: the app makes its own secret (prefix `lfa_`), sends only the SHA-256 to `POST /apps/pair/start` and gets a 6-character code plus `verifyUrl` (`APP_URL/connect?code=`). The signed-in user approves on `/connect` (`POST /apps/claim`); the app polls `/apps/pair/poll`, which only ever returns a status.
+- `api/src/plugins/auth.ts` accepts an app token **only** on `APP_TOKEN_ROUTES`: read topics and a topic's context, search cards, create topics, notes and cards, `GET/DELETE /apps/me`. Everything else answers 403 `APP_TOKEN_SCOPE`. Adding a route there widens what a leaked token can do.
+- Tokens live in `app_tokens`, hash only. Each use pushes `expires_at` 90 days out; revoked and expired tokens answer 401 `TOKEN_REVOKED` / `TOKEN_EXPIRED`. The write gate (verified e-mail, subscription) applies to app tokens like to a login.
+- `POST /notes` takes `source_ref`: the same ref for the same user returns the existing note, so an app's retried upload creates nothing.
+- Settings → Connected apps lists app tokens for every user and, for an admin, the paired glasses.
+
 ### Web UI
 - `AuthContext` manages JWT token in localStorage
 - `ProtectedRoute` component wraps all routes except `/login`
@@ -194,6 +201,7 @@ npm run test:integration:down  # tear down
 - **fsrs_state** — 1:1 with cards (CASCADE), spaced repetition scheduling
 - **reviews** — many per card (CASCADE), rating 1-4, modality (chat/web/mcq)
 - **images** — optional card association (SET NULL), stored on disk; `content_hash` + `size_bytes` for imported media (one file per distinct content per user)
+- **app_pair_codes**, **app_tokens** — pairing codes and bearer tokens of connected apps (Lecture Scribe); hash only
 - **anki_imports** — one uploaded package and its job state (analyzing → staged → queued → running → done | failed)
 - **anki_records** — everything from Anki that LearnForge does not model (raw note/card columns, review log per card, deck options, note type configs), unique per (user, kind, anki_key)
 
@@ -222,6 +230,9 @@ POST /glasses/pair/start        POST /glasses/pair/poll     (public, rate limite
 POST /glasses/claim             GET/DELETE /glasses/tokens[/:id]   (admin JWT)
 GET /glasses/summary            GET /glasses/next?mode=&limit=&session_id=&exclude=
 POST /glasses/reviews           (glasses bearer token, see api/src/plugins/auth.ts)
+POST /apps/pair/start           POST /apps/pair/poll        (public, rate limited)
+GET /apps/pair/info?code=       POST /apps/claim            GET/DELETE /apps/tokens[/:id]   (JWT)
+GET/DELETE /apps/me             (app bearer token, see APP_TOKEN_ROUTES in api/src/plugins/auth.ts)
 GET /health
 ```
 

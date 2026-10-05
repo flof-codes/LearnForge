@@ -1,23 +1,18 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Glasses, Trash2 } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Glasses } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { glassesService } from '../../api/glasses';
 
 /**
  * Admin-only settings block: pairs the Even Realities G2 app by the one-time
- * code the glasses display, and lists the tokens that pairing issued.
+ * code the glasses display. The paired glasses are listed under Connected apps.
  */
 export default function GlassesSection() {
   const { t } = useTranslation(['app']);
   const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const { data: tokens = [] } = useQuery({
-    queryKey: ['glasses-tokens'],
-    queryFn: () => glassesService.list().then(r => r.data),
-  });
 
   const claimMutation = useMutation({
     mutationFn: (value: string) => glassesService.claim(value).then(r => r.data),
@@ -30,11 +25,6 @@ export default function GlassesSection() {
       const axErr = error as import('axios').AxiosError<{ error?: string }>;
       setMessage({ type: 'error', text: axErr.response?.data?.error || error.message });
     },
-  });
-
-  const revokeMutation = useMutation({
-    mutationFn: (id: string) => glassesService.revoke(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['glasses-tokens'] }),
   });
 
   const normalized = code.replace(/[\s-]/g, '').toUpperCase();
@@ -79,39 +69,6 @@ export default function GlassesSection() {
         <p className={`text-sm ${message.type === 'success' ? 'text-green-500' : 'text-danger'}`}>{message.text}</p>
       )}
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-text-primary">{t('app:settings.glasses.devices')}</h3>
-        {tokens.length === 0 ? (
-          <p className="text-text-muted text-sm">{t('app:settings.glasses.noDevices')}</p>
-        ) : (
-          <ul className="divide-y divide-border rounded-lg border border-border">
-            {tokens.map((tok) => (
-              <li key={tok.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="text-sm">
-                  <p className="text-text-primary">{tok.label}</p>
-                  <p className="text-text-muted text-xs">
-                    {t('app:settings.glasses.created', { date: new Date(tok.createdAt).toLocaleDateString() })}
-                    {' · '}
-                    {tok.lastUsedAt
-                      ? t('app:settings.glasses.lastUsed', { date: new Date(tok.lastUsedAt).toLocaleDateString() })
-                      : t('app:settings.glasses.neverUsed')}
-                    {' · '}
-                    {t('app:settings.glasses.expires', { date: new Date(tok.expiresAt).toLocaleDateString() })}
-                  </p>
-                </div>
-                <button
-                  onClick={() => revokeMutation.mutate(tok.id)}
-                  disabled={revokeMutation.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-danger border border-danger/30 rounded-lg hover:bg-danger/10 transition-colors disabled:opacity-50"
-                >
-                  <Trash2 size={14} />
-                  {revokeMutation.isPending ? t('app:settings.glasses.revoking') : t('app:settings.glasses.revoke')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </section>
   );
 }

@@ -29,6 +29,7 @@ import SharePage from './pages/SharePage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ConnectAppPage from './pages/ConnectAppPage';
 
 function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -66,6 +67,7 @@ export function AppRoutes() {
 
       {/* Public share accept page */}
       <Route path="/share/:token" element={<SharePage />} />
+      <Route path="/connect" element={<ConnectAppPage />} />
 
       {/* Authenticated app */}
       <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

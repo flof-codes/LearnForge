@@ -141,11 +141,23 @@ export interface CreateNoteInput {
   tags?: string[];
   concept?: string;
   anki_guid?: string;
+  /** A connected app's own id for the note. Sent again, the existing note comes back and nothing is created. */
+  source_ref?: string;
+}
+
+async function noteBySourceRef(db: Db, userId: string, sourceRef: string): Promise<string | null> {
+  const r = await db.execute<{ id: string }>(sql`SELECT id FROM notes WHERE user_id = ${userId} AND source_ref = ${sourceRef}`);
+  return r.rows[0]?.id ?? null;
 }
 
 export async function createNote(db: Db, userId: string, input: CreateNoteInput): Promise<Note> {
   if (!input.topic_id) throw new ValidationError("topic_id is required");
   if (!input.note_type) throw new ValidationError("note_type is required");
+  const sourceRef = input.source_ref?.trim() || null;
+  if (sourceRef) {
+    const existing = await noteBySourceRef(db, userId, sourceRef);
+    if (existing) return getNote(db, userId, existing);
+  }
   const type = await resolveNoteType(db, userId, input.note_type);
   const fields = normalizeFields(type, input.fields);
   const tags = input.tags ?? [];
@@ -157,8 +169,8 @@ export async function createNote(db: Db, userId: string, input: CreateNoteInput)
 
   const noteId = await db.transaction(async (tx) => {
     const ins = await tx.execute<{ id: string }>(sql`
-      INSERT INTO notes (user_id, note_type_id, topic_id, fields, tags, anki_guid)
-      VALUES (${userId}, ${type.id}, ${input.topic_id}, ${JSON.stringify(fields)}::jsonb, ${textArray(tags)}, ${input.anki_guid ?? null})
+      INSERT INTO notes (user_id, note_type_id, topic_id, fields, tags, anki_guid, source_ref)
+      VALUES (${userId}, ${type.id}, ${input.topic_id}, ${JSON.stringify(fields)}::jsonb, ${textArray(tags)}, ${input.anki_guid ?? null}, ${sourceRef})
       RETURNING id
     `);
     const id = ins.rows[0].id;

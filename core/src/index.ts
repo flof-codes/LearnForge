@@ -210,3 +210,8 @@ export {
   getGlassesAskContext,
   type GlassesAskContext,
 } from "./services/glasses-compile.js";
+export {
+  startAppPairing, pollAppPairing, getAppPairing, claimAppPairing, resolveAppToken, listAppTokens, revokeAppToken, revokeAppTokenById,
+  getAppAccount, hashAppToken, normalizeAppPairCode, APP_TOKEN_PREFIX, APP_PAIR_CODE_TTL_MS, APP_TOKEN_TTL_MS,
+  type AppTokenRow, type AppTokenCheck, type AppAccount, type StartAppPairingInput,
+} from "./services/app-token-service.js";

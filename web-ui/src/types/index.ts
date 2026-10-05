@@ -339,6 +339,22 @@ export interface GlassesToken {
   expiresAt: string;
 }
 
+export interface ConnectedApp {
+  id: string;
+  app: string;
+  device: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+}
+
+export interface AppPairing {
+  app: string;
+  device: string;
+  expiresAt: string;
+  claimed: boolean;
+}
+
 // --- Focus Topics ---
 export interface FocusTopic {
   id: string;

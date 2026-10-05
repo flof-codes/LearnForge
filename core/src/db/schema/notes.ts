@@ -18,6 +18,8 @@ export const notes = pgTable("notes", {
   tags: text("tags").array().notNull().default([]),
   /** Anki's note guid, kept so an imported deck can be re-exported. */
   ankiGuid: text("anki_guid"),
+  /** The id a connected app gave the note, so a repeated upload returns the note instead of a copy. */
+  sourceRef: text("source_ref"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (t) => [
@@ -25,6 +27,7 @@ export const notes = pgTable("notes", {
   index("notes_topic_idx").on(t.topicId),
   /** A guid names one note per user: re-importing a deck updates instead of duplicating. */
   uniqueIndex("notes_user_guid_uq").on(t.userId, t.ankiGuid).where(sql`anki_guid IS NOT NULL`),
+  uniqueIndex("notes_user_source_ref_uq").on(t.userId, t.sourceRef).where(sql`source_ref IS NOT NULL`),
 ]);
 
 export const notesRelations = relations(notes, ({ one }) => ({
