@@ -37,7 +37,7 @@ export function normalizeAppPairCode(raw: string): string {
   return raw.replace(/[\s-]/g, "").toUpperCase();
 }
 
-const label = (v: string | undefined) => (v ?? "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, MAX_LABEL);
+const label = (v: string | undefined) => (v ?? "").replace(/\p{Cc}/gu, " ").trim().slice(0, MAX_LABEL);
 
 export interface StartAppPairingInput {
   token_hash: string;
