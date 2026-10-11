@@ -42,6 +42,13 @@ export const config = {
   smtpUser: process.env.SMTP_USER ?? "",
   smtpPassword: process.env.SMTP_PASSWORD ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "LearnForge <office@learnforge.eu>",
+  /**
+   * Writes the study questions for the admin account. Empty switches the
+   * feature off: the study view then shows the plain cards for everyone.
+   */
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  /** Model that writes the questions; "stub" is the canned writer the integration tests run against. */
+  tutorModel: process.env.TUTOR_MODEL ?? "claude-opus-5-5",
 } as const;
 
 /** Signs media URLs; derived from the JWT secret, so rotating that secret also revokes every issued media URL. */

@@ -40,6 +40,9 @@ services:
       SMTP_FROM: "${SMTP_FROM:-LearnForge <office@learnforge.eu>}"
       MCP_PORT: "3001"
       MCP_PUBLIC_URL: "${MCP_PUBLIC_URL}"
+      # Tutor in the web app (admin only): the operator's own Anthropic key. Empty switches it off.
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      TUTOR_MODEL: "${TUTOR_MODEL:-claude-opus-5-5}"
     volumes:
       - ./data/images:/data/images
     healthcheck:

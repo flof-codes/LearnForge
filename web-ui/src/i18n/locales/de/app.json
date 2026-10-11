@@ -204,7 +204,12 @@
     "nextReview": "N\u00e4chste Wiederholung: {{date}}",
     "clickToContinue": "Klicken zum Fortfahren",
     "manualReview": "Manuelle Wiederholung",
-    "flip": "Umdrehen"
+    "flip": "Umdrehen",
+    "whatToStudy": "Was lernen",
+    "optionalFilter": "optionaler Filter",
+    "everythingDue": "Alles, was fällig ist",
+    "startWaiting_one": "Start · {{count}} Karte wartet",
+    "startWaiting_other": "Start · {{count}} Karten warten"
   },
   "sessionSummary": {
     "title": "Sitzung abgeschlossen",
@@ -696,5 +701,70 @@
     "noCode": "Im Link fehlt der Code. Starte in der App neu.",
     "signInFirst": "Melde dich an, um die App zu verbinden, die diesen Code zeigt.",
     "signIn": "Anmelden"
+  },
+  "tutor": {
+    "question": "Frage",
+    "fillGap": "Lücke füllen",
+    "right": "Richtig",
+    "wrong": "Nicht ganz",
+    "partly": "Teilweise richtig",
+    "notAnswered": "Nicht beantwortet",
+    "severalCorrect_one": "{{count}} ist richtig.",
+    "severalCorrect_other": "{{count}} sind richtig.",
+    "correctOption": "richtig",
+    "wrongOption": "falsch",
+    "youWrote": "Deine Antwort: {{text}}",
+    "showBack": "Rückseite zeigen",
+    "suggested": "Vorschlag: {{rating}}. Tippe eine Bewertung, um zu speichern und weiterzugehen.",
+    "yourAnswer": "Deine Antwort",
+    "check": "Prüfen",
+    "checkCount": "Prüfen ({{count}})",
+    "dontKnow": "Weiß ich nicht",
+    "progress": "{{headspace}} · Karte {{current}} · noch {{left}}",
+    "writing": "Fragen für die nächsten Karten werden geschrieben…",
+    "retry": "Erneut versuchen",
+    "pausedCredits": "Das API-Guthaben ist aufgebraucht, deshalb siehst du die Karten selbst.",
+    "pausedError": "Fragen können gerade nicht geschrieben werden, deshalb siehst du die Karten selbst.",
+    "runsUntil": "Läuft, bis du aufhörst oder keine Karten mehr übrig sind.",
+    "ready_one": "{{count}} Frage ist bereit.",
+    "ready_other": "{{count}} Fragen sind bereit.",
+    "readyWriting_one": "{{count}} Frage ist bereit, weitere werden geschrieben.",
+    "readyWriting_other": "{{count}} Fragen sind bereit, weitere werden geschrieben.",
+    "difficulty": "Schwierigkeit",
+    "difficultyRange": "Schwierigkeit, 0,3 leicht bis 1,0 schwer",
+    "headspace": {
+      "title": "Kopffreiheit",
+      "commute": "Unterwegs",
+      "desk": "Schreibtisch",
+      "deep": "Vertieft",
+      "custom": "Eigener Wert {{value}}",
+      "commuteHint": "Schnell, eine richtig",
+      "deskHint": "Zum Abwägen",
+      "deepHint": "So schwer wie möglich"
+    },
+    "setting": {
+      "questions": "Fragen",
+      "wrongOptions": "Falsche Optionen",
+      "interval": "Wiederholungsintervall"
+    },
+    "mix": {
+      "choice": "alles Auswahl",
+      "deskTyped": "Auswahl; Lückenkarten ab Anwenden getippt",
+      "deepTyped": "Lückenkarten und die ersten zwei Stufen getippt, der Rest Auswahl",
+      "typed": "alles getippte Lücken"
+    },
+    "distractors": {
+      "commute": "klar verschieden",
+      "desk": "plausibel",
+      "deep": "die nächstliegenden Irrtümer"
+    },
+    "answerBy": {
+      "title": "Antworten per",
+      "pickAny": "beliebig wählbar",
+      "tap": "Tippen",
+      "tapHint": "Auswahlfragen",
+      "type": "Schreiben",
+      "typeHint": "Lücke füllen"
+    }
   }
 }

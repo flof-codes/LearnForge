@@ -110,6 +110,7 @@ Copy `.env.example` to `.env` at the project root. Required secrets:
 | `JWT_SECRET` | API | Signs JWT auth tokens |
 | `AUTH_PASSWORD` | API | Single-user login password |
 | `MCP_API_KEY` | MCP | Bearer token for HTTP transport |
+| `ANTHROPIC_API_KEY` | API | Optional. Writes the study questions for the admin account; empty switches the tutor in the web app off |
 
 Docker Compose passes these via `${VAR:-default}` syntax. Dev defaults exist but must be changed for production.
 
@@ -201,6 +202,7 @@ npm run test:integration:down  # tear down
 - **reviews** — many per card (CASCADE), rating 1-4, modality (chat/web/mcq)
 - **images** — optional card association (SET NULL), stored on disk; `content_hash` + `size_bytes` for imported media (one file per distinct content per user)
 - **app_pair_codes**, **app_tokens** — pairing codes and bearer tokens of connected apps (Lecture Scribe); hash only
+- **card_questions** — one stored question per card, Bloom level and form (`choice` | `gap`), payload as JSON; `used_at` is set by the review
 - **anki_imports** — one uploaded package and its job state (analyzing → staged → queued → running → done | failed)
 - **anki_records** — everything from Anki that LearnForge does not model (raw note/card columns, review log per card, deck options, note type configs), unique per (user, kind, anki_key)
 
@@ -228,6 +230,8 @@ GET /shares/preview/:token      POST /shares/accept/:token
 POST /apps/pair/start           POST /apps/pair/poll        (public, rate limited)
 GET /apps/pair/info?code=       POST /apps/claim            GET/DELETE /apps/tokens[/:id]   (JWT)
 GET/DELETE /apps/me             (app bearer token, see APP_TOKEN_ROUTES in api/src/plugins/auth.ts)
+GET /tutor/status               POST /tutor/prepare         POST /tutor/sessions
+POST /tutor/next                POST /tutor/answer          (admin JWT, 403 TUTOR_UNAVAILABLE otherwise)
 GET /health
 ```
 
@@ -266,6 +270,16 @@ GET /health
 - The database stores media as `/images/<id>`. Card HTML renders in a sandboxed iframe that cannot send the login token, so an `onSend` hook in `api/src/app.ts` rewrites those references in every JSON response to `/media/<id>/<sig>` (HMAC of id + owner from core `lib/media-url.ts`, secret derived from `JWT_SECRET`), prefixed with `API_PUBLIC_URL` only when that is set. Only ids the requesting user owns are signed. The links are relative on purpose: `CardHtmlRender.resolveMediaLinks` puts the web app's full API address (`VITE_API_URL`, which may include a path such as `/api`) in front of them before the card frame is built, so neither the proxy's Host handling nor a path prefix can misdirect them. A `preValidation` hook turns signed URLs in request bodies back, so they never reach the database. `/export` keeps the stored form.
 
 - CORS: browsers may call the API only from `APP_URL` plus `CORS_ORIGINS`; `/health` accepts any origin.
+
+## Tutor in the web app
+
+- Admin only, and only with `ANTHROPIC_API_KEY` set: the key is the operator's own, so no other account may spend it. `GET /tutor/status` answers `available: false` for everyone else and the study view keeps the plain cards.
+- Questions are written ahead, five cards per call, by `api/src/services/question-model.ts` (the only file that calls Anthropic; `TUTOR_MODEL=stub` swaps in a canned writer for the tests) and stored in `card_questions`. The rules the model works from are `QUESTION_SYSTEM_PROMPT` in core `lib/question-prompt.ts`; bump `QUESTION_PROMPT_VERSION` when they change.
+- A stored question is fresh while `card_updated_at` and `original_id` match the card and `used_at` is null. The review sets `used_at`, so the next visit gets a new variant; card and note edits delete unused rows.
+- `pickQuestionForm` (core `services/card-questions.ts`) decides the form from session difficulty, Bloom level, cloze or not, and the answer modes (`tap`, `type`, `dictate`). Tap only is always `choice`.
+- `POST /tutor/next` serves stored questions with a study ticket each (`study_questions.card_question_id`) and starts the writer for cards that have none; the client polls while `pending > 0`. A card the writer skipped, and every card while the writer is paused (credits used up, API error), is served as `type: "card"` and rated by hand.
+- `POST /tutor/answer` sends the picked letters or the typed text plus the rating the learner tapped. The server grades (`gradeChoice`, `gradeGap` against the stored spellings) and `submitReview` takes the tapped rating as `rating_override`.
+- The writer (`api/src/services/question-generator.ts`) keeps its state in memory: one batch per user at a time, a pause after a failure. A restart forgets both.
 
 ## Anki Import
 

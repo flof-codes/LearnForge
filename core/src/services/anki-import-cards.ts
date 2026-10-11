@@ -71,6 +71,7 @@ export async function syncImportedCards(
       UPDATE cards SET suspended = true, suspended_by = COALESCE(suspended_by, 'gap'), topic_id = ${topicId}, updated_at = NOW() WHERE id = ${c.id}
     `);
   }
+  await tx.execute(sql`DELETE FROM card_questions WHERE used_at IS NULL AND card_id IN (SELECT id FROM cards WHERE note_id = ${noteId})`);
 }
 
 async function insertDerivedOriginal(tx: Tx, cardId: string, p: PlannedCard) {

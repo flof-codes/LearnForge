@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 interface RatingButtonsProps {
   onRate: (rating: 1 | 2 | 3 | 4) => void;
   disabled?: boolean;
+  /** The rating the app proposes for a graded answer: it stands out, and Enter picks it. */
+  suggested?: 1 | 2 | 3 | 4;
 }
 
 const ratings = [
@@ -23,12 +25,14 @@ const CODE_MAP: Record<string, 1 | 2 | 3 | 4> = {
   Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4,
 };
 
-export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) {
+export default function RatingButtons({ onRate, disabled, suggested }: RatingButtonsProps) {
   const { t } = useTranslation('app');
   const onRateRef = useRef(onRate);
   const disabledRef = useRef(disabled);
   onRateRef.current = onRate; // eslint-disable-line react-hooks/refs
   disabledRef.current = disabled; // eslint-disable-line react-hooks/refs
+  const suggestedRef = useRef(suggested);
+  suggestedRef.current = suggested; // eslint-disable-line react-hooks/refs
 
   const [activeKey, setActiveKey] = useState(0);
   const activeKeyRef = useRef(setActiveKey);
@@ -38,9 +42,9 @@ export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) 
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (disabledRef.current) return;
+      if (disabledRef.current || e.repeat) return;
 
-      const rating = KEY_MAP[e.key.toLowerCase()] ?? CODE_MAP[e.code] ?? null;
+      const rating = KEY_MAP[e.key.toLowerCase()] ?? CODE_MAP[e.code] ?? (e.key === 'Enter' ? suggestedRef.current : null) ?? null;
       if (!rating) return;
 
       e.preventDefault();
@@ -62,7 +66,8 @@ export default function RatingButtons({ onRate, disabled }: RatingButtonsProps) 
           disabled={disabled}
           className={`flex-1 py-3 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50 ${
             activeKey === value ? 'scale-95 brightness-125' : ''
-          }`}
+          } ${suggested === undefined ? '' : suggested === value ? 'ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary' : 'opacity-50'}`}
+          aria-current={suggested === value ? 'true' : undefined}
           style={{ backgroundColor: bg }}
         >
           {t(labelKey)}

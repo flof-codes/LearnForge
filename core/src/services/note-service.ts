@@ -303,6 +303,8 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
         await tx.execute(sql`UPDATE cards SET topic_id = ${topicId} WHERE id = ${c.id}`);
       }
     }
+    // Questions written ahead were built from the old content.
+    await tx.execute(sql`DELETE FROM card_questions WHERE used_at IS NULL AND card_id IN (SELECT id FROM cards WHERE note_id = ${noteId})`);
   });
   await refreshDerivedOriginals(db, userId, noteId);
   return getNote(db, userId, noteId);

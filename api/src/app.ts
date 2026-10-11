@@ -17,6 +17,7 @@ import adminRoutes from "./routes/admin.js";
 import shareRoutes from "./routes/shares.js";
 import focusRoutes from "./routes/focus.js";
 import appRoutes from "./routes/apps.js";
+import tutorRoutes from "./routes/tutor.js";
 import noteRoutes from "./routes/notes.js";
 import ankiImportRoutes from "./routes/anki-import.js";
 import { sql } from "drizzle-orm";
@@ -124,6 +125,7 @@ export function buildApp() {
   app.register(shareRoutes);
   app.register(focusRoutes);
   app.register(appRoutes);
+  app.register(tutorRoutes);
 
   // The body names this service on purpose, and the check touches the database.
   //

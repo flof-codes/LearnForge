@@ -4,6 +4,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDueCards } from '../../hooks/useStudy';
+import { useTutorStatus } from '../../hooks/useTutor';
+import { settingsFromParams } from '../../utils/tutor';
+import TutorSession from './TutorSession';
 import { useSubmitReview } from '../../hooks/useReviews';
 import BloomBadge from '../../components/BloomBadge';
 import FocusBadge from '../../components/FocusBadge';
@@ -12,7 +15,17 @@ import InteractiveCard from './InteractiveCard';
 import SessionSummary from './SessionSummary';
 import type { DueCard } from '../../types';
 
+/** The tutor's session when the start screen chose settings for it and this account has it; the plain cards otherwise. */
 export default function StudySessionPage() {
+  const [searchParams] = useSearchParams();
+  const settings = settingsFromParams(searchParams);
+  const { data: tutor, isLoading } = useTutorStatus();
+  if (settings && isLoading) return <LoadingSpinner />;
+  if (settings && tutor?.available) return <TutorSession topicId={searchParams.get('topicId') || undefined} settings={settings} />;
+  return <PlainSession />;
+}
+
+function PlainSession() {
   const { t } = useTranslation('app');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

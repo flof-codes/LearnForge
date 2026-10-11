@@ -12,6 +12,7 @@ export { authTokens, authTokensRelations } from "./authTokens.js";
 export { cardOriginals, cardOriginalsRelations } from "./cardOriginals.js";
 export { studySessions } from "./studySessions.js";
 export { studyQuestions } from "./studyQuestions.js";
+export { cardQuestions } from "./cardQuestions.js";
 export { noteTypes, noteTypeFields, cardTemplates, noteTypesRelations, noteTypeFieldsRelations, cardTemplatesRelations } from "./noteTypes.js";
 export { notes, notesRelations } from "./notes.js";
 export { ankiImports, ankiRecords } from "./ankiImport.js";

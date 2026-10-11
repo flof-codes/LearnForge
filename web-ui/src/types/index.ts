@@ -405,3 +405,55 @@ export interface AnkiImport {
   createdAt: string;
   finishedAt: string | null;
 }
+
+// --- Tutor in the web app (stored questions for the study view, admin only) ---
+export type AnswerMode = 'tap' | 'type' | 'dictate';
+export type TutorPause = 'credits' | 'auth' | 'refused' | 'error';
+
+export interface QuestionTerm { term: string; definition: string }
+export interface ChoicePayload {
+  stem: string;
+  options: { text: string; correct: boolean; why: string }[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+export interface GapPayload {
+  stem: string;
+  answer: string;
+  accept: string[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+
+interface TutorQuestionBase {
+  type: 'question';
+  /** The study ticket this question was served with. */
+  questionId: string;
+  cardId: string;
+  topicId: string;
+  concept: string;
+  bloomLevel: number;
+  backHtml: string;
+}
+export type TutorQuestion =
+  | (TutorQuestionBase & { form: 'choice'; payload: ChoicePayload })
+  | (TutorQuestionBase & { form: 'gap'; payload: GapPayload });
+/** A card without a stored question: shown as it is and rated by the learner. */
+export interface TutorPlainCard { type: 'card'; card: DueCard }
+export type TutorItem = TutorQuestion | TutorPlainCard;
+
+export interface TutorStatus { available: boolean; writing: number; paused: TutorPause | null }
+export interface TutorPrepared { ready: number; waiting: number; writing: number; paused: TutorPause | null }
+export interface TutorBatch {
+  sessionId: string;
+  items: TutorItem[];
+  /** Cards still waiting for the writer. */
+  pending: number;
+  /** Due and new cards left, including the ones served here. */
+  remaining: number;
+  paused: TutorPause | null;
+}
+export interface TutorAnswerResult extends ReviewResponse {
+  correctness: number;
+  suggestedRating: number;
+}

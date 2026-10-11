@@ -169,6 +169,13 @@
       "when": 1791723299163,
       "tag": "0023_drop_glasses",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791723788618,
+      "tag": "0024_card_questions",
+      "breakpoints": true
     }
   ]
 }

@@ -204,7 +204,12 @@
     "nextReview": "Next review: {{date}}",
     "clickToContinue": "Click to continue",
     "manualReview": "Manual review",
-    "flip": "Flip"
+    "flip": "Flip",
+    "whatToStudy": "What to study",
+    "optionalFilter": "optional filter",
+    "everythingDue": "Everything that is due",
+    "startWaiting_one": "Start · {{count}} card waiting",
+    "startWaiting_other": "Start · {{count}} cards waiting"
   },
   "sessionSummary": {
     "title": "Session Complete",
@@ -696,5 +701,70 @@
     "noCode": "The link is missing its code. Start again in the app.",
     "signInFirst": "Sign in to connect the app that shows this code.",
     "signIn": "Sign in"
+  },
+  "tutor": {
+    "question": "Question",
+    "fillGap": "Fill the gap",
+    "right": "Right",
+    "wrong": "Not quite",
+    "partly": "Partly right",
+    "notAnswered": "Not answered",
+    "severalCorrect_one": "{{count}} is correct.",
+    "severalCorrect_other": "{{count}} are correct.",
+    "correctOption": "correct",
+    "wrongOption": "wrong",
+    "youWrote": "You wrote: {{text}}",
+    "showBack": "Show card back",
+    "suggested": "Suggested: {{rating}}. Tap a rating to save and continue.",
+    "yourAnswer": "Your answer",
+    "check": "Check",
+    "checkCount": "Check ({{count}})",
+    "dontKnow": "Don't know",
+    "progress": "{{headspace}} · card {{current}} · {{left}} left",
+    "writing": "Writing questions for the next cards…",
+    "retry": "Try again",
+    "pausedCredits": "The API credits are used up, so you see the cards themselves.",
+    "pausedError": "Questions cannot be written right now, so you see the cards themselves.",
+    "runsUntil": "Runs until you stop or no cards are left.",
+    "ready_one": "{{count}} question is ready.",
+    "ready_other": "{{count}} questions are ready.",
+    "readyWriting_one": "{{count}} question is ready, more are being written.",
+    "readyWriting_other": "{{count}} questions are ready, more are being written.",
+    "difficulty": "Difficulty",
+    "difficultyRange": "difficulty, 0.3 easy to 1.0 hard",
+    "headspace": {
+      "title": "Headspace",
+      "commute": "Commute",
+      "desk": "Desk",
+      "deep": "Deep",
+      "custom": "Custom {{value}}",
+      "commuteHint": "Quick, one correct",
+      "deskHint": "Worth arguing about",
+      "deepHint": "As hard as it gets"
+    },
+    "setting": {
+      "questions": "Questions",
+      "wrongOptions": "Wrong options",
+      "interval": "Review interval"
+    },
+    "mix": {
+      "choice": "all choice",
+      "deskTyped": "choice; gap cards typed from Apply up",
+      "deepTyped": "gap cards and the first two levels typed, the rest choice",
+      "typed": "all typed gaps"
+    },
+    "distractors": {
+      "commute": "clearly different",
+      "desk": "plausible",
+      "deep": "the closest misconceptions"
+    },
+    "answerBy": {
+      "title": "Answer by",
+      "pickAny": "pick any",
+      "tap": "Tap",
+      "tapHint": "Choice questions",
+      "type": "Type",
+      "typeHint": "Fill the gap"
+    }
   }
 }
