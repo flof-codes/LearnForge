@@ -16,27 +16,26 @@ import exportRoutes from "./routes/export.js";
 import adminRoutes from "./routes/admin.js";
 import shareRoutes from "./routes/shares.js";
 import focusRoutes from "./routes/focus.js";
-import glassesRoutes from "./routes/glasses.js";
 import appRoutes from "./routes/apps.js";
+import tutorRoutes from "./routes/tutor.js";
 import noteRoutes from "./routes/notes.js";
 import ankiImportRoutes from "./routes/anki-import.js";
 import { sql } from "drizzle-orm";
 import { db } from "./db/connection.js";
-import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
+import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError, ServiceUnavailableError } from "./lib/errors.js";
 import { signMediaRefs, unsignMediaRefsDeep, referencedMediaIds, textArray } from "@learnforge/core";
 import { config, mediaUrlSecret } from "./config.js";
 
 export function buildApp() {
   // trustProxy: the api sits behind a reverse proxy; without it request.ip is the
-  // proxy and every per-IP limit (glasses pairing) collapses into one global bucket.
+  // proxy and every per-IP limit (app pairing) collapses into one global bucket.
   const app = Fastify({ logger: true, trustProxy: true });
 
   // Browsers may call the API from the web app only (APP_URL plus CORS_ORIGINS).
-  // The glasses run in Even's app, whose webview has no web origin, so their
-  // routes take any origin; the bearer token is their credential.
+  // /health is open to any origin.
   app.register(cors, () => (request: FastifyRequest, callback: (err: Error | null, options: FastifyCorsOptions) => void) => {
     const path = request.url.split("?")[0];
-    const open = path.startsWith("/glasses/") || path === "/health";
+    const open = path === "/health";
     callback(null, {
       origin: open ? true : [...config.corsOrigins],
       credentials: true,
@@ -59,6 +58,9 @@ export function buildApp() {
     }
     if (error instanceof ValidationError) {
       return reply.status(400).send({ error: error.message });
+    }
+    if (error instanceof ServiceUnavailableError) {
+      return reply.status(503).send({ error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
     if (error.validation) {
       return reply.status(400).send({ error: error.message });
@@ -125,8 +127,8 @@ export function buildApp() {
   app.register(adminRoutes);
   app.register(shareRoutes);
   app.register(focusRoutes);
-  app.register(glassesRoutes);
   app.register(appRoutes);
+  app.register(tutorRoutes);
 
   // The body names this service on purpose, and the check touches the database.
   //

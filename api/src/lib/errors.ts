@@ -27,3 +27,14 @@ export class ForbiddenError extends Error {
     this.code = code;
   }
 }
+
+/** Something this request depends on is down or refuses; the code says what, so the client can explain it. */
+export class ServiceUnavailableError extends Error {
+  readonly statusCode = 503;
+  readonly code?: string;
+  constructor(message = "Service unavailable", code?: string) {
+    super(message);
+    this.name = "ServiceUnavailableError";
+    this.code = code;
+  }
+}

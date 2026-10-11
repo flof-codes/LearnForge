@@ -204,7 +204,12 @@
     "nextReview": "N\u00e4chste Wiederholung: {{date}}",
     "clickToContinue": "Klicken zum Fortfahren",
     "manualReview": "Manuelle Wiederholung",
-    "flip": "Umdrehen"
+    "flip": "Umdrehen",
+    "whatToStudy": "Was lernen",
+    "optionalFilter": "optionaler Filter",
+    "everythingDue": "Alles, was fällig ist",
+    "startWaiting_one": "Start · {{count}} Karte wartet",
+    "startWaiting_other": "Start · {{count}} Karten warten"
   },
   "sessionSummary": {
     "title": "Sitzung abgeschlossen",
@@ -474,6 +479,35 @@
       "saveDescription": "Dieser Schl\u00fcssel wird nur einmal angezeigt. Kopiere ihn jetzt und bewahre ihn sicher auf.",
       "copyToClipboard": "In Zwischenablage kopieren"
     },
+    "tutor": {
+      "title": "Tutor",
+      "description": "Die Lernansicht kann Fragen stellen, die Claude schreibt, statt die Karte selbst zu zeigen. Das läuft über deinen eigenen Anthropic-API-Schlüssel; die Nutzung zahlst du an Anthropic.",
+      "key": "Anthropic-API-Schlüssel",
+      "keyPlaceholder": "sk-ant-…",
+      "replacePlaceholder": "Neuen Schlüssel einfügen, um ihn zu ersetzen",
+      "save": "Speichern",
+      "remove": "Entfernen",
+      "check": "Schlüssel prüfen",
+      "checking": "Wird geprüft…",
+      "checkOk": "Anthropic akzeptiert diesen Schlüssel für das gewählte Modell.",
+      "checkFailed": {
+        "auth": "Anthropic hat diesen Schlüssel abgelehnt.",
+        "credits": "Dieser Schlüssel hat kein Guthaben mehr.",
+        "error": "Der Schlüssel konnte gerade nicht geprüft werden."
+      },
+      "noKey": "Kein Schlüssel gespeichert. Ohne Schlüssel zeigt die Lernansicht die Karten selbst.",
+      "serverKey": "Kein Schlüssel gespeichert. Dieses Konto nutzt den Schlüssel des Servers, der abgelöst wird. Speichere hier deinen eigenen.",
+      "keyNote": "Wird verschlüsselt gespeichert. Angezeigt werden nur die letzten vier Zeichen.",
+      "model": "Modell",
+      "effort": "Aufwand",
+      "efforts": {
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch"
+      },
+      "noEffort": "{{model}} hat keine Aufwand-Einstellung.",
+      "modelNote": "Gilt für Fragen, die ab jetzt geschrieben werden, und für das Bewerten offener Antworten. Mehr Aufwand ist langsamer und kostet mehr."
+    },
     "apps": {
       "title": "Verbundene Apps",
       "description": "Apps und Ger\u00e4te mit eigenem Zugang zu diesem Konto. Entfernen meldet sie sofort ab.",
@@ -482,15 +516,6 @@
       "lastUsed": "Zuletzt genutzt am {{date}}",
       "neverUsed": "Noch nicht genutzt",
       "remove": "Entfernen"
-    },
-    "glasses": {
-      "title": "Brille",
-      "description": "Verbindet die Even Realities G2 App. \u00d6ffne LearnForge auf der Brille und gib den angezeigten Code ein. Gekoppelte Brillen stehen unter Verbundene Apps. Nur f\u00fcr Admins.",
-      "codeLabel": "Kopplungscode",
-      "codePlaceholder": "z.B. K7F42Q",
-      "connect": "Verbinden",
-      "connecting": "Verbinden...",
-      "connected": "Brille verbunden. Die App auf der Brille macht von selbst weiter."
     },
     "claude": {
       "title": "Claude (claude.ai) Einrichtung",
@@ -705,5 +730,98 @@
     "noCode": "Im Link fehlt der Code. Starte in der App neu.",
     "signInFirst": "Melde dich an, um die App zu verbinden, die diesen Code zeigt.",
     "signIn": "Anmelden"
+  },
+  "tutor": {
+    "question": "Frage",
+    "fillGap": "Lücke füllen",
+    "right": "Richtig",
+    "wrong": "Nicht ganz",
+    "partly": "Teilweise richtig",
+    "notAnswered": "Nicht beantwortet",
+    "severalCorrect_one": "{{count}} ist richtig.",
+    "severalCorrect_other": "{{count}} sind richtig.",
+    "correctOption": "richtig",
+    "wrongOption": "falsch",
+    "youWrote": "Deine Antwort: {{text}}",
+    "showBack": "Rückseite zeigen",
+    "suggested": "Vorschlag: {{rating}}. Tippe eine Bewertung, um zu speichern und weiterzugehen.",
+    "yourAnswer": "Deine Antwort",
+    "check": "Prüfen",
+    "checkCount": "Prüfen ({{count}})",
+    "dontKnow": "Weiß ich nicht",
+    "progress": "{{headspace}} · Karte {{current}} · noch {{left}}",
+    "writing": "Fragen für die nächsten Karten werden geschrieben…",
+    "retry": "Erneut versuchen",
+    "pausedCredits": "Das API-Guthaben ist aufgebraucht, deshalb siehst du die Karten selbst.",
+    "pausedError": "Fragen können gerade nicht geschrieben werden, deshalb siehst du die Karten selbst.",
+    "runsUntil": "Läuft, bis du aufhörst oder keine Karten mehr übrig sind.",
+    "ready_one": "{{count}} Frage ist bereit.",
+    "ready_other": "{{count}} Fragen sind bereit.",
+    "readyWriting_one": "{{count}} Frage ist bereit, weitere werden geschrieben.",
+    "readyWriting_other": "{{count}} Fragen sind bereit, weitere werden geschrieben.",
+    "difficulty": "Schwierigkeit",
+    "difficultyRange": "Schwierigkeit, 0,3 leicht bis 1,0 schwer",
+    "headspace": {
+      "title": "Kopffreiheit",
+      "commute": "Unterwegs",
+      "desk": "Schreibtisch",
+      "deep": "Vertieft",
+      "custom": "Eigener Wert {{value}}",
+      "commuteHint": "Schnell, eine richtig",
+      "deskHint": "Zum Abwägen",
+      "deepHint": "So schwer wie möglich"
+    },
+    "setting": {
+      "questions": "Fragen",
+      "wrongOptions": "Falsche Optionen",
+      "interval": "Wiederholungsintervall"
+    },
+    "mix": {
+      "choice": "alles Auswahl",
+      "deskTyped": "meist Auswahl; Lückenkarten ab Anwenden getippt, offene Antworten ab Bewerten",
+      "deepTyped": "getippte Lücken auf den ersten zwei Stufen, darüber offene Antworten",
+      "typed": "getippte Lücken und offene Antworten, keine Auswahl"
+    },
+    "distractors": {
+      "commute": "klar verschieden",
+      "desk": "plausibel",
+      "deep": "die nächstliegenden Irrtümer"
+    },
+    "answerBy": {
+      "title": "Antworten per",
+      "pickAny": "beliebig wählbar",
+      "tap": "Tippen",
+      "tapHint": "Auswahlfragen",
+      "type": "Schreiben",
+      "typeHint": "Lücken und offene Antworten",
+      "dictate": "Diktieren",
+      "dictateHint": "Antwort sprechen",
+      "noDictation": "Dieser Browser kann hier nicht zuhören. Das Mikrofon deiner Tastatur funktioniert in jedem Textfeld."
+    },
+    "openQuestion": "Offene Frage",
+    "mostly": "Weitgehend richtig",
+    "openHint": "Antworte in zwei oder drei Sätzen.",
+    "openHintMic": "Antworte in zwei oder drei Sätzen. Schreibe oder drücke das Mikrofon.",
+    "openHintKeyboardMic": "Antworte in zwei oder drei Sätzen. Dieser Browser kann hier nicht zuhören: Nutze das Mikrofon deiner Tastatur.",
+    "yourAnswerLabel": "Deine Antwort",
+    "tutor": "Tutor",
+    "you": "Du",
+    "checking": "Wird geprüft…",
+    "send": "Senden",
+    "ask": "Fragen",
+    "askFollowUp": "Nachfrage stellen",
+    "pointMet": "genannt",
+    "pointMissing": "fehlt",
+    "modelAnswer": "Musterantwort:",
+    "showModel": "Musterantwort zeigen",
+    "dictate": "Diktieren",
+    "stopDictation": "Diktat beenden",
+    "dictationFailed": "Das Diktat ist nicht gestartet. Prüfe die Mikrofon-Berechtigung.",
+    "modelError": "Der Tutor kann gerade nicht antworten. Versuche es gleich noch einmal.",
+    "questionGone": "Diese Frage gilt nicht mehr, die Karte wurde geändert.",
+    "saveFailed": "Die Antwort konnte nicht gespeichert werden. Tippe eine Bewertung, um es erneut zu versuchen.",
+    "skipCard": "Diese Karte später lernen",
+    "addKey": "Fragen statt nur Karten?",
+    "addKeyLink": "Hinterlege deinen Anthropic-API-Schlüssel in den Einstellungen."
   }
 }

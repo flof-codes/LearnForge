@@ -42,7 +42,21 @@ export const config = {
   smtpUser: process.env.SMTP_USER ?? "",
   smtpPassword: process.env.SMTP_PASSWORD ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "LearnForge <office@learnforge.eu>",
+  /**
+   * Deprecated: every user saves their own key under Settings. This one is
+   * still used for an admin account that has none on file, and for no one else.
+   */
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  /** "stub" swaps Anthropic for the canned writer the integration tests run against. */
+  tutorModel: process.env.TUTOR_MODEL ?? "",
 } as const;
+
+/**
+ * Seals the API keys users save for the tutor. SETTINGS_SECRET if set; otherwise
+ * derived from the JWT secret, so rotating that one makes saved keys unreadable
+ * and they have to be entered again.
+ */
+export const settingsSecret = process.env.SETTINGS_SECRET || createHmac("sha256", config.jwtSecret).update("learnforge-settings").digest("hex");
 
 /** Signs media URLs; derived from the JWT secret, so rotating that secret also revokes every issued media URL. */
 export const mediaUrlSecret = createHmac("sha256", config.jwtSecret).update("learnforge-media-url").digest("hex");

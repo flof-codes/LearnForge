@@ -324,10 +324,10 @@ export async function updateCard(db: Db, userId: string, cardId: string, input: 
   if (!updated) throw new NotFoundError("Card not found");
 
   // The tutor's original question may no longer match the edited content, and
-  // neither does a question compiled for the glasses from the old content.
+  // neither does a question written ahead from the old content.
   if (concept !== undefined || front_html !== undefined || back_html !== undefined || cloze_data !== undefined) {
     await markOriginalStale(db, userId, cardId);
-    await db.execute(sql`DELETE FROM glasses_questions WHERE card_id = ${cardId}`);
+    await db.execute(sql`DELETE FROM card_questions WHERE card_id = ${cardId} AND used_at IS NULL`);
   }
 
   return updated;

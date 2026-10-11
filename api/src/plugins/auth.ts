@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { config } from "../config.js";
 import { UnauthorizedError, ForbiddenError } from "../lib/errors.js";
 import { db } from "../db/connection.js";
-import { users, checkSubscriptionAccess, resolveGlassesToken, resolveAppToken, APP_TOKEN_PREFIX } from "@learnforge/core";
+import { users, checkSubscriptionAccess, resolveAppToken, APP_TOKEN_PREFIX } from "@learnforge/core";
 
 const PUBLIC_PATHS = new Set([
   "/health",
@@ -15,21 +15,11 @@ const PUBLIC_PATHS = new Set([
   "/auth/password-reset/request",
   "/auth/password-reset/confirm",
   "/billing/webhook",
-  "/glasses/pair/start",
-  "/glasses/pair/poll",
   "/apps/pair/start",
   "/apps/pair/poll",
 ]);
 // /media/<id>/<sig> carries its own HMAC signature; see core lib/media-url.ts.
 const PUBLIC_PREFIXES = ["/shares/preview/", "/media/"];
-
-/**
- * Routes the G2 glasses call with their own bearer token instead of a JWT.
- * Exact paths on purpose: `/glasses/claim` and `/glasses/tokens` stay behind the
- * admin's JWT, and a glasses token presented anywhere else still fails jwtVerify,
- * which is the whole scope check.
- */
-const GLASSES_TOKEN_PATHS = new Set(["/glasses/summary", "/glasses/next", "/glasses/reviews", "/glasses/ask"]);
 
 /**
  * Everything a connected app (Lecture Scribe) may call with its own bearer token:
@@ -64,20 +54,6 @@ export default fp(async function authPlugin(app: FastifyInstance) {
     if (PUBLIC_PATHS.has(path)) return;
     if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
     if (request.method === "OPTIONS") return;
-
-    if (GLASSES_TOKEN_PATHS.has(path)) {
-      const header = request.headers.authorization ?? "";
-      const raw = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-      const check = await resolveGlassesToken(db, raw);
-      if (!check.ok) {
-        // The glasses clear their stored token on a revocation, so the reason has to be distinguishable.
-        if (check.reason === "revoked") throw new UnauthorizedError("Glasses token revoked", "TOKEN_REVOKED");
-        if (check.reason === "expired") throw new UnauthorizedError("Glasses token expired", "TOKEN_EXPIRED");
-        throw new UnauthorizedError("Invalid glasses token");
-      }
-      request.user = { sub: check.userId, glasses: true };
-      return;
-    }
 
     const bearer = request.headers.authorization ?? "";
     if (bearer.startsWith(`Bearer ${APP_TOKEN_PREFIX}`)) {

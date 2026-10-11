@@ -204,7 +204,12 @@
     "nextReview": "Next review: {{date}}",
     "clickToContinue": "Click to continue",
     "manualReview": "Manual review",
-    "flip": "Flip"
+    "flip": "Flip",
+    "whatToStudy": "What to study",
+    "optionalFilter": "optional filter",
+    "everythingDue": "Everything that is due",
+    "startWaiting_one": "Start · {{count}} card waiting",
+    "startWaiting_other": "Start · {{count}} cards waiting"
   },
   "sessionSummary": {
     "title": "Session Complete",
@@ -474,6 +479,35 @@
       "saveDescription": "This key will only be shown once. Copy it now and store it securely.",
       "copyToClipboard": "Copy to clipboard"
     },
+    "tutor": {
+      "title": "Tutor",
+      "description": "The study view can ask questions written by Claude instead of showing the plain card. It runs on your own Anthropic API key, and you pay Anthropic for what it uses.",
+      "key": "Anthropic API key",
+      "keyPlaceholder": "sk-ant-…",
+      "replacePlaceholder": "Paste a new key to replace it",
+      "save": "Save",
+      "remove": "Remove",
+      "check": "Check key",
+      "checking": "Checking…",
+      "checkOk": "Anthropic accepts this key for the chosen model.",
+      "checkFailed": {
+        "auth": "Anthropic rejected this key.",
+        "credits": "This key has no credit left.",
+        "error": "The key could not be checked right now."
+      },
+      "noKey": "No key saved. Without one the study view shows the plain cards.",
+      "serverKey": "No key saved. This account runs on the server's key, which is being phased out. Save your own here.",
+      "keyNote": "Stored encrypted. Only the last four characters are shown again.",
+      "model": "Model",
+      "effort": "Effort",
+      "efforts": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "noEffort": "{{model}} has no effort setting.",
+      "modelNote": "Applies to questions written from now on, and to grading open answers. Higher effort is slower and costs more."
+    },
     "apps": {
       "title": "Connected apps",
       "description": "Apps and devices with their own access to this account. Removing one signs it out at once.",
@@ -482,15 +516,6 @@
       "lastUsed": "Last used {{date}}",
       "neverUsed": "Not used yet",
       "remove": "Remove"
-    },
-    "glasses": {
-      "title": "Glasses",
-      "description": "Pair the Even Realities G2 app. Open LearnForge on the glasses, then type the code it shows. Paired glasses appear under Connected apps. Admin only.",
-      "codeLabel": "Pairing code",
-      "codePlaceholder": "e.g. K7F42Q",
-      "connect": "Connect",
-      "connecting": "Connecting...",
-      "connected": "Glasses connected. The app on the glasses continues by itself."
     },
     "claude": {
       "title": "Claude (claude.ai) Setup",
@@ -705,5 +730,98 @@
     "noCode": "The link is missing its code. Start again in the app.",
     "signInFirst": "Sign in to connect the app that shows this code.",
     "signIn": "Sign in"
+  },
+  "tutor": {
+    "question": "Question",
+    "fillGap": "Fill the gap",
+    "right": "Right",
+    "wrong": "Not quite",
+    "partly": "Partly right",
+    "notAnswered": "Not answered",
+    "severalCorrect_one": "{{count}} is correct.",
+    "severalCorrect_other": "{{count}} are correct.",
+    "correctOption": "correct",
+    "wrongOption": "wrong",
+    "youWrote": "You wrote: {{text}}",
+    "showBack": "Show card back",
+    "suggested": "Suggested: {{rating}}. Tap a rating to save and continue.",
+    "yourAnswer": "Your answer",
+    "check": "Check",
+    "checkCount": "Check ({{count}})",
+    "dontKnow": "Don't know",
+    "progress": "{{headspace}} · card {{current}} · {{left}} left",
+    "writing": "Writing questions for the next cards…",
+    "retry": "Try again",
+    "pausedCredits": "The API credits are used up, so you see the cards themselves.",
+    "pausedError": "Questions cannot be written right now, so you see the cards themselves.",
+    "runsUntil": "Runs until you stop or no cards are left.",
+    "ready_one": "{{count}} question is ready.",
+    "ready_other": "{{count}} questions are ready.",
+    "readyWriting_one": "{{count}} question is ready, more are being written.",
+    "readyWriting_other": "{{count}} questions are ready, more are being written.",
+    "difficulty": "Difficulty",
+    "difficultyRange": "difficulty, 0.3 easy to 1.0 hard",
+    "headspace": {
+      "title": "Headspace",
+      "commute": "Commute",
+      "desk": "Desk",
+      "deep": "Deep",
+      "custom": "Custom {{value}}",
+      "commuteHint": "Quick, one correct",
+      "deskHint": "Worth arguing about",
+      "deepHint": "As hard as it gets"
+    },
+    "setting": {
+      "questions": "Questions",
+      "wrongOptions": "Wrong options",
+      "interval": "Review interval"
+    },
+    "mix": {
+      "choice": "all choice",
+      "deskTyped": "mostly choice; gap cards typed from Apply, open answers from Evaluate",
+      "deepTyped": "typed gaps for the first two levels, open answers above",
+      "typed": "typed gaps and open answers, no choice"
+    },
+    "distractors": {
+      "commute": "clearly different",
+      "desk": "plausible",
+      "deep": "the closest misconceptions"
+    },
+    "answerBy": {
+      "title": "Answer by",
+      "pickAny": "pick any",
+      "tap": "Tap",
+      "tapHint": "Choice questions",
+      "type": "Type",
+      "typeHint": "Gaps and open answers",
+      "dictate": "Dictate",
+      "dictateHint": "Speak your answer",
+      "noDictation": "This browser cannot listen here. The microphone on your keyboard works in every text field."
+    },
+    "openQuestion": "Open question",
+    "mostly": "Mostly right",
+    "openHint": "Answer in two or three sentences.",
+    "openHintMic": "Answer in two or three sentences. Type or press the microphone.",
+    "openHintKeyboardMic": "Answer in two or three sentences. This browser cannot listen here: use the microphone on your keyboard.",
+    "yourAnswerLabel": "Your answer",
+    "tutor": "Tutor",
+    "you": "You",
+    "checking": "Checking…",
+    "send": "Send",
+    "ask": "Ask",
+    "askFollowUp": "Ask a follow-up",
+    "pointMet": "covered",
+    "pointMissing": "missing",
+    "modelAnswer": "Model answer:",
+    "showModel": "Show model answer",
+    "dictate": "Dictate",
+    "stopDictation": "Stop dictation",
+    "dictationFailed": "Dictation did not start. Check the microphone permission.",
+    "modelError": "The tutor cannot answer right now. Try again in a moment.",
+    "questionGone": "This question is no longer valid, the card was changed.",
+    "saveFailed": "The answer could not be saved. Tap a rating to try again.",
+    "skipCard": "Leave this card for later",
+    "addKey": "Want questions instead of plain cards?",
+    "addKeyLink": "Add your Anthropic API key in the settings."
   }
 }

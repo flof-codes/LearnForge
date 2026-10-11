@@ -100,6 +100,27 @@ export {
 // Services - Review
 export { submitReview, deleteReview, gradeChoice, type SubmitReviewInput, type DeleteReviewOptions, type QuestionStyle } from "./services/review-service.js";
 
+// Services - Stored questions for the study view
+export {
+  QUESTION_PROMPT_VERSION, QUESTION_BATCH_SIZE, FOLLOW_UP_LIMIT, getAnswerContext,
+  validateAnswerModes, pickQuestionForm, validateQuestionPayload, normalizeGapAnswer, gradeGap,
+  getTutorQueue, toQuestionRequest, storeQuestions, serveTutorBatch, submitTutorAnswer, difficultyBand,
+  type QuestionForm, type AnswerMode, type QuestionTerm, type ChoicePayload, type GapPayload, type OpenPayload, type QuestionPayload,
+  type TutorQueueOptions, type TutorQueueEntry, type WrittenQuestion, type TutorQuestion, type TutorPlainCard, type TutorItem,
+  type ServeTutorOptions, type TutorAnswerInput,
+} from "./services/card-questions.js";
+export {
+  QUESTION_SYSTEM_PROMPT, buildQuestionBatchPrompt, GRADING_SYSTEM_PROMPT, buildGradingPrompt,
+  FOLLOW_UP_SYSTEM_PROMPT, buildFollowUpContext, type QuestionRequest, type AnswerContext,
+} from "./lib/question-prompt.js";
+
+export {
+  TUTOR_MODELS, TUTOR_EFFORTS, DEFAULT_TUTOR_MODEL, DEFAULT_TUTOR_EFFORT,
+  getTutorSettings, saveTutorSettings, removeTutorKey, loadTutorCredentials, validateApiKey,
+  type TutorModelId, type TutorEffort, type TutorSettingsView, type SaveTutorSettingsInput, type TutorCredentials,
+} from "./services/tutor-settings.js";
+export { sealSecret, openSecret } from "./lib/secret-box.js";
+
 // Services - Study
 export { getStudyCards, getStudySummary, type GetStudyCardsOptions } from "./services/study-service.js";
 export { getDueForecast, getStudyStats } from "./services/study-stats.js";
@@ -172,44 +193,6 @@ export {
 export { extFromMime } from "./lib/image-utils.js";
 export { loadCardMedia, mediaIdsIn, type CardMedia, type CardMediaEntry, type AttachedImage } from "./lib/card-media.js";
 
-// Services - Glasses (Even Realities G2)
-export {
-  GLASSES_PROMPT_VERSION,
-  GLASSES_CAPS,
-  GLASSES_PAIR_CODE_TTL_MS,
-  GLASSES_TOKEN_TTL_MS,
-  hashGlassesToken,
-  normalizePairCode,
-  startGlassesPairing,
-  pollGlassesPairing,
-  claimGlassesPairing,
-  resolveGlassesToken,
-  listGlassesTokens,
-  revokeGlassesToken,
-  getGlassesCompileQueue,
-  storeGlassesQuestion,
-  validateGlassesQuestion,
-  getGlassesBatch,
-  submitGlassesAnswer,
-  getGlassesSummary,
-  type GlassesTokenRow,
-  type GlassesTokenCheck,
-  type GlassesCompileQueueEntry,
-  type GlassesCompileQueueOptions,
-  type StoreGlassesQuestionInput,
-  type GlassesMode,
-  type GlassesQuestion,
-  type GlassesBatchOptions,
-  type GlassesAnswerInput,
-} from "./services/glasses-service.js";
-export {
-  GLASSES_COMPILER_CLIENT_ID,
-  GLASSES_COMPILER_TOKEN_TTL_MS,
-  mintGlassesCompilerToken,
-  countPendingCompile,
-  getGlassesAskContext,
-  type GlassesAskContext,
-} from "./services/glasses-compile.js";
 export {
   startAppPairing, pollAppPairing, getAppPairing, claimAppPairing, resolveAppToken, listAppTokens, revokeAppToken, revokeAppTokenById,
   getAppAccount, hashAppToken, normalizeAppPairCode, APP_TOKEN_PREFIX, APP_PAIR_CODE_TTL_MS, APP_TOKEN_TTL_MS,

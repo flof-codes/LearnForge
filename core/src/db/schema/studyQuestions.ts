@@ -2,6 +2,7 @@ import { pgTable, uuid, smallint, real, text, timestamp, index } from "drizzle-o
 import { cards } from "./cards.js";
 import { studySessions } from "./studySessions.js";
 import { cardOriginals } from "./cardOriginals.js";
+import { cardQuestions } from "./cardQuestions.js";
 
 /**
  * A ticket issued by the server when it serves a card to a tutor session.
@@ -19,6 +20,8 @@ export const studyQuestions = pgTable("study_questions", {
   /** fsrs_state.last_review at serve time; a later review invalidates the ticket. */
   lastReviewAtServe: timestamp("last_review_at_serve", { withTimezone: true }),
   servedAt: timestamp("served_at", { withTimezone: true }).defaultNow().notNull(),
+  /** The stored question this ticket was served with (web study view); null for a tutor that writes its own. */
+  cardQuestionId: uuid("card_question_id").references(() => cardQuestions.id, { onDelete: "set null" }),
 }, (t) => [
   index("study_questions_session_idx").on(t.sessionId),
   index("study_questions_card_idx").on(t.cardId),

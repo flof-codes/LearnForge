@@ -41,6 +41,10 @@ export interface SubmitReviewInput {
   user_answer?: string;
   /** The learner looked up a term shown in an option before answering: a correct answer counts as Good, not Easy. */
   option_term_lookup?: boolean;
+  /** The learner's own rating for an answer the server or tutor graded; correctness still comes from the grading. */
+  rating_override?: number;
+  /** `correctness` was computed by the server (a typed gap checked against stored spellings), not judged by a tutor. */
+  server_graded?: boolean;
 }
 
 interface CardStateRow extends Record<string, unknown> {
@@ -88,6 +92,9 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
   if (rawCorrectness !== undefined && (typeof rawCorrectness !== "number" || Number.isNaN(rawCorrectness) || rawCorrectness < 0 || rawCorrectness > 1)) {
     throw new ValidationError("correctness must be between 0 and 1");
   }
+  if (input.rating_override !== undefined && (!Number.isInteger(input.rating_override) || input.rating_override < 1 || input.rating_override > 4)) {
+    throw new ValidationError("rating_override must be between 1 and 4");
+  }
   const sessionDifficultyInput = input.session_difficulty === undefined ? undefined : validateDifficulty(input.session_difficulty);
 
   const legacyModality: StudyModality = (rawModality && isValidModality(rawModality)) ? rawModality : "web";
@@ -101,7 +108,7 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
     gradedBy = "server";
   } else if (rawCorrectness !== undefined) {
     correctness = rawCorrectness;
-    gradedBy = "tutor";
+    gradedBy = input.server_graded ? "server" : "tutor";
     if (style === "self") style = "open";
   } else if (rawRating !== undefined) {
     correctness = correctnessFromRating(rawRating);
@@ -111,7 +118,7 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
     throw new ValidationError("rating or correctness is required");
   }
   const derivedRating = (rawCorrectness !== undefined || gradedBy === "server") ? ratingFromCorrectness(correctness) : (rawRating as 1 | 2 | 3 | 4);
-  const rating = input.option_term_lookup && derivedRating === 4 ? 3 : derivedRating;
+  const rating = (input.rating_override as 1 | 2 | 3 | 4 | undefined) ?? (input.option_term_lookup && derivedRating === 4 ? 3 : derivedRating);
 
   const result = await db.transaction(async (tx) => {
     // 1. Take the row locks first. The state is read in a second statement so a

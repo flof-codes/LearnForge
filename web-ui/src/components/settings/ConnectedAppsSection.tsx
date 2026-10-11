@@ -2,34 +2,24 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appsService } from '../../api/apps';
-import { glassesService } from '../../api/glasses';
 
-interface Row { key: string; kind: 'app' | 'glasses'; id: string; name: string; createdAt: string; lastUsedAt: string | null }
+interface Row { key: string; id: string; name: string; createdAt: string; lastUsedAt: string | null }
 
 /**
- * Everything that holds a token of its own for this account, in one list:
- * connected apps for every user, plus the paired glasses for an admin.
+ * Every connected app that holds a token of its own for this account.
  */
-export default function ConnectedAppsSection({ withGlasses }: { withGlasses: boolean }) {
+export default function ConnectedAppsSection() {
   const { t } = useTranslation(['app']);
   const queryClient = useQueryClient();
 
   const { data: apps = [] } = useQuery({ queryKey: ['app-tokens'], queryFn: () => appsService.list().then(r => r.data) });
-  const { data: glasses = [] } = useQuery({
-    queryKey: ['glasses-tokens'],
-    queryFn: () => glassesService.list().then(r => r.data),
-    enabled: withGlasses,
-  });
 
   const revoke = useMutation({
-    mutationFn: (row: Row) => (row.kind === 'app' ? appsService.revoke(row.id) : glassesService.revoke(row.id)),
-    onSuccess: (_r, row) => queryClient.invalidateQueries({ queryKey: [row.kind === 'app' ? 'app-tokens' : 'glasses-tokens'] }),
+    mutationFn: (row: Row) => appsService.revoke(row.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-tokens'] }),
   });
 
-  const rows: Row[] = [
-    ...apps.map(a => ({ key: `app-${a.id}`, kind: 'app' as const, id: a.id, name: a.device ? `${a.app} · ${a.device}` : a.app, createdAt: a.createdAt, lastUsedAt: a.lastUsedAt })),
-    ...glasses.map(g => ({ key: `glasses-${g.id}`, kind: 'glasses' as const, id: g.id, name: g.label, createdAt: g.createdAt, lastUsedAt: g.lastUsedAt })),
-  ];
+  const rows: Row[] = apps.map(a => ({ key: `app-${a.id}`, id: a.id, name: a.device ? `${a.app} · ${a.device}` : a.app, createdAt: a.createdAt, lastUsedAt: a.lastUsedAt }));
 
   return (
     <section className="lf-panel space-y-4">

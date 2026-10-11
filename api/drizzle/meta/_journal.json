@@ -162,6 +162,27 @@
       "when": 1791200095120,
       "tag": "0022_app_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791723299163,
+      "tag": "0023_drop_glasses",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791723788618,
+      "tag": "0024_card_questions",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791731478636,
+      "tag": "0025_tutor_settings",
+      "breakpoints": true
     }
   ]
 }

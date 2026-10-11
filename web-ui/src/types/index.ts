@@ -330,15 +330,6 @@ export interface McpKeyStatus {
   createdAt: string | null;
 }
 
-// --- Glasses (Even Realities G2, admin only) ---
-export interface GlassesToken {
-  id: string;
-  label: string;
-  createdAt: string;
-  lastUsedAt: string | null;
-  expiresAt: string;
-}
-
 export interface ConnectedApp {
   id: string;
   app: string;
@@ -413,4 +404,85 @@ export interface AnkiImport {
   progress: { done: number; total: number };
   createdAt: string;
   finishedAt: string | null;
+}
+
+// --- Tutor in the web app (stored questions for the study view, admin only) ---
+export type AnswerMode = 'tap' | 'type' | 'dictate';
+export type TutorPause = 'credits' | 'auth' | 'refused' | 'error';
+
+export interface QuestionTerm { term: string; definition: string }
+export interface ChoicePayload {
+  stem: string;
+  options: { text: string; correct: boolean; why: string }[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+export interface GapPayload {
+  stem: string;
+  answer: string;
+  accept: string[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+
+export interface OpenPayload {
+  stem: string;
+  /** A model answer, shown on request after the learner's own. */
+  answer: string;
+  keyPoints: string[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+/** The server's grading of an open answer; the review is written later, with the rating. */
+export interface OpenGrade {
+  correctness: number;
+  feedback: string;
+  points: { text: string; met: boolean }[];
+  modelAnswer: string;
+}
+
+interface TutorQuestionBase {
+  type: 'question';
+  /** The study ticket this question was served with. */
+  questionId: string;
+  cardId: string;
+  topicId: string;
+  concept: string;
+  bloomLevel: number;
+  backHtml: string;
+}
+export type TutorQuestion =
+  | (TutorQuestionBase & { form: 'choice'; payload: ChoicePayload })
+  | (TutorQuestionBase & { form: 'gap'; payload: GapPayload })
+  | (TutorQuestionBase & { form: 'open'; payload: OpenPayload });
+/** A card without a stored question: shown as it is and rated by the learner. */
+export interface TutorPlainCard { type: 'card'; card: DueCard }
+export type TutorItem = TutorQuestion | TutorPlainCard;
+
+export interface TutorStatus { available: boolean; writing: number; paused: TutorPause | null }
+export interface TutorPrepared { ready: number; waiting: number; writing: number; paused: TutorPause | null }
+export interface TutorBatch {
+  sessionId: string;
+  items: TutorItem[];
+  /** Cards still waiting for the writer. */
+  pending: number;
+  /** Due and new cards left, including the ones served here. */
+  remaining: number;
+  paused: TutorPause | null;
+}
+export interface TutorAnswerResult extends ReviewResponse {
+  correctness: number;
+  suggestedRating: number;
+}
+/** The account's own tutor setup. The key itself never comes back, only its last four characters. */
+export interface TutorSettings {
+  hasKey: boolean;
+  keyHint: string | null;
+  model: string;
+  effort: string;
+  updatedAt: string | null;
+  /** No key of its own: this admin account runs on the server's (deprecated). */
+  serverKey: boolean;
+  models: { id: string; name: string; effort: boolean }[];
+  efforts: string[];
 }
