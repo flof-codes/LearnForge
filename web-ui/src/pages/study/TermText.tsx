@@ -17,12 +17,14 @@ interface Piece { text: string; term?: QuestionTerm; marker?: boolean }
 /** Splits the text at the first occurrence of each term (and at the marker), keeping the original casing. */
 function split(text: string, terms: QuestionTerm[], marker?: string): Piece[] {
   let pieces: Piece[] = [{ text }];
-  const cut = (needle: string, make: (found: string) => Piece) => {
-    const lower = needle.toLowerCase();
+  const cut = (needle: string, make: (found: string) => Piece, wholeWord = true) => {
+    // Whole words only: a short term must not light up inside a longer word.
+    const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = wholeWord ? new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu') : new RegExp(escaped, 'iu');
     for (let i = 0; i < pieces.length; i++) {
       const p = pieces[i];
       if (p.term || p.marker) continue;
-      const at = p.text.toLowerCase().indexOf(lower);
+      const at = p.text.search(pattern);
       if (at < 0) continue;
       const found = p.text.slice(at, at + needle.length);
       pieces = [
@@ -35,7 +37,7 @@ function split(text: string, terms: QuestionTerm[], marker?: string): Piece[] {
       return;
     }
   };
-  if (marker) cut(marker, () => ({ text: '', marker: true }));
+  if (marker) cut(marker, () => ({ text: '', marker: true }), false);
   // Longest first, so "stroke volume" is not split by a shorter term inside it.
   for (const term of [...terms].sort((a, b) => b.term.length - a.term.length)) cut(term.term, found => ({ text: found, term }));
   return pieces;

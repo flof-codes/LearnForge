@@ -11,7 +11,7 @@ import InteractiveCard from './InteractiveCard';
 import QuestionCard, { type QuestionAnswer } from './QuestionCard';
 import OpenCard from './OpenCard';
 import SessionSummary from './SessionSummary';
-import { presetOf, type TutorSettings } from '../../utils/tutor';
+import { presetOf, tutorErrorKey, type TutorSettings } from '../../utils/tutor';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
 import type { TutorItem, TutorPause } from '../../types';
 
@@ -44,6 +44,8 @@ export default function TutorSession({ topicId, settings }: Props) {
   const [ratings, setRatings] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** A review that could not be saved: the card stays, with a way to try again or to leave it. */
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [ended, setEnded] = useState(false);
   const [round, setRound] = useState(0);
 
@@ -98,11 +100,12 @@ export default function TutorSession({ topicId, settings }: Props) {
   const answerQuestion = async (answer: QuestionAnswer) => {
     if (!current || current.type !== 'question' || saving) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await tutorService.answer({ questionId: current.questionId, ...answer });
       advance(answer.rating);
     } catch (err) {
-      setError(extractErrorMessage(err));
+      setSaveError(t(tutorErrorKey(err)));
     } finally {
       setSaving(false);
     }
@@ -111,6 +114,7 @@ export default function TutorSession({ topicId, settings }: Props) {
   const rateCard = async (rating: 1 | 2 | 3 | 4) => {
     if (!current || current.type !== 'card' || saving) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await reviewService.submit({
         card_id: current.card.id,
@@ -122,7 +126,7 @@ export default function TutorSession({ topicId, settings }: Props) {
       });
       advance(rating);
     } catch (err) {
-      setError(extractErrorMessage(err));
+      setSaveError(t(tutorErrorKey(err)));
     } finally {
       setSaving(false);
     }
@@ -171,6 +175,13 @@ export default function TutorSession({ topicId, settings }: Props) {
         <div className="lf-panel md:p-4 space-y-2">
           <p className="text-sm text-danger">{error}</p>
           <button onClick={() => { setError(null); void refill(); }} className="text-sm text-accent-blue">{t('tutor.retry')}</button>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="lf-panel md:p-4 space-y-2">
+          <p className="text-sm text-danger">{saveError}</p>
+          <button onClick={() => { setSaveError(null); setQueue(q => q.slice(1)); setExhausted(false); }} className="text-sm text-accent-blue">{t('tutor.skipCard')}</button>
         </div>
       )}
 

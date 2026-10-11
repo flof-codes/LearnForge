@@ -786,6 +786,11 @@
     "modelAnswer": "Musterantwort:",
     "showModel": "Musterantwort zeigen",
     "dictate": "Diktieren",
-    "stopDictation": "Diktat beenden"
+    "stopDictation": "Diktat beenden",
+    "dictationFailed": "Das Diktat ist nicht gestartet. Prüfe die Mikrofon-Berechtigung.",
+    "modelError": "Der Tutor kann gerade nicht antworten. Versuche es gleich noch einmal.",
+    "questionGone": "Diese Frage gilt nicht mehr, die Karte wurde geändert.",
+    "saveFailed": "Die Antwort konnte nicht gespeichert werden. Tippe eine Bewertung, um es erneut zu versuchen.",
+    "skipCard": "Diese Karte später lernen"
   }
 }

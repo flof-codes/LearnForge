@@ -63,11 +63,10 @@ export function requestQuestions(db: Db, userId: string, requests: QuestionReque
       // The test writer fails on purpose; its pauses must not outlast a test.
       const pauseMs = model.name === "stub" ? Math.min(PAUSE_MS[reason], 3000) : PAUSE_MS[reason];
       // A declined batch would be declined again: mark its cards as skipped so they are shown as they are.
-      if (reason === "refused") {
-        await storeQuestions(db, userId, batch, batch.map(r => ({ card_id: r.cardId, status: "skipped", skip_reason: "The model declined to write this question" })), model.name).catch(() => undefined);
-      } else {
-        state.paused = { reason, until: Date.now() + pauseMs };
-      }
+      // If even that cannot be stored, pause like any other fault, or every poll would pay for the same refusal.
+      const skips = batch.map(r => ({ card_id: r.cardId, status: "skipped", skip_reason: "The model declined to write this question" }));
+      const settled = reason === "refused" && await storeQuestions(db, userId, batch, skips, model.name).then(() => true, () => false);
+      if (!settled) state.paused = { reason: reason === "refused" ? "error" : reason, until: Date.now() + (pauseMs || PAUSE_MS.error) };
       log(`question writer failed (${reason}): ${(err as Error).message}`);
     } finally {
       state.writing.clear();

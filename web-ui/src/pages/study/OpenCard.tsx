@@ -9,8 +9,7 @@ import TermText from './TermText';
 import MicButton from './MicButton';
 import { BottomBar, barButton, primaryButton, type QuestionAnswer } from './QuestionCard';
 import { dictationSupported } from '../../hooks/useDictation';
-import { suggestedRating, FOLLOW_UP_LIMIT } from '../../utils/tutor';
-import { extractErrorMessage } from '../../utils/extractErrorMessage';
+import { suggestedRating, tutorErrorKey, FOLLOW_UP_LIMIT } from '../../utils/tutor';
 import type { OpenGrade, TutorQuestion } from '../../types';
 
 interface Props {
@@ -65,7 +64,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
     try {
       setGrade((await tutorService.grade(item.questionId, answer)).data);
     } catch (err) {
-      setError(extractErrorMessage(err));
+      setError(t(tutorErrorKey(err) === 'tutor.saveFailed' ? 'tutor.modelError' : tutorErrorKey(err)));
     } finally {
       setBusy(null);
     }
@@ -87,7 +86,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
       // The question stays out of the thread so the next one still alternates.
       setThread(thread);
       setFollowUp(question);
-      setError(extractErrorMessage(err));
+      setError(t(tutorErrorKey(err) === 'tutor.saveFailed' ? 'tutor.modelError' : tutorErrorKey(err)));
     } finally {
       setBusy(null);
     }

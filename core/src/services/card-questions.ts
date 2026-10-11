@@ -59,6 +59,11 @@ export const FOLLOW_UP_LIMIT = 5;
 // Which form a card is asked in
 // ---------------------------------------------------------------------------
 
+/** Wrong options are written for a band of the session difficulty; a question is served only inside its band. */
+export function difficultyBand(difficulty: number): "commute" | "desk" | "deep" {
+  return difficulty < 0.5 ? "commute" : difficulty < 0.85 ? "desk" : "deep";
+}
+
 export function validateAnswerModes(raw: unknown): AnswerMode[] {
   if (!Array.isArray(raw)) throw new ValidationError("answer_by must be an array of tap, type, dictate");
   const modes = [...new Set(raw)].filter((m): m is AnswerMode => ANSWER_MODES.includes(m as AnswerMode));
@@ -183,6 +188,8 @@ export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicNam
 
 /** Due cards in study order, each with its form and its fresh stored question, if one exists. */
 export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOptions): Promise<TutorQueueEntry[]> {
+  if (opts.topicId !== undefined && !UUID_RE.test(opts.topicId)) throw new ValidationError("topic_id must be a UUID");
+  if (opts.limit !== undefined && !Number.isInteger(opts.limit)) throw new ValidationError("limit must be a whole number");
   const limit = Math.max(1, Math.min(20, opts.limit ?? QUESTION_BATCH_SIZE * 2));
   const exclude = new Set((opts.exclude ?? []).filter(id => UUID_RE.test(id)));
   const due = await getStudyCards(db, userId, opts.topicId, Math.min(100, limit + exclude.size));
@@ -191,10 +198,11 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
 
   // A skip is retried after a week: the reason may have been a passing fault of the writer.
   const idList = sql.join(cards.map(c => sql`${c.id}::uuid`), sql`, `);
-  const rows = await db.execute<{ id: string; card_id: string; bloom_level: number; form: string; status: string; payload: QuestionPayload | null }>(sql`
-    SELECT cq.id, cq.card_id, cq.bloom_level, cq.form, cq.status, cq.payload
+  const rows = await db.execute<{ id: string; card_id: string; bloom_level: number; form: string; status: string; difficulty: number; payload: QuestionPayload | null }>(sql`
+    SELECT cq.id, cq.card_id, cq.bloom_level, cq.form, cq.status, cq.difficulty, cq.payload
     FROM card_questions cq
     JOIN cards c ON c.id = cq.card_id
+    JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
     WHERE cq.card_id IN (${idList})
       AND cq.prompt_version = ${QUESTION_PROMPT_VERSION}
       AND cq.used_at IS NULL
@@ -205,6 +213,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
   `);
 
   const topics = await loadTopicRates(db, userId);
+  const band = difficultyBand(opts.difficulty);
   return cards.map(card => {
     const form = pickQuestionForm({
       difficulty: opts.difficulty,
@@ -212,7 +221,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
       isCloze: card.noteTypeKind === "cloze" || card.cardType === "cloze",
       answerBy: opts.answerBy,
     });
-    const row = rows.rows.find(r => r.card_id === card.id && r.bloom_level === card.bloomState.currentLevel && r.form === form);
+    const row = rows.rows.find(r => r.card_id === card.id && r.bloom_level === card.bloomState.currentLevel && r.form === form && difficultyBand(r.difficulty) === band);
     return {
       card,
       form,
@@ -283,8 +292,10 @@ export async function storeQuestions(db: Db, userId: string, requests: QuestionR
 
     const inserted = await db.execute<{ id: string }>(sql`
       WITH stale AS (
-        DELETE FROM card_questions
-        WHERE card_id = ${request.cardId} AND used_at IS NULL AND bloom_level = ${request.bloomLevel} AND form = ${request.form}
+        DELETE FROM card_questions cq
+        USING cards c, topics t
+        WHERE cq.card_id = c.id AND t.id = c.topic_id AND t.user_id = ${userId}
+          AND cq.card_id = ${request.cardId} AND cq.used_at IS NULL AND cq.bloom_level = ${request.bloomLevel} AND cq.form = ${request.form}
       )
       INSERT INTO card_questions
         (card_id, bloom_level, form, prompt_version, status, payload, skip_reason, difficulty, model, original_id, card_updated_at)
@@ -331,6 +342,7 @@ export interface ServeTutorOptions extends Omit<TutorQueueOptions, "difficulty">
  * writer skipped as plain cards, and the cards still waiting for a question.
  */
 export async function serveTutorBatch(db: Db, userId: string, opts: ServeTutorOptions) {
+  if (!UUID_RE.test(opts.sessionId ?? "")) throw new ValidationError("session_id must be a UUID");
   const session = await getSession(db, userId, opts.sessionId);
   const queue = await getTutorQueue(db, userId, { ...opts, difficulty: session.sessionDifficulty });
 
@@ -495,12 +507,4 @@ export async function submitTutorAnswer(db: Db, userId: string, input: TutorAnsw
 
   await db.execute(sql`UPDATE card_questions SET used_at = NOW() WHERE id = ${q.cq_id} AND used_at IS NULL`);
   return { ...result, correctness, suggestedRating: ratingFromCorrectness(correctness) };
-}
-
-/** How many of the next due cards already have a question; the start screen shows it. */
-export async function countReadyQuestions(db: Db, userId: string, opts: TutorQueueOptions): Promise<{ ready: number; unwritten: number }> {
-  validateDifficulty(opts.difficulty);
-  const queue = await getTutorQueue(db, userId, opts);
-  const ready = queue.filter(e => e.stored).length;
-  return { ready, unwritten: queue.length - ready };
 }

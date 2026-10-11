@@ -786,6 +786,11 @@
     "modelAnswer": "Model answer:",
     "showModel": "Show model answer",
     "dictate": "Dictate",
-    "stopDictation": "Stop dictation"
+    "stopDictation": "Stop dictation",
+    "dictationFailed": "Dictation did not start. Check the microphone permission.",
+    "modelError": "The tutor cannot answer right now. Try again in a moment.",
+    "questionGone": "This question is no longer valid, the card was changed.",
+    "saveFailed": "The answer could not be saved. Tap a rating to try again.",
+    "skipCard": "Leave this card for later"
   }
 }

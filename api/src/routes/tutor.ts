@@ -107,6 +107,7 @@ export default async function tutorRoutes(app: FastifyInstance) {
     const userId = await requireTutor(req);
     const { session_id, exclude, limit } = req.body ?? {};
     if (!session_id) throw new ValidationError("session_id is required");
+    if (limit !== undefined && typeof limit !== "number") throw new ValidationError("limit must be a number");
     const answerBy = validateAnswerModes(req.body?.answer_by);
     const paused = writerStatus(userId).paused;
 

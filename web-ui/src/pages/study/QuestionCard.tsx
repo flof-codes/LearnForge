@@ -79,7 +79,8 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
     if (done) return;
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (e.key === 'Enter') { e.preventDefault(); handlers.current.check(); return; }
+      // Enter on a focused button or link is that control's own key.
+      if (e.key === 'Enter' && tag !== 'BUTTON' && tag !== 'A') { e.preventDefault(); handlers.current.check(); return; }
       if (tag === 'INPUT' || tag === 'TEXTAREA' || item.form !== 'choice') return;
       const i = ['1', '2', '3', '4'].indexOf(e.key);
       if (i >= 0 && i < item.payload.options.length) { e.preventDefault(); handlers.current.pick(i); }

@@ -82,3 +82,12 @@ export function suggestedRating(correctness: number, lookedUp: boolean): 1 | 2 |
   const rating = correctness >= 0.95 ? 4 : correctness >= 0.8 ? 3 : correctness >= 0.5 ? 2 : 1;
   return lookedUp && rating === 4 ? 3 : rating;
 }
+
+/** What to tell the learner when a tutor request failed: the server names model faults by code. */
+export function tutorErrorKey(error: unknown): string {
+  const data = (error as { response?: { status?: number; data?: { code?: string } } }).response;
+  if (data?.data?.code === 'TUTOR_CREDITS') return 'tutor.pausedCredits';
+  if (data?.data?.code?.startsWith('TUTOR_')) return 'tutor.modelError';
+  if (data?.status === 404) return 'tutor.questionGone';
+  return 'tutor.saveFailed';
+}

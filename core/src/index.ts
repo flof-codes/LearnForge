@@ -104,7 +104,7 @@ export { submitReview, deleteReview, gradeChoice, type SubmitReviewInput, type D
 export {
   QUESTION_PROMPT_VERSION, QUESTION_BATCH_SIZE, FOLLOW_UP_LIMIT, getAnswerContext,
   validateAnswerModes, pickQuestionForm, validateQuestionPayload, normalizeGapAnswer, gradeGap,
-  getTutorQueue, toQuestionRequest, storeQuestions, serveTutorBatch, submitTutorAnswer, countReadyQuestions,
+  getTutorQueue, toQuestionRequest, storeQuestions, serveTutorBatch, submitTutorAnswer, difficultyBand,
   type QuestionForm, type AnswerMode, type QuestionTerm, type ChoicePayload, type GapPayload, type OpenPayload, type QuestionPayload,
   type TutorQueueOptions, type TutorQueueEntry, type WrittenQuestion, type TutorQuestion, type TutorPlainCard, type TutorItem,
   type ServeTutorOptions, type TutorAnswerInput,
