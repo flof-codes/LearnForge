@@ -23,7 +23,7 @@ import { ForbiddenError } from "../lib/errors.js";
  * `request.user` (see APP_TOKEN_ROUTES there).
  */
 
-// Same tiny per-IP window as the glasses pairing: the poll leaks only a status,
+// A tiny per-IP window: the poll leaks only a status,
 // but there is no reason to let anyone enumerate codes.
 const WINDOW_MS = 60 * 1000;
 const START_LIMIT = 10;

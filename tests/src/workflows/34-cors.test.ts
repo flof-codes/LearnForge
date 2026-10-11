@@ -25,9 +25,4 @@ describe("CORS", () => {
     expect(plain.status).toBe(200); // /health is open to any origin
     expect(plain.headers["access-control-allow-origin"]).toBe("https://evil.example");
   });
-
-  it("lets the glasses app, which has no web origin, reach its routes", async () => {
-    const res = await preflight("/glasses/pair/start", "null");
-    expect(res.headers["access-control-allow-origin"]).toBe("null");
-  });
 });

@@ -483,15 +483,6 @@
       "neverUsed": "Noch nicht genutzt",
       "remove": "Entfernen"
     },
-    "glasses": {
-      "title": "Brille",
-      "description": "Verbindet die Even Realities G2 App. \u00d6ffne LearnForge auf der Brille und gib den angezeigten Code ein. Gekoppelte Brillen stehen unter Verbundene Apps. Nur f\u00fcr Admins.",
-      "codeLabel": "Kopplungscode",
-      "codePlaceholder": "z.B. K7F42Q",
-      "connect": "Verbinden",
-      "connecting": "Verbinden...",
-      "connected": "Brille verbunden. Die App auf der Brille macht von selbst weiter."
-    },
     "claude": {
       "title": "Claude (claude.ai) Einrichtung",
       "step1": "\u00d6ffne <1>claude.ai</1> und gehe zu <bold>Settings > Connectors</bold>",

@@ -21,7 +21,6 @@ import { registerImageTools } from "./tools/images.js";
 import { registerSkillTools } from "./tools/skill.js";
 import { registerFocusTools } from "./tools/focus.js";
 import { registerDialTools } from "./tools/dials.js";
-import { registerGlassesTools } from "./tools/glasses.js";
 import { registerNoteTools } from "./tools/notes.js";
 import { LearnForgeOAuthProvider, handleLogin, cleanupExpiredOAuth } from "./auth/oauth-provider.js";
 
@@ -60,7 +59,6 @@ Question presentation: where the client has the visualizer, render each choice c
     registerSkillTools(server);
     registerFocusTools(server, db, userId);
     registerDialTools(server, db, userId);
-    registerGlassesTools(server, db, userId);
     registerNoteTools(server, db, userId);
     return server;
   }

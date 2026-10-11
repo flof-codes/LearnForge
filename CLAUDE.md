@@ -71,13 +71,12 @@
 
 ## Project Structure
 
-Monorepo with 5 packages — all ESM (`"type": "module"`):
+Monorepo with 4 packages — all ESM (`"type": "module"`):
 
 - `core/` — Shared package (`@learnforge/core`): DB schema, services, utilities
 - `api/` — Fastify 5 REST backend (thin route handlers calling core services)
 - `web-ui/` — React 19 SPA (React Router 7, TanStack Query 5, Tailwind CSS 4, Vite 7)
 - `mcp/` — MCP server with tutor instructions and card templates (stdio + StreamableHTTP transport)
-- `glasses/` — Even Hub plugin for the Even Realities G2 glasses (Vite + TS, ring-operated MCQ; admin-only, sideloaded, not built in CI)
 
 This project uses internationalization (i18n) with DE/EN translations. When modifying user-facing text, update both language files. Translation keys are spread across 25+ components.
 
@@ -173,11 +172,11 @@ npm run test:integration:down  # tear down
 - Stdio transport requires `--api-key <key>` argument
 
 ### Connected apps (app tokens)
-- Lecture Scribe connects by a pairing modelled on the glasses: the app makes its own secret (prefix `lfa_`), sends only the SHA-256 to `POST /apps/pair/start` and gets a 6-character code plus `verifyUrl` (`APP_URL/connect?code=`). The signed-in user approves on `/connect` (`POST /apps/claim`); the app polls `/apps/pair/poll`, which only ever returns a status.
+- Lecture Scribe connects by pairing: the app makes its own secret (prefix `lfa_`), sends only the SHA-256 to `POST /apps/pair/start` and gets a 6-character code plus `verifyUrl` (`APP_URL/connect?code=`). The signed-in user approves on `/connect` (`POST /apps/claim`); the app polls `/apps/pair/poll`, which only ever returns a status.
 - `api/src/plugins/auth.ts` accepts an app token **only** on `APP_TOKEN_ROUTES`: read topics and a topic's context, search cards, create topics, notes and cards, `GET/DELETE /apps/me`. Everything else answers 403 `APP_TOKEN_SCOPE`. Adding a route there widens what a leaked token can do.
 - Tokens live in `app_tokens`, hash only. Each use pushes `expires_at` 90 days out; revoked and expired tokens answer 401 `TOKEN_REVOKED` / `TOKEN_EXPIRED`. The write gate (verified e-mail, subscription) applies to app tokens like to a login.
 - `POST /notes` takes `source_ref`: the same ref for the same user returns the existing note, so an app's retried upload creates nothing.
-- Settings → Connected apps lists app tokens for every user and, for an admin, the paired glasses.
+- Settings → Connected apps lists app tokens for every user.
 
 ### Web UI
 - `AuthContext` manages JWT token in localStorage
@@ -226,10 +225,6 @@ POST/GET /import/anki           GET/DELETE /import/anki/:id
 POST /import/anki/:id/commit
 POST/GET /shares                DELETE /shares/:id
 GET /shares/preview/:token      POST /shares/accept/:token
-POST /glasses/pair/start        POST /glasses/pair/poll     (public, rate limited)
-POST /glasses/claim             GET/DELETE /glasses/tokens[/:id]   (admin JWT)
-GET /glasses/summary            GET /glasses/next?mode=&limit=&session_id=&exclude=
-POST /glasses/reviews           (glasses bearer token, see api/src/plugins/auth.ts)
 POST /apps/pair/start           POST /apps/pair/poll        (public, rate limited)
 GET /apps/pair/info?code=       POST /apps/claim            GET/DELETE /apps/tokens[/:id]   (JWT)
 GET/DELETE /apps/me             (app bearer token, see APP_TOKEN_ROUTES in api/src/plugins/auth.ts)
@@ -252,8 +247,6 @@ GET /health
 | Similar cards | get_similar_cards | card_id, limit? |
 | Topic context | get_topic_context | topic_id, depth? |
 | Upload/Delete image | upload_image, delete_image | file_path / image_id |
-| Glasses compile queue (admin) | get_glasses_compile_queue | limit?, topic_id?, horizon_days? |
-| Store glasses question (admin) | store_glasses_question | card_id, bloom_level, stem, options[4], correct[], explanation, or skip + reason |
 
 ## Architecture Rules
 
@@ -272,7 +265,7 @@ GET /health
 
 - The database stores media as `/images/<id>`. Card HTML renders in a sandboxed iframe that cannot send the login token, so an `onSend` hook in `api/src/app.ts` rewrites those references in every JSON response to `/media/<id>/<sig>` (HMAC of id + owner from core `lib/media-url.ts`, secret derived from `JWT_SECRET`), prefixed with `API_PUBLIC_URL` only when that is set. Only ids the requesting user owns are signed. The links are relative on purpose: `CardHtmlRender.resolveMediaLinks` puts the web app's full API address (`VITE_API_URL`, which may include a path such as `/api`) in front of them before the card frame is built, so neither the proxy's Host handling nor a path prefix can misdirect them. A `preValidation` hook turns signed URLs in request bodies back, so they never reach the database. `/export` keeps the stored form.
 
-- CORS: browsers may call the API only from `APP_URL` plus `CORS_ORIGINS`; `/glasses/*` and `/health` accept any origin because Even's app webview has no web origin (the bearer token is the credential there).
+- CORS: browsers may call the API only from `APP_URL` plus `CORS_ORIGINS`; `/health` accepts any origin.
 
 ## Anki Import
 
@@ -282,14 +275,6 @@ GET /health
 - `cards.suspended_by`: `gap` (cloze gap vanished; un-suspended when it returns), `user`, `anki`, `unsupported`. Only `gap` is lifted automatically.
 - Fixtures from real Anki: `tests/fixtures/anki/` (regenerate with `make_fixtures.py`, needs `pip install anki`).
 - The reverse proxy in front of the API must allow 200 MB request bodies for the upload.
-
-## Glasses (Even Realities G2)
-
-- Admin-only feature. Questions are compiled through the MCP tools by Claude Code, never by LearnForge code, and the API holds no Anthropic credential. Two runners: the `/compile-glasses` skill in the admin's own Claude Code, and the server-side compiler (`api/src/services/glasses-compiler.ts`, `GLASSES_COMPILER=claude-code`) that spawns the unmodified Claude Code binary bundled in the api image when the glasses app opens with pending cards. The binary is signed in by the admin on the server (a `claude setup-token` value in the api environment, or a login persisted under `CLAUDE_CONFIG_DIR=/data/claude`) and reaches the local MCP with a 30-minute OAuth token minted by `mintGlassesCompilerToken`. This is the hosted-Claude-Code case Anthropic's terms allow; a Claude token handled by LearnForge code is not, see docs/reports/2026-09-22-claude-subscription-terms.html.
-- Pairing: the glasses generate a secret, send its SHA-256 to `POST /glasses/pair/start`, show the 6-char code; the admin claims it in Settings → Glasses; poll returns only a status. Tokens live hashed in `glasses_tokens`, 90 days, revocable.
-- `glasses_questions` is keyed by (card_id, bloom_level, prompt_version) and is fresh only while `card_updated_at` and `original_id` match the card. `updateCard` deletes a card's rows. Bump `GLASSES_PROMPT_VERSION` in core when the compile rules change.
-- Serving uses study sessions (`client: glasses`, difficulty 0.3) and question tickets; `POST /glasses/reviews` sends letters plus the ticket and the review service grades (`style` single/multiple from the correct count).
-- Display caps (core `GLASSES_CAPS`, mirrored in `glasses/src/text.ts`): stem 96 chars / 2 lines, 4 options × 28, explanation 190. Characters are checked against Even's font metrics (`@evenrealities/pretext`, `requireDrawable` in core): umlauts, accents, typographic quotes pass; ✓ ► µ and backticks are refused.
 
 ## Conventions
 
@@ -312,8 +297,8 @@ Use the lint-gate agent to check type safety and linting.
 ```
 
 Prüft:
-- `tsc --noEmit` auf api/, mcp/ und glasses/, `tsc -b` auf web-ui/
-- `eslint .` auf alle 4 Packages (api, mcp, web-ui, glasses)
+- `tsc --noEmit` auf api/ und mcp/, `tsc -b` auf web-ui/
+- `eslint .` auf alle 3 Packages (api, mcp, web-ui)
 - **Null-Toleranz**: Ein einziger Fehler = BLOCKED. Phase 2 startet NICHT.
 
 ### Phase 2: Parallele Spezialisten (nach bestandenem Lint Gate)

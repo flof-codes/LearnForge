@@ -101,7 +101,6 @@ export async function convertLegacyClozeCards(db: Db, log: (msg: string) => void
           }
         }
         // Questions compiled for the rotating card no longer match one gap.
-        await tx.execute(sql`DELETE FROM glasses_questions WHERE card_id = ${card.id}`);
       });
 
       // The tutor's original was written for the rotation flow; replace it with a derived one per card.

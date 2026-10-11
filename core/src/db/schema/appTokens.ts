@@ -4,7 +4,7 @@ import { users } from "./users.js";
 /**
  * One-time codes for connecting an app (Lecture Scribe) to an account.
  *
- * Same idea as the glasses pairing: the app generates its own bearer secret and
+ * The app generates its own bearer secret and
  * sends only its SHA-256; the signed-in user approves the code in the web UI,
  * which turns the hash into an app_tokens row. Polling reveals a status and
  * nothing else.

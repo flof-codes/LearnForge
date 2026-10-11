@@ -303,8 +303,6 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
         await tx.execute(sql`UPDATE cards SET topic_id = ${topicId} WHERE id = ${c.id}`);
       }
     }
-    // Compiled glasses questions were built from the old content.
-    await tx.execute(sql`DELETE FROM glasses_questions WHERE card_id IN (SELECT id FROM cards WHERE note_id = ${noteId})`);
   });
   await refreshDerivedOriginals(db, userId, noteId);
   return getNote(db, userId, noteId);

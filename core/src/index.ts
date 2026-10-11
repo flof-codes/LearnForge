@@ -172,44 +172,6 @@ export {
 export { extFromMime } from "./lib/image-utils.js";
 export { loadCardMedia, mediaIdsIn, type CardMedia, type CardMediaEntry, type AttachedImage } from "./lib/card-media.js";
 
-// Services - Glasses (Even Realities G2)
-export {
-  GLASSES_PROMPT_VERSION,
-  GLASSES_CAPS,
-  GLASSES_PAIR_CODE_TTL_MS,
-  GLASSES_TOKEN_TTL_MS,
-  hashGlassesToken,
-  normalizePairCode,
-  startGlassesPairing,
-  pollGlassesPairing,
-  claimGlassesPairing,
-  resolveGlassesToken,
-  listGlassesTokens,
-  revokeGlassesToken,
-  getGlassesCompileQueue,
-  storeGlassesQuestion,
-  validateGlassesQuestion,
-  getGlassesBatch,
-  submitGlassesAnswer,
-  getGlassesSummary,
-  type GlassesTokenRow,
-  type GlassesTokenCheck,
-  type GlassesCompileQueueEntry,
-  type GlassesCompileQueueOptions,
-  type StoreGlassesQuestionInput,
-  type GlassesMode,
-  type GlassesQuestion,
-  type GlassesBatchOptions,
-  type GlassesAnswerInput,
-} from "./services/glasses-service.js";
-export {
-  GLASSES_COMPILER_CLIENT_ID,
-  GLASSES_COMPILER_TOKEN_TTL_MS,
-  mintGlassesCompilerToken,
-  countPendingCompile,
-  getGlassesAskContext,
-  type GlassesAskContext,
-} from "./services/glasses-compile.js";
 export {
   startAppPairing, pollAppPairing, getAppPairing, claimAppPairing, resolveAppToken, listAppTokens, revokeAppToken, revokeAppTokenById,
   getAppAccount, hashAppToken, normalizeAppPairCode, APP_TOKEN_PREFIX, APP_PAIR_CODE_TTL_MS, APP_TOKEN_TTL_MS,

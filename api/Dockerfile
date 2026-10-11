@@ -20,9 +20,6 @@ COPY core/package.json core/
 COPY api/package.json api/
 COPY mcp/package.json mcp/
 COPY web-ui/package.json web-ui/
-# glasses is a root workspace too: npm ci refuses to run when a listed workspace
-# has no package.json, even though nothing from it is built into this image.
-COPY glasses/package.json glasses/
 RUN apt-get update && apt-get install -y python3 make g++ --no-install-recommends && rm -rf /var/lib/apt/lists/*
 # --ignore-scripts then an explicit rebuild: argon2 and sharp are native and must
 # be built for this platform. sharp is required by @xenova/transformers for
@@ -99,14 +96,7 @@ COPY --from=build /app/api/dist api/dist
 # Required at RUNTIME, not just at build: runMigrations() reads ./drizzle on boot.
 COPY --from=build /app/api/drizzle api/drizzle
 
-# Claude Code for the glasses compiler (api/src/services/glasses-compiler.ts).
-# Unmodified binary, pinned; the admin signs it in on the server, either with
-# CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` or by running `claude` once
-# inside the container with CLAUDE_CONFIG_DIR on a persistent volume.
-RUN npm install -g @anthropic-ai/claude-code@2.1.278 --no-audit --no-fund
-ENV CLAUDE_CONFIG_DIR=/data/claude
-
-RUN mkdir -p /data/images /data/claude
+RUN mkdir -p /data/images
 
 # STILL RUNS AS ROOT, and that is a deliberate deferral rather than an oversight.
 #

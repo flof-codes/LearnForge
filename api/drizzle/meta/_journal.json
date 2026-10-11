@@ -162,6 +162,13 @@
       "when": 1791200095120,
       "tag": "0022_app_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791723299163,
+      "tag": "0023_drop_glasses",
+      "breakpoints": true
     }
   ]
 }
