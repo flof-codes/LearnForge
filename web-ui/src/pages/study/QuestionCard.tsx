@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RatingButtons from '../../components/RatingButtons';
@@ -24,6 +25,8 @@ interface Props {
   /** The session's difficulty, changed from the card's menu. */
   difficulty: number;
   onChangeDifficulty: (difficulty: number) => Promise<void>;
+  /** Phone layout: the session's header row hosts the card's menu, and the label row above the question goes. */
+  menuSlot?: HTMLElement | null;
   /** The session allows dictation: a gap gets a microphone where the browser can listen. */
   dictate?: boolean;
 }
@@ -46,7 +49,7 @@ export const primaryButton = 'flex-1 py-3 rounded-lg text-sm font-medium bg-acce
  * A stored question: asked, checked on the spot, then rated. The answer goes
  * to the server only with the rating, so one tap after the feedback moves on.
  */
-export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty }: Props) {
+export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty, menuSlot }: Props) {
   const { t } = useTranslation('app');
   const isPhone = useIsPhone();
   const [picked, setPicked] = useState<number[]>([]);
@@ -108,22 +111,28 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
     </p>
   );
 
+  const menu = (
+    <CardMenu
+      difficulty={difficulty}
+      onChangeDifficulty={onChangeDifficulty}
+      card={{ frontHtml: item.frontHtml, backHtml: item.backHtml }}
+      answered={done}
+      onViewDetail={onViewDetail}
+      onOpenChange={setMenuOpen}
+    />
+  );
+
   return (
     <>
       <div className="space-y-4 pb-36 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-6 md:pb-6 md:mb-36">
-        <div className="flex items-center justify-between">
-          <div className="text-[10px] uppercase tracking-wider text-text-muted">
-            {item.form === 'gap' ? t('tutor.fillGap') : t('tutor.question')}
+        {menuSlot ? createPortal(menu, menuSlot) : (
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">
+              {item.form === 'gap' ? t('tutor.fillGap') : t('tutor.question')}
+            </div>
+            {menu}
           </div>
-          <CardMenu
-            difficulty={difficulty}
-            onChangeDifficulty={onChangeDifficulty}
-            card={{ frontHtml: item.frontHtml, backHtml: item.backHtml }}
-            answered={done}
-            onViewDetail={onViewDetail}
-            onOpenChange={setMenuOpen}
-          />
-        </div>
+        )}
 
         <div className="text-lg font-medium leading-snug">
           {item.form === 'gap' ? (

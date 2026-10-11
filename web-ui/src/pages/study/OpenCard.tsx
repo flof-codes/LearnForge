@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RatingButtons from '../../components/RatingButtons';
@@ -19,6 +20,8 @@ interface Props {
   /** The session's difficulty, changed from the card's menu. */
   difficulty: number;
   onChangeDifficulty: (difficulty: number) => Promise<void>;
+  /** Phone layout: the session's header row hosts the card's menu, and the label row above the question goes. */
+  menuSlot?: HTMLElement | null;
   /** The card was answered elsewhere or its question replaced: the session drops it. */
   onStale?: () => void;
   /** The session allows dictation: show the microphone where the browser can listen. */
@@ -34,7 +37,7 @@ const field = 'flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-bg-secondary border bord
  * graded against the question's key points, and they may ask about it before
  * rating. Only the rating writes the review.
  */
-export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty, onStale }: Props) {
+export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty, menuSlot, onStale }: Props) {
   const { t } = useTranslation('app');
   const { payload } = item;
   const [text, setText] = useState('');
@@ -103,20 +106,26 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
   const block = 'lf-bleed px-4 py-3 border-t border-border space-y-1.5 md:mx-0 md:px-0';
   const who = 'text-[10px] uppercase tracking-wider text-text-muted';
 
+  const menu = (
+    <CardMenu
+      difficulty={difficulty}
+      onChangeDifficulty={onChangeDifficulty}
+      card={{ frontHtml: item.frontHtml, backHtml: item.backHtml }}
+      answered={done}
+      onViewDetail={onViewDetail}
+      onOpenChange={setMenuOpen}
+    />
+  );
+
   return (
     <>
       <div className="space-y-4 pb-48 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-6 md:pb-6 md:mb-48">
-        <div className="flex items-center justify-between">
-          <div className="text-[10px] uppercase tracking-wider text-text-muted">{t('tutor.openQuestion')}</div>
-          <CardMenu
-            difficulty={difficulty}
-            onChangeDifficulty={onChangeDifficulty}
-            card={{ frontHtml: item.frontHtml, backHtml: item.backHtml }}
-            answered={done}
-            onViewDetail={onViewDetail}
-            onOpenChange={setMenuOpen}
-          />
-        </div>
+        {menuSlot ? createPortal(menu, menuSlot) : (
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">{t('tutor.openQuestion')}</div>
+            {menu}
+          </div>
+        )}
 
         <div className="text-lg font-medium leading-snug">
           <TermText text={payload.stem} terms={payload.terms} onLookup={() => setLookedUp(true)} />

@@ -834,6 +834,7 @@
       "cancel": "Abbrechen",
       "use": "{{name}} verwenden",
       "backLocked": "Die Rückseite öffnet sich, nachdem du geantwortet hast."
-    }
+    },
+    "progressShort": "{{headspace}} · {{current}} · noch {{left}}"
   }
 }
