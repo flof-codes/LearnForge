@@ -343,7 +343,7 @@ describe("Tutor in the web app", () => {
   it("reports a key Anthropic rejects, and keeps one user's key away from another", async () => {
     const owner = await registerUser("rejected", "user");
     await owner.put("/tutor/settings", { api_key: "sk-ant-api03-rejected-key-0123456789abcd" });
-    expect((await owner.post("/tutor/settings/check", {})).data).toEqual({ ok: false, reason: "auth" });
+    expect((await owner.post("/tutor/settings/check", {})).data).toMatchObject({ ok: false, reason: "auth", detail: "The Anthropic API key was rejected" });
 
     const other = await registerUser("nokey", "user");
     expect((await other.get("/tutor/settings")).data.hasKey).toBe(false);

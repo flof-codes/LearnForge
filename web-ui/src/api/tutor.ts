@@ -17,7 +17,7 @@ export const tutorService = {
   settings:     () => api.get<TutorSettings>('/tutor/settings'),
   saveSettings: (change: { api_key?: string; model?: string; effort?: string }) => api.put<SavedSettings>('/tutor/settings', change),
   removeKey:    () => api.delete<SavedSettings>('/tutor/settings/key'),
-  checkKey:     () => api.post<{ ok: boolean; reason: string | null }>('/tutor/settings/check', {}),
+  checkKey:     () => api.post<{ ok: boolean; reason: string | null; detail?: string }>('/tutor/settings/check', {}),
   grade:   (questionId: string, text: string) => api.post<OpenGrade>('/tutor/grade', { question_id: questionId, text }),
   followUp: (questionId: string, thread: { role: 'user' | 'assistant'; text: string }[]) =>
     api.post<{ text: string }>('/tutor/followup', { question_id: questionId, thread }),

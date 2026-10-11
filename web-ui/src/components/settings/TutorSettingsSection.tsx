@@ -19,7 +19,7 @@ export default function TutorSettingsSection() {
   const { t } = useTranslation(['app']);
   const queryClient = useQueryClient();
   const [newKey, setNewKey] = useState('');
-  const [check, setCheck] = useState<{ ok: boolean; reason: string | null } | null>(null);
+  const [check, setCheck] = useState<{ ok: boolean; reason: string | null; detail?: string } | null>(null);
 
   const { data: settings } = useQuery({ queryKey: ['tutor', 'settings'], queryFn: () => tutorService.settings().then(r => r.data) });
 
@@ -73,6 +73,7 @@ export default function TutorSettingsSection() {
             {check.ok ? t('app:settings.tutor.checkOk') : t(`app:settings.tutor.checkFailed.${check.reason === 'auth' || check.reason === 'credits' ? check.reason : 'error'}`)}
           </p>
         )}
+        {check && !check.ok && check.detail && <p className="text-xs text-text-muted break-words">{check.detail}</p>}
         <form
           className="flex gap-2"
           onSubmit={(e) => { e.preventDefault(); if (newKey.trim()) save.mutate({ api_key: newKey.trim() }); }}

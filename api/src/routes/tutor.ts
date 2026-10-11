@@ -220,7 +220,10 @@ export default async function tutorRoutes(app: FastifyInstance) {
       clearWriterPause(userId);
       return { ok: true, reason: null };
     } catch (err) {
-      return { ok: false, reason: err instanceof QuestionModelError ? err.reason : "error" };
+      // What Anthropic or the network said, so a failure can be told apart; it never contains the key.
+      const detail = (err instanceof Error ? err.message : "Unknown error").slice(0, 300);
+      app.log.warn(`tutor key check failed for model ${setup.model}: ${detail}`);
+      return { ok: false, reason: err instanceof QuestionModelError ? err.reason : "error", detail };
     }
   });
 }
