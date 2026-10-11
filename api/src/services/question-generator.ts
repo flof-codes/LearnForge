@@ -1,5 +1,5 @@
 import { storeQuestions, QUESTION_BATCH_SIZE, type Db, type QuestionRequest } from "@learnforge/core";
-import { getQuestionModel, QuestionModelError, type ModelFailure } from "./question-model.js";
+import { QuestionModelError, type ModelFailure, type QuestionModel } from "./question-model.js";
 
 /**
  * Writes questions in the background, one batch per user at a time.
@@ -35,8 +35,9 @@ function stateOf(userId: string): WriterState {
   return state;
 }
 
-export function writerEnabled(): boolean {
-  return getQuestionModel() !== null;
+/** A new key or model deserves a fresh try. */
+export function clearWriterPause(userId: string): void {
+  stateOf(userId).paused = null;
 }
 
 export function writerStatus(userId: string): { writing: number; paused: ModelFailure | null } {
@@ -45,10 +46,9 @@ export function writerStatus(userId: string): { writing: number; paused: ModelFa
 }
 
 /** Starts one batch for the first cards that are not being written yet. Does nothing while a batch runs or the writer is paused. */
-export function requestQuestions(db: Db, userId: string, requests: QuestionRequest[], log: (msg: string) => void): void {
-  const model = getQuestionModel();
+export function requestQuestions(db: Db, userId: string, model: QuestionModel, requests: QuestionRequest[], log: (msg: string) => void): void {
   const state = stateOf(userId);
-  if (!model || state.paused || state.writing.size > 0 || requests.length === 0) return;
+  if (state.paused || state.writing.size > 0 || requests.length === 0) return;
 
   const batch = requests.slice(0, QUESTION_BATCH_SIZE);
   for (const r of batch) state.writing.add(r.cardId);

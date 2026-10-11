@@ -1,34 +1,32 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
-import { eq } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import {
-  users, startSession, validateDifficulty, validateAnswerModes, serveTutorBatch, submitTutorAnswer,
+  getTutorSettings, saveTutorSettings, removeTutorKey, TUTOR_MODELS, TUTOR_EFFORTS,
+  startSession, validateDifficulty, validateAnswerModes, serveTutorBatch, submitTutorAnswer,
   getTutorQueue, toQuestionRequest, getStudySummary, getAnswerContext, ValidationError, FOLLOW_UP_LIMIT,
 } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 import { ForbiddenError, ServiceUnavailableError } from "../lib/errors.js";
-import { writerEnabled, writerStatus, requestQuestions } from "../services/question-generator.js";
-import { getQuestionModel, QuestionModelError, type AnswerGrade, type ThreadMessage } from "../services/question-model.js";
+import { writerStatus, requestQuestions, clearWriterPause } from "../services/question-generator.js";
+import { QuestionModelError, checkApiKey, type AnswerGrade, type ThreadMessage, type QuestionModel } from "../services/question-model.js";
+import { resolveTutorSetup, resolveTutorModel, usesServerKey } from "../services/tutor-access.js";
+import { settingsSecret } from "../config.js";
 
 /**
  * The tutor inside the web app: a study session that asks stored questions.
  *
- * Questions are written with the operator's own Anthropic key, so the feature
- * is for admins only. Everyone else gets `available: false` from the status
- * route and keeps the plain card view.
+ * Every model call runs on the key of the account it is for (Settings → Tutor).
+ * An account without a key gets `available: false` from the status route and
+ * keeps the plain card view.
  */
 
 interface TutorScope { topic_id?: string; difficulty?: number; answer_by?: unknown }
 
-async function isAdmin(userId: string): Promise<boolean> {
-  const [user] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId));
-  return user?.role === "admin";
-}
-
-async function requireTutor(request: FastifyRequest): Promise<string> {
+async function requireTutor(request: FastifyRequest): Promise<{ userId: string; model: QuestionModel }> {
   const userId = getUserId(request);
-  if (!writerEnabled() || !(await isAdmin(userId))) throw new ForbiddenError("The tutor is not available for this account", "TUTOR_UNAVAILABLE");
-  return userId;
+  const model = await resolveTutorModel(userId);
+  if (!model) throw new ForbiddenError("Save an Anthropic API key in the settings to use the tutor", "TUTOR_UNAVAILABLE");
+  return { userId, model };
 }
 
 /**
@@ -60,10 +58,10 @@ function cleanAnswerText(raw: unknown): string {
   return text;
 }
 
-async function gradeOpenAnswer(userId: string, questionId: string, text: string) {
+async function gradeOpenAnswer(userId: string, model: QuestionModel, questionId: string, text: string) {
   const ctx = await getAnswerContext(db, userId, questionId);
   if (ctx.form !== "open") throw new ValidationError("Only an open question is graded this way");
-  const grade = await getQuestionModel()!.grade(ctx, text).catch(modelUnavailable);
+  const grade = await model.grade(ctx, text).catch(modelUnavailable);
   rememberGrade(questionId, text, grade);
   return { ctx, grade };
 }
@@ -74,19 +72,19 @@ export default async function tutorRoutes(app: FastifyInstance) {
   // GET /tutor/status — may this account use the tutor, and is the writer running
   app.get("/tutor/status", async (req) => {
     const userId = getUserId(req);
-    if (!writerEnabled() || !(await isAdmin(userId))) return { available: false, writing: 0, paused: null };
+    if (!(await resolveTutorSetup(userId))) return { available: false, writing: 0, paused: null };
     return { available: true, ...writerStatus(userId) };
   });
 
   // POST /tutor/prepare — start writing for the settings on the start screen, report what is ready
   app.post<{ Body: TutorScope }>("/tutor/prepare", async (req) => {
-    const userId = await requireTutor(req);
+    const { userId, model } = await requireTutor(req);
     const difficulty = validateDifficulty(req.body?.difficulty);
     const answerBy = validateAnswerModes(req.body?.answer_by);
     const topicId = req.body?.topic_id || undefined;
 
     const queue = await getTutorQueue(db, userId, { topicId, difficulty, answerBy });
-    requestQuestions(db, userId, queue.filter(e => !e.stored).map(e => toQuestionRequest(e, difficulty)), log);
+    requestQuestions(db, userId, model, queue.filter(e => !e.stored).map(e => toQuestionRequest(e, difficulty)), log);
     const summary = await getStudySummary(db, userId, topicId);
     return {
       ready: queue.filter(e => e.stored).length,
@@ -97,14 +95,14 @@ export default async function tutorRoutes(app: FastifyInstance) {
 
   // POST /tutor/sessions — open a session at the chosen difficulty
   app.post<{ Body: { difficulty?: number } }>("/tutor/sessions", async (req) => {
-    const userId = await requireTutor(req);
+    const { userId } = await requireTutor(req);
     const { session } = await startSession(db, userId, { client: "web", difficulty: validateDifficulty(req.body?.difficulty) });
     return { sessionId: session.id, difficulty: session.sessionDifficulty };
   });
 
   // POST /tutor/next — the next stored questions of a session; cards without one are written in the background
   app.post<{ Body: { session_id?: string; topic_id?: string; answer_by?: unknown; exclude?: string[]; limit?: number } }>("/tutor/next", async (req) => {
-    const userId = await requireTutor(req);
+    const { userId, model } = await requireTutor(req);
     const { session_id, exclude, limit } = req.body ?? {};
     if (!session_id) throw new ValidationError("session_id is required");
     if (limit !== undefined && typeof limit !== "number") throw new ValidationError("limit must be a number");
@@ -120,7 +118,7 @@ export default async function tutorRoutes(app: FastifyInstance) {
       // While the writer is paused the session goes on with the plain cards.
       serveUnwritten: paused !== null,
     });
-    requestQuestions(db, userId, batch.unwritten.map(e => toQuestionRequest(e, batch.session.sessionDifficulty)), log);
+    requestQuestions(db, userId, model, batch.unwritten.map(e => toQuestionRequest(e, batch.session.sessionDifficulty)), log);
     return {
       sessionId: batch.session.id,
       items: batch.items,
@@ -132,7 +130,7 @@ export default async function tutorRoutes(app: FastifyInstance) {
 
   // POST /tutor/answer — grade a stored question and write the review
   app.post<{ Body: { question_id?: string; selected?: string[]; text?: string; dont_know?: boolean; rating?: number } }>("/tutor/answer", async (req) => {
-    const userId = await requireTutor(req);
+    const { userId, model } = await requireTutor(req);
     const { question_id, selected, text, dont_know, rating } = req.body ?? {};
     if (!question_id) throw new ValidationError("question_id is required");
 
@@ -145,7 +143,7 @@ export default async function tutorRoutes(app: FastifyInstance) {
         const known = grades.get(question_id);
         openCorrectness = known && known.text === text.trim()
           ? known.grade.correctness
-          : (await gradeOpenAnswer(userId, question_id, cleanAnswerText(text))).grade.correctness;
+          : (await gradeOpenAnswer(userId, model, question_id, cleanAnswerText(text))).grade.correctness;
       }
     }
     const result = await submitTutorAnswer(db, userId, { question_id, selected, text, dont_know, rating, openCorrectness });
@@ -155,9 +153,9 @@ export default async function tutorRoutes(app: FastifyInstance) {
 
   // POST /tutor/grade — grade an open answer; the review is written later, with the rating
   app.post<{ Body: { question_id?: string; text?: string } }>("/tutor/grade", async (req) => {
-    const userId = await requireTutor(req);
+    const { userId, model } = await requireTutor(req);
     if (!req.body?.question_id) throw new ValidationError("question_id is required");
-    const { ctx, grade } = await gradeOpenAnswer(userId, req.body.question_id, cleanAnswerText(req.body.text));
+    const { ctx, grade } = await gradeOpenAnswer(userId, model, req.body.question_id, cleanAnswerText(req.body.text));
     return {
       correctness: grade.correctness,
       feedback: grade.feedback,
@@ -168,7 +166,7 @@ export default async function tutorRoutes(app: FastifyInstance) {
 
   // POST /tutor/followup — a question about the answer just graded; the thread starts with that answer and its feedback
   app.post<{ Body: { question_id?: string; thread?: Array<{ role?: string; text?: string }> } }>("/tutor/followup", async (req) => {
-    const userId = await requireTutor(req);
+    const { userId, model } = await requireTutor(req);
     if (!req.body?.question_id) throw new ValidationError("question_id is required");
     const raw = Array.isArray(req.body.thread) ? req.body.thread : [];
     const thread: ThreadMessage[] = raw.map((m, i) => {
@@ -181,6 +179,48 @@ export default async function tutorRoutes(app: FastifyInstance) {
 
     const ctx = await getAnswerContext(db, userId, req.body.question_id);
     if (ctx.form !== "open") throw new ValidationError("Follow-ups belong to an open question");
-    return { text: await getQuestionModel()!.reply(ctx, thread).catch(modelUnavailable) };
+    return { text: await model.reply(ctx, thread).catch(modelUnavailable) };
+  });
+
+  // GET /tutor/settings — this account's key (masked), model and effort, and what can be chosen
+  app.get("/tutor/settings", async (req) => {
+    const userId = getUserId(req);
+    return {
+      ...(await getTutorSettings(db, userId)),
+      // Deprecated fallback: an admin without a key of their own runs on the server's.
+      serverKey: await usesServerKey(userId),
+      models: TUTOR_MODELS,
+      efforts: TUTOR_EFFORTS,
+    };
+  });
+
+  // PUT /tutor/settings — save a key, a model, an effort; what is left out stays
+  app.put<{ Body: { api_key?: string; model?: string; effort?: string } }>("/tutor/settings", async (req) => {
+    const userId = getUserId(req);
+    const { api_key, model, effort } = req.body ?? {};
+    const saved = await saveTutorSettings(db, userId, { api_key, model, effort }, settingsSecret);
+    clearWriterPause(userId);
+    return { ...saved, serverKey: await usesServerKey(userId) };
+  });
+
+  // DELETE /tutor/settings/key — forget the saved key
+  app.delete("/tutor/settings/key", async (req) => {
+    const userId = getUserId(req);
+    const saved = await removeTutorKey(db, userId);
+    return { ...saved, serverKey: await usesServerKey(userId) };
+  });
+
+  // POST /tutor/settings/check — does Anthropic accept the key for the chosen model
+  app.post("/tutor/settings/check", async (req) => {
+    const userId = getUserId(req);
+    const setup = await resolveTutorSetup(userId);
+    if (!setup) throw new ValidationError("No API key is saved yet");
+    try {
+      await checkApiKey(setup);
+      clearWriterPause(userId);
+      return { ok: true, reason: null };
+    } catch (err) {
+      return { ok: false, reason: err instanceof QuestionModelError ? err.reason : "error" };
+    }
   });
 }

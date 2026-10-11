@@ -64,7 +64,7 @@ afterAll(async () => {
 });
 
 describe("Tutor in the web app", () => {
-  it("is switched off for an account that is not the admin", async () => {
+  it("is switched off for an account without a key of its own", async () => {
     const api = await registerUser("plain", "user");
     const status = await api.get("/tutor/status");
     expect(status.status).toBe(200);
@@ -289,5 +289,72 @@ describe("Tutor in the web app", () => {
     const failed = await api.post("/tutor/grade", { question_id: open.items[0].questionId, text: "[credits] A" });
     expect(failed.status).toBe(503);
     expect(failed.data.code).toBe("TUTOR_CREDITS");
+  });
+
+  it("lets any user run the tutor on a key they saved, and never shows the key again", async () => {
+    const api = await registerUser("ownkey", "user");
+    const key = "sk-ant-api03-test-key-0123456789abcdefWXYZ";
+
+    const before = await api.get("/tutor/settings");
+    expect(before.status).toBe(200);
+    expect(before.data).toMatchObject({ hasKey: false, keyHint: null, serverKey: false, model: "claude-opus-5-5", effort: "medium" });
+    expect(before.data.models.map((m: { id: string }) => m.id)).toEqual(["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-4-5"]);
+    expect(before.data.efforts).toEqual(["low", "medium", "high"]);
+    expect((await api.post("/tutor/settings/check", {})).status).toBe(400);
+
+    expect((await api.put("/tutor/settings", { api_key: "not a key" })).status).toBe(400);
+    expect((await api.put("/tutor/settings", { model: "gpt-9" })).status).toBe(400);
+    expect((await api.put("/tutor/settings", { effort: "max" })).status).toBe(400);
+
+    const saved = await api.put("/tutor/settings", { api_key: `  ${key} `, model: "claude-sonnet-5-5", effort: "high" });
+    expect(saved.status).toBe(200);
+    expect(saved.data).toMatchObject({ hasKey: true, keyHint: "WXYZ", model: "claude-sonnet-5-5", effort: "high" });
+    expect(JSON.stringify(saved.data)).not.toContain(key);
+    expect(JSON.stringify((await api.get("/tutor/settings")).data)).not.toContain(key);
+
+    // At rest the key is sealed, not readable.
+    const db = new pg.Client(DB_CONFIG);
+    await db.connect();
+    const stored = await db.query("SELECT api_key_enc FROM tutor_settings WHERE key_hint = 'WXYZ'");
+    await db.end();
+    expect(stored.rows[0].api_key_enc).toMatch(/^v1\./);
+    expect(stored.rows[0].api_key_enc).not.toContain(key);
+
+    expect((await api.get("/tutor/status")).data.available).toBe(true);
+    expect((await api.post("/tutor/settings/check", {})).data).toEqual({ ok: true, reason: null });
+
+    // A change of model alone leaves the key in place.
+    const changed = await api.put("/tutor/settings", { model: "claude-haiku-4-5" });
+    expect(changed.data).toMatchObject({ hasKey: true, keyHint: "WXYZ", model: "claude-haiku-4-5", effort: "high" });
+
+    // The tutor now works for this plain user, on their key.
+    const { topicId } = await topicWithCards(api, ["mu"]);
+    const session = await api.post("/tutor/sessions", { difficulty: 0.7 });
+    expect(session.status).toBe(200);
+    const batch = await nextItems(api, { session_id: session.data.sessionId, topic_id: topicId, answer_by: ["tap"] });
+    expect(batch.items[0].type).toBe("question");
+
+    const removed = await api.delete("/tutor/settings/key");
+    expect(removed.data).toMatchObject({ hasKey: false, keyHint: null, model: "claude-haiku-4-5" });
+    expect((await api.get("/tutor/status")).data.available).toBe(false);
+    expect((await api.post("/tutor/sessions", { difficulty: 0.7 })).status).toBe(403);
+  });
+
+  it("reports a key Anthropic rejects, and keeps one user's key away from another", async () => {
+    const owner = await registerUser("rejected", "user");
+    await owner.put("/tutor/settings", { api_key: "sk-ant-api03-rejected-key-0123456789abcd" });
+    expect((await owner.post("/tutor/settings/check", {})).data).toEqual({ ok: false, reason: "auth" });
+
+    const other = await registerUser("nokey", "user");
+    expect((await other.get("/tutor/settings")).data.hasKey).toBe(false);
+    expect((await other.get("/tutor/status")).data.available).toBe(false);
+  });
+
+  it("lets an admin without a saved key fall back to the server's key, and says so", async () => {
+    const api = await registerUser("serverkey", "admin");
+    expect((await api.get("/tutor/settings")).data).toMatchObject({ hasKey: false, serverKey: true });
+    expect((await api.get("/tutor/status")).data.available).toBe(true);
+    const saved = await api.put("/tutor/settings", { api_key: "sk-ant-api03-admin-own-key-0123456789abcd" });
+    expect(saved.data).toMatchObject({ hasKey: true, serverKey: false });
   });
 });

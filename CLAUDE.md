@@ -110,7 +110,8 @@ Copy `.env.example` to `.env` at the project root. Required secrets:
 | `JWT_SECRET` | API | Signs JWT auth tokens |
 | `AUTH_PASSWORD` | API | Single-user login password |
 | `MCP_API_KEY` | MCP | Bearer token for HTTP transport |
-| `ANTHROPIC_API_KEY` | API | Optional. Writes the study questions for the admin account; empty switches the tutor in the web app off |
+| `SETTINGS_SECRET` | API | Optional. Seals the Anthropic API keys users save for the tutor; empty derives it from `JWT_SECRET` |
+| `ANTHROPIC_API_KEY` | API | Deprecated. Stands in for an admin account that has saved no key of its own, for no one else |
 
 Docker Compose passes these via `${VAR:-default}` syntax. Dev defaults exist but must be changed for production.
 
@@ -203,6 +204,7 @@ npm run test:integration:down  # tear down
 - **images** — optional card association (SET NULL), stored on disk; `content_hash` + `size_bytes` for imported media (one file per distinct content per user)
 - **app_pair_codes**, **app_tokens** — pairing codes and bearer tokens of connected apps (Lecture Scribe); hash only
 - **card_questions** — one stored question per card, Bloom level and form (`choice` | `gap` | `open`), payload as JSON; `used_at` is set by the review
+- **tutor_settings** — 1:1 with users: Anthropic API key (sealed), model, effort
 - **anki_imports** — one uploaded package and its job state (analyzing → staged → queued → running → done | failed)
 - **anki_records** — everything from Anki that LearnForge does not model (raw note/card columns, review log per card, deck options, note type configs), unique per (user, kind, anki_key)
 
@@ -231,7 +233,8 @@ POST /apps/pair/start           POST /apps/pair/poll        (public, rate limite
 GET /apps/pair/info?code=       POST /apps/claim            GET/DELETE /apps/tokens[/:id]   (JWT)
 GET/DELETE /apps/me             (app bearer token, see APP_TOKEN_ROUTES in api/src/plugins/auth.ts)
 GET /tutor/status               POST /tutor/prepare         POST /tutor/sessions
-POST /tutor/next                POST /tutor/answer          (admin JWT, 403 TUTOR_UNAVAILABLE otherwise)
+POST /tutor/next                POST /tutor/answer          (403 TUTOR_UNAVAILABLE without a key)
+GET/PUT /tutor/settings         DELETE /tutor/settings/key  POST /tutor/settings/check
 POST /tutor/grade               POST /tutor/followup        (open questions; 503 TUTOR_CREDITS etc. when the model fails)
 GET /health
 ```
@@ -274,7 +277,9 @@ GET /health
 
 ## Tutor in the web app
 
-- Admin only, and only with `ANTHROPIC_API_KEY` set: the key is the operator's own, so no other account may spend it. `GET /tutor/status` answers `available: false` for everyone else and the study view keeps the plain cards.
+- Every user runs the tutor on their own Anthropic API key, saved with a model and an effort under Settings → Tutor (`tutor_settings`, core `services/tutor-settings.ts`). A key is only ever used for the account that saved it; `api/src/services/tutor-access.ts` is the one place that decides whose key a call runs on. Without a key `GET /tutor/status` answers `available: false` and the study view keeps the plain cards.
+- The key is sealed with AES-256-GCM (core `lib/secret-box.ts`) under `settingsSecret` from `api/src/config.ts`, returned by no route (only `keyHint`, its last four characters) and never logged. `ANTHROPIC_API_KEY` in the environment is deprecated: it serves an admin without a saved key only.
+- Models on offer are `TUTOR_MODELS` in core; efforts are low, medium, high. Haiku takes no effort, so none is sent for it. Model and effort apply to writing, grading and follow-ups alike.
 - Questions are written ahead, five cards per call, by `api/src/services/question-model.ts` (the only file that calls Anthropic; `TUTOR_MODEL=stub` swaps in a canned writer for the tests) and stored in `card_questions`. The rules the model works from are `QUESTION_SYSTEM_PROMPT` in core `lib/question-prompt.ts`; bump `QUESTION_PROMPT_VERSION` when they change.
 - A stored question is fresh while `card_updated_at` and `original_id` match the card and `used_at` is null. The review sets `used_at`, so the next visit gets a new variant; card and note edits delete unused rows.
 - `pickQuestionForm` (core `services/card-questions.ts`) decides the form from session difficulty, Bloom level, cloze or not, and the answer modes (`tap`, `type`, `dictate`). Tap only is always `choice`; with typing or dictation a cloze card becomes a typed `gap` and any other card an `open` question once session and level are past recognition.

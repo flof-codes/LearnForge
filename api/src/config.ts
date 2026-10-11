@@ -43,13 +43,20 @@ export const config = {
   smtpPassword: process.env.SMTP_PASSWORD ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "LearnForge <office@learnforge.eu>",
   /**
-   * Writes the study questions for the admin account. Empty switches the
-   * feature off: the study view then shows the plain cards for everyone.
+   * Deprecated: every user saves their own key under Settings. This one is
+   * still used for an admin account that has none on file, and for no one else.
    */
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
-  /** Model that writes the questions; "stub" is the canned writer the integration tests run against. */
-  tutorModel: process.env.TUTOR_MODEL ?? "claude-opus-5-5",
+  /** "stub" swaps Anthropic for the canned writer the integration tests run against. */
+  tutorModel: process.env.TUTOR_MODEL ?? "",
 } as const;
+
+/**
+ * Seals the API keys users save for the tutor. SETTINGS_SECRET if set; otherwise
+ * derived from the JWT secret, so rotating that one makes saved keys unreadable
+ * and they have to be entered again.
+ */
+export const settingsSecret = process.env.SETTINGS_SECRET || createHmac("sha256", config.jwtSecret).update("learnforge-settings").digest("hex");
 
 /** Signs media URLs; derived from the JWT secret, so rotating that secret also revokes every issued media URL. */
 export const mediaUrlSecret = createHmac("sha256", config.jwtSecret).update("learnforge-media-url").digest("hex");

@@ -114,6 +114,13 @@ export {
   FOLLOW_UP_SYSTEM_PROMPT, buildFollowUpContext, type QuestionRequest, type AnswerContext,
 } from "./lib/question-prompt.js";
 
+export {
+  TUTOR_MODELS, TUTOR_EFFORTS, DEFAULT_TUTOR_MODEL, DEFAULT_TUTOR_EFFORT,
+  getTutorSettings, saveTutorSettings, removeTutorKey, loadTutorCredentials, validateApiKey,
+  type TutorModelId, type TutorEffort, type TutorSettingsView, type SaveTutorSettingsInput, type TutorCredentials,
+} from "./services/tutor-settings.js";
+export { sealSecret, openSecret } from "./lib/secret-box.js";
+
 // Services - Study
 export { getStudyCards, getStudySummary, type GetStudyCardsOptions } from "./services/study-service.js";
 export { getDueForecast, getStudyStats } from "./services/study-stats.js";

@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import ConfirmModal from '../../components/ConfirmModal';
 import LanguageSwitcher from '../../components/public/LanguageSwitcher';
+import TutorSettingsSection from '../../components/settings/TutorSettingsSection';
 import ConnectedAppsSection from '../../components/settings/ConnectedAppsSection';
 
 function computeTrialDays(trialEndsAt: string | undefined | null): number {
@@ -649,6 +650,8 @@ export default function McpSettingsPage() {
           </div>
         </section>
       )}
+
+      <TutorSettingsSection />
 
       <ConnectedAppsSection />
 

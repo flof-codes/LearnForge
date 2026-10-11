@@ -479,6 +479,35 @@
       "saveDescription": "This key will only be shown once. Copy it now and store it securely.",
       "copyToClipboard": "Copy to clipboard"
     },
+    "tutor": {
+      "title": "Tutor",
+      "description": "The study view can ask questions written by Claude instead of showing the plain card. It runs on your own Anthropic API key, and you pay Anthropic for what it uses.",
+      "key": "Anthropic API key",
+      "keyPlaceholder": "sk-ant-…",
+      "replacePlaceholder": "Paste a new key to replace it",
+      "save": "Save",
+      "remove": "Remove",
+      "check": "Check key",
+      "checking": "Checking…",
+      "checkOk": "Anthropic accepts this key for the chosen model.",
+      "checkFailed": {
+        "auth": "Anthropic rejected this key.",
+        "credits": "This key has no credit left.",
+        "error": "The key could not be checked right now."
+      },
+      "noKey": "No key saved. Without one the study view shows the plain cards.",
+      "serverKey": "No key saved. This account runs on the server's key, which is being phased out. Save your own here.",
+      "keyNote": "Stored encrypted. Only the last four characters are shown again.",
+      "model": "Model",
+      "effort": "Effort",
+      "efforts": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "noEffort": "{{model}} has no effort setting.",
+      "modelNote": "Applies to questions written from now on, and to grading open answers. Higher effort is slower and costs more."
+    },
     "apps": {
       "title": "Connected apps",
       "description": "Apps and devices with their own access to this account. Removing one signs it out at once.",
@@ -791,6 +820,8 @@
     "modelError": "The tutor cannot answer right now. Try again in a moment.",
     "questionGone": "This question is no longer valid, the card was changed.",
     "saveFailed": "The answer could not be saved. Tap a rating to try again.",
-    "skipCard": "Leave this card for later"
+    "skipCard": "Leave this card for later",
+    "addKey": "Want questions instead of plain cards?",
+    "addKeyLink": "Add your Anthropic API key in the settings."
   }
 }

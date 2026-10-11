@@ -4,7 +4,8 @@ import { z } from "zod/v4";
 import {
   QUESTION_SYSTEM_PROMPT, buildQuestionBatchPrompt, GRADING_SYSTEM_PROMPT, buildGradingPrompt,
   FOLLOW_UP_SYSTEM_PROMPT, buildFollowUpContext,
-  type QuestionRequest, type WrittenQuestion, type AnswerContext,
+  TUTOR_MODELS,
+  type QuestionRequest, type WrittenQuestion, type AnswerContext, type TutorModelId, type TutorEffort,
 } from "@learnforge/core";
 import { config } from "../config.js";
 
@@ -12,7 +13,7 @@ import { config } from "../config.js";
  * The one place that calls a model: to write questions ahead, to grade an open
  * answer, and to answer a follow-up. Everything else works
  * with what comes back, so the tests swap this for a stub (TUTOR_MODEL=stub)
- * and never reach Anthropic.
+ * and never reach Anthropic. Every call runs on the key of the user it is for.
  */
 
 /** One flat shape for every form; fields a form does not use come back empty. */
@@ -76,9 +77,18 @@ function classify(err: unknown): QuestionModelError {
   return new QuestionModelError("error", err instanceof Error ? err.message : "Unknown error");
 }
 
-function anthropicModel(): QuestionModel {
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
-  const model = config.tutorModel;
+/** Whose key, which model, how much effort. One per request: nothing here outlives the call it was made for. */
+export interface ModelSetup {
+  apiKey: string;
+  model: TutorModelId;
+  effort: TutorEffort;
+}
+
+function anthropicModel(setup: ModelSetup): QuestionModel {
+  const client = new Anthropic({ apiKey: setup.apiKey });
+  const { model } = setup;
+  // Haiku takes no effort setting; sending one is an error there.
+  const effort = TUTOR_MODELS.find(m => m.id === model)?.effort ? { effort: setup.effort } : {};
   return {
     name: model,
     async write(requests) {
@@ -89,7 +99,7 @@ function anthropicModel(): QuestionModel {
           // The rules never change between calls, so every batch after the first reads them from the cache.
           system: [{ type: "text", text: QUESTION_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: buildQuestionBatchPrompt(requests) }],
-          output_config: { effort: "medium", format: zodOutputFormat(WrittenBatch) },
+          output_config: { ...effort, format: zodOutputFormat(WrittenBatch) },
         });
         if (response.stop_reason === "refusal") throw new QuestionModelError("refused", "The model declined this batch");
         if (!response.parsed_output) throw new QuestionModelError("error", `The model returned no usable output (${response.stop_reason})`);
@@ -105,8 +115,7 @@ function anthropicModel(): QuestionModel {
           max_tokens: 4000,
           system: [{ type: "text", text: GRADING_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: buildGradingPrompt(ctx, answer) }],
-          // The learner is waiting on this one: little deliberation, a short answer.
-          output_config: { effort: "low", format: zodOutputFormat(Grade) },
+          output_config: { ...effort, format: zodOutputFormat(Grade) },
         });
         if (response.stop_reason === "refusal") throw new QuestionModelError("refused", "The model declined to grade this answer");
         if (!response.parsed_output) throw new QuestionModelError("error", `The model returned no usable grade (${response.stop_reason})`);
@@ -122,7 +131,7 @@ function anthropicModel(): QuestionModel {
           max_tokens: 2000,
           system: `${FOLLOW_UP_SYSTEM_PROMPT}\n\n${buildFollowUpContext(ctx)}`,
           messages: thread.map(m => ({ role: m.role, content: m.text })),
-          output_config: { effort: "low" },
+          output_config: effort,
         });
         if (response.stop_reason === "refusal") throw new QuestionModelError("refused", "The model declined to answer");
         const text = response.content.filter(b => b.type === "text").map(b => b.text).join("").trim();
@@ -172,12 +181,20 @@ function stubModel(): QuestionModel {
   };
 }
 
-let cached: QuestionModel | null | undefined;
+/** The model for one user's setup; the canned writer when the server runs in test mode. */
+export function createQuestionModel(setup: ModelSetup): QuestionModel {
+  return config.tutorModel === "stub" ? stubModel() : anthropicModel(setup);
+}
 
-/** The configured model, or null when question writing is switched off (no key). */
-export function getQuestionModel(): QuestionModel | null {
-  if (cached === undefined) {
-    cached = config.tutorModel === "stub" ? stubModel() : config.anthropicApiKey ? anthropicModel() : null;
+/** Asks Anthropic whether the key is accepted and may use the model. Costs nothing. */
+export async function checkApiKey(setup: ModelSetup): Promise<void> {
+  if (config.tutorModel === "stub") {
+    if (setup.apiKey.includes("rejected")) throw new QuestionModelError("auth", "The Anthropic API key was rejected");
+    return;
   }
-  return cached;
+  try {
+    await new Anthropic({ apiKey: setup.apiKey }).models.retrieve(setup.model);
+  } catch (err) {
+    throw classify(err);
+  }
 }

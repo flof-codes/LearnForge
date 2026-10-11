@@ -474,3 +474,15 @@ export interface TutorAnswerResult extends ReviewResponse {
   correctness: number;
   suggestedRating: number;
 }
+/** The account's own tutor setup. The key itself never comes back, only its last four characters. */
+export interface TutorSettings {
+  hasKey: boolean;
+  keyHint: string | null;
+  model: string;
+  effort: string;
+  updatedAt: string | null;
+  /** No key of its own: this admin account runs on the server's (deprecated). */
+  serverKey: boolean;
+  models: { id: string; name: string; effort: boolean }[];
+  efforts: string[];
+}

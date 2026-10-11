@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTopics } from '../../hooks/useTopics';
@@ -207,6 +207,13 @@ export default function StudyStartPage() {
             )}
           </div>
         </>
+      )}
+
+      {tutor && !tutorOn && (
+        <p className="text-sm text-text-muted">
+          {t('tutor.addKey')}{' '}
+          <Link to="/dashboard/settings" className="text-accent-blue hover:underline">{t('tutor.addKeyLink')}</Link>
+        </p>
       )}
 
       {/* Start */}

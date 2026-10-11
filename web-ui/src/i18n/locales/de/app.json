@@ -479,6 +479,35 @@
       "saveDescription": "Dieser Schl\u00fcssel wird nur einmal angezeigt. Kopiere ihn jetzt und bewahre ihn sicher auf.",
       "copyToClipboard": "In Zwischenablage kopieren"
     },
+    "tutor": {
+      "title": "Tutor",
+      "description": "Die Lernansicht kann Fragen stellen, die Claude schreibt, statt die Karte selbst zu zeigen. Das läuft über deinen eigenen Anthropic-API-Schlüssel; die Nutzung zahlst du an Anthropic.",
+      "key": "Anthropic-API-Schlüssel",
+      "keyPlaceholder": "sk-ant-…",
+      "replacePlaceholder": "Neuen Schlüssel einfügen, um ihn zu ersetzen",
+      "save": "Speichern",
+      "remove": "Entfernen",
+      "check": "Schlüssel prüfen",
+      "checking": "Wird geprüft…",
+      "checkOk": "Anthropic akzeptiert diesen Schlüssel für das gewählte Modell.",
+      "checkFailed": {
+        "auth": "Anthropic hat diesen Schlüssel abgelehnt.",
+        "credits": "Dieser Schlüssel hat kein Guthaben mehr.",
+        "error": "Der Schlüssel konnte gerade nicht geprüft werden."
+      },
+      "noKey": "Kein Schlüssel gespeichert. Ohne Schlüssel zeigt die Lernansicht die Karten selbst.",
+      "serverKey": "Kein Schlüssel gespeichert. Dieses Konto nutzt den Schlüssel des Servers, der abgelöst wird. Speichere hier deinen eigenen.",
+      "keyNote": "Wird verschlüsselt gespeichert. Angezeigt werden nur die letzten vier Zeichen.",
+      "model": "Modell",
+      "effort": "Aufwand",
+      "efforts": {
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch"
+      },
+      "noEffort": "{{model}} hat keine Aufwand-Einstellung.",
+      "modelNote": "Gilt für Fragen, die ab jetzt geschrieben werden, und für das Bewerten offener Antworten. Mehr Aufwand ist langsamer und kostet mehr."
+    },
     "apps": {
       "title": "Verbundene Apps",
       "description": "Apps und Ger\u00e4te mit eigenem Zugang zu diesem Konto. Entfernen meldet sie sofort ab.",
@@ -791,6 +820,8 @@
     "modelError": "Der Tutor kann gerade nicht antworten. Versuche es gleich noch einmal.",
     "questionGone": "Diese Frage gilt nicht mehr, die Karte wurde geändert.",
     "saveFailed": "Die Antwort konnte nicht gespeichert werden. Tippe eine Bewertung, um es erneut zu versuchen.",
-    "skipCard": "Diese Karte später lernen"
+    "skipCard": "Diese Karte später lernen",
+    "addKey": "Fragen statt nur Karten?",
+    "addKeyLink": "Hinterlege deinen Anthropic-API-Schlüssel in den Einstellungen."
   }
 }
