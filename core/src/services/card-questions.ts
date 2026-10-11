@@ -7,7 +7,7 @@ import { getStudyCards, getStudySummary } from "./study-service.js";
 import { getSession, validateDifficulty } from "./session-service.js";
 import { submitReview, gradeChoice } from "./review-service.js";
 import { ratingFromCorrectness } from "./bloom.js";
-import type { QuestionRequest } from "../lib/question-prompt.js";
+import type { QuestionRequest, AnswerContext } from "../lib/question-prompt.js";
 
 /**
  * Questions written ahead of time for the study view.
@@ -22,7 +22,7 @@ import type { QuestionRequest } from "../lib/question-prompt.js";
 export const QUESTION_PROMPT_VERSION = 1;
 export const QUESTION_BATCH_SIZE = 5;
 
-export type QuestionForm = "choice" | "gap";
+export type QuestionForm = "choice" | "gap" | "open";
 export type AnswerMode = "tap" | "type" | "dictate";
 const ANSWER_MODES: readonly AnswerMode[] = ["tap", "type", "dictate"];
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
@@ -43,7 +43,17 @@ export interface GapPayload {
   explanation: string;
   terms: QuestionTerm[];
 }
-export type QuestionPayload = ChoicePayload | GapPayload;
+export interface OpenPayload {
+  stem: string;
+  answer: string;
+  keyPoints: string[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+export type QuestionPayload = ChoicePayload | GapPayload | OpenPayload;
+
+/** Follow-up questions the learner may ask about one open answer. */
+export const FOLLOW_UP_LIMIT = 5;
 
 // ---------------------------------------------------------------------------
 // Which form a card is asked in
@@ -59,17 +69,20 @@ export function validateAnswerModes(raw: unknown): AnswerMode[] {
 
 /**
  * Tap only asks everything as a choice. With typing or dictation, a cloze card
- * is asked as a gap once the session or the level is past plain recognition,
- * and a session without tapping asks everything as a gap.
+ * becomes a typed gap and any other card an open question once the session and
+ * the level are past plain recognition: at Desk from Apply (gap) and Evaluate
+ * (open), at Deep always. Without tapping nothing is asked as a choice.
  */
 export function pickQuestionForm(input: { difficulty: number; level: number; isCloze: boolean; answerBy: AnswerMode[] }): QuestionForm {
   const tap = input.answerBy.includes("tap");
   const typed = input.answerBy.includes("type") || input.answerBy.includes("dictate");
   if (!typed) return "choice";
-  if (!tap) return "gap";
+  // Recalling a fact or a definition is a gap; from Apply up the learner explains.
+  const typedForm: QuestionForm = input.isCloze || input.level <= 1 ? "gap" : "open";
+  if (!tap || input.difficulty >= 0.85) return typedForm;
   if (input.difficulty < 0.5) return "choice";
-  if (input.difficulty < 0.85) return input.isCloze && input.level >= 2 ? "gap" : "choice";
-  return input.isCloze || input.level <= 1 ? "gap" : "choice";
+  if (input.isCloze) return input.level >= 2 ? "gap" : "choice";
+  return input.level >= 4 ? "open" : "choice";
 }
 
 // ---------------------------------------------------------------------------
@@ -120,6 +133,17 @@ export function validateQuestionPayload(form: QuestionForm, raw: Record<string, 
     return { stem, options, explanation, terms: cleanTerms(raw.terms, [stem, explanation, ...options.map(o => o.text)]) };
   }
 
+  if (form === "open") {
+    const stem = requireText("stem", raw.stem, 600);
+    const answer = requireText("answer", raw.answer, 1200);
+    const keyPoints = (Array.isArray(raw.key_points) ? raw.key_points : [])
+      .filter((k): k is string => typeof k === "string" && k.trim() !== "")
+      .map(k => k.trim().slice(0, 240))
+      .slice(0, 4);
+    if (keyPoints.length < 2) throw new ValidationError("an open question needs at least two key points");
+    return { stem, answer, keyPoints, explanation, terms: cleanTerms(raw.terms, [stem]) };
+  }
+
   const stem = requireText("stem", raw.stem, 500);
   if (stem.split(GAP_MARK).length !== 2) throw new ValidationError(`a gap question needs ${GAP_MARK} exactly once in the stem`);
   const answer = requireText("answer", raw.answer, 120);
@@ -165,6 +189,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
   const cards = due.filter(c => !exclude.has(c.id)).slice(0, limit);
   if (cards.length === 0) return [];
 
+  // A skip is retried after a week: the reason may have been a passing fault of the writer.
   const idList = sql.join(cards.map(c => sql`${c.id}::uuid`), sql`, `);
   const rows = await db.execute<{ id: string; card_id: string; bloom_level: number; form: string; status: string; payload: QuestionPayload | null }>(sql`
     SELECT cq.id, cq.card_id, cq.bloom_level, cq.form, cq.status, cq.payload
@@ -173,6 +198,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
     WHERE cq.card_id IN (${idList})
       AND cq.prompt_version = ${QUESTION_PROMPT_VERSION}
       AND cq.used_at IS NULL
+      AND (cq.status = 'ready' OR cq.created_at > NOW() - INTERVAL '7 days')
       AND cq.card_updated_at = c.updated_at
       AND cq.original_id IS NOT DISTINCT FROM c.current_original_id
     ORDER BY cq.created_at DESC
@@ -359,6 +385,36 @@ export interface TutorAnswerInput {
   dont_know?: boolean;
   /** The rating the learner tapped, when it differs from the suggested one. */
   rating?: number;
+  /** Open: the caller's grading of `text`. Never taken from the client. */
+  openCorrectness?: number;
+}
+
+/** The question behind a ticket, for grading an open answer and for the follow-up thread. */
+export async function getAnswerContext(db: Db, userId: string, questionId: string): Promise<AnswerContext & { form: QuestionForm; cardId: string }> {
+  if (!UUID_RE.test(questionId ?? "")) throw new ValidationError("question_id must be a UUID");
+  const rows = await db.execute<{ card_id: string; card_level: number; form: QuestionForm; payload: QuestionPayload; concept: string; back_html: string; topic_name: string }>(sql`
+    SELECT sq.card_id, sq.card_level, cq.form, cq.payload, c.concept, c.back_html, t.name AS topic_name
+    FROM study_questions sq
+    JOIN study_sessions ss ON ss.id = sq.session_id AND ss.user_id = ${userId}
+    JOIN card_questions cq ON cq.id = sq.card_question_id AND cq.status = 'ready'
+    JOIN cards c ON c.id = sq.card_id
+    JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
+    WHERE sq.id = ${questionId}
+  `);
+  if (rows.rows.length === 0) throw new NotFoundError("Question ticket not found");
+  const r = rows.rows[0];
+  const open = r.form === "open" ? (r.payload as OpenPayload) : null;
+  return {
+    form: r.form,
+    cardId: r.card_id,
+    bloomLevel: r.card_level,
+    topicName: r.topic_name,
+    concept: r.concept,
+    backText: stripHtml(r.back_html).slice(0, 2400),
+    stem: r.payload.stem,
+    modelAnswer: open?.answer ?? "",
+    keyPoints: open?.keyPoints ?? [],
+  };
 }
 
 /** Grades a stored question from its ticket and writes the review. The server decides correctness. */
@@ -406,6 +462,20 @@ export async function submitTutorAnswer(db: Db, userId: string, input: TutorAnsw
       question_text: `${payload.stem} ${letters.map(label).join(" ")}`,
       answer_expected: correctIds.map(label).join(", "),
       user_answer: dontKnow ? "I don't know" : selected.map(label).join(", "),
+    });
+  } else if (q.form === "open") {
+    const payload = q.payload as OpenPayload;
+    const text = dontKnow ? "" : (input.text ?? "").trim().slice(0, 4000);
+    if (!dontKnow && !text) throw new ValidationError("text must not be empty unless dont_know is set");
+    if (!dontKnow && input.openCorrectness === undefined) throw new ValidationError("An open answer has to be graded before it is saved");
+    correctness = dontKnow ? 0 : input.openCorrectness!;
+    result = await submitReview(db, userId, {
+      ...common,
+      style: "open",
+      correctness,
+      question_text: payload.stem,
+      answer_expected: payload.answer,
+      user_answer: dontKnow ? "I don't know" : text,
     });
   } else {
     const payload = q.payload as GapPayload;

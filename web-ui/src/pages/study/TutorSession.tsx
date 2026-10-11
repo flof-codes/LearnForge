@@ -9,6 +9,7 @@ import BloomBadge from '../../components/BloomBadge';
 import FocusBadge from '../../components/FocusBadge';
 import InteractiveCard from './InteractiveCard';
 import QuestionCard, { type QuestionAnswer } from './QuestionCard';
+import OpenCard from './OpenCard';
 import SessionSummary from './SessionSummary';
 import { presetOf, type TutorSettings } from '../../utils/tutor';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
@@ -147,6 +148,7 @@ export default function TutorSession({ topicId, settings }: Props) {
   const headspace = preset ? t(`tutor.headspace.${preset}`) : t('tutor.headspace.custom', { value: settings.difficulty.toFixed(2) });
   const level = current ? (current.type === 'question' ? current.bloomLevel : current.card.bloomState.currentLevel) : null;
   const done = ratings.length;
+  const dictate = settings.answerBy.includes('dictate');
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -187,8 +189,11 @@ export default function TutorSession({ topicId, settings }: Props) {
         </div>
       )}
 
-      {current?.type === 'question' && (
-        <QuestionCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} />
+      {current?.type === 'question' && current.form !== 'open' && (
+        <QuestionCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} />
+      )}
+      {current?.type === 'question' && current.form === 'open' && (
+        <OpenCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} />
       )}
       {current?.type === 'card' && (
         <InteractiveCard key={current.card.id} card={current.card} onRate={rateCard} onViewDetail={() => viewDetail(current.card.id)} disabled={saving} />

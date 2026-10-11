@@ -749,9 +749,9 @@
     },
     "mix": {
       "choice": "alles Auswahl",
-      "deskTyped": "Auswahl; Lückenkarten ab Anwenden getippt",
-      "deepTyped": "Lückenkarten und die ersten zwei Stufen getippt, der Rest Auswahl",
-      "typed": "alles getippte Lücken"
+      "deskTyped": "meist Auswahl; Lückenkarten ab Anwenden getippt, offene Antworten ab Bewerten",
+      "deepTyped": "getippte Lücken auf den ersten zwei Stufen, darüber offene Antworten",
+      "typed": "getippte Lücken und offene Antworten, keine Auswahl"
     },
     "distractors": {
       "commute": "klar verschieden",
@@ -764,7 +764,28 @@
       "tap": "Tippen",
       "tapHint": "Auswahlfragen",
       "type": "Schreiben",
-      "typeHint": "Lücke füllen"
-    }
+      "typeHint": "Lücken und offene Antworten",
+      "dictate": "Diktieren",
+      "dictateHint": "Antwort sprechen",
+      "noDictation": "Dieser Browser kann hier nicht zuhören. Das Mikrofon deiner Tastatur funktioniert in jedem Textfeld."
+    },
+    "openQuestion": "Offene Frage",
+    "mostly": "Weitgehend richtig",
+    "openHint": "Antworte in zwei oder drei Sätzen.",
+    "openHintMic": "Antworte in zwei oder drei Sätzen. Schreibe oder drücke das Mikrofon.",
+    "openHintKeyboardMic": "Antworte in zwei oder drei Sätzen. Dieser Browser kann hier nicht zuhören: Nutze das Mikrofon deiner Tastatur.",
+    "yourAnswerLabel": "Deine Antwort",
+    "tutor": "Tutor",
+    "you": "Du",
+    "checking": "Wird geprüft…",
+    "send": "Senden",
+    "ask": "Fragen",
+    "askFollowUp": "Nachfrage stellen",
+    "pointMet": "genannt",
+    "pointMissing": "fehlt",
+    "modelAnswer": "Musterantwort:",
+    "showModel": "Musterantwort zeigen",
+    "dictate": "Diktieren",
+    "stopDictation": "Diktat beenden"
   }
 }

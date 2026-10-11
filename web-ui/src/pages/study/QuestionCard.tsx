@@ -5,6 +5,7 @@ import CardHtmlRender from '../../components/CardHtmlRender';
 import RatingButtons from '../../components/RatingButtons';
 import { useIsPhone } from '../../hooks/useIsPhone';
 import TermText from './TermText';
+import MicButton from './MicButton';
 import { OPTION_LETTERS, gradeChoice, gradeGap, suggestedRating } from '../../utils/tutor';
 import type { TutorQuestion } from '../../types';
 
@@ -16,10 +17,12 @@ export interface QuestionAnswer {
 }
 
 interface Props {
-  item: TutorQuestion;
+  item: Exclude<TutorQuestion, { form: 'open' }>;
   onAnswer: (answer: QuestionAnswer) => void;
   onViewDetail?: () => void;
   saving?: boolean;
+  /** The session allows dictation: a gap gets a microphone where the browser can listen. */
+  dictate?: boolean;
 }
 
 const GAP_MARK = '{{gap}}';
@@ -33,14 +36,14 @@ export function BottomBar({ children }: { children: ReactNode }) {
   );
 }
 
-const barButton = 'flex-1 py-3 rounded-lg text-sm font-medium border border-border bg-bg-surface text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50';
-const primaryButton = 'flex-1 py-3 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity disabled:opacity-50';
+export const barButton = 'flex-1 py-3 rounded-lg text-sm font-medium border border-border bg-bg-surface text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50';
+export const primaryButton = 'flex-1 py-3 rounded-lg text-sm font-medium bg-accent-blue text-white hover:opacity-90 transition-opacity disabled:opacity-50';
 
 /**
  * A stored question: asked, checked on the spot, then rated. The answer goes
  * to the server only with the rating, so one tap after the feedback moves on.
  */
-export default function QuestionCard({ item, onAnswer, onViewDetail, saving }: Props) {
+export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dictate }: Props) {
   const { t } = useTranslation('app');
   const isPhone = useIsPhone();
   const [picked, setPicked] = useState<number[]>([]);
@@ -193,7 +196,8 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving }: P
           </>
         ) : item.form === 'gap' ? (
           <>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-stretch">
+              {dictate && <MicButton value={text} onText={setText} />}
               <input
                 ref={inputRef}
                 value={text}

@@ -749,9 +749,9 @@
     },
     "mix": {
       "choice": "all choice",
-      "deskTyped": "choice; gap cards typed from Apply up",
-      "deepTyped": "gap cards and the first two levels typed, the rest choice",
-      "typed": "all typed gaps"
+      "deskTyped": "mostly choice; gap cards typed from Apply, open answers from Evaluate",
+      "deepTyped": "typed gaps for the first two levels, open answers above",
+      "typed": "typed gaps and open answers, no choice"
     },
     "distractors": {
       "commute": "clearly different",
@@ -764,7 +764,28 @@
       "tap": "Tap",
       "tapHint": "Choice questions",
       "type": "Type",
-      "typeHint": "Fill the gap"
-    }
+      "typeHint": "Gaps and open answers",
+      "dictate": "Dictate",
+      "dictateHint": "Speak your answer",
+      "noDictation": "This browser cannot listen here. The microphone on your keyboard works in every text field."
+    },
+    "openQuestion": "Open question",
+    "mostly": "Mostly right",
+    "openHint": "Answer in two or three sentences.",
+    "openHintMic": "Answer in two or three sentences. Type or press the microphone.",
+    "openHintKeyboardMic": "Answer in two or three sentences. This browser cannot listen here: use the microphone on your keyboard.",
+    "yourAnswerLabel": "Your answer",
+    "tutor": "Tutor",
+    "you": "You",
+    "checking": "Checking…",
+    "send": "Send",
+    "ask": "Ask",
+    "askFollowUp": "Ask a follow-up",
+    "pointMet": "covered",
+    "pointMissing": "missing",
+    "modelAnswer": "Model answer:",
+    "showModel": "Show model answer",
+    "dictate": "Dictate",
+    "stopDictation": "Stop dictation"
   }
 }

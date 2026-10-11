@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTopics } from '../../hooks/useTopics';
 import { useStudySummary } from '../../hooks/useStudy';
 import { useTutorStatus, useTutorPrepare } from '../../hooks/useTutor';
+import { dictationSupported } from '../../hooks/useDictation';
 import { BLOOM_COLORS } from '../../types';
 import type { AnswerMode } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -16,7 +17,7 @@ import {
   bandOf, presetOf, intervalFactor, loadTutorSettings, saveTutorSettings, settingsToParams, type TutorSettings,
 } from '../../utils/tutor';
 
-const ANSWER_MODES: AnswerMode[] = ['tap', 'type'];
+const ANSWER_MODES: AnswerMode[] = ['tap', 'type', 'dictate'];
 const sectionLabel = 'flex items-baseline justify-between gap-3 text-[10px] uppercase tracking-wider text-text-muted';
 const choice = (on: boolean) =>
   `flex flex-col gap-0.5 text-left rounded-lg border px-3 py-2.5 transition-colors ${on ? 'border-accent-blue bg-accent-blue/10' : 'border-border bg-bg-surface hover:bg-bg-hover'}`;
@@ -201,6 +202,9 @@ export default function StudyStartPage() {
                 </button>
               ))}
             </div>
+            {settings.answerBy.includes('dictate') && !dictationSupported() && (
+              <p className="text-sm text-text-muted">{t('tutor.answerBy.noDictation')}</p>
+            )}
           </div>
         </>
       )}

@@ -6,6 +6,8 @@ export const HEADSPACE = [
   { key: 'desk', value: 0.7 },
   { key: 'deep', value: 1 },
 ] as const;
+/** Follow-up questions per open answer; the server enforces the same number. */
+export const FOLLOW_UP_LIMIT = 5;
 export const DIFFICULTY_MIN = 0.3;
 export const DIFFICULTY_MAX = 1;
 export const DIFFICULTY_STEP = 0.05;

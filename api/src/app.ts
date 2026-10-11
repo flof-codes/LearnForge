@@ -22,7 +22,7 @@ import noteRoutes from "./routes/notes.js";
 import ankiImportRoutes from "./routes/anki-import.js";
 import { sql } from "drizzle-orm";
 import { db } from "./db/connection.js";
-import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from "./lib/errors.js";
+import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError, ServiceUnavailableError } from "./lib/errors.js";
 import { signMediaRefs, unsignMediaRefsDeep, referencedMediaIds, textArray } from "@learnforge/core";
 import { config, mediaUrlSecret } from "./config.js";
 
@@ -58,6 +58,9 @@ export function buildApp() {
     }
     if (error instanceof ValidationError) {
       return reply.status(400).send({ error: error.message });
+    }
+    if (error instanceof ServiceUnavailableError) {
+      return reply.status(503).send({ error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
     if (error.validation) {
       return reply.status(400).send({ error: error.message });

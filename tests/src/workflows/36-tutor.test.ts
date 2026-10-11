@@ -219,4 +219,75 @@ describe("Tutor in the web app", () => {
     const batch = await nextItems(api, { session_id: session.data.sessionId, topic_id: topicId, answer_by: ["tap"] });
     expect(batch.items[0].type).toBe("card");
   });
+
+  it("asks an open question from Apply up, grades it live and answers follow-ups", async () => {
+    const api = await registerUser("open", "admin");
+    const { topicId, cardIds } = await topicWithCards(api, ["theta", "iota"]);
+    const db = new pg.Client(DB_CONFIG);
+    await db.connect();
+    await db.query("UPDATE bloom_state SET current_level = 3, highest_reached = 3 WHERE card_id = ANY($1)", [cardIds]);
+    await db.end();
+
+    const session = await api.post("/tutor/sessions", { difficulty: 1 });
+    const batch = await nextItems(api, { session_id: session.data.sessionId, topic_id: topicId, answer_by: ["tap", "dictate"] });
+    expect(batch.items).toHaveLength(2);
+    const [first, second] = batch.items;
+    expect(first.form).toBe("open");
+    expect(first.payload.keyPoints).toEqual(["Names A", "Names B"]);
+
+    // Half of the key points: graded, not yet saved.
+    const graded = await api.post("/tutor/grade", { question_id: first.questionId, text: "It is about A" });
+    expect(graded.status).toBe(200);
+    expect(graded.data.correctness).toBe(0.5);
+    expect(graded.data.points).toEqual([{ text: "Names A", met: true }, { text: "Names B", met: false }]);
+    expect(graded.data.feedback).toContain("1 of 2");
+
+    const thread = [
+      { role: "user", text: "It is about A" },
+      { role: "assistant", text: graded.data.feedback },
+      { role: "user", text: "Why does B matter?" },
+    ];
+    const reply = await api.post("/tutor/followup", { question_id: first.questionId, thread });
+    expect(reply.status).toBe(200);
+    expect(reply.data.text).toBe("Stub reply to: Why does B matter?");
+
+    // A thread that does not end with the learner, or runs past the limit, is refused.
+    expect((await api.post("/tutor/followup", { question_id: first.questionId, thread: thread.slice(0, 2) })).status).toBe(400);
+    const long = [...thread];
+    for (let i = 0; i < 5; i++) long.push({ role: "assistant", text: "ok" }, { role: "user", text: "and then?" });
+    expect((await api.post("/tutor/followup", { question_id: first.questionId, thread: long })).status).toBe(400);
+
+    // Saving uses the server's grade for that text; a correctness sent along is ignored.
+    const saved = await api.post("/tutor/answer", { question_id: first.questionId, text: "It is about A", correctness: 1, openCorrectness: 1 });
+    expect(saved.status).toBe(200);
+    expect(saved.data.correctness).toBe(0.5);
+    expect(saved.data.review.style).toBe("open");
+    expect(saved.data.review.rating).toBe(2);
+    expect(saved.data.review.answerExpected).toBe("It works because of A and B.");
+
+    // Without a grade on record the answer is graded when it is saved.
+    const direct = await api.post("/tutor/answer", { question_id: second.questionId, text: "A and also B" });
+    expect(direct.status).toBe(200);
+    expect(direct.data.correctness).toBe(1);
+
+    expect((await api.post("/tutor/grade", { question_id: first.questionId, text: "" })).status).toBe(400);
+  });
+
+  it("refuses to grade a choice question as an open one, and reports a writer that is out of credits", async () => {
+    const api = await registerUser("grade", "admin");
+    const { topicId, cardIds } = await topicWithCards(api, ["kappa", "lambda"]);
+    const session = await api.post("/tutor/sessions", { difficulty: 0.7 });
+    const choice = await nextItems(api, { session_id: session.data.sessionId, topic_id: topicId, answer_by: ["tap"] });
+    expect((await api.post("/tutor/grade", { question_id: choice.items[0].questionId, text: "anything" })).status).toBe(400);
+
+    const db = new pg.Client(DB_CONFIG);
+    await db.connect();
+    await db.query("UPDATE bloom_state SET current_level = 2, highest_reached = 2 WHERE card_id = $1", [cardIds[1]]);
+    await db.end();
+    const open = await nextItems(api, { session_id: session.data.sessionId, topic_id: topicId, answer_by: ["type"], exclude: [cardIds[0]] });
+    expect(open.items[0].form).toBe("open");
+    const failed = await api.post("/tutor/grade", { question_id: open.items[0].questionId, text: "[credits] A" });
+    expect(failed.status).toBe(503);
+    expect(failed.data.code).toBe("TUTOR_CREDITS");
+  });
 });

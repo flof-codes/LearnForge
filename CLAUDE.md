@@ -202,7 +202,7 @@ npm run test:integration:down  # tear down
 - **reviews** — many per card (CASCADE), rating 1-4, modality (chat/web/mcq)
 - **images** — optional card association (SET NULL), stored on disk; `content_hash` + `size_bytes` for imported media (one file per distinct content per user)
 - **app_pair_codes**, **app_tokens** — pairing codes and bearer tokens of connected apps (Lecture Scribe); hash only
-- **card_questions** — one stored question per card, Bloom level and form (`choice` | `gap`), payload as JSON; `used_at` is set by the review
+- **card_questions** — one stored question per card, Bloom level and form (`choice` | `gap` | `open`), payload as JSON; `used_at` is set by the review
 - **anki_imports** — one uploaded package and its job state (analyzing → staged → queued → running → done | failed)
 - **anki_records** — everything from Anki that LearnForge does not model (raw note/card columns, review log per card, deck options, note type configs), unique per (user, kind, anki_key)
 
@@ -232,6 +232,7 @@ GET /apps/pair/info?code=       POST /apps/claim            GET/DELETE /apps/tok
 GET/DELETE /apps/me             (app bearer token, see APP_TOKEN_ROUTES in api/src/plugins/auth.ts)
 GET /tutor/status               POST /tutor/prepare         POST /tutor/sessions
 POST /tutor/next                POST /tutor/answer          (admin JWT, 403 TUTOR_UNAVAILABLE otherwise)
+POST /tutor/grade               POST /tutor/followup        (open questions; 503 TUTOR_CREDITS etc. when the model fails)
 GET /health
 ```
 
@@ -276,9 +277,11 @@ GET /health
 - Admin only, and only with `ANTHROPIC_API_KEY` set: the key is the operator's own, so no other account may spend it. `GET /tutor/status` answers `available: false` for everyone else and the study view keeps the plain cards.
 - Questions are written ahead, five cards per call, by `api/src/services/question-model.ts` (the only file that calls Anthropic; `TUTOR_MODEL=stub` swaps in a canned writer for the tests) and stored in `card_questions`. The rules the model works from are `QUESTION_SYSTEM_PROMPT` in core `lib/question-prompt.ts`; bump `QUESTION_PROMPT_VERSION` when they change.
 - A stored question is fresh while `card_updated_at` and `original_id` match the card and `used_at` is null. The review sets `used_at`, so the next visit gets a new variant; card and note edits delete unused rows.
-- `pickQuestionForm` (core `services/card-questions.ts`) decides the form from session difficulty, Bloom level, cloze or not, and the answer modes (`tap`, `type`, `dictate`). Tap only is always `choice`.
+- `pickQuestionForm` (core `services/card-questions.ts`) decides the form from session difficulty, Bloom level, cloze or not, and the answer modes (`tap`, `type`, `dictate`). Tap only is always `choice`; with typing or dictation a cloze card becomes a typed `gap` and any other card an `open` question once session and level are past recognition.
 - `POST /tutor/next` serves stored questions with a study ticket each (`study_questions.card_question_id`) and starts the writer for cards that have none; the client polls while `pending > 0`. A card the writer skipped, and every card while the writer is paused (credits used up, API error), is served as `type: "card"` and rated by hand.
 - `POST /tutor/answer` sends the picked letters or the typed text plus the rating the learner tapped. The server grades (`gradeChoice`, `gradeGap` against the stored spellings) and `submitReview` takes the tapped rating as `rating_override`.
+- An open answer is the only live model call while studying: `POST /tutor/grade` grades the text against the question's key points and keeps the grade in memory until the rating arrives; `POST /tutor/answer` takes the correctness from there, never from the request, and grades again if the grade is gone. `POST /tutor/followup` answers up to `FOLLOW_UP_LIMIT` questions about the answer; the client sends the whole thread.
+- Dictation is the browser's speech recognition (`web-ui/src/hooks/useDictation.ts`). Where it is missing the microphone button is not rendered and the keyboard's own microphone does the job.
 - The writer (`api/src/services/question-generator.ts`) keeps its state in memory: one batch per user at a time, a pause after a failure. A restart forgets both.
 
 ## Anki Import

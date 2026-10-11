@@ -102,14 +102,17 @@ export { submitReview, deleteReview, gradeChoice, type SubmitReviewInput, type D
 
 // Services - Stored questions for the study view
 export {
-  QUESTION_PROMPT_VERSION, QUESTION_BATCH_SIZE,
+  QUESTION_PROMPT_VERSION, QUESTION_BATCH_SIZE, FOLLOW_UP_LIMIT, getAnswerContext,
   validateAnswerModes, pickQuestionForm, validateQuestionPayload, normalizeGapAnswer, gradeGap,
   getTutorQueue, toQuestionRequest, storeQuestions, serveTutorBatch, submitTutorAnswer, countReadyQuestions,
-  type QuestionForm, type AnswerMode, type QuestionTerm, type ChoicePayload, type GapPayload, type QuestionPayload,
+  type QuestionForm, type AnswerMode, type QuestionTerm, type ChoicePayload, type GapPayload, type OpenPayload, type QuestionPayload,
   type TutorQueueOptions, type TutorQueueEntry, type WrittenQuestion, type TutorQuestion, type TutorPlainCard, type TutorItem,
   type ServeTutorOptions, type TutorAnswerInput,
 } from "./services/card-questions.js";
-export { QUESTION_SYSTEM_PROMPT, buildQuestionBatchPrompt, type QuestionRequest } from "./lib/question-prompt.js";
+export {
+  QUESTION_SYSTEM_PROMPT, buildQuestionBatchPrompt, GRADING_SYSTEM_PROMPT, buildGradingPrompt,
+  FOLLOW_UP_SYSTEM_PROMPT, buildFollowUpContext, type QuestionRequest, type AnswerContext,
+} from "./lib/question-prompt.js";
 
 // Services - Study
 export { getStudyCards, getStudySummary, type GetStudyCardsOptions } from "./services/study-service.js";

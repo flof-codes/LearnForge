@@ -425,6 +425,22 @@ export interface GapPayload {
   terms: QuestionTerm[];
 }
 
+export interface OpenPayload {
+  stem: string;
+  /** A model answer, shown on request after the learner's own. */
+  answer: string;
+  keyPoints: string[];
+  explanation: string;
+  terms: QuestionTerm[];
+}
+/** The server's grading of an open answer; the review is written later, with the rating. */
+export interface OpenGrade {
+  correctness: number;
+  feedback: string;
+  points: { text: string; met: boolean }[];
+  modelAnswer: string;
+}
+
 interface TutorQuestionBase {
   type: 'question';
   /** The study ticket this question was served with. */
@@ -437,7 +453,8 @@ interface TutorQuestionBase {
 }
 export type TutorQuestion =
   | (TutorQuestionBase & { form: 'choice'; payload: ChoicePayload })
-  | (TutorQuestionBase & { form: 'gap'; payload: GapPayload });
+  | (TutorQuestionBase & { form: 'gap'; payload: GapPayload })
+  | (TutorQuestionBase & { form: 'open'; payload: OpenPayload });
 /** A card without a stored question: shown as it is and rated by the learner. */
 export interface TutorPlainCard { type: 'card'; card: DueCard }
 export type TutorItem = TutorQuestion | TutorPlainCard;
