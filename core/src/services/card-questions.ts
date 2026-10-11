@@ -4,7 +4,7 @@ import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
 import { loadTopicRates } from "./change-rate.js";
 import { getStudyCards, getStudySummary } from "./study-service.js";
-import { getSession, validateDifficulty } from "./session-service.js";
+import { getSession } from "./session-service.js";
 import { submitReview, gradeChoice } from "./review-service.js";
 import { ratingFromCorrectness } from "./bloom.js";
 import type { QuestionRequest, AnswerContext } from "../lib/question-prompt.js";

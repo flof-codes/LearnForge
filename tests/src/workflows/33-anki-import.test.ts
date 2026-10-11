@@ -22,7 +22,6 @@ const fixtureDir = join(testsDir, "fixtures", "anki");
 const fixture = JSON.parse(readFileSync(join(fixtureDir, "fixture.json"), "utf8"));
 const pkg = (name: string) => readFileSync(join(fixtureDir, name));
 const apiUrl = process.env.TEST_API_URL ?? TEST_CONFIG.apiUrl;
-const DAY_MS = 86_400_000;
 
 async function newUser(tag: string): Promise<AxiosInstance> {
   const email = `anki-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.dev`;
@@ -174,7 +173,8 @@ describe("Anki import: current package format from real Anki", () => {
     expect(note.topicId).toBe(vocab[0].id);
     const reviewed = cards.find(c => c.fsrsState.state === 2)!;
     expect(reviewed.fsrsState.stability).toBeCloseTo(fixture.notes.custom.cards[0].stability, 3);
-    expect(new Date(reviewed.fsrsState.due).getTime()).toBeGreaterThan(Date.now() - DAY_MS);
+    // The filtered deck stores its sort position (-99999 days) in `due`; the real date lies after the collection was created.
+    expect(new Date(reviewed.fsrsState.due).getTime()).toBeGreaterThan(fixture.crt * 1000);
   });
 
   it("keeps Anki's suspension, and a later edit does not lift it", async () => {
