@@ -52,7 +52,9 @@ export default function TutorSession({ topicId, settings }: Props) {
   const sessionId = useRef<string | null>(null);
   const fetching = useRef(false);
   const queueRef = useRef<TutorItem[]>([]);
-  queueRef.current = queue;
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
 
   const refill = useCallback(async () => {
     if (fetching.current) return;
