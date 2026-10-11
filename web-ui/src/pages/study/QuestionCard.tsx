@@ -204,10 +204,7 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
 
       <BottomBar>
         {done ? (
-          <>
-            <p className="text-xs text-text-muted">{t('tutor.suggested', { rating: t(`ratings.${['again', 'hard', 'good', 'easy'][suggestedRating(correctness, lookedUp) - 1]}`) })}</p>
-            <RatingButtons onRate={submit} disabled={saving || menuOpen} suggested={suggestedRating(correctness, lookedUp)} />
-          </>
+          <RatingButtons onRate={submit} disabled={saving || menuOpen} suggested={suggestedRating(correctness, lookedUp)} />
         ) : item.form === 'gap' ? (
           <>
             <div className="flex gap-2 items-stretch">

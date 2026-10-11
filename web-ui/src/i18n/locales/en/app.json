@@ -743,7 +743,6 @@
     "correctOption": "correct",
     "wrongOption": "wrong",
     "youWrote": "You wrote: {{text}}",
-    "suggested": "Suggested: {{rating}}. Tap a rating to save and continue.",
     "yourAnswer": "Your answer",
     "check": "Check",
     "checkCount": "Check ({{count}})",

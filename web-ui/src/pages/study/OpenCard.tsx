@@ -235,7 +235,6 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
                 <button type="button" onClick={ask} disabled={busy !== null || followUp.trim() === ''} className={`${barButton} flex-none px-4`}>{t('tutor.ask')}</button>
               </div>
             )}
-            <p className="text-xs text-text-muted">{t('tutor.suggested', { rating: t(`ratings.${['again', 'hard', 'good', 'easy'][suggestion - 1]}`) })}</p>
             <RatingButtons onRate={submit} disabled={saving || busy !== null || menuOpen} suggested={suggestion} />
           </>
         )}

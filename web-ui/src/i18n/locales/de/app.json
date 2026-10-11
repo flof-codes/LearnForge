@@ -743,7 +743,6 @@
     "correctOption": "richtig",
     "wrongOption": "falsch",
     "youWrote": "Deine Antwort: {{text}}",
-    "suggested": "Vorschlag: {{rating}}. Tippe eine Bewertung, um zu speichern und weiterzugehen.",
     "yourAnswer": "Deine Antwort",
     "check": "Prüfen",
     "checkCount": "Prüfen ({{count}})",
