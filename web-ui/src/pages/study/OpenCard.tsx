@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Info, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import CardHtmlRender from '../../components/CardHtmlRender';
 import RatingButtons from '../../components/RatingButtons';
-import { useIsPhone } from '../../hooks/useIsPhone';
 import { tutorService } from '../../api/tutor';
 import TermText from './TermText';
 import MicButton from './MicButton';
+import CardMenu from './CardMenu';
 import { BottomBar, barButton, primaryButton, type QuestionAnswer } from './QuestionCard';
 import { dictationSupported } from '../../hooks/useDictation';
-import { suggestedRating, tutorErrorKey, FOLLOW_UP_LIMIT } from '../../utils/tutor';
+import { suggestedRating, tutorErrorKey, isStaleTicket, FOLLOW_UP_LIMIT } from '../../utils/tutor';
 import type { OpenGrade, TutorQuestion } from '../../types';
 
 interface Props {
@@ -17,6 +16,11 @@ interface Props {
   onAnswer: (answer: QuestionAnswer) => void;
   onViewDetail?: () => void;
   saving?: boolean;
+  /** The session's difficulty, changed from the card's menu. */
+  difficulty: number;
+  onChangeDifficulty: (difficulty: number) => Promise<void>;
+  /** The card was answered elsewhere or its question replaced: the session drops it. */
+  onStale?: () => void;
   /** The session allows dictation: show the microphone where the browser can listen. */
   dictate?: boolean;
 }
@@ -30,9 +34,8 @@ const field = 'flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-bg-secondary border bord
  * graded against the question's key points, and they may ask about it before
  * rating. Only the rating writes the review.
  */
-export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate }: Props) {
+export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty, onStale }: Props) {
   const { t } = useTranslation('app');
-  const isPhone = useIsPhone();
   const { payload } = item;
   const [text, setText] = useState('');
   const [grade, setGrade] = useState<OpenGrade | null>(null);
@@ -42,7 +45,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
   const [thread, setThread] = useState<Message[]>([]);
   const [followUp, setFollowUp] = useState('');
   const [lookedUp, setLookedUp] = useState(false);
-  const [showBack, setShowBack] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showModel, setShowModel] = useState(false);
   const end = useRef<HTMLDivElement>(null);
 
@@ -64,6 +67,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
     try {
       setGrade((await tutorService.grade(item.questionId, answer)).data);
     } catch (err) {
+      if (isStaleTicket(err)) { onStale?.(); return; }
       setError(t(tutorErrorKey(err) === 'tutor.saveFailed' ? 'tutor.modelError' : tutorErrorKey(err)));
     } finally {
       setBusy(null);
@@ -104,15 +108,18 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
       <div className="space-y-4 pb-48 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-6 md:pb-6 md:mb-48">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-wider text-text-muted">{t('tutor.openQuestion')}</div>
-          {onViewDetail && (
-            <button onClick={onViewDetail} className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-blue transition-colors" title={t('study.viewDetails')}>
-              <Info size={14} /> {t('study.details')}
-            </button>
-          )}
+          <CardMenu
+            difficulty={difficulty}
+            onChangeDifficulty={onChangeDifficulty}
+            card={{ frontHtml: item.frontHtml, backHtml: item.backHtml }}
+            answered={done}
+            onViewDetail={onViewDetail}
+            onOpenChange={setMenuOpen}
+          />
         </div>
 
         <div className="text-lg font-medium leading-snug">
-          <TermText text={payload.stem} terms={payload.terms} onLookup={() => { if (!done) setLookedUp(true); }} />
+          <TermText text={payload.stem} terms={payload.terms} onLookup={() => setLookedUp(true)} />
         </div>
 
         {!done && busy !== 'grade' && (
@@ -158,19 +165,8 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
             {(dontKnow || showModel) && (
               <p className="text-[15px]"><span className="text-text-muted">{t('tutor.modelAnswer')} </span>{payload.answer}</p>
             )}
-            <div className="flex flex-wrap gap-2 pt-1">
-              {grade && !showModel && (
+            {grade && !showModel && (
                 <button type="button" onClick={() => setShowModel(true)} className="text-sm px-3 py-1 rounded-full border border-border hover:bg-bg-hover transition-colors">{t('tutor.showModel')}</button>
-              )}
-              {!showBack && (
-                <button type="button" onClick={() => setShowBack(true)} className="text-sm px-3 py-1 rounded-full border border-border hover:bg-bg-hover transition-colors">{t('tutor.showBack')}</button>
-              )}
-            </div>
-            {showBack && (
-              <div className="pt-2">
-                <div className={`${who} mb-2`}>{t('study.back')}</div>
-                <CardHtmlRender html={item.backHtml} interactive flat={isPhone} />
-              </div>
             )}
           </div>
         )}
@@ -231,7 +227,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
               </div>
             )}
             <p className="text-xs text-text-muted">{t('tutor.suggested', { rating: t(`ratings.${['again', 'hard', 'good', 'easy'][suggestion - 1]}`) })}</p>
-            <RatingButtons onRate={submit} disabled={saving || busy !== null} suggested={suggestion} />
+            <RatingButtons onRate={submit} disabled={saving || busy !== null || menuOpen} suggested={suggestion} />
           </>
         )}
       </BottomBar>

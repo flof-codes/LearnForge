@@ -232,9 +232,10 @@ GET /shares/preview/:token      POST /shares/accept/:token
 POST /apps/pair/start           POST /apps/pair/poll        (public, rate limited)
 GET /apps/pair/info?code=       POST /apps/claim            GET/DELETE /apps/tokens[/:id]   (JWT)
 GET/DELETE /apps/me             (app bearer token, see APP_TOKEN_ROUTES in api/src/plugins/auth.ts)
-GET /tutor/status               POST /tutor/prepare         POST /tutor/sessions
+GET /tutor/status               POST /tutor/prepare         POST /tutor/sessions        PUT /tutor/sessions/:id
 POST /tutor/next                POST /tutor/answer          (403 TUTOR_UNAVAILABLE without a key)
 GET/PUT /tutor/settings         DELETE /tutor/settings/key  POST /tutor/settings/check
+POST /tutor/check               (which held tickets and cards can still be answered)
 POST /tutor/grade               POST /tutor/followup        (open questions; 503 TUTOR_CREDITS etc. when the model fails)
 GET /health
 ```
@@ -287,6 +288,8 @@ GET /health
 - `POST /tutor/answer` sends the picked letters or the typed text plus the rating the learner tapped. The server grades (`gradeChoice`, `gradeGap` against the stored spellings) and `submitReview` takes the tapped rating as `rating_override`.
 - An open answer is the only live model call while studying: `POST /tutor/grade` grades the text against the question's key points and keeps the grade in memory until the rating arrives; `POST /tutor/answer` takes the correctness from there, never from the request, and grades again if the grade is gone. `POST /tutor/followup` answers up to `FOLLOW_UP_LIMIT` questions about the answer; the client sends the whole thread.
 - Dictation is the browser's speech recognition (`web-ui/src/hooks/useDictation.ts`). Where it is missing the microphone button is not rendered and the keyboard's own microphone does the job.
+- Two devices may study the same account. Each has its own session and tickets; the stored questions are shared. A ticket whose card was answered elsewhere, or whose question was replaced, is refused with 400 and `code: QUESTION_STALE` (`StaleTicketError` in core); the web client drops that card quietly and asks `POST /tutor/check` whenever its tab becomes visible again. A question written for another difficulty band stays beside the new one, so a ticket held elsewhere keeps working. The start screen's difficulty and answer modes are stored on the account (`tutor_settings.study_*`), so the second device starts the same way.
+- The card menu (`web-ui/src/pages/study/CardMenu.tsx`) changes a running session's difficulty through `PUT /tutor/sessions/:id` and shows the original card; the back opens only after the answer. A term opened at any point before the rating caps the suggested rating at Good.
 - The writer (`api/src/services/question-generator.ts`) keeps its state in memory: one batch per user at a time, a pause after a failure. A restart forgets both.
 
 ## Anki Import

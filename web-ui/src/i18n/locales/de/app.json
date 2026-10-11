@@ -743,7 +743,6 @@
     "correctOption": "richtig",
     "wrongOption": "falsch",
     "youWrote": "Deine Antwort: {{text}}",
-    "showBack": "Rückseite zeigen",
     "suggested": "Vorschlag: {{rating}}. Tippe eine Bewertung, um zu speichern und weiterzugehen.",
     "yourAnswer": "Deine Antwort",
     "check": "Prüfen",
@@ -818,10 +817,23 @@
     "stopDictation": "Diktat beenden",
     "dictationFailed": "Das Diktat ist nicht gestartet. Prüfe die Mikrofon-Berechtigung.",
     "modelError": "Der Tutor kann gerade nicht antworten. Versuche es gleich noch einmal.",
-    "questionGone": "Diese Frage gilt nicht mehr, die Karte wurde geändert.",
+    "questionGone": "Diese Frage war nicht mehr aktuell, deshalb ging es mit der nächsten Karte weiter. Die Karte kommt wieder, wenn sie fällig ist.",
     "saveFailed": "Die Antwort konnte nicht gespeichert werden. Tippe eine Bewertung, um es erneut zu versuchen.",
     "skipCard": "Diese Karte später lernen",
     "addKey": "Fragen statt nur Karten?",
-    "addKeyLink": "Hinterlege deinen Anthropic-API-Schlüssel in den Einstellungen."
+    "addKeyLink": "Hinterlege deinen Anthropic-API-Schlüssel in den Einstellungen.",
+    "menu": {
+      "more": "Mehr",
+      "difficulty": "Schwierigkeit ändern",
+      "difficultyTitle": "Schwierigkeit der Sitzung",
+      "card": "Originalkarte",
+      "details": "Kartendetails",
+      "nextCard": "Gilt ab der nächsten Karte.",
+      "rewrite": "Fragen, die für die alte Schwierigkeit geschrieben wurden, werden ersetzt; das verbraucht API-Guthaben.",
+      "runsAt": "Diese Sitzung läuft auf {{name}}.",
+      "cancel": "Abbrechen",
+      "use": "{{name}} verwenden",
+      "backLocked": "Die Rückseite öffnet sich, nachdem du geantwortet hast."
+    }
   }
 }

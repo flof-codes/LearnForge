@@ -3,6 +3,8 @@ import type { Db } from "../db/types.js";
 import { tutorSettings } from "../db/schema/index.js";
 import { ValidationError } from "../lib/errors.js";
 import { sealSecret, openSecret } from "../lib/secret-box.js";
+import { validateDifficulty } from "./session-service.js";
+import { validateAnswerModes, type AnswerMode } from "./question-forms.js";
 
 /**
  * Each user's own tutor setup: their Anthropic API key, the model and the
@@ -28,6 +30,9 @@ export interface TutorSettingsView {
   keyHint: string | null;
   model: TutorModelId;
   effort: TutorEffort;
+  /** The study start screen's last choices; null until the user has made any. */
+  difficulty: number | null;
+  answerBy: AnswerMode[] | null;
   updatedAt: string | null;
 }
 
@@ -40,6 +45,8 @@ function view(row: typeof tutorSettings.$inferSelect | undefined): TutorSettings
     keyHint: row?.apiKeyEnc ? row.keyHint : null,
     model: isModel(row?.model) ? row.model : DEFAULT_TUTOR_MODEL,
     effort: isEffort(row?.effort) ? row.effort : DEFAULT_TUTOR_EFFORT,
+    difficulty: row?.studyDifficulty ?? null,
+    answerBy: row?.studyAnswerBy?.length ? (row.studyAnswerBy as AnswerMode[]) : null,
     updatedAt: row ? row.updatedAt.toISOString() : null,
   };
 }
@@ -54,6 +61,8 @@ export interface SaveTutorSettingsInput {
   api_key?: string;
   model?: string;
   effort?: string;
+  difficulty?: number;
+  answer_by?: unknown;
 }
 
 export function validateApiKey(raw: unknown): string {
@@ -73,6 +82,8 @@ export async function saveTutorSettings(db: Db, userId: string, input: SaveTutor
     if (!isEffort(input.effort)) throw new ValidationError(`effort must be one of ${TUTOR_EFFORTS.join(", ")}`);
     changes.effort = input.effort;
   }
+  if (input.difficulty !== undefined) changes.studyDifficulty = validateDifficulty(input.difficulty);
+  if (input.answer_by !== undefined) changes.studyAnswerBy = validateAnswerModes(input.answer_by);
   if (input.api_key !== undefined) {
     const key = validateApiKey(input.api_key);
     changes.apiKeyEnc = sealSecret(key, secret);

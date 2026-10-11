@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Info, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import CardHtmlRender from '../../components/CardHtmlRender';
 import RatingButtons from '../../components/RatingButtons';
 import { useIsPhone } from '../../hooks/useIsPhone';
 import TermText from './TermText';
 import MicButton from './MicButton';
+import CardMenu from './CardMenu';
 import { OPTION_LETTERS, gradeChoice, gradeGap, suggestedRating } from '../../utils/tutor';
 import type { TutorQuestion } from '../../types';
 
@@ -21,6 +21,9 @@ interface Props {
   onAnswer: (answer: QuestionAnswer) => void;
   onViewDetail?: () => void;
   saving?: boolean;
+  /** The session's difficulty, changed from the card's menu. */
+  difficulty: number;
+  onChangeDifficulty: (difficulty: number) => Promise<void>;
   /** The session allows dictation: a gap gets a microphone where the browser can listen. */
   dictate?: boolean;
 }
@@ -43,7 +46,7 @@ export const primaryButton = 'flex-1 py-3 rounded-lg text-sm font-medium bg-acce
  * A stored question: asked, checked on the spot, then rated. The answer goes
  * to the server only with the rating, so one tap after the feedback moves on.
  */
-export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dictate }: Props) {
+export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty }: Props) {
   const { t } = useTranslation('app');
   const isPhone = useIsPhone();
   const [picked, setPicked] = useState<number[]>([]);
@@ -51,7 +54,7 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
   const [done, setDone] = useState(false);
   const [dontKnow, setDontKnow] = useState(false);
   const [lookedUp, setLookedUp] = useState(false);
-  const [showBack, setShowBack] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { payload } = item;
@@ -76,7 +79,7 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
   const handlers = useRef({ pick, check });
   handlers.current = { pick, check }; // eslint-disable-line react-hooks/refs
   useEffect(() => {
-    if (done) return;
+    if (done || menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       // Enter on a focused button or link is that control's own key.
@@ -87,7 +90,7 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [done, item]);
+  }, [done, menuOpen, item]);
 
   useEffect(() => {
     if (item.form === 'gap' && !isPhone) inputRef.current?.focus();
@@ -112,11 +115,14 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             {item.form === 'gap' ? t('tutor.fillGap') : t('tutor.question')}
           </div>
-          {onViewDetail && (
-            <button onClick={onViewDetail} className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-blue transition-colors" title={t('study.viewDetails')}>
-              <Info size={14} /> {t('study.details')}
-            </button>
-          )}
+          <CardMenu
+            difficulty={difficulty}
+            onChangeDifficulty={onChangeDifficulty}
+            card={{ frontHtml: item.frontHtml, backHtml: item.backHtml }}
+            answered={done}
+            onViewDetail={onViewDetail}
+            onOpenChange={setMenuOpen}
+          />
         </div>
 
         <div className="text-lg font-medium leading-snug">
@@ -124,19 +130,18 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
             <TermText
               text={payload.stem}
               terms={payload.terms}
-              onLookup={() => { if (!done) setLookedUp(true); }}
+              onLookup={() => setLookedUp(true)}
               marker={GAP_MARK}
               markerNode={done
                 ? <span className={`font-semibold border-b-2 px-1 ${right ? 'text-accent-green border-accent-green' : 'text-danger border-danger'}`}>{right ? text.trim() : item.payload.answer}</span>
                 : <span className="font-semibold text-warning border-b-2 border-dashed border-warning px-3">…</span>}
             />
           ) : (
-            <TermText text={payload.stem} terms={payload.terms} onLookup={() => { if (!done) setLookedUp(true); }} />
+            <TermText text={payload.stem} terms={payload.terms} onLookup={() => setLookedUp(true)} />
           )}
         </div>
 
-        {item.form === 'choice' && multi && !done && <p className="text-sm text-text-muted">{t('tutor.severalCorrect', { count: correctCount })}</p>}
-        {item.form === 'choice' && verdict}
+        {item.form === 'choice' && multi && <p className="text-sm text-text-muted">{t('tutor.severalCorrect', { count: correctCount })}</p>}
 
         {item.form === 'choice' && (
           <div className="lf-bleed border-y border-border divide-y divide-border md:mx-0 md:border-0 md:divide-y-0 md:space-y-2">
@@ -149,11 +154,13 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
                 <>
                   <span className={`w-6.5 h-6.5 shrink-0 rounded-full border grid place-items-center text-xs font-semibold ${ring}`}>{OPTION_LETTERS[i]}</span>
                   <span className="flex-1 min-w-0">
-                    <TermText text={o.text} terms={payload.terms} active={done} />
-                    {done && <span className="block text-sm text-text-muted mt-0.5">{o.why}</span>}
+                    <TermText text={o.text} terms={payload.terms} active={done} onLookup={() => setLookedUp(true)} />
                   </span>
-                  {state === 'ok' && <Check size={18} className="shrink-0 text-accent-green" aria-label={t('tutor.correctOption')} />}
-                  {state === 'bad' && <X size={18} className="shrink-0 text-danger" aria-label={t('tutor.wrongOption')} />}
+                  {/* The mark has its place from the start, so marking an answer moves nothing. */}
+                  <span className="w-[18px] shrink-0">
+                    {state === 'ok' && <Check size={18} className="text-accent-green" aria-label={t('tutor.correctOption')} />}
+                    {state === 'bad' && <X size={18} className="text-danger" aria-label={t('tutor.wrongOption')} />}
+                  </span>
                 </>
               );
               const frame = `w-full flex items-start gap-3 text-left px-4 py-3 md:rounded-lg md:border md:border-border ${tone}`;
@@ -172,20 +179,17 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
           </>
         )}
 
-        {done && (
-          <>
-            <p><TermText text={payload.explanation} terms={payload.terms} /></p>
-            {showBack ? (
-              <div className="border-t border-border pt-3">
-                <div className="text-[10px] uppercase tracking-wider text-text-muted mb-2">{t('study.back')}</div>
-                <CardHtmlRender html={item.backHtml} interactive flat={isPhone} />
-              </div>
-            ) : (
-              <button type="button" onClick={() => setShowBack(true)} className="text-sm px-3 py-1 rounded-full border border-border text-text-primary hover:bg-bg-hover transition-colors">
-                {t('tutor.showBack')}
-              </button>
-            )}
-          </>
+        {item.form === 'choice' && done && verdict}
+        {done && <p><TermText text={payload.explanation} terms={payload.terms} onLookup={() => setLookedUp(true)} /></p>}
+        {item.form === 'choice' && done && (
+          <ul className="space-y-1.5 text-sm">
+            {item.payload.options.map((o, i) => (
+              <li key={i} className="flex gap-2">
+                <span className={`font-semibold ${o.correct ? 'text-accent-green' : picked.includes(i) ? 'text-danger' : 'text-text-muted'}`}>{OPTION_LETTERS[i]}</span>
+                <span className="text-text-muted">{o.why}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
@@ -193,7 +197,7 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
         {done ? (
           <>
             <p className="text-xs text-text-muted">{t('tutor.suggested', { rating: t(`ratings.${['again', 'hard', 'good', 'easy'][suggestedRating(correctness, lookedUp) - 1]}`) })}</p>
-            <RatingButtons onRate={submit} disabled={saving} suggested={suggestedRating(correctness, lookedUp)} />
+            <RatingButtons onRate={submit} disabled={saving || menuOpen} suggested={suggestedRating(correctness, lookedUp)} />
           </>
         ) : item.form === 'gap' ? (
           <>

@@ -88,3 +88,15 @@ export async function getSession(db: Db, userId: string, sessionId: string): Pro
   if (rows.rows.length === 0) throw new NotFoundError("Session not found");
   return mapSession(rows.rows[0]);
 }
+
+/** Changes the difficulty a running session asks and schedules at. */
+export async function setSessionDifficulty(db: Db, userId: string, sessionId: string, difficulty: number): Promise<StudySession> {
+  const value = validateDifficulty(difficulty);
+  const rows = await db.execute<SessionRow>(sql`
+    UPDATE study_sessions SET session_difficulty = ${value}, last_activity = NOW()
+    WHERE id = ${sessionId} AND user_id = ${userId}
+    RETURNING *
+  `);
+  if (rows.rows.length === 0) throw new NotFoundError("Session not found");
+  return mapSession(rows.rows[0]);
+}

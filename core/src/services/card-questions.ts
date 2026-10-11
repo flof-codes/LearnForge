@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
-import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { NotFoundError, ValidationError, StaleTicketError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
 import { loadTopicRates } from "./change-rate.js";
 import { getStudyCards, getStudySummary } from "./study-service.js";
@@ -8,6 +8,12 @@ import { getSession } from "./session-service.js";
 import { submitReview, gradeChoice } from "./review-service.js";
 import { ratingFromCorrectness } from "./bloom.js";
 import type { QuestionRequest, AnswerContext } from "../lib/question-prompt.js";
+import {
+  OPTION_LETTERS, GAP_MARK, pickQuestionForm, difficultyBand, difficultyBandRange, validateQuestionPayload, gradeGap,
+  type QuestionForm, type AnswerMode, type QuestionPayload, type ChoicePayload, type GapPayload, type OpenPayload,
+} from "./question-forms.js";
+
+export * from "./question-forms.js";
 
 /**
  * Questions written ahead of time for the study view.
@@ -21,153 +27,7 @@ import type { QuestionRequest, AnswerContext } from "../lib/question-prompt.js";
 /** Bump when the rules in lib/question-prompt.ts change; older rows stop being served. */
 export const QUESTION_PROMPT_VERSION = 1;
 export const QUESTION_BATCH_SIZE = 5;
-
-export type QuestionForm = "choice" | "gap" | "open";
-export type AnswerMode = "tap" | "type" | "dictate";
-const ANSWER_MODES: readonly AnswerMode[] = ["tap", "type", "dictate"];
-const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GAP_MARK = "{{gap}}";
-
-export interface QuestionTerm { term: string; definition: string }
-export interface ChoicePayload {
-  stem: string;
-  options: Array<{ text: string; correct: boolean; why: string }>;
-  explanation: string;
-  terms: QuestionTerm[];
-}
-export interface GapPayload {
-  stem: string;
-  answer: string;
-  accept: string[];
-  explanation: string;
-  terms: QuestionTerm[];
-}
-export interface OpenPayload {
-  stem: string;
-  answer: string;
-  keyPoints: string[];
-  explanation: string;
-  terms: QuestionTerm[];
-}
-export type QuestionPayload = ChoicePayload | GapPayload | OpenPayload;
-
-/** Follow-up questions the learner may ask about one open answer. */
-export const FOLLOW_UP_LIMIT = 5;
-
-// ---------------------------------------------------------------------------
-// Which form a card is asked in
-// ---------------------------------------------------------------------------
-
-/** Wrong options are written for a band of the session difficulty; a question is served only inside its band. */
-export function difficultyBand(difficulty: number): "commute" | "desk" | "deep" {
-  return difficulty < 0.5 ? "commute" : difficulty < 0.85 ? "desk" : "deep";
-}
-
-export function validateAnswerModes(raw: unknown): AnswerMode[] {
-  if (!Array.isArray(raw)) throw new ValidationError("answer_by must be an array of tap, type, dictate");
-  const modes = [...new Set(raw)].filter((m): m is AnswerMode => ANSWER_MODES.includes(m as AnswerMode));
-  if (modes.length !== new Set(raw).size) throw new ValidationError("answer_by may only contain tap, type, dictate");
-  if (modes.length === 0) throw new ValidationError("answer_by must name at least one way to answer");
-  return modes;
-}
-
-/**
- * Tap only asks everything as a choice. With typing or dictation, a cloze card
- * becomes a typed gap and any other card an open question once the session and
- * the level are past plain recognition: at Desk from Apply (gap) and Evaluate
- * (open), at Deep always. Without tapping nothing is asked as a choice.
- */
-export function pickQuestionForm(input: { difficulty: number; level: number; isCloze: boolean; answerBy: AnswerMode[] }): QuestionForm {
-  const tap = input.answerBy.includes("tap");
-  const typed = input.answerBy.includes("type") || input.answerBy.includes("dictate");
-  if (!typed) return "choice";
-  // Recalling a fact or a definition is a gap; from Apply up the learner explains.
-  const typedForm: QuestionForm = input.isCloze || input.level <= 1 ? "gap" : "open";
-  if (!tap || input.difficulty >= 0.85) return typedForm;
-  if (input.difficulty < 0.5) return "choice";
-  if (input.isCloze) return input.level >= 2 ? "gap" : "choice";
-  return input.level >= 4 ? "open" : "choice";
-}
-
-// ---------------------------------------------------------------------------
-// Validation of what the model returned
-// ---------------------------------------------------------------------------
-
-function cleanTerms(raw: unknown, texts: string[]): QuestionTerm[] {
-  if (!Array.isArray(raw)) return [];
-  const haystack = texts.join("\n").toLowerCase();
-  const seen = new Set<string>();
-  const terms: QuestionTerm[] = [];
-  for (const t of raw) {
-    const term = typeof t?.term === "string" ? t.term.trim() : "";
-    const definition = typeof t?.definition === "string" ? t.definition.trim() : "";
-    // A term the text does not contain could never be tapped.
-    if (!term || !definition || seen.has(term.toLowerCase()) || !haystack.includes(term.toLowerCase())) continue;
-    seen.add(term.toLowerCase());
-    terms.push({ term: term.slice(0, 80), definition: definition.slice(0, 400) });
-    if (terms.length === 4) break;
-  }
-  return terms;
-}
-
-function requireText(field: string, value: unknown, max: number): string {
-  const text = typeof value === "string" ? value.trim() : "";
-  if (!text) throw new ValidationError(`${field} is required`);
-  if (text.length > max) throw new ValidationError(`${field} must be at most ${max} characters`);
-  return text;
-}
-
-/** Normalises a question and refuses one the study view could not ask or grade. */
-export function validateQuestionPayload(form: QuestionForm, raw: Record<string, unknown>): QuestionPayload {
-  const explanation = requireText("explanation", raw.explanation, 600);
-
-  if (form === "choice") {
-    const stem = requireText("stem", raw.stem, 500);
-    if (!Array.isArray(raw.options) || raw.options.length !== OPTION_LETTERS.length) {
-      throw new ValidationError(`exactly ${OPTION_LETTERS.length} options are required`);
-    }
-    const options = raw.options.map((o, i) => ({
-      text: requireText(`option ${OPTION_LETTERS[i]}`, o?.text, 240),
-      correct: o?.correct === true,
-      why: requireText(`reason for option ${OPTION_LETTERS[i]}`, o?.why, 400),
-    }));
-    if (new Set(options.map(o => o.text.toLowerCase())).size !== options.length) throw new ValidationError("options must be distinct");
-    const correct = options.filter(o => o.correct).length;
-    if (correct < 1 || correct > 2) throw new ValidationError("one or two options must be correct");
-    return { stem, options, explanation, terms: cleanTerms(raw.terms, [stem, explanation, ...options.map(o => o.text)]) };
-  }
-
-  if (form === "open") {
-    const stem = requireText("stem", raw.stem, 600);
-    const answer = requireText("answer", raw.answer, 1200);
-    const keyPoints = (Array.isArray(raw.key_points) ? raw.key_points : [])
-      .filter((k): k is string => typeof k === "string" && k.trim() !== "")
-      .map(k => k.trim().slice(0, 240))
-      .slice(0, 4);
-    if (keyPoints.length < 2) throw new ValidationError("an open question needs at least two key points");
-    return { stem, answer, keyPoints, explanation, terms: cleanTerms(raw.terms, [stem]) };
-  }
-
-  const stem = requireText("stem", raw.stem, 500);
-  if (stem.split(GAP_MARK).length !== 2) throw new ValidationError(`a gap question needs ${GAP_MARK} exactly once in the stem`);
-  const answer = requireText("answer", raw.answer, 120);
-  const accept = [...new Set([answer, ...(Array.isArray(raw.accept) ? raw.accept : [])]
-    .filter((a): a is string => typeof a === "string")
-    .map(normalizeGapAnswer)
-    .filter(Boolean))].slice(0, 20);
-  return { stem, answer, accept, explanation, terms: cleanTerms(raw.terms, [stem, explanation]) };
-}
-
-/** Case, surrounding punctuation and runs of spaces do not make a typed answer wrong. */
-export function normalizeGapAnswer(text: string): string {
-  return text.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").replace(/^[\s"'„“”‚‘’.,;:!?()]+|[\s"'„“”‚‘’.,;:!?()]+$/g, "");
-}
-
-export function gradeGap(payload: GapPayload, text: string): number {
-  const given = normalizeGapAnswer(text);
-  return given !== "" && payload.accept.includes(given) ? 1 : 0;
-}
 
 // ---------------------------------------------------------------------------
 // The queue: due cards, the form each is asked in, and what is already written
@@ -290,12 +150,14 @@ export async function storeQuestions(db: Db, userId: string, requests: QuestionR
       }
     }
 
+    const [from, below] = difficultyBandRange(request.difficulty);
     const inserted = await db.execute<{ id: string }>(sql`
       WITH stale AS (
         DELETE FROM card_questions cq
         USING cards c, topics t
         WHERE cq.card_id = c.id AND t.id = c.topic_id AND t.user_id = ${userId}
           AND cq.card_id = ${request.cardId} AND cq.used_at IS NULL AND cq.bloom_level = ${request.bloomLevel} AND cq.form = ${request.form}
+          AND cq.difficulty >= ${from} AND cq.difficulty < ${below}
       )
       INSERT INTO card_questions
         (card_id, bloom_level, form, prompt_version, status, payload, skip_reason, difficulty, model, original_id, card_updated_at)
@@ -326,6 +188,7 @@ export interface TutorQuestion {
   bloomLevel: number;
   form: QuestionForm;
   payload: QuestionPayload;
+  frontHtml: string;
   backHtml: string;
 }
 export interface TutorPlainCard { type: "card"; card: StudyCard }
@@ -375,6 +238,7 @@ export async function serveTutorBatch(db: Db, userId: string, opts: ServeTutorOp
       bloomLevel: card.bloomState.currentLevel,
       form: entry.form,
       payload: stored.payload,
+      frontHtml: card.frontHtml,
       backHtml: card.backHtml,
     });
   }
@@ -408,13 +272,14 @@ export async function getAnswerContext(db: Db, userId: string, questionId: strin
     SELECT sq.card_id, sq.card_level, cq.form, cq.payload, c.concept, c.back_html, t.name AS topic_name
     FROM study_questions sq
     JOIN study_sessions ss ON ss.id = sq.session_id AND ss.user_id = ${userId}
-    JOIN card_questions cq ON cq.id = sq.card_question_id AND cq.status = 'ready'
+    LEFT JOIN card_questions cq ON cq.id = sq.card_question_id AND cq.status = 'ready'
     JOIN cards c ON c.id = sq.card_id
     JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
     WHERE sq.id = ${questionId}
   `);
   if (rows.rows.length === 0) throw new NotFoundError("Question ticket not found");
   const r = rows.rows[0];
+  if (!r.payload) throw new StaleTicketError("The question behind this ticket was replaced");
   const open = r.form === "open" ? (r.payload as OpenPayload) : null;
   return {
     form: r.form,
@@ -440,11 +305,12 @@ export async function submitTutorAnswer(db: Db, userId: string, input: TutorAnsw
     SELECT sq.card_id, sq.card_level, cq.id AS cq_id, cq.form, cq.payload
     FROM study_questions sq
     JOIN study_sessions ss ON ss.id = sq.session_id AND ss.user_id = ${userId}
-    JOIN card_questions cq ON cq.id = sq.card_question_id AND cq.status = 'ready'
+    LEFT JOIN card_questions cq ON cq.id = sq.card_question_id AND cq.status = 'ready'
     WHERE sq.id = ${input.question_id}
   `);
   if (rows.rows.length === 0) throw new NotFoundError("Question ticket not found");
   const q = rows.rows[0];
+  if (!q.cq_id) throw new StaleTicketError("The question behind this ticket was replaced");
   const dontKnow = !!input.dont_know;
 
   const common = {
@@ -507,4 +373,36 @@ export async function submitTutorAnswer(db: Db, userId: string, input: TutorAnsw
 
   await db.execute(sql`UPDATE card_questions SET used_at = NOW() WHERE id = ${q.cq_id} AND used_at IS NULL`);
   return { ...result, correctness, suggestedRating: ratingFromCorrectness(correctness) };
+}
+
+/**
+ * Which of the items a client still holds can be answered: tickets nobody has
+ * answered since, whose question is still there, and plain cards that are
+ * still due. A second device that studied in the meantime makes the rest stale.
+ */
+export async function checkTutorItems(db: Db, userId: string, input: { questionIds: string[]; cardIds: string[] }) {
+  const questionIds = [...new Set(input.questionIds)].filter(id => UUID_RE.test(id)).slice(0, 50);
+  const cardIds = [...new Set(input.cardIds)].filter(id => UUID_RE.test(id)).slice(0, 50);
+  const list = (ids: string[]) => sql.join(ids.map(id => sql`${id}::uuid`), sql`, `);
+
+  const questions = questionIds.length === 0 ? [] : (await db.execute<{ id: string }>(sql`
+    SELECT sq.id
+    FROM study_questions sq
+    JOIN study_sessions ss ON ss.id = sq.session_id AND ss.user_id = ${userId}
+    JOIN card_questions cq ON cq.id = sq.card_question_id AND cq.status = 'ready' AND cq.used_at IS NULL
+    JOIN fsrs_state fs ON fs.card_id = sq.card_id
+    WHERE sq.id IN (${list(questionIds)})
+      AND fs.last_review IS NOT DISTINCT FROM sq.last_review_at_serve
+      AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.question_id = sq.id)
+  `)).rows.map(r => r.id);
+
+  const cards = cardIds.length === 0 ? [] : (await db.execute<{ id: string }>(sql`
+    SELECT c.id
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
+    JOIN fsrs_state fs ON fs.card_id = c.id
+    WHERE c.id IN (${list(cardIds)}) AND fs.due <= NOW()
+  `)).rows.map(r => r.id);
+
+  return { questions, cards };
 }

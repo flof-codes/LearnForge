@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, real, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 
 /**
@@ -15,5 +15,8 @@ export const tutorSettings = pgTable("tutor_settings", {
   keyHint: varchar("key_hint", { length: 8 }),
   model: text("model").notNull().default("claude-opus-5-5"),
   effort: text("effort").notNull().default("medium"),
+  /** The start screen's last choices, so a session begun on one device continues the same way on another. */
+  studyDifficulty: real("study_difficulty"),
+  studyAnswerBy: text("study_answer_by").array(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

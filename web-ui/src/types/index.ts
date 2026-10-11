@@ -449,6 +449,8 @@ interface TutorQuestionBase {
   topicId: string;
   concept: string;
   bloomLevel: number;
+  /** The card behind the question, for the card menu. */
+  frontHtml: string;
   backHtml: string;
 }
 export type TutorQuestion =
@@ -480,6 +482,9 @@ export interface TutorSettings {
   keyHint: string | null;
   model: string;
   effort: string;
+  /** The start screen's last choices, shared between devices; null until any were made. */
+  difficulty: number | null;
+  answerBy: AnswerMode[] | null;
   updatedAt: string | null;
   /** No key of its own: this admin account runs on the server's (deprecated). */
   serverKey: boolean;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,8 +10,9 @@ import FocusBadge from '../../components/FocusBadge';
 import InteractiveCard from './InteractiveCard';
 import QuestionCard, { type QuestionAnswer } from './QuestionCard';
 import OpenCard from './OpenCard';
+import CardMenu from './CardMenu';
 import SessionSummary from './SessionSummary';
-import { presetOf, tutorErrorKey, type TutorSettings } from '../../utils/tutor';
+import { presetOf, tutorErrorKey, isStaleTicket, saveTutorSettings, settingsToParams, type TutorSettings } from '../../utils/tutor';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
 import type { TutorItem, TutorPause } from '../../types';
 
@@ -35,6 +36,9 @@ export default function TutorSession({ topicId, settings }: Props) {
   const { t } = useTranslation('app');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [, setSearchParams] = useSearchParams();
+  const [difficulty, setDifficulty] = useState(settings.difficulty);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [queue, setQueue] = useState<TutorItem[]>([]);
   const [remaining, setRemaining] = useState(0);
@@ -47,6 +51,8 @@ export default function TutorSession({ topicId, settings }: Props) {
   /** A review that could not be saved: the card stays, with a way to try again or to leave it. */
   const [saveError, setSaveError] = useState<string | null>(null);
   const [ended, setEnded] = useState(false);
+  /** Why a card went away without being rated. */
+  const [notice, setNotice] = useState<string | null>(null);
   const [round, setRound] = useState(0);
 
   const sessionId = useRef<string | null>(null);
@@ -60,7 +66,7 @@ export default function TutorSession({ topicId, settings }: Props) {
     if (fetching.current) return;
     fetching.current = true;
     try {
-      if (!sessionId.current) sessionId.current = (await tutorService.start(settings.difficulty)).data.sessionId;
+      if (!sessionId.current) sessionId.current = (await tutorService.start(difficulty)).data.sessionId;
       const { data } = await tutorService.next({
         sessionId: sessionId.current,
         topicId,
@@ -79,7 +85,7 @@ export default function TutorSession({ topicId, settings }: Props) {
       fetching.current = false;
       setRound(r => r + 1);
     }
-  }, [settings, topicId]);
+  }, [settings, difficulty, topicId]);
 
   // Keep a few items ahead. While the writer is busy, ask again shortly; `round` restarts the wait after every answer from the server.
   useEffect(() => {
@@ -88,7 +94,39 @@ export default function TutorSession({ topicId, settings }: Props) {
     return () => clearTimeout(timer);
   }, [queue.length, pending, exhausted, ended, error, round, refill]);
 
+  // A card that can no longer be answered here (studied on another device, question replaced) leaves the queue quietly.
+  const dropStale = useCallback(() => {
+    setNotice(t('tutor.questionGone'));
+    setSaveError(null);
+    setQueue(q => q.slice(1));
+    setExhausted(false);
+  }, [t]);
+
+  // Coming back to this tab or app: another device may have studied meanwhile. Keep only what can still be answered.
+  const sync = useCallback(async () => {
+    const held = queueRef.current;
+    if (held.length === 0) return;
+    try {
+      const { data } = await tutorService.check(
+        held.flatMap(item => (item.type === 'question' ? [item.questionId] : [])),
+        held.flatMap(item => (item.type === 'card' ? [item.card.id] : [])),
+      );
+      const good = new Set([...data.questions, ...data.cards]);
+      setQueue(q => q.filter(item => good.has(item.type === 'question' ? item.questionId : item.card.id)));
+      setExhausted(false);
+    } catch {
+      // Not knowing is fine: a stale card is caught when it is answered.
+    }
+  }, []);
+  useEffect(() => {
+    const onShow = () => { if (document.visibilityState === 'visible') void sync(); };
+    document.addEventListener('visibilitychange', onShow);
+    window.addEventListener('focus', onShow);
+    return () => { document.removeEventListener('visibilitychange', onShow); window.removeEventListener('focus', onShow); };
+  }, [sync]);
+
   const advance = useCallback((rating: number) => {
+    setNotice(null);
     setRatings(r => [...r, rating]);
     setQueue(q => q.slice(1));
     setRemaining(n => Math.max(0, n - 1));
@@ -99,6 +137,18 @@ export default function TutorSession({ topicId, settings }: Props) {
 
   const current = queue[0];
 
+  // A new difficulty holds from the next card: what is queued behind the current one was written for the old one.
+  const changeDifficulty = useCallback(async (next: number) => {
+    if (sessionId.current) await tutorService.setDifficulty(sessionId.current, next);
+    setDifficulty(next);
+    setQueue(q => q.slice(0, 1));
+    setExhausted(false);
+    const remembered = { ...settings, difficulty: next };
+    saveTutorSettings(remembered);
+    tutorService.saveSettings({ difficulty: next }).catch(() => undefined);
+    setSearchParams(params => { settingsToParams(remembered, params); return params; }, { replace: true });
+  }, [settings, setSearchParams]);
+
   const answerQuestion = async (answer: QuestionAnswer) => {
     if (!current || current.type !== 'question' || saving) return;
     setSaving(true);
@@ -107,7 +157,8 @@ export default function TutorSession({ topicId, settings }: Props) {
       await tutorService.answer({ questionId: current.questionId, ...answer });
       advance(answer.rating);
     } catch (err) {
-      setSaveError(t(tutorErrorKey(err)));
+      if (isStaleTicket(err)) dropStale();
+      else setSaveError(t(tutorErrorKey(err)));
     } finally {
       setSaving(false);
     }
@@ -150,8 +201,8 @@ export default function TutorSession({ topicId, settings }: Props) {
     return <SessionSummary cardsReviewed={ratings.length} ratings={ratings} />;
   }
 
-  const preset = presetOf(settings.difficulty);
-  const headspace = preset ? t(`tutor.headspace.${preset}`) : t('tutor.headspace.custom', { value: settings.difficulty.toFixed(2) });
+  const preset = presetOf(difficulty);
+  const headspace = preset ? t(`tutor.headspace.${preset}`) : t('tutor.headspace.custom', { value: difficulty.toFixed(2) });
   const level = current ? (current.type === 'question' ? current.bloomLevel : current.card.bloomState.currentLevel) : null;
   const done = ratings.length;
   const dictate = settings.answerBy.includes('dictate');
@@ -187,6 +238,8 @@ export default function TutorSession({ topicId, settings }: Props) {
         </div>
       )}
 
+      {notice && <p className="text-sm text-text-muted">{notice}</p>}
+
       {paused && (
         <p className="text-sm text-warning">{t(paused === 'credits' ? 'tutor.pausedCredits' : 'tutor.pausedError')}</p>
       )}
@@ -203,13 +256,19 @@ export default function TutorSession({ topicId, settings }: Props) {
       )}
 
       {current?.type === 'question' && current.form !== 'open' && (
-        <QuestionCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} />
+        <QuestionCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} difficulty={difficulty} onChangeDifficulty={changeDifficulty} />
       )}
       {current?.type === 'question' && current.form === 'open' && (
-        <OpenCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} />
+        <OpenCard key={current.questionId} item={current} onAnswer={answerQuestion} onStale={dropStale} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} difficulty={difficulty} onChangeDifficulty={changeDifficulty} />
       )}
       {current?.type === 'card' && (
-        <InteractiveCard key={current.card.id} card={current.card} onRate={rateCard} onViewDetail={() => viewDetail(current.card.id)} disabled={saving} />
+        <InteractiveCard
+          key={current.card.id}
+          card={current.card}
+          onRate={rateCard}
+          disabled={saving || menuOpen}
+          menu={<CardMenu difficulty={difficulty} onChangeDifficulty={changeDifficulty} onViewDetail={() => viewDetail(current.card.id)} onOpenChange={setMenuOpen} />}
+        />
       )}
     </div>
   );

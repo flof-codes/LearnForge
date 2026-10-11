@@ -98,7 +98,17 @@ describe("Tutor in the web app", () => {
     expect(first.payload.options).toHaveLength(4);
     expect(first.payload.options.filter((o: { correct: boolean }) => o.correct)).toHaveLength(1);
     expect(first.payload.terms[0].term).toContain("Fresh card");
+    expect(first.frontHtml).toContain("Test");
     expect(first.backHtml).toContain("Answer");
+
+    // The difficulty of a running session can be changed; another account cannot touch it.
+    const harder = await api.put(`/tutor/sessions/${session.data.sessionId}`, { difficulty: 1 });
+    expect(harder.status).toBe(200);
+    expect(harder.data.difficulty).toBe(1);
+    expect((await api.put(`/tutor/sessions/${session.data.sessionId}`, { difficulty: 7 })).status).toBe(400);
+    const stranger = await registerUser("stranger", "admin");
+    expect((await stranger.put(`/tutor/sessions/${session.data.sessionId}`, { difficulty: 0.3 })).status).toBe(404);
+    await api.put(`/tutor/sessions/${session.data.sessionId}`, { difficulty: 0.7 });
 
     // A right answer: the server grades it, the suggestion follows the correctness.
     const right = await api.post("/tutor/answer", { question_id: first.questionId, selected: ["A"] });
@@ -356,5 +366,68 @@ describe("Tutor in the web app", () => {
     expect((await api.get("/tutor/status")).data.available).toBe(true);
     const saved = await api.put("/tutor/settings", { api_key: "sk-ant-api03-admin-own-key-0123456789abcd" });
     expect(saved.data).toMatchObject({ hasKey: true, serverKey: false });
+  });
+
+  it("hands a session over to a second device: what was answered there is stale here, not an error", async () => {
+    const api = await registerUser("handover", "admin");
+    const { topicId } = await topicWithCards(api, ["nu", "xi"]);
+    const scope = { topic_id: topicId, answer_by: ["tap"] };
+
+    const browser = await api.post("/tutor/sessions", { difficulty: 0.7 });
+    const onBrowser = await nextItems(api, { session_id: browser.data.sessionId, ...scope });
+    expect(onBrowser.items).toHaveLength(2);
+
+    // The phone starts its own session and gets the same cards, with the questions already written.
+    const phone = await api.post("/tutor/sessions", { difficulty: 0.7 });
+    const onPhone = await nextItems(api, { session_id: phone.data.sessionId, ...scope });
+    expect(onPhone.items).toHaveLength(2);
+    expect(onPhone.pending).toBe(0);
+    const phoneFirst = onPhone.items.find((i: { cardId: string }) => i.cardId === onBrowser.items[0].cardId);
+    expect(phoneFirst.questionId).not.toBe(onBrowser.items[0].questionId);
+    expect(phoneFirst.payload.stem).toBe(onBrowser.items[0].payload.stem);
+
+    expect((await api.post("/tutor/answer", { question_id: phoneFirst.questionId, selected: ["A"] })).status).toBe(200);
+
+    // Back in the browser: the check names what is still good, and the stale ticket is refused with a code.
+    const check = await api.post("/tutor/check", { question_ids: onBrowser.items.map((i: { questionId: string }) => i.questionId), card_ids: [] });
+    expect(check.status).toBe(200);
+    expect(check.data.questions).toEqual([onBrowser.items[1].questionId]);
+
+    const stale = await api.post("/tutor/answer", { question_id: onBrowser.items[0].questionId, selected: ["A"] });
+    expect(stale.status).toBe(400);
+    expect(stale.data.code).toBe("QUESTION_STALE");
+
+    // The card nobody answered is still answerable from the browser.
+    expect((await api.post("/tutor/answer", { question_id: onBrowser.items[1].questionId, selected: ["B"] })).status).toBe(200);
+  });
+
+  it("keeps a question in use when another difficulty writes its own for the same card", async () => {
+    const api = await registerUser("bands", "admin");
+    const { topicId } = await topicWithCards(api, ["omicron"]);
+
+    const easy = await api.post("/tutor/sessions", { difficulty: 0.3 });
+    const first = await nextItems(api, { session_id: easy.data.sessionId, topic_id: topicId, answer_by: ["tap"] });
+    expect(first.items[0].type).toBe("question");
+
+    // Another device at Deep: no question for that band yet, so one is written beside the first.
+    const deep = await api.post("/tutor/sessions", { difficulty: 1 });
+    const second = await nextItems(api, { session_id: deep.data.sessionId, topic_id: topicId, answer_by: ["tap"] });
+    expect(second.items[0].type).toBe("question");
+    expect(second.items[0].questionId).not.toBe(first.items[0].questionId);
+
+    const answered = await api.post("/tutor/answer", { question_id: first.items[0].questionId, selected: ["A"] });
+    expect(answered.status).toBe(200);
+    expect(answered.data.correctness).toBe(1);
+  });
+
+  it("remembers the start screen's choices on the account", async () => {
+    const api = await registerUser("prefs", "user");
+    expect((await api.get("/tutor/settings")).data).toMatchObject({ difficulty: null, answerBy: null });
+    const saved = await api.put("/tutor/settings", { difficulty: 0.55, answer_by: ["tap", "dictate"] });
+    expect(saved.status).toBe(200);
+    expect(saved.data).toMatchObject({ difficulty: 0.55, answerBy: ["tap", "dictate"], hasKey: false });
+    expect((await api.put("/tutor/settings", { difficulty: 4 })).status).toBe(400);
+    expect((await api.put("/tutor/settings", { answer_by: ["sing"] })).status).toBe(400);
+    expect((await api.get("/tutor/settings")).data).toMatchObject({ difficulty: 0.55, answerBy: ["tap", "dictate"] });
   });
 });

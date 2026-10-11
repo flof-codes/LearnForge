@@ -12,7 +12,7 @@ import {
 } from "./bloom.js";
 import { loadTopicRates, resolveCardRate, type EffectiveRate } from "./change-rate.js";
 import { validateDifficulty, SESSION_EXPIRY_HOURS } from "./session-service.js";
-import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { NotFoundError, ValidationError, StaleTicketError } from "../lib/errors.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -197,10 +197,10 @@ export async function submitReview(db: Db, userId: string, input: SubmitReviewIn
       };
     }
     if (s.q_stale) {
-      throw new ValidationError("Question ticket is stale: the card was reviewed after it was served. Fetch the card again.");
+      throw new StaleTicketError("Question ticket is stale: the card was reviewed after it was served. Fetch the card again.");
     }
     if (s.q_expired) {
-      throw new ValidationError(`Question ticket expired: it was served more than ${SESSION_EXPIRY_HOURS} hours ago. Fetch the card again.`);
+      throw new StaleTicketError(`Question ticket expired: it was served more than ${SESSION_EXPIRY_HOURS} hours ago. Fetch the card again.`);
     }
 
     // 3. Settings the question was asked under: from the ticket when present.

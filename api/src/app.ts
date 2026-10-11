@@ -57,7 +57,8 @@ export function buildApp() {
       return reply.status(403).send({ error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
     if (error instanceof ValidationError) {
-      return reply.status(400).send({ error: error.message });
+      const code = (error as ValidationError & { code?: string }).code;
+      return reply.status(400).send({ error: error.message, ...(code ? { code } : {}) });
     }
     if (error instanceof ServiceUnavailableError) {
       return reply.status(503).send({ error: error.message, ...(error.code ? { code: error.code } : {}) });

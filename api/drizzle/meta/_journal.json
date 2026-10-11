@@ -183,6 +183,13 @@
       "when": 1791731478636,
       "tag": "0025_tutor_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791735866065,
+      "tag": "0026_tutor_study_prefs",
+      "breakpoints": true
     }
   ]
 }

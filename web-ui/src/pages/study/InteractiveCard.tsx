@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Info, Repeat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CardHtmlRender from '../../components/CardHtmlRender';
@@ -11,9 +11,11 @@ interface Props {
   onRate: (rating: 1 | 2 | 3 | 4) => void;
   onViewDetail?: () => void;
   disabled?: boolean;
+  /** Shown at the top right instead of the Details link (the tutor's card menu). */
+  menu?: ReactNode;
 }
 
-export default function InteractiveCard({ card, onRate, onViewDetail, disabled }: Props) {
+export default function InteractiveCard({ card, onRate, onViewDetail, disabled, menu }: Props) {
   const { t } = useTranslation('app');
   const [flipped, setFlipped] = useState(false);
   const isPhone = useIsPhone();
@@ -46,7 +48,8 @@ export default function InteractiveCard({ card, onRate, onViewDetail, disabled }
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             {flipped ? t('study.back') : t('study.front')}
           </div>
-          {onViewDetail && (
+          {menu}
+          {!menu && onViewDetail && (
             <button
               onClick={onViewDetail}
               className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-blue transition-colors"

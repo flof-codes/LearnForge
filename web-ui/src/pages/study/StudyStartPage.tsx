@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,15 +13,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
 import SubscriptionBanner from '../../components/SubscriptionBanner';
 import { formatPercent } from '../../utils/format';
-import {
-  HEADSPACE, DIFFICULTY_MIN, DIFFICULTY_MAX, DIFFICULTY_STEP, DIFFICULTY_TICKS,
-  bandOf, presetOf, intervalFactor, loadTutorSettings, saveTutorSettings, settingsToParams, type TutorSettings,
-} from '../../utils/tutor';
+import DifficultyPicker from './DifficultyPicker';
+import { tutorService } from '../../api/tutor';
+import { bandOf, intervalFactor, loadTutorSettings, saveTutorSettings, settingsToParams, cleanTutorSettings, choiceTile as choice, type TutorSettings } from '../../utils/tutor';
 
 const ANSWER_MODES: AnswerMode[] = ['tap', 'type', 'dictate'];
 const sectionLabel = 'flex items-baseline justify-between gap-3 text-[10px] uppercase tracking-wider text-text-muted';
-const choice = (on: boolean) =>
-  `flex flex-col gap-0.5 text-left rounded-lg border px-3 py-2.5 transition-colors ${on ? 'border-accent-blue bg-accent-blue/10' : 'border-border bg-bg-surface hover:bg-bg-hover'}`;
 
 /** Which question forms a session at these settings will ask. */
 function mixKey(settings: TutorSettings): string {
@@ -48,7 +46,27 @@ export default function StudyStartPage() {
   const { data: prepared } = useTutorPrepare(tutorOn && waiting > 0, topicId || undefined, settled);
   const navigate = useNavigate();
 
+  // The account remembers the last choices, so a session begun on another device starts the same way here.
+  const { data: account } = useQuery({ queryKey: ['tutor', 'settings'], queryFn: () => tutorService.settings().then(res => res.data), enabled: tutorOn });
+  const adopted = useRef(false);
+  const dirty = useRef(false);
+  useEffect(() => {
+    if (adopted.current || !account) return;
+    adopted.current = true;
+    if (dirty.current || (account.difficulty === null && !account.answerBy)) return;
+    const next = cleanTutorSettings({ difficulty: account.difficulty ?? settings.difficulty, answerBy: account.answerBy ?? settings.answerBy });
+    setSettings(next);
+    saveTutorSettings(next);
+  }, [account, settings]);
+  useEffect(() => {
+    if (!dirty.current || !tutorOn) return;
+    dirty.current = false;
+    // Losing this write only costs the other device its defaults.
+    tutorService.saveSettings({ difficulty: settled.difficulty, answer_by: settled.answerBy }).catch(() => undefined);
+  }, [settled, tutorOn]);
+
   const change = (next: TutorSettings) => {
+    dirty.current = true;
     setSettings(next);
     saveTutorSettings(next);
   };
@@ -73,8 +91,6 @@ export default function StudyStartPage() {
   }
 
   const totalBloom = summary ? Object.values(summary.bloomLevels).reduce((a, b) => a + b, 0) : 0;
-  const preset = presetOf(settings.difficulty);
-  const span = DIFFICULTY_MAX - DIFFICULTY_MIN;
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -150,34 +166,7 @@ export default function StudyStartPage() {
               <span>{t('tutor.headspace.title')}</span>
               <span className="normal-case tracking-normal text-xs">{t('tutor.difficultyRange')}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {HEADSPACE.map(h => (
-                <button key={h.key} type="button" aria-pressed={preset === h.key} onClick={() => change({ ...settings, difficulty: h.value })} className={choice(preset === h.key)}>
-                  <b className="font-semibold text-[15px]">{t(`tutor.headspace.${h.key}`)}</b>
-                  <span className="text-xs text-text-muted leading-snug">{t(`tutor.headspace.${h.key}Hint`)}</span>
-                </button>
-              ))}
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="flex-1 min-w-0 px-2">
-                <input
-                  type="range"
-                  min={DIFFICULTY_MIN}
-                  max={DIFFICULTY_MAX}
-                  step={DIFFICULTY_STEP}
-                  value={settings.difficulty}
-                  onChange={e => change({ ...settings, difficulty: Number(e.target.value) })}
-                  aria-label={t('tutor.difficulty')}
-                  className="block w-full accent-accent-blue"
-                />
-                <div className="relative h-4 mt-1 text-[11px] text-text-muted tabular-nums" aria-hidden="true">
-                  {DIFFICULTY_TICKS.map(tick => (
-                    <span key={tick} className="absolute -translate-x-1/2" style={{ left: `${((tick - DIFFICULTY_MIN) / span) * 100}%` }}>{tick.toFixed(tick === 0.85 ? 2 : 1)}</span>
-                  ))}
-                </div>
-              </div>
-              <output className="shrink-0 w-12 text-right text-xl font-semibold tabular-nums leading-tight">{settings.difficulty.toFixed(2)}</output>
-            </div>
+            <DifficultyPicker value={settings.difficulty} onChange={difficulty => change({ ...settings, difficulty })} />
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-sm">
               <dt className="text-text-muted">{t('tutor.setting.questions')}</dt>
               <dd>{t(`tutor.mix.${mixKey(settings)}`)}</dd>

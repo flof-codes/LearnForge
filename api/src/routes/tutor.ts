@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { db } from "../db/connection.js";
 import {
   getTutorSettings, saveTutorSettings, removeTutorKey, TUTOR_MODELS, TUTOR_EFFORTS,
-  startSession, validateDifficulty, validateAnswerModes, serveTutorBatch, submitTutorAnswer,
+  startSession, setSessionDifficulty, checkTutorItems, validateDifficulty, validateAnswerModes, serveTutorBatch, submitTutorAnswer,
   getTutorQueue, toQuestionRequest, getStudySummary, getAnswerContext, ValidationError, FOLLOW_UP_LIMIT,
 } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
@@ -100,6 +100,14 @@ export default async function tutorRoutes(app: FastifyInstance) {
     return { sessionId: session.id, difficulty: session.sessionDifficulty };
   });
 
+  // PUT /tutor/sessions/:id — change the difficulty of a running session; it holds from the next card served
+  app.put<{ Params: { id: string }; Body: { difficulty?: number } }>("/tutor/sessions/:id", async (req) => {
+    const { userId } = await requireTutor(req);
+    if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) throw new ValidationError("session id must be a UUID");
+    const session = await setSessionDifficulty(db, userId, req.params.id, validateDifficulty(req.body?.difficulty));
+    return { sessionId: session.id, difficulty: session.sessionDifficulty };
+  });
+
   // POST /tutor/next — the next stored questions of a session; cards without one are written in the background
   app.post<{ Body: { session_id?: string; topic_id?: string; answer_by?: unknown; exclude?: string[]; limit?: number } }>("/tutor/next", async (req) => {
     const { userId, model } = await requireTutor(req);
@@ -126,6 +134,13 @@ export default async function tutorRoutes(app: FastifyInstance) {
       remaining: batch.remaining,
       paused,
     };
+  });
+
+  // POST /tutor/check — which of the items this client still holds can be answered (another device may have studied meanwhile)
+  app.post<{ Body: { question_ids?: string[]; card_ids?: string[] } }>("/tutor/check", async (req) => {
+    const { userId } = await requireTutor(req);
+    const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+    return checkTutorItems(db, userId, { questionIds: ids(req.body?.question_ids), cardIds: ids(req.body?.card_ids) });
   });
 
   // POST /tutor/answer — grade a stored question and write the review
@@ -195,11 +210,12 @@ export default async function tutorRoutes(app: FastifyInstance) {
   });
 
   // PUT /tutor/settings — save a key, a model, an effort; what is left out stays
-  app.put<{ Body: { api_key?: string; model?: string; effort?: string } }>("/tutor/settings", async (req) => {
+  app.put<{ Body: { api_key?: string; model?: string; effort?: string; difficulty?: number; answer_by?: unknown } }>("/tutor/settings", async (req) => {
     const userId = getUserId(req);
-    const { api_key, model, effort } = req.body ?? {};
-    const saved = await saveTutorSettings(db, userId, { api_key, model, effort }, settingsSecret);
-    clearWriterPause(userId);
+    const { api_key, model, effort, difficulty, answer_by } = req.body ?? {};
+    const saved = await saveTutorSettings(db, userId, { api_key, model, effort, difficulty, answer_by }, settingsSecret);
+    // A new key or model deserves a fresh try; remembering a difficulty does not.
+    if (api_key !== undefined || model !== undefined || effort !== undefined) clearWriterPause(userId);
     return { ...saved, serverKey: await usesServerKey(userId) };
   });
 

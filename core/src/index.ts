@@ -3,7 +3,7 @@ export * from "./db/schema/index.js";
 export type { Db } from "./db/types.js";
 
 // Errors
-export { NotFoundError, ValidationError } from "./lib/errors.js";
+export { NotFoundError, ValidationError, StaleTicketError } from "./lib/errors.js";
 
 // Utilities
 export { stripHtml } from "./lib/strip-html.js";
@@ -37,7 +37,7 @@ export {
   setChangeRate, validateChangeRate, type EffectiveRate, type RateSource, type SetChangeRateInput,
 } from "./services/change-rate.js";
 export {
-  startSession, getSession, getOpenQuestions, validateDifficulty, SESSION_EXPIRY_HOURS,
+  startSession, getSession, setSessionDifficulty, getOpenQuestions, validateDifficulty, SESSION_EXPIRY_HOURS,
   type StudySession, type StartSessionInput,
 } from "./services/session-service.js";
 export {
@@ -104,7 +104,7 @@ export { submitReview, deleteReview, gradeChoice, type SubmitReviewInput, type D
 export {
   QUESTION_PROMPT_VERSION, QUESTION_BATCH_SIZE, FOLLOW_UP_LIMIT, getAnswerContext,
   validateAnswerModes, pickQuestionForm, validateQuestionPayload, normalizeGapAnswer, gradeGap,
-  getTutorQueue, toQuestionRequest, storeQuestions, serveTutorBatch, submitTutorAnswer, difficultyBand,
+  getTutorQueue, toQuestionRequest, storeQuestions, serveTutorBatch, submitTutorAnswer, difficultyBand, checkTutorItems,
   type QuestionForm, type AnswerMode, type QuestionTerm, type ChoicePayload, type GapPayload, type OpenPayload, type QuestionPayload,
   type TutorQueueOptions, type TutorQueueEntry, type WrittenQuestion, type TutorQuestion, type TutorPlainCard, type TutorItem,
   type ServeTutorOptions, type TutorAnswerInput,

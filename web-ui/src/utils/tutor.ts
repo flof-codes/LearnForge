@@ -24,7 +24,7 @@ const DEFAULTS: TutorSettings = { difficulty: 0.7, answerBy: ['tap'] };
 const STORAGE_KEY = 'learnforge_tutor_settings';
 const MODES: AnswerMode[] = ['tap', 'type', 'dictate'];
 
-function clean(raw: Partial<TutorSettings> | null): TutorSettings {
+export function cleanTutorSettings(raw: Partial<TutorSettings> | null): TutorSettings {
   const d = Number(raw?.difficulty);
   const difficulty = Number.isFinite(d) ? Math.min(DIFFICULTY_MAX, Math.max(DIFFICULTY_MIN, d)) : DEFAULTS.difficulty;
   const answerBy = MODES.filter(m => raw?.answerBy?.includes(m));
@@ -33,7 +33,7 @@ function clean(raw: Partial<TutorSettings> | null): TutorSettings {
 
 export function loadTutorSettings(): TutorSettings {
   try {
-    return clean(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null'));
+    return cleanTutorSettings(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null'));
   } catch {
     return DEFAULTS;
   }
@@ -54,7 +54,7 @@ export function settingsToParams(settings: TutorSettings, params: URLSearchParam
 
 export function settingsFromParams(params: URLSearchParams): TutorSettings | null {
   if (!params.has('d')) return null;
-  return clean({ difficulty: Number(params.get('d')), answerBy: (params.get('by') ?? '').split(',') as AnswerMode[] });
+  return cleanTutorSettings({ difficulty: Number(params.get('d')), answerBy: (params.get('by') ?? '').split(',') as AnswerMode[] });
 }
 
 // --- Grading on the client, for instant feedback. The server grades again when the review is saved. ---
@@ -88,6 +88,16 @@ export function tutorErrorKey(error: unknown): string {
   const data = (error as { response?: { status?: number; data?: { code?: string } } }).response;
   if (data?.data?.code === 'TUTOR_CREDITS') return 'tutor.pausedCredits';
   if (data?.data?.code?.startsWith('TUTOR_')) return 'tutor.modelError';
-  if (data?.status === 404) return 'tutor.questionGone';
+  if (isStaleTicket(error)) return 'tutor.questionGone';
   return 'tutor.saveFailed';
 }
+
+/** The ticket is no longer good: the card was answered on another device, or its question was replaced. */
+export function isStaleTicket(error: unknown): boolean {
+  const data = (error as { response?: { status?: number; data?: { code?: string } } }).response;
+  return data?.status === 404 || data?.data?.code === 'QUESTION_STALE';
+}
+
+/** A selectable tile on the start screen and in the difficulty sheet. */
+export const choiceTile = (on: boolean) =>
+  `flex flex-col gap-0.5 text-left rounded-lg border px-3 py-2.5 transition-colors ${on ? 'border-accent-blue bg-accent-blue/10' : 'border-border bg-bg-surface hover:bg-bg-hover'}`;

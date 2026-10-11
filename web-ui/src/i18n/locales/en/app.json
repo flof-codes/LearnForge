@@ -743,7 +743,6 @@
     "correctOption": "correct",
     "wrongOption": "wrong",
     "youWrote": "You wrote: {{text}}",
-    "showBack": "Show card back",
     "suggested": "Suggested: {{rating}}. Tap a rating to save and continue.",
     "yourAnswer": "Your answer",
     "check": "Check",
@@ -818,10 +817,23 @@
     "stopDictation": "Stop dictation",
     "dictationFailed": "Dictation did not start. Check the microphone permission.",
     "modelError": "The tutor cannot answer right now. Try again in a moment.",
-    "questionGone": "This question is no longer valid, the card was changed.",
+    "questionGone": "This question was out of date, so the card moved on. It comes back when it is due.",
     "saveFailed": "The answer could not be saved. Tap a rating to try again.",
     "skipCard": "Leave this card for later",
     "addKey": "Want questions instead of plain cards?",
-    "addKeyLink": "Add your Anthropic API key in the settings."
+    "addKeyLink": "Add your Anthropic API key in the settings.",
+    "menu": {
+      "more": "More",
+      "difficulty": "Change difficulty",
+      "difficultyTitle": "Session difficulty",
+      "card": "Original card",
+      "details": "Card details",
+      "nextCard": "Applies from the next card.",
+      "rewrite": "Questions already written for the old difficulty are replaced, which uses API credit.",
+      "runsAt": "This session runs at {{name}}.",
+      "cancel": "Cancel",
+      "use": "Use {{name}}",
+      "backLocked": "The back opens after you answer."
+    }
   }
 }
