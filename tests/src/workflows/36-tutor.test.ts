@@ -55,6 +55,11 @@ async function nextItems(api: AxiosInstance, body: Record<string, unknown>) {
   throw new Error("the question writer did not finish in time");
 }
 
+/** Options are shuffled when stored, so the tests read the right and a wrong letter off the payload. */
+function letterOf(item: { payload: { options: Array<{ correct: boolean }> } }, correct: boolean): string {
+  return "ABCD"[item.payload.options.findIndex(o => o.correct === correct)];
+}
+
 afterAll(async () => {
   if (createdEmails.length === 0) return;
   const client = new pg.Client(DB_CONFIG);
@@ -111,7 +116,7 @@ describe("Tutor in the web app", () => {
     await api.put(`/tutor/sessions/${session.data.sessionId}`, { difficulty: 0.7 });
 
     // A right answer: the server grades it, the suggestion follows the correctness.
-    const right = await api.post("/tutor/answer", { question_id: first.questionId, selected: ["A"] });
+    const right = await api.post("/tutor/answer", { question_id: first.questionId, selected: [letterOf(first, true)] });
     expect(right.status).toBe(200);
     expect(right.data.correctness).toBe(1);
     expect(right.data.suggestedRating).toBe(4);
@@ -125,7 +130,7 @@ describe("Tutor in the web app", () => {
     expect(again.data.duplicate).toBe(true);
 
     // A wrong answer, rated by the learner: correctness stays the server's, the rating is theirs.
-    const wrong = await api.post("/tutor/answer", { question_id: second.questionId, selected: ["C"], rating: 2 });
+    const wrong = await api.post("/tutor/answer", { question_id: second.questionId, selected: [letterOf(second, false)], rating: 2 });
     expect(wrong.status).toBe(200);
     expect(wrong.data.correctness).toBe(0);
     expect(wrong.data.suggestedRating).toBe(1);
@@ -415,7 +420,7 @@ describe("Tutor in the web app", () => {
     expect(second.items[0].type).toBe("question");
     expect(second.items[0].questionId).not.toBe(first.items[0].questionId);
 
-    const answered = await api.post("/tutor/answer", { question_id: first.items[0].questionId, selected: ["A"] });
+    const answered = await api.post("/tutor/answer", { question_id: first.items[0].questionId, selected: [letterOf(first.items[0], true)] });
     expect(answered.status).toBe(200);
     expect(answered.data.correctness).toBe(1);
   });

@@ -59,7 +59,7 @@ Interpolate between these anchors. Without an original, treat the card front as 
 - stem: the question, one or two sentences. It must not name or hint at the answer.
 - options: exactly four. Each has text, correct, and why.
 - text: short, parallel in length and grammar, no "all of the above", no "none of these". The correct option must not be the longest by habit.
-- why: one sentence for this option alone. For a wrong option, say why it is wrong. For a correct one, say why it is right. Do not refer to other options by letter: the app may reorder nothing, but the learner reads each reason next to its own option.
+- why: one sentence for this option alone. For a wrong option, say why it is wrong. For a correct one, say why it is right. Do not refer to other options by letter or position: the app shuffles the options, and the learner reads each reason next to its own option.
 - At least one and at most two options are correct.
 - Leave answer, accept, key_points empty.
 
