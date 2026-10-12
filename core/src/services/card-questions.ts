@@ -121,6 +121,15 @@ export function toQuestionRequest(entry: TutorQueueEntry, difficulty: number): Q
 // Storing what the model wrote
 // ---------------------------------------------------------------------------
 
+function shuffled<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export interface WrittenQuestion {
   card_id: string;
   status: string;
@@ -145,6 +154,9 @@ export async function storeQuestions(db: Db, userId: string, requests: QuestionR
     } else {
       try {
         payload = validateQuestionPayload(request.form, item);
+        // Models tend to write the right option first. At change rate 0 the original's order is kept.
+        const keepOrder = request.changeRate === 0 && !!request.original?.options;
+        if ("options" in payload && !keepOrder) payload = { ...payload, options: shuffled(payload.options) };
       } catch (err) {
         skipReason = `Invalid question: ${(err as Error).message}`;
       }
