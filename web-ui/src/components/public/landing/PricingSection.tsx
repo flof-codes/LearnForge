@@ -1,107 +1,77 @@
+import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Check, Heart } from 'lucide-react';
+import { row, rowGroup, sectionInner, sectionTitle } from './styles';
+
+const plans = ['trial', 'monthly', 'annual'] as const;
+
+// The container entrypoint fills an unset donation URL with "#", and only after the page was
+// prerendered. So the link is decided in the browser, never in the prerendered HTML.
+const donationUrl = import.meta.env.VITE_DONATION_URL;
+const subscribeNever = () => () => {};
+const donationInBrowser = () => Boolean(donationUrl) && donationUrl !== '#';
 
 export default function PricingSection() {
   const { t } = useTranslation('landing');
+  const hasDonation = useSyncExternalStore(subscribeNever, donationInBrowser, () => false);
 
   return (
-    <section id="pricing" className="py-20 sm:py-28">
-      <div className="max-w-4xl mx-auto px-6">
-        <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary text-center mb-12">
-          {t('pricing.title')}
-        </h2>
+    <section id="pricing" className="py-16 sm:py-24 bg-bg-secondary/50 scroll-mt-16">
+      <div className={sectionInner}>
+        <h2 className={`${sectionTitle} mb-8 md:mb-14`}>{t('pricing.title')}</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {/* Free Trial */}
-          <div className="rounded-xl border border-border p-8 bg-bg-secondary">
-            <h3 className="text-lg font-medium text-text-primary mb-1">
-              {t('pricing.trial.title')}
-            </h3>
-            <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-semibold text-text-primary">
-                {t('pricing.trial.price')}
-              </span>
+        <div className={`${rowGroup} md:grid-cols-3`}>
+          {plans.map((plan) => (
+            <div key={plan} className={`${row} ${plan === 'annual' ? 'md:border-accent-blue/40!' : ''}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-medium text-text-primary">{t(`pricing.${plan}.title`)}</h3>
+                {plan === 'annual' && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent-blue/20 text-accent-blue font-medium">
+                    {t('pricing.annual.badge')}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-3xl font-semibold text-text-primary">{t(`pricing.${plan}.price`)}</span>
+                <span className="text-text-muted text-sm">{t(`pricing.${plan}.period`)}</span>
+              </div>
+              {plan !== 'trial' && <p className="text-sm text-text-muted">{t(`pricing.${plan}.billed`)}</p>}
+              <ul className="space-y-2.5 mt-4">
+                {(t(`pricing.${plan}.features`, { returnObjects: true }) as string[]).map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-text-muted">
+                    <Check
+                      size={16}
+                      className={`shrink-0 mt-1 ${plan === 'trial' ? 'text-accent-green' : 'text-accent-blue'}`}
+                      aria-hidden="true"
+                    />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="text-sm text-text-muted mb-6">{t('pricing.trial.period')}</p>
-            <ul className="space-y-3 mb-6">
-              {(t('pricing.trial.features', { returnObjects: true }) as string[]).map((feature, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-text-muted">
-                  <Check size={16} className="text-accent-green shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Monthly */}
-          <div className="rounded-xl border border-border p-8 bg-bg-secondary">
-            <h3 className="text-lg font-medium text-text-primary mb-1">
-              {t('pricing.monthly.title')}
-            </h3>
-            <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-semibold text-text-primary">
-                {t('pricing.monthly.price')}
-              </span>
-              <span className="text-text-muted text-sm">{t('pricing.monthly.period')}</span>
-            </div>
-            <p className="text-sm text-text-muted mb-6">{t('pricing.monthly.billed')}</p>
-            <ul className="space-y-3 mb-6">
-              {(t('pricing.monthly.features', { returnObjects: true }) as string[]).map((feature, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-text-muted">
-                  <Check size={16} className="text-accent-blue shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Annual */}
-          <div className="rounded-xl border-2 border-accent-blue/30 p-8 bg-bg-secondary lf-card-glow">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-medium text-text-primary">
-                {t('pricing.annual.title')}
-              </h3>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-accent-blue/20 text-accent-blue font-medium">
-                {t('pricing.annual.badge')}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-semibold text-text-primary">
-                {t('pricing.annual.price')}
-              </span>
-              <span className="text-text-muted text-sm">{t('pricing.annual.period')}</span>
-            </div>
-            <p className="text-sm text-text-muted mb-6">{t('pricing.annual.billed')}</p>
-            <ul className="space-y-3 mb-6">
-              {(t('pricing.annual.features', { returnObjects: true }) as string[]).map((feature, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-text-muted">
-                  <Check size={16} className="text-accent-blue shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
+          ))}
         </div>
 
-        {/* CTA */}
-        <div className="text-center mt-10">
+        <div className="mt-8 md:text-center">
           <Link
             to="/register"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-accent-blue text-white font-medium text-lg hover:opacity-90 transition-opacity lf-cta-glow"
+            className="block sm:inline-block px-8 py-4 rounded-xl bg-accent-blue text-white font-medium text-lg text-center hover:opacity-90 transition-opacity lf-cta-glow"
           >
             {t('pricing.cta')}
           </Link>
-          <p className="text-text-muted text-sm mt-4">{t('pricing.claudeNote')}</p>
-          <a
-            href={import.meta.env.VITE_DONATION_URL || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center justify-center gap-2 text-text-muted text-sm hover:text-text-primary transition-colors"
-          >
-            <Heart size={16} />
-            <span>{t('pricing.donation')}</span>
-          </a>
+          <p className="text-text-muted text-sm mt-4 max-w-2xl md:mx-auto">{t('pricing.aiNote')}</p>
+          {hasDonation && (
+            <a
+              href={donationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-text-muted text-sm hover:text-text-primary transition-colors"
+            >
+              <Heart size={16} aria-hidden="true" />
+              <span>{t('pricing.donation')}</span>
+            </a>
+          )}
         </div>
       </div>
     </section>

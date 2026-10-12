@@ -1,61 +1,51 @@
 import { useTranslation } from 'react-i18next';
-import { Cloud, Server, Check } from 'lucide-react';
-import { useFadeIn } from '../../../hooks/useFadeIn';
+import { Cloud, Server, Check, Github } from 'lucide-react';
+import { row, rowGroup, sectionInner, sectionTitle } from './styles';
+
+const GITHUB_URL = 'https://github.com/flof-codes/LearnForge';
+
+const options = [
+  { key: 'cloud', icon: Cloud, color: 'text-accent-blue' },
+  { key: 'selfHost', icon: Server, color: 'text-accent-green' },
+] as const;
 
 export default function OpenSourceSection() {
   const { t } = useTranslation('landing');
-  const { ref, isVisible } = useFadeIn();
 
   return (
-    <section className="py-20 sm:py-28">
-      <div
-        ref={ref}
-        className={`max-w-4xl mx-auto px-6 lf-fade-in ${isVisible ? 'lf-visible' : ''}`}
-      >
-        <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary text-center mb-12">
-          {t('openSource.title')}
-        </h2>
+    <section id="open-source" className="py-16 sm:py-24 scroll-mt-16">
+      <div className={sectionInner}>
+        <h2 className={`${sectionTitle} mb-8 md:mb-14`}>{t('openSource.title')}</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Cloud */}
-          <div className="bg-bg-secondary rounded-xl border border-border p-8 lf-card-glow">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-accent-blue/10 text-accent-blue flex items-center justify-center">
-                <Cloud size={22} />
+        <div className={`${rowGroup} md:grid-cols-2`}>
+          {options.map(({ key, icon: Icon, color }) => (
+            <div key={key} className={row}>
+              <div className="flex items-center gap-3 mb-4">
+                <Icon size={22} className={color} aria-hidden="true" />
+                <h3 className="text-lg font-medium text-text-primary">{t(`openSource.${key}.title`)}</h3>
               </div>
-              <h3 className="text-lg font-medium text-text-primary">
-                {t('openSource.cloud.title')}
-              </h3>
+              <ul className="space-y-3">
+                {(['point1', 'point2', 'point3'] as const).map((point) => (
+                  <li key={point} className="flex items-start gap-2.5 text-sm text-text-muted">
+                    <Check size={16} className={`shrink-0 mt-1 ${color}`} aria-hidden="true" />
+                    {t(`openSource.${key}.${point}`)}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-3">
-              {(['point1', 'point2', 'point3'] as const).map((key) => (
-                <li key={key} className="flex items-center gap-2.5 text-sm text-text-muted">
-                  <Check size={16} className="text-accent-blue shrink-0" />
-                  {t(`openSource.cloud.${key}`)}
-                </li>
-              ))}
-            </ul>
-          </div>
+          ))}
+        </div>
 
-          {/* Self-Host */}
-          <div className="bg-bg-secondary rounded-xl border border-border p-8 lf-card-glow">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-accent-green/10 text-accent-green flex items-center justify-center">
-                <Server size={22} />
-              </div>
-              <h3 className="text-lg font-medium text-text-primary">
-                {t('openSource.selfHost.title')}
-              </h3>
-            </div>
-            <ul className="space-y-3">
-              {(['point1', 'point2', 'point3'] as const).map((key) => (
-                <li key={key} className="flex items-center gap-2.5 text-sm text-text-muted">
-                  <Check size={16} className="text-accent-green shrink-0" />
-                  {t(`openSource.selfHost.${key}`)}
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="mt-8 md:text-center">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl border border-border text-text-primary font-medium hover:bg-bg-surface transition-colors"
+          >
+            <Github size={18} aria-hidden="true" />
+            {t('openSource.cta')}
+          </a>
         </div>
       </div>
     </section>

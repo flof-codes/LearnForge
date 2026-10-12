@@ -13,7 +13,7 @@ export default function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 bg-bg-primary/90 backdrop-blur-sm border-b border-border">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
           <LogoIcon size={24} />
@@ -57,6 +57,9 @@ export default function PublicHeader() {
         {/* Mobile hamburger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={t('nav.menu')}
+          aria-expanded={mobileOpen}
+          aria-controls="public-mobile-menu"
           className="md:hidden p-2 text-text-muted hover:text-text-primary"
         >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -65,7 +68,7 @@ export default function PublicHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-bg-primary px-6 py-4 space-y-4">
+        <div id="public-mobile-menu" className="md:hidden border-t border-border bg-bg-primary px-4 py-4 space-y-4">
           <a
             href="/#features"
             onClick={() => setMobileOpen(false)}

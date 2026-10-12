@@ -39,7 +39,7 @@ ROOT=/usr/share/nginx/html
 
 # OPERATOR_ADDRESS and VITE_DONATION_URL are the only optional ones, because the
 # app already treats an empty address and an absent donation link as valid states
-# (web-ui/src/i18n/index.ts defaults the address to '', and PricingSection.tsx
+# (web-ui/src/i18n/index.ts defaults the address to '', and McpSettingsPage.tsx
 # falls back to '#'). Everything else has a localhost-shaped default in source
 # that must never reach a server.
 REQUIRED_VARS='VITE_API_URL OPERATOR_NAME OPERATOR_CITY OPERATOR_EMAIL'
@@ -58,7 +58,7 @@ if [ -n "$missing" ]; then
     exit 1
 fi
 
-# The `|| '#'` fallback in web-ui/src/components/public/landing/PricingSection.tsx
+# The `|| '#'` fallback in web-ui/src/pages/settings/McpSettingsPage.tsx
 # does NOT survive the build. Vite substitutes the placeholder as a literal and
 # esbuild then constant-folds `"__LF_VITE_DONATION_URL__" || "#"` down to the
 # placeholder alone, so the fallback is gone by the time this script runs and an

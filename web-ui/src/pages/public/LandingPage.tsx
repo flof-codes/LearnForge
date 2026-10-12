@@ -1,17 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import HeroSection from '../../components/public/landing/HeroSection';
-import ProblemSection from '../../components/public/landing/ProblemSection';
-import SolutionSection from '../../components/public/landing/SolutionSection';
-import FeaturesSection from '../../components/public/landing/FeaturesSection';
-import HowItWorksSection from '../../components/public/landing/HowItWorksSection';
-import BloomSection from '../../components/public/landing/BloomSection';
+import ReviewSection from '../../components/public/landing/ReviewSection';
+import WaysInSection from '../../components/public/landing/WaysInSection';
+import WhereSection from '../../components/public/landing/WhereSection';
 import OpenSourceSection from '../../components/public/landing/OpenSourceSection';
-import CommunitySection from '../../components/public/landing/CommunitySection';
 import PricingSection from '../../components/public/landing/PricingSection';
+import FaqSection, { type FaqItem } from '../../components/public/landing/FaqSection';
 
 export default function LandingPage() {
   const { t, i18n } = useTranslation('landing');
+  const faq = t('faq.items', { returnObjects: true }) as FaqItem[];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -23,19 +22,24 @@ export default function LandingPage() {
         url: 'https://learnforge.eu',
         applicationCategory: t('seo.appCategory'),
         operatingSystem: 'Web',
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'EUR',
-          description: t('pricing.trial.title'),
-        },
-        featureList: [
-          'Dynamic question reformulation',
-          "Bloom's Taxonomy progression",
-          'FSRS spaced repetition',
-          'AI-native card creation',
-          'Multiple study modalities',
+        offers: [
+          { '@type': 'Offer', price: '0', priceCurrency: 'EUR', description: t('pricing.trial.title') },
+          {
+            '@type': 'Offer',
+            price: '4.99',
+            priceCurrency: 'EUR',
+            description: t('pricing.monthly.title'),
+            priceSpecification: { '@type': 'UnitPriceSpecification', price: '4.99', priceCurrency: 'EUR', billingDuration: 'P1M' },
+          },
+          {
+            '@type': 'Offer',
+            price: '48',
+            priceCurrency: 'EUR',
+            description: t('pricing.annual.title'),
+            priceSpecification: { '@type': 'UnitPriceSpecification', price: '48', priceCurrency: 'EUR', billingDuration: 'P1Y' },
+          },
         ],
+        featureList: t('seo.features', { returnObjects: true }) as string[],
       },
       {
         '@type': 'Organization',
@@ -46,12 +50,11 @@ export default function LandingPage() {
       },
       {
         '@type': 'FAQPage',
-        mainEntity: [
-          { '@type': 'Question', name: t('seo.faq.q1'), acceptedAnswer: { '@type': 'Answer', text: t('seo.faq.a1') } },
-          { '@type': 'Question', name: t('seo.faq.q2'), acceptedAnswer: { '@type': 'Answer', text: t('seo.faq.a2') } },
-          { '@type': 'Question', name: t('seo.faq.q3'), acceptedAnswer: { '@type': 'Answer', text: t('seo.faq.a3') } },
-          { '@type': 'Question', name: t('seo.faq.q4'), acceptedAnswer: { '@type': 'Answer', text: t('seo.faq.a4') } },
-        ],
+        mainEntity: faq.map(({ q, a }) => ({
+          '@type': 'Question',
+          name: q,
+          acceptedAnswer: { '@type': 'Answer', text: a },
+        })),
       },
     ],
   };
@@ -83,14 +86,12 @@ export default function LandingPage() {
       </Helmet>
 
       <HeroSection />
-      <ProblemSection />
-      <SolutionSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <BloomSection />
-      <OpenSourceSection />
-      <CommunitySection />
+      <ReviewSection />
+      <WaysInSection />
+      <WhereSection />
       <PricingSection />
+      <OpenSourceSection />
+      <FaqSection />
     </>
   );
 }

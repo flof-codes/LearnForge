@@ -1,133 +1,177 @@
 {
   "meta": {
-    "title": "Never see the same question twice",
-    "description": "LearnForge is your AI Memory Guardian — dynamic question reformulation, Bloom's Taxonomy depth tracking, and science-backed spaced repetition."
+    "title": "Flashcards that ask a new question at every review",
+    "description": "LearnForge rewrites each card's question when it is due, tracks how deeply you know it and schedules reviews with FSRS. It imports Anki decks with their schedule and is open source."
   },
   "hero": {
-    "hook": "Never see the same question twice.",
-    "subtitle": "Traditional flashcards make you memorize the card. LearnForge makes you understand the concept — with AI-powered reformulation, cognitive depth tracking, and science-backed scheduling.",
-    "ctaPrimary": "Start Learning Free",
-    "ctaGithub": "View on GitHub"
+    "hook": "Flashcards that ask a new question at every review.",
+    "subtitle": "Bring your Anki decks with their schedule. LearnForge rewrites each card's question when it is due and asks one level higher once you keep getting it right.",
+    "ctaPrimary": "Try free for 30 days",
+    "ctaGithub": "View on GitHub",
+    "ctaNote": "No credit card. €4.99 a month afterwards. The rewritten questions run on your Claude account or on your own API key."
   },
-  "problem": {
-    "title": "The Recognition Trap",
-    "lead": "After seeing the same card enough times, your brain takes a shortcut. You recognize the layout instead of recalling the concept. You feel confident — until the exam phrases it differently.",
-    "card1": {
-      "title": "Same question, every time",
-      "description": "Traditional flashcard apps show you the identical card on every review. Your brain memorizes the visual pattern, not the knowledge."
-    },
-    "card2": {
-      "title": "Stuck at surface level",
-      "description": "Can you recite the definition? Great. Can you apply it? Analyze it? Most tools never ask — they stop at 'do you remember?'"
-    },
-    "card3": {
-      "title": "One size fits nobody",
-      "description": "The same format, the same difficulty, the same question type. No adaptation to how deeply you actually understand each concept."
-    }
+  "demo": {
+    "title": "One card, asked three ways",
+    "lead": "Tap an answer. It is the same card each time, with a different question.",
+    "concept": "Why there are seasons",
+    "stepsLabel": "Reviews",
+    "correct": "Correct",
+    "wrong": "Not quite",
+    "next": "Next review",
+    "restart": "Start over",
+    "caption": "Example card. In LearnForge, Claude writes such questions from your own cards, in Claude chat or in the app with an API key.",
+    "reviews": [
+      {
+        "label": "First review",
+        "level": "Remember",
+        "stem": "What causes the seasons on Earth?",
+        "options": [
+          "The tilt of Earth's axis",
+          "Earth's changing distance from the Sun",
+          "The Moon's orbit around Earth",
+          "The Sun shining brighter and dimmer"
+        ],
+        "answer": 0,
+        "explain": "Earth's axis is tilted by about 23.5 degrees. Over a year each half of the planet leans towards the Sun, then away from it."
+      },
+      {
+        "label": "Later",
+        "level": "Understand",
+        "stem": "Why is it summer in Australia while it is winter in Austria?",
+        "options": [
+          "Australia is closer to the Sun",
+          "The southern half of Earth is tilted towards the Sun at that time",
+          "Australia lies nearer the equator",
+          "The days in Australia are longer all year"
+        ],
+        "answer": 1,
+        "explain": "When the north leans away from the Sun, the south leans towards it. Sunlight hits the south more steeply and for more hours a day."
+      },
+      {
+        "label": "Later still",
+        "level": "Apply",
+        "stem": "A planet circles its star with an axis that is not tilted. What are its seasons like?",
+        "options": [
+          "Hot summers and cold winters, as on Earth",
+          "The same as on Earth, but twice as long",
+          "There are almost none: every place gets the same sunlight all year",
+          "Only the poles have seasons"
+        ],
+        "answer": 2,
+        "explain": "Without a tilt neither half ever leans towards the star. Each place gets the same sunlight every day of the year, so nothing changes with the seasons."
+      }
+    ]
   },
-  "solution": {
-    "title": "Your AI Memory Guardian",
-    "lead": "LearnForge sits between you and the forgetting curve. It knows what you know, how deeply you know it, and asks exactly the right question to make sure nothing slips away.",
-    "point1": {
-      "title": "Dynamic reformulation",
-      "description": "Every review phrases the question differently. Different angle, different format. You can't fake understanding by recognizing a card layout."
+  "review": {
+    "title": "What happens when a card is due",
+    "lead": "See the same card often enough and you start to recognise the card instead of recalling the idea. LearnForge changes the question, so that shortcut stops working.",
+    "variation": {
+      "title": "The question is rewritten",
+      "description": "By default each review rewords the question and moves it to a slightly different setting. You set how far that goes per card or per topic.",
+      "steps": ["Exact", "Reworded", "New context", "Free"],
+      "stepHints": [
+        "Asked word for word",
+        "Same question, different wording",
+        "Same idea in a new situation",
+        "Anything that tests the idea"
+      ]
     },
-    "point2": {
-      "title": "Cognitive depth tracking",
-      "description": "Six levels of understanding per concept — from basic recall to critical thinking. The system automatically escalates as you prove mastery."
+    "levels": {
+      "title": "Every card has a level",
+      "description": "There are six levels, from recalling a fact to building something with it. Keep answering well and the card moves up a level. Miss it and it steps back. Cards set to Exact stay on their level."
     },
-    "point3": {
-      "title": "Science-backed scheduling",
-      "description": "FSRS algorithm with modality-aware intervals. Harder study modes earn longer breaks. Every review is optimally timed for your memory."
-    }
-  },
-  "features": {
-    "title": "Built for deep learning",
-    "subtitle": "Every feature exists because the science says it works.",
-    "card1": {
-      "badge": "Core",
-      "title": "Dynamic Question Reformulation",
-      "description": "AI rephrases every question on every review. Same concept, fresh perspective. The recognition trap becomes impossible."
+    "answers": {
+      "title": "Tap, type or dictate",
+      "description": "Pick a session difficulty and how you want to answer. Open answers are graded, and you can ask follow-up questions afterwards. All of this needs the tutor: Claude chat, or the app with your own API key.",
+      "difficultyLabel": "Difficulty",
+      "difficulties": ["Commute", "Desk", "Deep"],
+      "modesLabel": "Answer by",
+      "modes": ["Tap", "Type", "Dictate"]
     },
-    "card2": {
-      "badge": "Unique",
-      "title": "Bloom's Taxonomy Progression",
-      "description": "Track six levels of understanding per concept. Graduate from 'what is it?' to 'what would you do with it?' — automatically."
-    },
-    "card3": {
-      "badge": "Science",
-      "title": "FSRS Spaced Repetition",
-      "description": "The latest scheduling algorithm adapts to your individual memory patterns. No ease factor hell, no one-size-fits-all intervals."
-    },
-    "card4": {
-      "badge": "AI",
-      "title": "AI-Native Card Creation",
-      "description": "Create cards through natural conversation. KaTeX formulas, SVG diagrams, interactive quizzes — all generated from what you tell the AI."
-    }
-  },
-  "howItWorks": {
-    "title": "How it works",
-    "step1": {
-      "title": "Talk to your AI tutor",
-      "description": "Connect LearnForge to Claude via MCP. Tell it what you want to learn — it creates interactive flashcards with formulas, diagrams, and quizzes."
-    },
-    "step2": {
-      "title": "Study your way",
-      "description": "Review in the web app or via AI chat. Choose classic self-rating, multiple choice, or open questions. Harder modes earn longer intervals."
-    },
-    "step3": {
-      "title": "Master every concept",
-      "description": "Watch your understanding deepen through Bloom's levels. FSRS schedules your reviews at optimal intervals. Nothing slips away."
+    "schedule": {
+      "title": "FSRS decides when",
+      "description": "The FSRS algorithm schedules every card from how you rated it. After harder sessions and more varied questions, the next interval is longer."
     }
   },
   "bloom": {
-    "title": "Six levels of understanding",
-    "subtitle": "Traditional flashcards stop at level 1. LearnForge takes you to level 6.",
     "levels": {
       "0": { "name": "Remember", "description": "Recall facts and basic concepts" },
       "1": { "name": "Understand", "description": "Explain ideas and interpret meaning" },
       "2": { "name": "Apply", "description": "Use knowledge in new situations" },
-      "3": { "name": "Analyze", "description": "Break down and compare concepts" },
+      "3": { "name": "Analyze", "description": "Break down concepts and compare" },
       "4": { "name": "Evaluate", "description": "Justify decisions and assess validity" },
-      "5": { "name": "Create", "description": "Design, construct, and synthesize" }
+      "5": { "name": "Create", "description": "Design, construct and synthesize" }
+    }
+  },
+  "ways": {
+    "title": "Get your cards in",
+    "anki": {
+      "title": "Import from Anki",
+      "description": "Upload an .apkg or .colpkg file from a current or older Anki version. Decks and media come along, and you choose whether to keep your schedule. Image occlusion cards are imported but stay suspended for now."
+    },
+    "claude": {
+      "title": "Create them in Claude chat",
+      "description": "Connect LearnForge to Claude and say what you are learning. Claude drafts cards with formulas, diagrams and cloze gaps, and saves them once you approve."
+    },
+    "editor": {
+      "title": "Write them yourself",
+      "description": "Write and edit cards in the web app. No AI involved."
+    },
+    "share": {
+      "title": "Get a topic by link",
+      "description": "A link from someone else copies a whole topic with its cards into your account. Your progress starts at zero."
+    }
+  },
+  "where": {
+    "title": "Two places to study, and what each costs",
+    "lead": "The LearnForge subscription pays for hosting. AI usage is separate, and you choose how to cover it.",
+    "chat": {
+      "title": "In Claude chat",
+      "points": [
+        "Claude asks the questions and grades your answers",
+        "No API key needed, it runs on your Claude account",
+        "Set up once: paste the LearnForge address into Claude's settings (Claude calls this a connector)"
+      ]
+    },
+    "app": {
+      "title": "In the LearnForge app",
+      "points": [
+        "A web app you can add to your phone's home screen",
+        "The built-in tutor needs an API key: a code from your own Anthropic developer account, billed by usage",
+        "Without a key you study the plain cards and rate yourself. FSRS still schedules every card."
+      ]
     }
   },
   "openSource": {
-    "title": "Your data, your choice",
+    "title": "Open source, hosted in Austria",
     "cloud": {
-      "title": "Cloud",
-      "point1": "30-day free trial, no setup",
-      "point2": "Automatic updates and backups",
-      "point3": "Managed infrastructure"
+      "title": "Hosted",
+      "point1": "30 days free, nothing to set up",
+      "point2": "Updates and backups handled for you",
+      "point3": "Export topics, cards, reviews and media as a ZIP, also after the trial has ended"
     },
     "selfHost": {
-      "title": "Self-Host",
-      "point1": "Full control over your data",
+      "title": "Self-hosted",
+      "point1": "Runs on your own server, tutor and Claude connector included",
       "point2": "Docker Compose deployment",
-      "point3": "AGPL-3.0 — free forever"
-    }
-  },
-  "community": {
-    "title": "Shape the future of learning",
-    "stat1": "Open Source",
-    "stat2": "Built With Science",
-    "stat3": "AI-Powered",
-    "cta": "Star on GitHub"
+      "point3": "AGPL-3.0, free of charge"
+    },
+    "cta": "Source code on GitHub"
   },
   "pricing": {
-    "title": "Start learning today",
+    "title": "Pricing",
     "trial": {
-      "title": "Free Trial",
+      "title": "Free trial",
       "price": "€0",
       "period": "30 days",
-      "features": ["Full access to all features", "No credit card required", "Cancel anytime"]
+      "features": ["Every feature included", "No credit card required", "Ends on its own, nothing to cancel"]
     },
     "monthly": {
       "title": "Monthly",
       "price": "€4.99",
       "period": "/month",
       "billed": "Billed monthly",
-      "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support"]
+      "features": ["Every feature included", "Cancel any time, effective at the end of the paid period"]
     },
     "annual": {
       "title": "Annual",
@@ -135,25 +179,53 @@
       "price": "€4",
       "period": "/month",
       "billed": "€48 billed annually",
-      "features": ["Everything in Free Trial", "Unlimited study sessions", "Priority support", "20% discount"]
+      "features": ["Every feature included", "20% cheaper than monthly"]
     },
-    "cta": "Start Your Free Trial",
-    "claudeNote": "Works with any Claude plan, including the free tier (1 connector included).",
-    "donation": "Love LearnForge? Help keep it independent.",
-    "donationLink": "Support the project"
+    "cta": "Start the 30-day trial",
+    "aiNote": "AI usage is not part of the price: Claude chat runs on your Claude account, the in-app tutor on your own Anthropic API key.",
+    "donation": "Support LearnForge with a donation"
+  },
+  "faq": {
+    "title": "Questions",
+    "items": [
+      {
+        "q": "What is LearnForge?",
+        "a": "LearnForge is an open-source flashcard app with spaced repetition. When a card is due, an AI tutor rewrites its question, the app tracks one of six levels of understanding per card, and the FSRS algorithm plans the next review."
+      },
+      {
+        "q": "Do I need a Claude subscription or an API key?",
+        "a": "For studying in Claude chat you need a Claude account with LearnForge added as a connector, and no API key. For the tutor inside the LearnForge app you need your own Anthropic API key, which Anthropic bills by usage. With neither you can still study your cards in the app and rate yourself."
+      },
+      {
+        "q": "Can I bring my Anki decks?",
+        "a": "Yes. LearnForge imports .apkg and .colpkg files from current and older Anki versions. Decks and media come along, and you choose whether to keep the schedule of every card. Image occlusion cards are imported but stay suspended for now."
+      },
+      {
+        "q": "Does the question really change every time?",
+        "a": "By default, yes: each review rewords the question and moves it to a slightly different setting. You can set a card or a topic to Exact, and then it is asked word for word. In the app, cards that depend on a picture or a formula are shown as they are, and without an API key you see every card as it is."
+      },
+      {
+        "q": "What does LearnForge cost?",
+        "a": "The first 30 days are free and need no credit card. After that the hosted version costs €4.99 a month, or €48 a year. Self-hosting is free under the AGPL-3.0 licence. AI usage is billed separately by Anthropic."
+      },
+      {
+        "q": "What are the six levels?",
+        "a": "They follow Bloom's Taxonomy: Remember, Understand, Apply, Analyze, Evaluate and Create. Each card has its own level. It goes up when you keep answering well and steps back when you miss."
+      }
+    ]
   },
   "seo": {
-    "orgDescription": "Open-source AI-powered spaced repetition platform with dynamic question reformulation and Bloom's Taxonomy depth tracking.",
+    "orgDescription": "Open-source flashcard app with spaced repetition: questions rewritten at every review, six levels of understanding per card, FSRS scheduling and Anki import.",
     "appCategory": "EducationalApplication",
-    "faq": {
-      "q1": "What is LearnForge?",
-      "a1": "LearnForge is an open-source learning platform that uses AI to dynamically reformulate flashcard questions on every review, tracks cognitive depth using Bloom's Taxonomy, and schedules reviews with the FSRS spaced repetition algorithm.",
-      "q2": "How is LearnForge different from Anki or other flashcard apps?",
-      "a2": "Traditional flashcard apps show you the same question every time, leading to pattern recognition instead of true understanding. LearnForge rephrases every question using AI and tracks six levels of cognitive depth per concept — from basic recall to critical thinking.",
-      "q3": "Is LearnForge free?",
-      "a3": "LearnForge offers a 30-day free trial with full access. After that, choose between €4.99/month or €4/month billed annually (€48/year, 20% savings). Self-hosting is always free under the AGPL-3.0 license.",
-      "q4": "What is Bloom's Taxonomy?",
-      "a4": "Bloom's Taxonomy is a framework of six cognitive levels: Remember, Understand, Apply, Analyze, Evaluate, and Create. LearnForge tracks your mastery at each level and automatically escalates question difficulty as you improve."
-    }
+    "features": [
+      "Questions rewritten at every review",
+      "Six levels of understanding per card (Bloom's Taxonomy)",
+      "FSRS spaced repetition",
+      "Anki import with schedule (.apkg, .colpkg)",
+      "Tutor in Claude chat and in the web app",
+      "Tap, type or dictate answers",
+      "Topic sharing by link",
+      "Self-hostable, AGPL-3.0"
+    ]
   }
 }

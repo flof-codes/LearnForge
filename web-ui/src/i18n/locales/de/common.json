@@ -6,10 +6,11 @@
     "docs": "Doku",
     "login": "Anmelden",
     "signup": "Registrieren",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "menu": "Menü"
   },
   "footer": {
-    "tagline": "Dein KI-Gedächtniswächter",
+    "tagline": "Karteikarten, die bei jeder Wiederholung anders fragen",
     "product": "Produkt",
     "features": "Features",
     "github": "GitHub",

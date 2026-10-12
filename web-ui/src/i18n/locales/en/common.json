@@ -6,10 +6,11 @@
     "docs": "Docs",
     "login": "Login",
     "signup": "Sign Up",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "menu": "Menu"
   },
   "footer": {
-    "tagline": "Your AI Memory Guardian",
+    "tagline": "Flashcards that ask a new question at every review",
     "product": "Product",
     "features": "Features",
     "github": "GitHub",

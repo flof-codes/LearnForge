@@ -1,29 +1,39 @@
 # LearnForge
 
-> AI-powered spaced repetition with dynamic question reformulation and Bloom's Taxonomy depth tracking.
+> Open-source flashcard app with spaced repetition. It rewrites each card's question when the card is due, tracks one of six levels of understanding per card, and schedules reviews with FSRS.
 
-LearnForge is an open-source learning platform that solves the "recognition trap" — where learners memorize what a flashcard looks like instead of understanding the concept. Every review dynamically reformulates the question using AI, tracks cognitive depth across six Bloom's Taxonomy levels, and schedules reviews using the FSRS algorithm.
+LearnForge addresses the "recognition trap": after enough repetitions a learner recognises the flashcard instead of recalling the idea. When a card is due, an AI tutor (Claude) writes a new question for it. How far the question may move from the original is set per card or topic: Exact, Reworded, New context or Free. At Exact the original is asked word for word.
 
 ## Key Features
-- Dynamic question reformulation: AI rephrases every question on every review
-- Bloom's Taxonomy progression: 6 levels from Remember to Create per concept
-- FSRS spaced repetition: science-backed scheduling with modality-aware intervals
-- AI-native card creation: create cards through conversation with Claude via MCP
-- Multiple study modalities: self-rating, multiple choice, open response
+- Question variation: by default each review rewords the question and moves it to a slightly different setting
+- Levels: every card has one of six Bloom's Taxonomy levels (Remember to Create); it rises with repeated good answers and steps back after misses; cards set to Exact stay on their level
+- FSRS spaced repetition; harder sessions and more varied questions earn longer intervals
+- With the tutor: answer by tapping (choice), typing (gaps, open answers) or dictating; open answers are graded, with follow-up questions
+- Session difficulty: Commute, Desk or Deep
+- Anki import: .apkg and .colpkg from current and older Anki versions, with decks and media; the schedule can be kept (image occlusion cards are imported but suspended)
+- Card creation in Claude chat (MCP connector), in the web editor, or by importing a shared topic link
+- Web app that can be added to a phone's home screen
+- Data export as ZIP
 - Open source: AGPL-3.0, self-hostable via Docker Compose
+
+## Two ways to study
+- In Claude chat: LearnForge is added as an MCP connector. No API key needed.
+- In the LearnForge web app: the built-in tutor runs on the user's own Anthropic API key, billed by Anthropic. Without a key the app shows the plain cards with self-rating.
 
 ## Links
 - Website: https://learnforge.eu
+- Docs: https://learnforge.eu/docs
 - GitHub: https://github.com/flof-codes/LearnForge
 - Register: https://learnforge.eu/register
 
 ## Pricing
 - 30-day free trial, no credit card required
-- EUR 24/year (EUR 2/month) after trial
-- Self-hosting is free forever (AGPL-3.0)
+- EUR 4.99/month, or EUR 48/year, after the trial
+- AI usage is not included in the price
+- Self-hosting is free (AGPL-3.0)
 
 ## Technical
 - Built with: React, Fastify, PostgreSQL (pgvector), MCP protocol
-- AI integration: Claude via Model Context Protocol (MCP)
+- AI integration: Claude via Model Context Protocol (MCP) and the Anthropic API
 - Scheduling: FSRS (Free Spaced Repetition Scheduler)
 - Cognitive model: Bloom's Taxonomy (6 levels)

@@ -1,88 +1,99 @@
 {
   "meta": {
-    "title": "Nie dieselbe Frage zweimal sehen",
-    "description": "LearnForge ist dein KI-Gedächtniswächter — dynamische Frageumformulierung, Bloom-Taxonomie-Tiefenverfolgung und wissenschaftlich fundierte Wiederholungsplanung."
+    "title": "Karteikarten, die bei jeder Wiederholung anders fragen",
+    "description": "LearnForge formuliert jede fällige Karte neu, merkt sich, wie tief du sie verstanden hast, und plant Wiederholungen mit FSRS. Anki-Decks kommen samt Lernfortschritt mit. Open Source."
   },
   "hero": {
-    "hook": "Nie dieselbe Frage zweimal.",
-    "subtitle": "Herkömmliche Lernkarten lassen dich die Karte auswendig lernen. LearnForge sorgt dafür, dass du das Konzept verstehst — mit KI-gestützter Umformulierung, kognitiver Tiefenverfolgung und wissenschaftlich fundierter Planung.",
-    "ctaPrimary": "Kostenlos starten",
-    "ctaGithub": "Auf GitHub ansehen"
+    "hook": "Karteikarten, die bei jeder Wiederholung anders fragen.",
+    "subtitle": "Bring deine Anki-Decks samt Lernfortschritt und Fälligkeiten mit. LearnForge formuliert jede fällige Karte neu und fragt eine Stufe höher, sobald du sie wiederholt sicher beantwortest.",
+    "ctaPrimary": "30 Tage kostenlos testen",
+    "ctaGithub": "Auf GitHub ansehen",
+    "ctaNote": "Ohne Kreditkarte. Danach 4,99 € im Monat. Die neu geschriebenen Fragen laufen über dein Claude-Konto oder deinen eigenen API-Schlüssel."
   },
-  "problem": {
-    "title": "Die Wiedererkennungsfalle",
-    "lead": "Wenn du dieselbe Karte oft genug siehst, nimmt dein Gehirn eine Abkürzung. Du erkennst das Layout wieder, statt das Konzept abzurufen. Du fühlst dich sicher — bis die Prüfung es anders formuliert.",
-    "card1": {
-      "title": "Immer dieselbe Frage",
-      "description": "Herkömmliche Lernkarten-Apps zeigen dir bei jeder Wiederholung die identische Karte. Dein Gehirn merkt sich das visuelle Muster, nicht das Wissen."
-    },
-    "card2": {
-      "title": "An der Oberfläche hängengeblieben",
-      "description": "Du kannst die Definition aufsagen? Super. Kannst du sie anwenden? Analysieren? Die meisten Tools fragen nie — sie bleiben bei 'Erinnerst du dich?'"
-    },
-    "card3": {
-      "title": "Einheitsgröße für niemanden",
-      "description": "Dasselbe Format, derselbe Schwierigkeitsgrad, derselbe Fragetyp. Keine Anpassung daran, wie tief du jedes Konzept wirklich verstehst."
-    }
+  "demo": {
+    "title": "Eine Karte, auf drei Arten gefragt",
+    "lead": "Tippe auf eine Antwort. Es ist jedes Mal dieselbe Karte, mit einer anderen Frage.",
+    "concept": "Warum es Jahreszeiten gibt",
+    "stepsLabel": "Wiederholungen",
+    "correct": "Richtig",
+    "wrong": "Nicht ganz",
+    "next": "Nächste Wiederholung",
+    "restart": "Von vorn",
+    "caption": "Beispielkarte. In LearnForge schreibt Claude solche Fragen aus deinen eigenen Karten, im Claude-Chat oder in der App mit API-Schlüssel.",
+    "reviews": [
+      {
+        "label": "Erste Wiederholung",
+        "level": "Erinnern",
+        "stem": "Wodurch entstehen die Jahreszeiten auf der Erde?",
+        "options": [
+          "Durch die Neigung der Erdachse",
+          "Durch den wechselnden Abstand der Erde zur Sonne",
+          "Durch die Umlaufbahn des Mondes",
+          "Dadurch, dass die Sonne heller und dunkler scheint"
+        ],
+        "answer": 0,
+        "explain": "Die Erdachse ist um etwa 23,5 Grad geneigt. Im Lauf eines Jahres ist jede Erdhälfte einmal zur Sonne hin und einmal von ihr weg geneigt."
+      },
+      {
+        "label": "Später",
+        "level": "Verstehen",
+        "stem": "Warum ist in Australien Sommer, während in Österreich Winter ist?",
+        "options": [
+          "Australien ist näher an der Sonne",
+          "Die Südhalbkugel ist zu dieser Zeit zur Sonne hin geneigt",
+          "Australien liegt näher am Äquator",
+          "In Australien sind die Tage das ganze Jahr länger"
+        ],
+        "answer": 1,
+        "explain": "Ist der Norden von der Sonne weg geneigt, ist der Süden zu ihr hin geneigt. Das Sonnenlicht trifft den Süden steiler und für mehr Stunden am Tag."
+      },
+      {
+        "label": "Noch später",
+        "level": "Anwenden",
+        "stem": "Ein Planet umkreist seinen Stern mit einer Achse, die nicht geneigt ist. Wie sehen seine Jahreszeiten aus?",
+        "options": [
+          "Heiße Sommer und kalte Winter, wie auf der Erde",
+          "Wie auf der Erde, nur doppelt so lang",
+          "Es gibt fast keine: Jeder Ort bekommt das ganze Jahr gleich viel Sonne",
+          "Nur die Pole haben Jahreszeiten"
+        ],
+        "answer": 2,
+        "explain": "Ohne Neigung ist keine Hälfte je zum Stern hin geneigt. Jeder Ort bekommt an jedem Tag des Jahres gleich viel Sonne, also ändert sich mit den Jahreszeiten nichts."
+      }
+    ]
   },
-  "solution": {
-    "title": "Dein KI-Gedächtniswächter",
-    "lead": "LearnForge steht zwischen dir und der Vergessenskurve. Es weiß, was du weißt, wie tief du es verstehst, und stellt genau die richtige Frage, damit nichts verloren geht.",
-    "point1": {
-      "title": "Dynamische Umformulierung",
-      "description": "Jede Wiederholung formuliert die Frage anders. Anderer Blickwinkel, anderes Format. Du kannst Verständnis nicht durch Wiedererkennung vortäuschen."
+  "review": {
+    "title": "Was passiert, wenn eine Karte fällig ist",
+    "lead": "Siehst du dieselbe Karte oft genug, erkennst du irgendwann die Karte wieder, statt dich an den Inhalt zu erinnern. LearnForge ändert die Frage, damit diese Abkürzung nicht mehr funktioniert.",
+    "variation": {
+      "title": "Die Frage wird neu geschrieben",
+      "description": "Standardmäßig wird die Frage bei jeder Wiederholung umformuliert und in eine leicht andere Situation gesetzt. Wie weit das geht, stellst du pro Karte oder pro Thema ein.",
+      "steps": ["Exakt", "Umformuliert", "Neuer Kontext", "Frei"],
+      "stepHints": [
+        "Wird wörtlich abgefragt",
+        "Gleiche Frage, andere Formulierung",
+        "Derselbe Inhalt in neuer Situation",
+        "Alles, was den Inhalt prüft"
+      ]
     },
-    "point2": {
-      "title": "Kognitive Tiefenverfolgung",
-      "description": "Sechs Verständnisstufen pro Konzept — von einfachem Abruf bis kritischem Denken. Das System steigert automatisch, wenn du Meisterschaft beweist."
+    "levels": {
+      "title": "Jede Karte hat eine Stufe",
+      "description": "Es gibt sechs Stufen, vom Abrufen eines Fakts bis zum eigenen Entwurf. Antwortest du wiederholt sicher, steigt die Karte eine Stufe. Liegst du daneben, geht sie eine zurück. Karten auf Exakt bleiben auf ihrer Stufe."
     },
-    "point3": {
-      "title": "Wissenschaftlich fundierte Planung",
-      "description": "FSRS-Algorithmus mit modalitätsbewussten Intervallen. Schwierigere Lernmodi bringen längere Pausen. Jede Wiederholung ist optimal für dein Gedächtnis getimed."
-    }
-  },
-  "features": {
-    "title": "Entwickelt für tiefes Lernen",
-    "subtitle": "Jedes Feature existiert, weil die Wissenschaft sagt, dass es funktioniert.",
-    "card1": {
-      "badge": "Kern",
-      "title": "Dynamische Frageumformulierung",
-      "description": "KI formuliert jede Frage bei jeder Wiederholung um. Gleiches Konzept, frische Perspektive. Die Wiedererkennungsfalle wird unmöglich."
+    "answers": {
+      "title": "Antippen, schreiben oder diktieren",
+      "description": "Wähle die Schwierigkeit der Sitzung und wie du antworten willst. Offene Antworten werden bewertet, und du kannst danach Nachfragen stellen. Das alles braucht den Tutor: den Claude-Chat oder die App mit eigenem API-Schlüssel.",
+      "difficultyLabel": "Schwierigkeit",
+      "difficulties": ["Unterwegs", "Schreibtisch", "Vertieft"],
+      "modesLabel": "Antworten per",
+      "modes": ["Antippen", "Schreiben", "Diktieren"]
     },
-    "card2": {
-      "badge": "Einzigartig",
-      "title": "Bloom-Taxonomie-Progression",
-      "description": "Verfolge sechs Verständnisstufen pro Konzept. Steige auf von 'Was ist das?' zu 'Was würdest du damit machen?' — automatisch."
-    },
-    "card3": {
-      "badge": "Wissenschaft",
-      "title": "FSRS Spaced Repetition",
-      "description": "Der neueste Planungsalgorithmus passt sich deinen individuellen Gedächtnismustern an. Kein Ease-Factor-Problem, keine Einheitsintervalle."
-    },
-    "card4": {
-      "badge": "KI",
-      "title": "KI-native Kartenerstellung",
-      "description": "Erstelle Karten durch natürliche Konversation. KaTeX-Formeln, SVG-Diagramme, interaktive Quizze — alles generiert aus dem, was du der KI erzählst."
-    }
-  },
-  "howItWorks": {
-    "title": "So funktioniert's",
-    "step1": {
-      "title": "Sprich mit deinem KI-Tutor",
-      "description": "Verbinde LearnForge mit Claude über MCP. Erzähl, was du lernen willst — es erstellt interaktive Lernkarten mit Formeln, Diagrammen und Quizzen."
-    },
-    "step2": {
-      "title": "Lerne auf deine Art",
-      "description": "Wiederhole in der Web-App oder per KI-Chat. Wähle klassische Selbstbewertung, Multiple Choice oder offene Fragen. Schwierigere Modi bringen längere Intervalle."
-    },
-    "step3": {
-      "title": "Meistere jedes Konzept",
-      "description": "Beobachte, wie dein Verständnis durch die Bloom-Stufen wächst. FSRS plant deine Wiederholungen in optimalen Abständen. Nichts geht verloren."
+    "schedule": {
+      "title": "FSRS bestimmt den Zeitpunkt",
+      "description": "Der FSRS-Algorithmus plant jede Karte danach, wie du sie bewertet hast. Nach schwierigeren Sitzungen und stärker variierten Fragen ist der nächste Abstand länger."
     }
   },
   "bloom": {
-    "title": "Sechs Stufen des Verstehens",
-    "subtitle": "Herkömmliche Lernkarten bleiben bei Stufe 1 stehen. LearnForge bringt dich bis Stufe 6.",
     "levels": {
       "0": { "name": "Erinnern", "description": "Fakten und Grundkonzepte abrufen" },
       "1": { "name": "Verstehen", "description": "Ideen erklären und Bedeutung interpretieren" },
@@ -92,68 +103,129 @@
       "5": { "name": "Erschaffen", "description": "Entwerfen, konstruieren und synthetisieren" }
     }
   },
-  "openSource": {
-    "title": "Deine Daten, deine Wahl",
-    "cloud": {
-      "title": "Cloud",
-      "point1": "30 Tage kostenlos, kein Setup",
-      "point2": "Automatische Updates und Backups",
-      "point3": "Verwaltete Infrastruktur"
+  "ways": {
+    "title": "So kommen deine Karten hinein",
+    "anki": {
+      "title": "Aus Anki importieren",
+      "description": "Lade eine .apkg- oder .colpkg-Datei aus einer aktuellen oder älteren Anki-Version hoch. Decks und Medien kommen mit, und du entscheidest, ob du deine Fälligkeiten behältst. Bildverdeckungs-Karten (Image Occlusion) werden importiert, bleiben aber vorerst pausiert."
     },
-    "selfHost": {
-      "title": "Self-Host",
-      "point1": "Volle Kontrolle über deine Daten",
-      "point2": "Docker-Compose-Deployment",
-      "point3": "AGPL-3.0 — für immer kostenlos"
+    "claude": {
+      "title": "Im Claude-Chat erstellen",
+      "description": "Verbinde LearnForge mit Claude und sag, was du lernst. Claude entwirft Karten mit Formeln, Diagrammen und Lückentexten und speichert sie, sobald du sie freigibst."
+    },
+    "editor": {
+      "title": "Selbst schreiben",
+      "description": "Schreibe und bearbeite Karten in der Web-App. Ganz ohne KI."
+    },
+    "share": {
+      "title": "Ein Thema per Link bekommen",
+      "description": "Ein Link von jemand anderem kopiert ein ganzes Thema mit seinen Karten in dein Konto. Dein Lernfortschritt beginnt bei null."
     }
   },
-  "community": {
-    "title": "Gestalte die Zukunft des Lernens",
-    "stat1": "Open Source",
-    "stat2": "Wissenschaftlich fundiert",
-    "stat3": "KI-gestützt",
-    "cta": "Auf GitHub ansehen"
+  "where": {
+    "title": "Wo du lernst und was es kostet",
+    "lead": "Das LearnForge-Abo bezahlt das Hosting. Die KI-Nutzung läuft getrennt, und du entscheidest, wie du sie abdeckst.",
+    "chat": {
+      "title": "Im Claude-Chat",
+      "points": [
+        "Claude stellt die Fragen und bewertet deine Antworten",
+        "Kein API-Schlüssel nötig, es läuft über dein Claude-Konto",
+        "Einmal einrichten: LearnForge-Adresse in den Claude-Einstellungen eintragen (bei Claude heißt das Connector)"
+      ]
+    },
+    "app": {
+      "title": "In der LearnForge-App",
+      "points": [
+        "Eine Web-App, die du auf den Startbildschirm deines Handys legen kannst",
+        "Der eingebaute Tutor braucht einen API-Schlüssel: einen Code aus deinem eigenen Anthropic-Entwicklerkonto, abgerechnet nach Verbrauch",
+        "Ohne Schlüssel lernst du mit den Karten selbst und bewertest dich. FSRS plant trotzdem jede Karte."
+      ]
+    }
+  },
+  "openSource": {
+    "title": "Open Source, gehostet in Österreich",
+    "cloud": {
+      "title": "Gehostet",
+      "point1": "30 Tage kostenlos, nichts einzurichten",
+      "point2": "Updates und Backups übernehmen wir",
+      "point3": "Themen, Karten, Wiederholungen und Medien als ZIP exportieren, auch nach Ablauf der Testphase"
+    },
+    "selfHost": {
+      "title": "Selbst gehostet",
+      "point1": "Läuft auf deinem eigenen Server, samt Tutor und Claude-Connector",
+      "point2": "Deployment mit Docker Compose",
+      "point3": "AGPL-3.0, kostenlos"
+    },
+    "cta": "Quellcode auf GitHub"
   },
   "pricing": {
-    "title": "Heute mit dem Lernen beginnen",
+    "title": "Preise",
     "trial": {
       "title": "Kostenlose Testphase",
-      "price": "€0",
+      "price": "0 €",
       "period": "30 Tage",
-      "features": ["Voller Zugang zu allen Features", "Keine Kreditkarte erforderlich", "Jederzeit kündbar"]
+      "features": ["Alle Funktionen enthalten", "Keine Kreditkarte erforderlich", "Endet von selbst, nichts zu kündigen"]
     },
     "monthly": {
       "title": "Monatlich",
-      "price": "€4,99",
+      "price": "4,99 €",
       "period": "/Monat",
       "billed": "Monatlich abgerechnet",
-      "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support"]
+      "features": ["Alle Funktionen enthalten", "Jederzeit kündbar zum Ende des bezahlten Zeitraums"]
     },
     "annual": {
       "title": "Jährlich",
-      "badge": "20% sparen",
-      "price": "€4",
+      "badge": "20 % sparen",
+      "price": "4 €",
       "period": "/Monat",
-      "billed": "€48 jährlich abgerechnet",
-      "features": ["Alles aus der Testphase", "Unbegrenzte Lernsitzungen", "Prioritäts-Support", "20% Rabatt"]
+      "billed": "48 € jährlich abgerechnet",
+      "features": ["Alle Funktionen enthalten", "20 % günstiger als monatlich"]
     },
-    "cta": "Kostenlose Testphase starten",
-    "claudeNote": "Funktioniert mit jedem Claude-Plan, auch dem kostenlosen (1 Connector enthalten).",
-    "donation": "Du magst LearnForge? Hilf, es unabhängig zu halten.",
-    "donationLink": "Projekt unterstützen"
+    "cta": "30-Tage-Test starten",
+    "aiNote": "Die KI-Nutzung ist nicht im Preis enthalten: Der Claude-Chat läuft über dein Claude-Konto, der Tutor in der App über deinen eigenen Anthropic-API-Schlüssel.",
+    "donation": "LearnForge mit einer Spende unterstützen"
+  },
+  "faq": {
+    "title": "Fragen",
+    "items": [
+      {
+        "q": "Was ist LearnForge?",
+        "a": "LearnForge ist eine Open-Source-Karteikarten-App mit Spaced Repetition. Ist eine Karte fällig, schreibt ein KI-Tutor ihre Frage neu, die App führt pro Karte eine von sechs Verständnisstufen, und der FSRS-Algorithmus plant die nächste Wiederholung."
+      },
+      {
+        "q": "Brauche ich ein Claude-Abo oder einen API-Schlüssel?",
+        "a": "Zum Lernen im Claude-Chat brauchst du ein Claude-Konto, in dem LearnForge als Connector hinzugefügt ist, und keinen API-Schlüssel. Für den Tutor in der LearnForge-App brauchst du einen eigenen Anthropic-API-Schlüssel, den Anthropic nach Nutzung abrechnet. Ohne beides kannst du deine Karten in der App trotzdem lernen und dich selbst bewerten."
+      },
+      {
+        "q": "Kann ich meine Anki-Decks mitbringen?",
+        "a": "Ja. LearnForge importiert .apkg- und .colpkg-Dateien aus aktuellen und älteren Anki-Versionen. Decks und Medien kommen mit, und du entscheidest, ob jede Karte ihre Fälligkeit behält. Bildverdeckungs-Karten (Image Occlusion) werden importiert, bleiben aber vorerst pausiert."
+      },
+      {
+        "q": "Ändert sich die Frage wirklich jedes Mal?",
+        "a": "Standardmäßig ja: Jede Wiederholung formuliert die Frage um und setzt sie in eine leicht andere Situation. Du kannst eine Karte oder ein Thema auf Exakt stellen, dann wird wörtlich abgefragt. In der App werden Karten, die von einem Bild oder einer Formel leben, unverändert gezeigt, und ohne API-Schlüssel siehst du jede Karte so, wie sie ist."
+      },
+      {
+        "q": "Was kostet LearnForge?",
+        "a": "Die ersten 30 Tage sind kostenlos und brauchen keine Kreditkarte. Danach kostet die gehostete Version 4,99 € im Monat oder 48 € im Jahr. Self-Hosting ist unter der AGPL-3.0-Lizenz kostenlos. Die KI-Nutzung rechnet Anthropic getrennt ab."
+      },
+      {
+        "q": "Was sind die sechs Stufen?",
+        "a": "Sie folgen der Bloom-Taxonomie: Erinnern, Verstehen, Anwenden, Analysieren, Bewerten und Erschaffen. Jede Karte hat ihre eigene Stufe. Sie steigt, wenn du wiederholt sicher antwortest, und geht zurück, wenn du danebenliegst."
+      }
+    ]
   },
   "seo": {
-    "orgDescription": "Open-Source-Lernplattform mit KI-gestützter Spaced Repetition, dynamischer Frageumformulierung und Bloom-Taxonomie-Tiefenverfolgung.",
+    "orgDescription": "Open-Source-Karteikarten-App mit Spaced Repetition: bei jeder Wiederholung neu geschriebene Fragen, sechs Verständnisstufen pro Karte, FSRS-Planung und Anki-Import.",
     "appCategory": "EducationalApplication",
-    "faq": {
-      "q1": "Was ist LearnForge?",
-      "a1": "LearnForge ist eine Open-Source-Lernplattform, die KI nutzt, um Lernkarten-Fragen bei jeder Wiederholung dynamisch umzuformulieren, die kognitive Tiefe mit der Bloom-Taxonomie verfolgt und Wiederholungen mit dem FSRS-Algorithmus plant.",
-      "q2": "Wie unterscheidet sich LearnForge von Anki oder anderen Lernkarten-Apps?",
-      "a2": "Herkömmliche Lernkarten-Apps zeigen immer dieselbe Frage, was zu Mustererkennung statt echtem Verständnis führt. LearnForge formuliert jede Frage per KI um und verfolgt sechs Stufen kognitiver Tiefe pro Konzept — vom einfachen Abruf bis zum kritischen Denken.",
-      "q3": "Ist LearnForge kostenlos?",
-      "a3": "LearnForge bietet eine 30-tägige kostenlose Testphase mit vollem Zugang. Danach kannst du zwischen 4,99 €/Monat oder 4 €/Monat bei jährlicher Abrechnung (48 €/Jahr, 20% Ersparnis) wählen. Self-Hosting ist unter der AGPL-3.0-Lizenz immer kostenlos.",
-      "q4": "Was ist die Bloom-Taxonomie?",
-      "a4": "Die Bloom-Taxonomie ist ein Rahmenwerk mit sechs kognitiven Stufen: Erinnern, Verstehen, Anwenden, Analysieren, Bewerten und Erschaffen. LearnForge verfolgt deine Meisterschaft auf jeder Stufe und steigert automatisch die Frageschwierigkeit."
-    }
+    "features": [
+      "Bei jeder Wiederholung neu geschriebene Fragen",
+      "Sechs Verständnisstufen pro Karte (Bloom-Taxonomie)",
+      "FSRS Spaced Repetition",
+      "Anki-Import mit Lernfortschritt (.apkg, .colpkg)",
+      "Tutor im Claude-Chat und in der Web-App",
+      "Antworten per Tippen, Schreiben oder Diktieren",
+      "Themen per Link teilen",
+      "Self-Hosting, AGPL-3.0"
+    ]
   }
 }

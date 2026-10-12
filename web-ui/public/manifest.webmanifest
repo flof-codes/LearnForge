@@ -1,7 +1,7 @@
 {
   "name": "LearnForge",
   "short_name": "LearnForge",
-  "description": "Spaced repetition with Bloom's Taxonomy progression",
+  "description": "Flashcards that ask a new question at every review",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
