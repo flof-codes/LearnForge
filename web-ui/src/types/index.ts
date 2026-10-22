@@ -240,6 +240,8 @@ export interface DueForecast {
   overdue: number;
 }
 
+export * from './cardHistory';
+
 // --- Due Card (flat shape from /study/due) ---
 export interface DueCard {
   id: string;

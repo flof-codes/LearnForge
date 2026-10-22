@@ -541,6 +541,15 @@
     "message": "Your trial has expired. Subscribe to continue creating and studying.",
     "subscribe": "Subscribe"
   },
+  "cardHistory": {
+    "title": "Card History",
+    "thirtyDays": "30 Days",
+    "oneYear": "1 Year",
+    "all": "All",
+    "total": "Total",
+    "show": "Show card history",
+    "hide": "Hide card history"
+  },
   "dueForecast": {
     "title": "Due Forecast",
     "overdue": "{{count}} overdue",

@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { studyService } from '../api/study';
+import type { CardHistoryRange } from '../types';
 
 export const useStudySummary = (topicId?: string) =>
   useQuery({
@@ -23,4 +24,11 @@ export const useDueForecast = (topicId?: string, range: 'month' | 'year' = 'mont
   useQuery({
     queryKey: ['study', 'forecast', topicId, range],
     queryFn: () => studyService.forecast(topicId, range).then(r => r.data),
+  });
+
+export const useCardHistory = (range: CardHistoryRange) =>
+  useQuery({
+    queryKey: ['study', 'history', range],
+    queryFn: () => studyService.history(range).then(r => r.data),
+    placeholderData: keepPreviousData,
   });

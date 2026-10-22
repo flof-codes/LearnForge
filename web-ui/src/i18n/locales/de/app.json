@@ -541,6 +541,15 @@
     "message": "Deine Testphase ist abgelaufen. Abonniere, um weiterhin Karten zu erstellen und zu lernen.",
     "subscribe": "Abonnieren"
   },
+  "cardHistory": {
+    "title": "Kartenverlauf",
+    "thirtyDays": "30 Tage",
+    "oneYear": "1 Jahr",
+    "all": "Alle",
+    "total": "Gesamt",
+    "show": "Kartenverlauf anzeigen",
+    "hide": "Kartenverlauf ausblenden"
+  },
   "dueForecast": {
     "title": "F\u00e4lligkeitsvorhersage",
     "overdue": "{{count}} \u00fcberf\u00e4llig",

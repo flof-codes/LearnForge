@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
-import { getStudyCards, getStudySummary, getDueForecast, getStudyStats } from "@learnforge/core";
+import { getStudyCards, getStudySummary, getDueForecast, getStudyStats, getCardHistory } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
 
 export default async function studyRoutes(app: FastifyInstance) {
@@ -28,5 +28,11 @@ export default async function studyRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { topic_id?: string } }>("/study/stats", async (req) => {
     const userId = getUserId(req);
     return getStudyStats(db, userId, req.query.topic_id);
+  });
+
+  // GET /study/card-history — Card count per day (or week), split by card state
+  app.get<{ Querystring: { range?: string } }>("/study/card-history", async (req) => {
+    const userId = getUserId(req);
+    return getCardHistory(db, userId, req.query.range);
   });
 }

@@ -124,6 +124,7 @@ export { sealSecret, openSecret } from "./lib/secret-box.js";
 // Services - Study
 export { getStudyCards, getStudySummary, type GetStudyCardsOptions } from "./services/study-service.js";
 export { getDueForecast, getStudyStats } from "./services/study-stats.js";
+export { getCardHistory, type CardHistoryPoint } from "./services/card-history.js";
 
 // Services - Topic
 export {

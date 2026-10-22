@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
-import { GraduationCap, Plus, Layers, Flame, Sparkles } from 'lucide-react';
+import { GraduationCap, Plus, Layers, Flame, Sparkles, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStudySummary, useStudyStats } from '../hooks/useStudy';
 import { useTopics } from '../hooks/useTopics';
@@ -9,15 +9,29 @@ import ErrorFallback from '../components/ErrorFallback';
 import DueForecastChart from '../components/DueForecastChart';
 import TopicPieChart from '../components/TopicPieChart';
 import BloomStateChart from '../components/BloomStateChart';
+import CardHistoryChart from '../components/CardHistoryChart';
 import SubscriptionBanner from '../components/SubscriptionBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { formatPercent } from '../utils/format';
+
+// The history opens under the tile that was tapped, which sits in a different block on a phone.
+const DESKTOP = '(min-width: 48rem)';
+function subscribeDesktop(notify: () => void) {
+  const mq = window.matchMedia(DESKTOP);
+  mq.addEventListener('change', notify);
+  return () => mq.removeEventListener('change', notify);
+}
+function useIsDesktop() {
+  return useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP).matches, () => true);
+}
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation('app');
   const { data: summary, isLoading: summaryLoading, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useStudySummary();
   const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useStudyStats();
   const { data: topics, isLoading: topicsLoading, isError: topicsError, error: topicsErr, refetch: refetchTopics } = useTopics();
+  const [showHistory, setShowHistory] = useState(false);
+  const isDesktop = useIsDesktop();
   const [wizardDismissed, setWizardDismissed] = useState(() => localStorage.getItem('learnforge-wizard-dismissed') === '1');
 
   if (summaryLoading || statsLoading || topicsLoading) return <LoadingSpinner />;
@@ -32,6 +46,13 @@ export default function Dashboard() {
     return <OnboardingWizard onSkip={() => { localStorage.setItem('learnforge-wizard-dismissed', '1'); setWizardDismissed(true); }} />;
   }
 
+
+  const historyToggle = {
+    onClick: () => setShowHistory(v => !v),
+    'aria-expanded': showHistory,
+    title: t(showHistory ? 'cardHistory.hide' : 'cardHistory.show'),
+  };
+  const chevron = <ChevronDown size={14} className={`transition-transform ${showHistory ? 'rotate-180' : ''}`} />;
 
   const accuracy = summary?.accuracy7d != null ? formatPercent(summary.accuracy7d, i18n.language) : '--';
   const miniStats: { label: string; value: number; unit?: string }[] = stats ? [
@@ -51,10 +72,10 @@ export default function Dashboard() {
       {/* Phone: all numbers in one edge-to-edge block, then the way into a session */}
       <div className="md:hidden lf-bleed bg-bg-secondary border-y border-border">
         <div className="grid grid-cols-3 divide-x divide-border">
-          <div className="px-4 py-3 min-w-0">
-            <p className="text-text-muted text-xs leading-tight">{t('dashboard.totalCards')}</p>
+          <button type="button" {...historyToggle} className={`px-4 py-3 min-w-0 text-left ${showHistory ? 'bg-bg-surface' : ''}`}>
+            <p className="text-text-muted text-xs leading-tight flex items-center gap-1">{t('dashboard.totalCards')}{chevron}</p>
             <p className="text-2xl font-light tabular-nums mt-1">{summary?.totalCards ?? 0}</p>
-          </div>
+          </button>
           <div className="px-4 py-3 min-w-0">
             <p className="text-text-muted text-xs leading-tight">{t('dashboard.dueNow')}</p>
             <p className="text-2xl font-light tabular-nums mt-1 text-warning">{summary?.dueCount ?? 0}</p>
@@ -64,6 +85,9 @@ export default function Dashboard() {
             <p className="text-2xl font-light tabular-nums mt-1">{accuracy}</p>
           </div>
         </div>
+        {showHistory && !isDesktop && (
+          <div className="border-t border-border"><CardHistoryChart embedded /></div>
+        )}
         {[0, 3].map(start => miniStats.length > 0 && (
           <div key={start} className="grid grid-cols-3 divide-x divide-border border-t border-border">
             {miniStats.slice(start, start + 3).map(({ label, value, unit }) => (
@@ -91,10 +115,14 @@ export default function Dashboard() {
 
       {/* Stats row */}
       <div className="hidden md:grid md:grid-cols-3 gap-5">
-        <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <p className="text-text-muted text-sm">{t('dashboard.totalCards')}</p>
+        <button
+          type="button"
+          {...historyToggle}
+          className={`text-left rounded-xl border p-6 transition-colors hover:bg-bg-surface ${showHistory ? 'bg-bg-surface border-accent-blue/40' : 'bg-bg-secondary border-border'}`}
+        >
+          <p className="text-text-muted text-sm flex items-center gap-1.5">{t('dashboard.totalCards')}{chevron}</p>
           <p className="text-3xl font-light tabular-nums mt-1">{summary?.totalCards ?? 0}</p>
-        </div>
+        </button>
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
           <p className="text-text-muted text-sm">{t('dashboard.dueNow')}</p>
           <p className="text-3xl font-light tabular-nums mt-1 text-warning">{summary?.dueCount ?? 0}</p>
@@ -106,6 +134,8 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {showHistory && isDesktop && <CardHistoryChart />}
 
       {/* Streak & Activity */}
       {stats && (
