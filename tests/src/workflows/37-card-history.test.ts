@@ -95,3 +95,44 @@ describe("GET /study/card-history", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("GET /study/due-history", () => {
+  const DUE = ["learning", "relearning", "recall"] as const;
+  type DuePoint = { at: string; total: number } & Record<(typeof DUE)[number], number>;
+
+  it("ends at the dashboard's due count and splits every point into its states", async () => {
+    const [history, summary] = await Promise.all([
+      api.get("/study/due-history", { params: { range: "30d" } }),
+      api.get("/study/summary"),
+    ]);
+    expect(history.status).toBe(200);
+    expect(history.data.points).toHaveLength(31);
+    expect((history.data.points as DuePoint[]).at(-1)!.total).toBe(summary.data.dueCount);
+    for (const p of history.data.points as DuePoint[]) {
+      expect(Object.keys(p).sort()).toEqual(["at", "total", ...DUE].sort());
+      expect(DUE.reduce((sum, s) => sum + p[s], 0)).toBe(p.total);
+    }
+  });
+
+  it("counts an overdue review card as recall from its due date on", async () => {
+    const card = await createFreshCard(api, TOPICS.ALGEBRA);
+    created.push(card.id);
+    const before = (await api.get("/study/due-history", { params: { range: "30d" } })).data.points as DuePoint[];
+    await withDb(async c => {
+      await c.query(`UPDATE cards SET created_at = now() - interval '10 days' WHERE id = $1`, [card.id]);
+      await c.query(
+        `UPDATE fsrs_state SET state = 2, stability = 5, reps = 1, due = now() - interval '36 hours' WHERE card_id = $1`,
+        [card.id],
+      );
+    });
+    const after = (await api.get("/study/due-history", { params: { range: "30d" } })).data.points as DuePoint[];
+    expect(after.at(-1)!.recall).toBe(before.at(-1)!.recall + 1);
+    expect(after.at(-2)!.recall).toBe(before.at(-2)!.recall + 1);
+    expect(after.at(-3)!.recall).toBe(before.at(-3)!.recall);
+  });
+
+  it("requires authentication", async () => {
+    const res = await getUnauthApi().get("/study/due-history");
+    expect(res.status).toBe(401);
+  });
+});

@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCardHistory } from '../hooks/useStudy';
-import { CARD_STATE_COLORS, HISTORY_STATES, type CardHistoryPoint, type CardHistoryRange } from '../types';
+import { useHistory } from '../hooks/useStudy';
+import {
+  CARD_STATE_COLORS, DUE_STATES, HISTORY_STATES, type CardHistoryRange, type HistoryKind, type HistoryPoint, type HistoryState,
+} from '../types';
 
-// Most settled at the bottom, so the stack reads from consolidated up to new.
-const STACK = [...HISTORY_STATES].reverse();
+// Per kind: its bands and its i18n section (title, total label).
+const KINDS: Record<HistoryKind, { states: readonly HistoryState[]; i18n: string }> = {
+  cards: { states: HISTORY_STATES, i18n: 'cardHistory' },
+  due: { states: DUE_STATES, i18n: 'dueHistory' },
+};
 const RANGES: { key: CardHistoryRange; label: string }[] = [
   { key: '30d', label: 'cardHistory.thirtyDays' },
   { key: '1y', label: 'cardHistory.oneYear' },
@@ -20,7 +25,7 @@ function niceMax(value: number): number {
 }
 
 /** Path of one band: its top edge left to right, then its bottom edge back. */
-function bandPath(points: CardHistoryPoint[], below: number[], above: number[], yMax: number): string {
+function bandPath(points: HistoryPoint[], below: number[], above: number[], yMax: number): string {
   const n = points.length;
   const x = (i: number) => (n === 1 ? 0 : (i / (n - 1)) * 100);
   const y = (v: number) => 100 - (v / yMax) * 100;
@@ -30,15 +35,19 @@ function bandPath(points: CardHistoryPoint[], below: number[], above: number[], 
 }
 
 interface Props {
+  kind: HistoryKind;
   /** Inside another block on a phone: no panel frame of its own. */
   embedded?: boolean;
 }
 
-export default function CardHistoryChart({ embedded }: Props) {
+export default function HistoryChart({ kind, embedded }: Props) {
   const { t, i18n } = useTranslation('app');
   const [range, setRange] = useState<CardHistoryRange>('all');
   const [picked, setPicked] = useState<number | null>(null);
-  const { data, isLoading } = useCardHistory(range);
+  const { data, isLoading } = useHistory(kind, range);
+  const { states, i18n: section } = KINDS[kind];
+  // Most settled at the bottom, so the stack reads from consolidated up to new.
+  const stack = [...states].reverse();
 
   const points = data?.points ?? [];
   const n = points.length;
@@ -47,10 +56,10 @@ export default function CardHistoryChart({ embedded }: Props) {
   const current = points[index];
 
   // Cumulative heights per band, bottom up.
-  const bands: { state: (typeof STACK)[number]; below: number[]; above: number[] }[] = [];
+  const bands: { state: HistoryState; below: number[]; above: number[] }[] = [];
   let running = points.map(() => 0);
-  for (const state of STACK) {
-    const above = points.map((p, i) => running[i] + p[state]);
+  for (const state of stack) {
+    const above = points.map((p, i) => running[i] + (p[state] ?? 0));
     bands.push({ state, below: running, above });
     running = above;
   }
@@ -70,7 +79,7 @@ export default function CardHistoryChart({ embedded }: Props) {
   return (
     <div className={embedded ? 'px-4 py-4' : 'lf-panel'}>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">{t('cardHistory.title')}</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-text-muted">{t(`${section}.title`)}</h2>
         <div className="flex gap-1 shrink-0">
           {RANGES.map(r => (
             <button
@@ -94,7 +103,7 @@ export default function CardHistoryChart({ embedded }: Props) {
         {current && (
           <>
             <span className="text-text-muted">{fullFormat.format(new Date(current.at))} · </span>
-            <span className="tabular-nums">{t('cardHistory.total')} {current.total}</span>
+            <span className="tabular-nums">{t(`${section}.total`)} {current.total}</span>
           </>
         )}
       </p>
@@ -148,7 +157,7 @@ export default function CardHistoryChart({ embedded }: Props) {
 
       {/* Legend doubles as the readout: each state's count on the picked day */}
       <div className="grid grid-cols-2 gap-x-5 gap-y-1 md:flex md:flex-wrap mt-3">
-        {HISTORY_STATES.map(state => (
+        {states.map(state => (
           <div key={state} className="flex items-center gap-2 text-xs text-text-muted">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CARD_STATE_COLORS[state] }} />
             <span>{t(`cardStates.${state}`)}</span>

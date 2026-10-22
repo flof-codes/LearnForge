@@ -550,6 +550,12 @@
     "show": "Show card history",
     "hide": "Hide card history"
   },
+  "dueHistory": {
+    "title": "Due History",
+    "total": "Due",
+    "show": "Show due history",
+    "hide": "Hide due history"
+  },
   "dueForecast": {
     "title": "Due Forecast",
     "overdue": "{{count}} overdue",

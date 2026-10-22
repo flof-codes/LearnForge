@@ -550,6 +550,12 @@
     "show": "Kartenverlauf anzeigen",
     "hide": "Kartenverlauf ausblenden"
   },
+  "dueHistory": {
+    "title": "Fälligkeitsverlauf",
+    "total": "Fällig",
+    "show": "Fälligkeitsverlauf anzeigen",
+    "hide": "Fälligkeitsverlauf ausblenden"
+  },
   "dueForecast": {
     "title": "F\u00e4lligkeitsvorhersage",
     "overdue": "{{count}} \u00fcberf\u00e4llig",

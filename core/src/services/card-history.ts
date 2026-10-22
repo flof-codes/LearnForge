@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
+import { STUDYABLE } from "./study-filters.js";
 import {
   processReview, applyIntervalFactor, applyModalityMultiplier, isValidModality, type FsrsDbState,
 } from "./fsrs.js";
@@ -11,6 +12,8 @@ import {
 // replayed with FSRS from the rating, which matches closely but not exactly.
 // A reset deletes a card's reviews, so a reset card reads as new back to its creation.
 // Anki imports carry no review rows and count from the import date.
+// The due history uses the same timelines and counts what was due at each point;
+// suspension and disputes have no history, so today's flags apply throughout.
 
 export type CardHistoryRange = "30d" | "1y" | "all";
 
@@ -18,6 +21,11 @@ export const HISTORY_STATES = ["new", "learning", "relearning", "recall", "short
 export type HistoryState = (typeof HISTORY_STATES)[number];
 
 export type CardHistoryPoint = { at: string; total: number } & Record<HistoryState, number>;
+
+/** What feeds the due count: every started card whose due date has passed. */
+export const DUE_STATES = ["learning", "relearning", "recall"] as const;
+export type DueState = (typeof DUE_STATES)[number];
+export type DueHistoryPoint = { at: string; total: number } & Record<DueState, number>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -41,6 +49,11 @@ export function classifyState(s: { state: number; stability: number; dueMs: numb
   if (s.stability < 21) return "shortTerm";
   if (s.stability < 90) return "midTerm";
   return "longTerm";
+}
+
+function dueState(s: { state: number; dueMs: number }, at: number): DueState | null {
+  if (s.state === 0 || s.dueMs > at) return null;
+  return s.state === 1 ? "learning" : s.state === 3 ? "relearning" : "recall";
 }
 
 function fromJson(j: Record<string, unknown>): FsrsDbState {
@@ -81,7 +94,12 @@ function cardTimeline(
   return timeline;
 }
 
-export async function getCardHistory(db: Db, userId: string, rawRange?: string) {
+type Snapshot = { state: number; stability: number; dueMs: number };
+
+async function sampleHistory<S extends string>(
+  db: Db, userId: string, rawRange: string | undefined,
+  opts: { states: readonly S[]; bucket: (s: Snapshot, at: number) => S | null; studyableOnly: boolean },
+) {
   const range: CardHistoryRange = rawRange === "30d" || rawRange === "1y" ? rawRange : "all";
 
   const cardRows = await db.execute<CardRow>(sql`
@@ -89,6 +107,7 @@ export async function getCardHistory(db: Db, userId: string, rawRange?: string) 
     FROM cards c
     JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
     JOIN fsrs_state fs ON fs.card_id = c.id
+    WHERE ${opts.studyableOnly ? STUDYABLE : sql`true`}
   `);
   const reviewRows = await db.execute<ReviewRow>(sql`
     SELECT r.card_id, r.reviewed_at, r.rating, r.modality, r.interval_factor, r.state_before->'fsrs' AS fsrs_before
@@ -116,10 +135,10 @@ export async function getCardHistory(db: Db, userId: string, rawRange?: string) 
   const count = Math.ceil(span / step);
   const times = Array.from({ length: count + 1 }, (_, i) => now - (count - i) * step * DAY_MS);
 
-  const points: CardHistoryPoint[] = times.map(at => ({
+  const points = times.map(at => ({
     at: new Date(at).toISOString(), total: 0,
-    new: 0, learning: 0, relearning: 0, recall: 0, shortTerm: 0, midTerm: 0, longTerm: 0,
-  }));
+    ...Object.fromEntries(opts.states.map(s => [s, 0])),
+  }) as { at: string; total: number } & Record<S, number>);
 
   for (const c of cardRows.rows) {
     const createdAt = new Date(c.created_at).getTime();
@@ -134,11 +153,22 @@ export async function getCardHistory(db: Db, userId: string, rawRange?: string) 
       const at = times[i];
       if (at < createdAt) continue;
       while (seg + 1 < timeline.length && timeline[seg + 1].from <= at) seg++;
+      const bucket = opts.bucket(timeline[seg].state, at);
+      if (bucket === null) continue;
       const p = points[i];
       p.total++;
-      p[classifyState(timeline[seg].state, at)]++;
+      p[bucket]++;
     }
   }
 
   return { range, step: step === 7 ? "week" as const : "day" as const, points };
+}
+
+export function getCardHistory(db: Db, userId: string, rawRange?: string) {
+  return sampleHistory(db, userId, rawRange, { states: HISTORY_STATES, bucket: classifyState, studyableOnly: false });
+}
+
+/** Due cards over time, matching the dashboard's due count at the last point. */
+export function getDueHistory(db: Db, userId: string, rawRange?: string) {
+  return sampleHistory(db, userId, rawRange, { states: DUE_STATES, bucket: dueState, studyableOnly: true });
 }
