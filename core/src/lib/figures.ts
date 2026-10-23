@@ -18,7 +18,8 @@ export interface CardFigures {
   frontFigure: string | null;
 }
 
-const BLANK = /^(?:\s|<\/?(?:br|div|p)\s*\/?>)*$/i;
+// Anki's empty-field rule, as in lib/note-renderer.ts, so a figure counts exactly when the template shows it.
+const BLANK = /^(?:\s|<\/?(?:br|div)\s*\/?>)*$/i;
 const PICTURE = /<(?:img|svg)[\s>]/i;
 const SVG_BLOCK = /<svg[\s>][\s\S]*?<\/svg\s*>/gi;
 
@@ -62,6 +63,7 @@ export function hasPictures(html: string): boolean {
  * card itself.
  */
 export function isPictureOnly(frontHtml: string, figures: CardFigures, builtinKey: string | null): boolean {
+  // The image-occlusion type (built on a parallel branch) is a picture by definition.
   if (builtinKey === "occlusion") return true;
   const front = withoutFigures(frontHtml, figures);
   return questionText(front) === "" && (hasPictures(front) || !!figures.frontFigure);

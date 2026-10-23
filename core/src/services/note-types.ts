@@ -11,7 +11,6 @@ import { FIGURE_FIELD, FRONT_FIGURE_FIELD } from "../lib/figures.js";
 
 /** 2: the optional fields "Figure" (back, below the answer) and "Front figure" (front, below the question). */
 export const BUILTIN_TYPES_VERSION = 2;
-export { FIGURE_FIELD, FRONT_FIGURE_FIELD };
 
 export interface NoteTypeFieldDef { key: string; name: string; ord: number }
 export interface CardTemplateDef { id?: string; ord: number; name: string; frontTemplate: string; backTemplate: string }
@@ -199,6 +198,10 @@ async function upgradeBuiltinTypes(db: Db, userId: string, rows: Array<{ id: str
             const up = UPGRADE_BLOCKS[name];
             if (!up || front.includes(`{{${name}}}`) || back.includes(`{{${name}}}`)) continue;
             if (up.side === "front") front += up.block; else back += up.block;
+          }
+          // A cloze back has no {{FrontSide}}: the front figure stands in there when there is no full one, as in the built-in.
+          if (added.includes(FRONT_FIGURE_FIELD) && row.builtin_key === "cloze" && !back.includes("{{FrontSide}}") && !back.includes(`{{${FRONT_FIGURE_FIELD}}}`)) {
+            back += `{{^${FIGURE_FIELD}}}${FRONT_FIGURE_BLOCK}{{/${FIGURE_FIELD}}}`;
           }
           if (front !== t.front_template || back !== t.back_template) {
             await tx.execute(sql`UPDATE card_templates SET front_template = ${front}, back_template = ${back} WHERE id = ${t.id}`);

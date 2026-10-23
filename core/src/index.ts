@@ -7,8 +7,6 @@ export { NotFoundError, ValidationError, StaleTicketError } from "./lib/errors.j
 
 // Utilities
 export { stripHtml } from "./lib/strip-html.js";
-export { FIGURE_FIELD, FRONT_FIGURE_FIELD, figuresOf, questionText, isPictureOnly, type CardFigures } from "./lib/figures.js";
-export { loadCardFigures } from "./services/card-figures.js";
 export { validateCardHtml } from "./lib/sanitize-card-html.js";
 export { verifyCardOwnership } from "./lib/card-ownership.js";
 export {
@@ -47,7 +45,7 @@ export {
   type NoteType, type SaveNoteTypeInput, type NoteTypeFieldDef, type CardTemplateDef,
 } from "./services/note-types.js";
 export {
-  createNote, getNote, updateNote, deleteNote, listNotes, normalizeFields, rerenderNotesOfType, appMayEditNote, SCRIBE_SOURCE_PREFIX,
+  createNote, getNote, updateNote, deleteNote, listNotes, normalizeFields, rerenderNotesOfType, appMayEditNote,
   type Note, type NoteCardSummary, type CreateNoteInput, type UpdateNoteInput,
 } from "./services/note-service.js";
 export { convertLegacyClozeCards, type LegacyClozeReport } from "./services/legacy-cloze.js";

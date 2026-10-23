@@ -96,7 +96,7 @@ ${html}
   // Pictures open large on a tap: every figure, and images that are not part of a control.
   function zoomTarget(el) {
     var pic = el && el.closest ? el.closest('.lf-figure img, .lf-figure svg, img') : null;
-    if (!pic || pic.closest('a, button, label, summary, [onclick], [data-no-zoom]')) return null;
+    if (!pic || pic.closest('a, button, label, summary, [onclick], [role="button"], [tabindex], [data-no-zoom]')) return null;
     // A picture under positioned overlays (image occlusion masks) would show its answer alone.
     var box = pic.parentElement;
     if (box && box.children.length > 1 && getComputedStyle(box).position !== 'static') return null;
@@ -109,6 +109,8 @@ ${html}
     });
   }
   document.addEventListener('click', function(e) {
+    // A card's own script that handled the click keeps it.
+    if (e.defaultPrevented) return;
     var pic = zoomTarget(e.target);
     if (!pic) return;
     var plate = pic.tagName.toLowerCase() === 'img' && !!pic.closest('.lf-figure');

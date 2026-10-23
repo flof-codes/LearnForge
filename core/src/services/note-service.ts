@@ -277,7 +277,8 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
   const topicId = input.topic_id ?? current.topicId;
   const deck = await topicPath(db, userId, topicId);
   const planned = plannedCards(type, fields, deck, tags);
-  if (input.fields) checkSideSizes(planned);
+  // Notes from an Anki package may carry more than the cap; editing them stays possible.
+  if (input.fields && !current.ankiGuid) checkSideSizes(planned);
   const contentChanged = input.fields !== undefined || input.tags !== undefined || input.concept !== undefined;
   const concept = (input.concept?.trim() || (input.fields ? deriveConcept(type, fields) : current.cards[0]?.concept) || deriveConcept(type, fields)).slice(0, MAX_CONCEPT);
   const embedding = contentChanged ? await computeEmbedding(embeddingTextFor(concept, tags, type, fields)) : null;
