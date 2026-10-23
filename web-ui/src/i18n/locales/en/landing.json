@@ -107,7 +107,7 @@
     "title": "Get your cards in",
     "anki": {
       "title": "Import from Anki",
-      "description": "Upload an .apkg or .colpkg file from a current or older Anki version. Decks and media come along, and you choose whether to keep your schedule. Image occlusion cards are imported but stay suspended for now."
+      "description": "Upload an .apkg or .colpkg file from a current or older Anki version. Decks and media come along, and you choose whether to keep your schedule. Image occlusion cards come along too, ready to study."
     },
     "claude": {
       "title": "Create them in Claude chat",
@@ -198,7 +198,7 @@
       },
       {
         "q": "Can I bring my Anki decks?",
-        "a": "Yes. LearnForge imports .apkg and .colpkg files from current and older Anki versions. Decks and media come along, and you choose whether to keep the schedule of every card. Image occlusion cards are imported but stay suspended for now."
+        "a": "Yes. LearnForge imports .apkg and .colpkg files from current and older Anki versions. Decks and media come along, and you choose whether to keep the schedule of every card. Image occlusion cards come along too, ready to study."
       },
       {
         "q": "Does the question really change every time?",

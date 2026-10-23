@@ -26,7 +26,7 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
         )
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
                c.card_type, c.cloze_data, c.change_rate, c.current_original_id,
-               c.note_id, c.template_id, c.cloze_number, ct.name AS template_name, nt.kind AS note_type_kind,
+               c.note_id, c.template_id, c.cloze_number, ct.name AS template_name, nt.kind AS note_type_kind, nt.builtin_key AS note_type_key,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state, fs.last_review,
                bs.current_level, bs.highest_reached, bs.progress,
                ROW_NUMBER() OVER (PARTITION BY COALESCE(c.note_id, c.id) ORDER BY fs.due ASC, c.cloze_number ASC, c.id ASC) AS sibling_rank,
@@ -63,7 +63,7 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
         )
         SELECT c.id, c.concept, c.front_html, c.back_html, c.topic_id, c.tags,
                c.card_type, c.cloze_data, c.change_rate, c.current_original_id,
-               c.note_id, c.template_id, c.cloze_number, ct.name AS template_name, nt.kind AS note_type_kind,
+               c.note_id, c.template_id, c.cloze_number, ct.name AS template_name, nt.kind AS note_type_kind, nt.builtin_key AS note_type_key,
                fs.stability, fs.difficulty, fs.due, fs.reps, fs.lapses, fs.state, fs.last_review,
                bs.current_level, bs.highest_reached, bs.progress,
                ROW_NUMBER() OVER (PARTITION BY COALESCE(c.note_id, c.id) ORDER BY fs.due ASC, c.cloze_number ASC, c.id ASC) AS sibling_rank,
@@ -88,7 +88,7 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
     id: string; concept: string; front_html: string; back_html: string;
     topic_id: string; tags: string[] | null;
     card_type: string; cloze_data: unknown; change_rate: number | null; current_original_id: string | null;
-    note_id: string | null; template_id: string | null; cloze_number: number; template_name: string | null; note_type_kind: string | null;
+    note_id: string | null; template_id: string | null; cloze_number: number; template_name: string | null; note_type_kind: string | null; note_type_key: string | null;
     stability: number; difficulty: number; due: string; reps: number; lapses: number; state: number; last_review: string | null;
     current_level: number | null; highest_reached: number | null; progress: number | null; sibling_rank: number; pos: number;
   }>(sql`SELECT * FROM (${topicFilter}) ranked WHERE sibling_rank = 1 ORDER BY pos LIMIT ${limit}`);
@@ -158,6 +158,8 @@ export async function getStudyCards(db: Db, userId: string, topicId?: string, ra
     templateName: row.template_name,
     clozeNumber: row.cloze_number,
     noteTypeKind: row.note_type_kind,
+    /** The built-in type's key ("occlusion", …); null for the user's own types. */
+    noteTypeKey: row.note_type_key,
     bloomState: {
       currentLevel: row.current_level ?? 0,
       highestReached: row.highest_reached ?? 0,

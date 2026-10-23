@@ -8,6 +8,7 @@ import TopicSelector from '../../components/TopicSelector';
 import TagInput from '../../components/TagInput';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import VariationSlider from '../../components/VariationSlider';
+import OcclusionEditor from '../../components/OcclusionEditor';
 import type { CardWithState, CreateCardInput, UpdateCardInput, UpdateNoteInput } from '../../types';
 
 interface Props {
@@ -59,6 +60,8 @@ function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: Ca
   const [tags, setTags] = useState<string[]>(card.tags);
   const [topicId, setTopicId] = useState(card.topicId);
   const [changeRate, setChangeRate] = useState<number | null>(card.changeRate ?? null);
+  // Image occlusion: the Occlusion field gets the mask editor, drawn on the Image field's picture.
+  const imageKey = note.noteTypeKey === 'occlusion' ? note.fieldDefs.find(f => f.name === 'Image')?.key : undefined;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +78,13 @@ function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: Ca
         {note.fieldDefs.map(f => (
           <div key={f.key}>
             <label htmlFor={`note-field-${f.key}`} className="block text-sm text-text-muted mb-1">{f.name}</label>
+            {imageKey && f.name === 'Occlusion' ? (
+              <OcclusionEditor
+                value={fields[f.key] ?? ''}
+                imageHtml={fields[imageKey] ?? ''}
+                onChange={v => { setFields(prev => ({ ...prev, [f.key]: v })); onDirty?.(); }}
+              />
+            ) : (
             <textarea
               id={`note-field-${f.key}`}
               value={fields[f.key] ?? ''}
@@ -82,6 +92,7 @@ function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: Ca
               className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border text-text-primary text-sm focus:outline-none focus:border-accent-blue resize-y"
               rows={note.noteTypeKind === 'cloze' && f.ord === 0 ? 4 : 2}
             />
+            )}
           </div>
         ))}
         <label className="block">

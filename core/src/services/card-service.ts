@@ -221,8 +221,8 @@ export async function getCard(db: Db, userId: string, cardId: string) {
 
 /** Type, template and siblings of a typed card, for the detail view. */
 async function noteSummary(db: Db, noteId: string) {
-  const rows = await db.execute<{ id: string; note_type_id: string; type_name: string; type_kind: string; fields: Record<string, string>; field_defs: Array<{ key: string; name: string; ord: number }> }>(sql`
-    SELECT n.id, n.note_type_id, nt.name AS type_name, nt.kind AS type_kind, n.fields,
+  const rows = await db.execute<{ id: string; note_type_id: string; type_name: string; type_kind: string; type_key: string | null; fields: Record<string, string>; field_defs: Array<{ key: string; name: string; ord: number }> }>(sql`
+    SELECT n.id, n.note_type_id, nt.name AS type_name, nt.kind AS type_kind, nt.builtin_key AS type_key, n.fields,
       (SELECT json_agg(json_build_object('key', f.key, 'name', f.name, 'ord', f.ord) ORDER BY f.ord) FROM note_type_fields f WHERE f.note_type_id = nt.id) AS field_defs
     FROM notes n JOIN note_types nt ON nt.id = n.note_type_id WHERE n.id = ${noteId}
   `);
@@ -234,7 +234,7 @@ async function noteSummary(db: Db, noteId: string) {
     WHERE c.note_id = ${noteId} ORDER BY ct.ord NULLS LAST, c.cloze_number
   `);
   return {
-    id: n.id, noteTypeId: n.note_type_id, noteTypeName: n.type_name, noteTypeKind: n.type_kind, fields: n.fields,
+    id: n.id, noteTypeId: n.note_type_id, noteTypeName: n.type_name, noteTypeKind: n.type_kind, noteTypeKey: n.type_key, fields: n.fields,
     fieldDefs: n.field_defs ?? [],
     siblings: siblings.rows.map(sb => ({ id: sb.id, templateName: sb.template_name, clozeNumber: sb.cloze_number, suspended: sb.suspended })),
   };

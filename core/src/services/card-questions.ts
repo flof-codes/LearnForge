@@ -44,7 +44,8 @@ export interface TutorQueueOptions {
 
 type StudyCard = Awaited<ReturnType<typeof getStudyCards>>[number];
 interface StoredQuestion { id: string; status: "ready" | "skipped"; payload: QuestionPayload | null }
-export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicName: string; stored: StoredQuestion | null }
+/** `asCard`: shown as the card itself, never written for (image occlusion: the picture is the question). */
+export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicName: string; stored: StoredQuestion | null; asCard: boolean }
 
 /** Due cards in study order, each with its form and its fresh stored question, if one exists. */
 export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOptions): Promise<TutorQueueEntry[]> {
@@ -87,6 +88,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
       form,
       topicName: topics.get(card.topicId)?.name ?? "",
       stored: row ? { id: row.id, status: row.status === "skipped" ? "skipped" : "ready", payload: row.payload } : null,
+      asCard: card.noteTypeKey === "occlusion",
     };
   });
 }
@@ -225,6 +227,10 @@ export async function serveTutorBatch(db: Db, userId: string, opts: ServeTutorOp
   const unwritten: TutorQueueEntry[] = [];
   for (const entry of queue) {
     const { card, stored } = entry;
+    if (entry.asCard) {
+      items.push({ type: "card", card });
+      continue;
+    }
     if (!stored) {
       if (opts.serveUnwritten) items.push({ type: "card", card });
       else unwritten.push(entry);

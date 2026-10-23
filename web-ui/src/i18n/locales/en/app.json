@@ -294,6 +294,18 @@
     "deleteReviewMessage": "This review will be permanently deleted. The card's scheduling state will be recalculated from remaining reviews.",
     "deleteReviewConfirm": "Delete"
   },
+  "occlusionEditor": {
+    "cards_one": "{{count}} card",
+    "cards_other": "{{count}} cards",
+    "hideAll": "Hide all, guess one",
+    "showText": "Edit as text",
+    "showEditor": "Back to the masks",
+    "noImage": "No picture in the Image field yet. Shapes can still be edited as text.",
+    "help": "Drag on the picture to cover a label. Drag a mask to move it. Masks with the same number are asked together on one card.",
+    "card": "Card",
+    "sameNumber": "Same number = same card",
+    "delete": "Delete mask"
+  },
   "cardEditor": {
     "typedHint": "This card renders from a {{type}} note. Edit the fields; the HTML follows.",
     "siblings": "{{count}} cards share this note",
@@ -688,7 +700,7 @@
     "cloze": "Cloze",
     "known": "imported before",
     "unsupported": "not viewable yet",
-    "unsupportedHint": "Image occlusion notes are imported and kept, but left out of study until LearnForge can draw them.",
+    "unsupportedHint": "Notes of this type are imported and kept, but left out of study until LearnForge can draw them.",
     "duplicates": "{{total}} notes are already in LearnForge. {{newer}} of them changed in Anki since and will be updated; your schedule and level stay.",
     "schedule": "Schedule",
     "scheduleOption": {
@@ -708,7 +720,7 @@
       "cards": "Cards: {{created}} new, {{suspended}} suspended as in Anki",
       "topics": "Topics: {{created}} new, {{reused}} reused",
       "media": "Media files: {{stored}} stored, {{reused}} already present",
-      "unsupported": "{{count}} image occlusion cards are kept but not studied yet.",
+      "unsupported": "{{count}} cards LearnForge cannot draw yet are kept but not studied.",
       "overQuota": "{{count}} media files were skipped: your storage is full.",
       "failed_one": "{{count}} note could not be imported",
       "failed_other": "{{count}} notes could not be imported",

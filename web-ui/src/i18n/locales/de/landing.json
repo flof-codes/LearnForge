@@ -107,7 +107,7 @@
     "title": "So kommen deine Karten hinein",
     "anki": {
       "title": "Aus Anki importieren",
-      "description": "Lade eine .apkg- oder .colpkg-Datei aus einer aktuellen oder älteren Anki-Version hoch. Decks und Medien kommen mit, und du entscheidest, ob du deine Fälligkeiten behältst. Bildverdeckungs-Karten (Image Occlusion) werden importiert, bleiben aber vorerst pausiert."
+      "description": "Lade eine .apkg- oder .colpkg-Datei aus einer aktuellen oder älteren Anki-Version hoch. Decks und Medien kommen mit, und du entscheidest, ob du deine Fälligkeiten behältst. Bildverdeckungs-Karten (Image Occlusion) kommen mit und sind sofort lernbar."
     },
     "claude": {
       "title": "Im Claude-Chat erstellen",
@@ -198,7 +198,7 @@
       },
       {
         "q": "Kann ich meine Anki-Decks mitbringen?",
-        "a": "Ja. LearnForge importiert .apkg- und .colpkg-Dateien aus aktuellen und älteren Anki-Versionen. Decks und Medien kommen mit, und du entscheidest, ob jede Karte ihre Fälligkeit behält. Bildverdeckungs-Karten (Image Occlusion) werden importiert, bleiben aber vorerst pausiert."
+        "a": "Ja. LearnForge importiert .apkg- und .colpkg-Dateien aus aktuellen und älteren Anki-Versionen. Decks und Medien kommen mit, und du entscheidest, ob jede Karte ihre Fälligkeit behält. Bildverdeckungs-Karten (Image Occlusion) kommen mit und sind sofort lernbar."
       },
       {
         "q": "Ändert sich die Frage wirklich jedes Mal?",

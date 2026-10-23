@@ -37,6 +37,88 @@ hr { border: 0; border-top: 1px solid rgba(128,128,128,.3); margin: 14px 0; }
 .cloze-inactive { }
 .typeans { width: 100%; padding: 6px 8px; margin-top: 8px; }`;
 
+// Image occlusion: Anki's own fields, so an Anki note maps 1:1 and exports back unchanged.
+// The shapes render as positioned <div>s (lib/image-occlusion.ts); the script only zooms and toggles.
+const OCCLUSION_CSS = `${BASE_CSS}
+.card { text-align: center; }
+.io-header { font-weight: 600; margin-bottom: 10px; }
+.io-figure { overflow: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+.io-stage {
+  --active-shape-color: #ff8e8e; --inactive-shape-color: #ffeba2;
+  --shape-border: #212121; --highlight-shape-border: #ff5a5a;
+  position: relative; display: inline-block; vertical-align: top; max-width: 100%; line-height: 0; cursor: zoom-in;
+}
+.io-stage img { display: block; max-width: 100%; height: auto; }
+.io-zoom .io-stage { width: 200%; max-width: none; cursor: zoom-out; }
+.io-zoom .io-stage img { width: 100%; max-width: none; }
+.io-masks { position: absolute; inset: 0; pointer-events: none; }
+.io-masks > div { position: absolute; box-sizing: border-box; transform-origin: 0 0; }
+.io-masks > .cloze { background: var(--active-shape-color); border: 1px solid var(--shape-border); }
+.io-masks > .cloze-inactive { display: none; }
+.io-masks > .cloze-inactive[data-occludeinactive="1"] { display: block; background: var(--io-fill, var(--inactive-shape-color)); border: 1px solid var(--shape-border); }
+.io-masks > .cloze-highlight { background: transparent; border: 2px solid var(--highlight-shape-border); }
+.io-masks > [data-shape="ellipse"] { border-radius: 50%; }
+/* [data-ordinal] outranks the mask colours: a polygon paints its own <svg>, its box spans the image. */
+.io-masks > div[data-shape="polygon"][data-ordinal] { inset: 0; background: none; border: 0; }
+.io-masks svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.io-masks polygon { vector-effect: non-scaling-stroke; stroke: var(--shape-border); stroke-width: 1px; }
+.io-masks > .cloze polygon { fill: var(--active-shape-color); }
+.io-masks > .cloze-inactive polygon { fill: var(--io-fill, var(--inactive-shape-color)); }
+.io-masks > .cloze-highlight polygon { fill: none; stroke: var(--highlight-shape-border); stroke-width: 2px; }
+.io-masks > div[data-shape="text"] {
+  background: #fff; color: var(--io-fill, #000); border: 0; padding: 0 .2em; white-space: nowrap;
+  font-family: Arial, sans-serif; line-height: 1.2; font-size: calc(var(--io-fs) * var(--io-h, 400px));
+}
+.io-bare .io-masks > .cloze-inactive { display: none; }
+.io-toggle { margin-top: 10px; font: inherit; font-size: 14px; padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(128,128,128,.5); background: transparent; color: inherit; }`;
+
+const OCCLUSION_SCRIPT = `<script>
+(function () {
+  if (window.lfOcclusion) return;
+  window.lfOcclusion = true;
+  document.querySelectorAll(".io-stage").forEach(function (stage) {
+    var figure = stage.parentNode;
+    var size = function () { stage.style.setProperty("--io-h", stage.clientHeight + "px"); };
+    if (window.ResizeObserver) new ResizeObserver(size).observe(stage);
+    size();
+    figure.addEventListener("click", function (e) {
+      var r = stage.getBoundingClientRect();
+      var fx = (e.clientX - r.left) / r.width;
+      if (figure.classList.toggle("io-zoom")) figure.scrollLeft = fx * stage.offsetWidth - figure.clientWidth / 2;
+    });
+  });
+  var covered = document.querySelector('.cloze-inactive[data-occludeinactive="1"]');
+  document.querySelectorAll(".io-toggle").forEach(function (button) {
+    if (!covered) { button.style.display = "none"; return; }
+    button.addEventListener("click", function () {
+      document.querySelectorAll(".io-stage").forEach(function (s) { s.classList.toggle("io-bare"); });
+    });
+  });
+})();
+</script>`;
+
+const OCCLUSION_FIGURE = `{{#Header}}<div class="io-header">{{Header}}</div>{{/Header}}
+<div class="io-figure"><div class="io-stage">{{Image}}<div class="io-masks">{{cloze:Occlusion}}</div></div></div>`;
+
+const OCCLUSION_TYPE = {
+  name: "Image Occlusion",
+  kind: "cloze" as const,
+  css: OCCLUSION_CSS,
+  sortFieldKey: "f3",
+  fields: [
+    { key: "f1", name: "Occlusion", ord: 0 },
+    { key: "f2", name: "Image", ord: 1 },
+    { key: "f3", name: "Header", ord: 2 },
+    { key: "f4", name: "Back Extra", ord: 3 },
+    { key: "f5", name: "Comments", ord: 4 },
+  ],
+  templates: [{
+    ord: 0, name: "Image Occlusion",
+    frontTemplate: `${OCCLUSION_FIGURE}\n${OCCLUSION_SCRIPT}`,
+    backTemplate: `${OCCLUSION_FIGURE}\n<div><button type="button" class="io-toggle">Toggle masks</button></div>\n{{#Back Extra}}<div class="extra">{{Back Extra}}</div>{{/Back Extra}}\n${OCCLUSION_SCRIPT}`,
+  }],
+};
+
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export const BUILTIN_TYPES: Record<string, { name: string; kind: "standard" | "cloze"; css: string; sortFieldKey: string; fields: NoteTypeFieldDef[]; templates: CardTemplateDef[] }> = {
@@ -89,6 +171,7 @@ export const BUILTIN_TYPES: Record<string, { name: string; kind: "standard" | "c
       backTemplate: `{{cloze:Text}}{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}`,
     }],
   },
+  occlusion: OCCLUSION_TYPE,
 };
 
 interface TypeRow extends Record<string, unknown> {
@@ -160,7 +243,7 @@ export async function getNoteType(db: Db, userId: string, noteTypeId: string): P
   return t;
 }
 
-/** Resolves a type by id or by built-in key ("open", "choice", "cloze"), creating the built-ins if needed. */
+/** Resolves a type by id or by built-in key ("open", "choice", "cloze", "occlusion"), creating the built-ins if needed. */
 export async function resolveNoteType(db: Db, userId: string, idOrKey: string): Promise<NoteType> {
   if (idOrKey in BUILTIN_TYPES) {
     await ensureBuiltinTypes(db, userId);

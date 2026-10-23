@@ -294,17 +294,37 @@ describe("Anki import: other package formats", () => {
     expect(cloze.cards.map(c => c.clozeNumber)).toEqual([1]);
   });
 
-  it("imports image occlusion notes but keeps them out of study", async () => {
+  it("imports image occlusion notes onto the built-in type, ready to study", async () => {
     const api = await newUser("occlusion");
     const done = await importAll(api, pkg("occlusion.apkg"));
-    expect(done.preview.noteTypes.find((t: { name: string }) => t.name === "Image Occlusion").supported).toBe(false);
-    expect(done.stats.cards.unsupported).toBe(fixture.occlusion.cards);
-    const { cards } = await cardsOf(api, fixture.occlusion.guid);
-    expect(cards.every(c => c.suspended && c.suspendedBy === "unsupported")).toBe(true);
+    expect(done.preview.noteTypes.find((t: { name: string }) => t.name === "Image Occlusion")).toMatchObject({ supported: true, known: true });
+    expect(done.stats.cards).toMatchObject({ created: fixture.occlusion.cards, unsupported: 0, notRendered: 0 });
+    expect(done.stats.noteTypes).toMatchObject({ created: 0, unsupported: 0 });
+
+    const { note, cards } = await cardsOf(api, fixture.occlusion.guid);
+    const types = (await api.get("/note-types")).data as Array<{ id: string; builtinKey: string | null }>;
+    expect(types.find(t => t.id === note.noteTypeId)?.builtinKey).toBe("occlusion");
+    expect(types.filter(t => t.builtinKey === null)).toHaveLength(0);
+    const fields = Object.values(note.fields) as string[];
+    expect(fields).toContain("Bones");
+    expect(fields.find(f => f.includes("image-occlusion:rect"))).toContain("{{c2::");
+    // The picture is stored and the field points at it.
+    expect(fields.find(f => f.startsWith("<img"))).toMatch(/^<img src="(\/images|\/media)\/[0-9a-f-]{36}/);
+    expect(cards.map(c => c.clozeNumber)).toEqual([1, 2]);
+    expect(cards.every(c => !c.suspended && c.suspendedBy === null)).toBe(true);
+    expect(cards[0].frontHtml).toContain('class="cloze" data-ordinal="1" data-shape="rect" data-left=".1"');
+    expect(cards[0].frontHtml).toContain('class="cloze-inactive" data-ordinal="2"');
+    expect(cards[0].frontHtml).toContain("left:10%;top:10%;width:30%;height:20%");
+    expect(cards[0].backHtml).toContain('class="cloze-highlight" data-ordinal="1"');
+
     const due = await api.get("/study/due?limit=50");
     expect(due.status).toBe(200);
     const served = Array.isArray(due.data) ? due.data : due.data.cards;
-    expect(served).toHaveLength(0);
+    expect(served).toHaveLength(1); // siblings: one card of a note per batch
+
+    // A second import of the same package changes nothing.
+    const again = await importAll(api, pkg("occlusion.apkg"));
+    expect(again.stats.notes).toMatchObject({ created: 0, unchanged: 1 });
   });
 
   it("starts every card fresh on request, keeping suspensions", async () => {

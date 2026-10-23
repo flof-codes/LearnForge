@@ -61,6 +61,8 @@ export interface CardNoteInfo {
   noteTypeId: string;
   noteTypeName: string;
   noteTypeKind: 'standard' | 'cloze';
+  /** The built-in type's key ("occlusion", …); null for the user's own types. */
+  noteTypeKey: string | null;
   fields: Record<string, string>;
   fieldDefs: NoteFieldDef[];
   siblings: NoteSibling[];

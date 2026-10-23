@@ -3,7 +3,8 @@ import { textArray } from "../lib/sql-array.js";
 import type { Db } from "../db/types.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
-import { renderCardTemplate, clozeNumbersIn, plainClozeText, RENDERER_VERSION } from "../lib/note-renderer.js";
+import { renderCardTemplate, clozeNumbersIn, plainClozeText, occlusionsIn, RENDERER_VERSION } from "../lib/note-renderer.js";
+import { validateOcclusionField } from "../lib/image-occlusion.js";
 import { computeEmbedding } from "./embeddings.js";
 import { createInitialFsrsState } from "./fsrs.js";
 import { getNoteType, resolveNoteType, type NoteType } from "./note-types.js";
@@ -72,6 +73,17 @@ function fieldsByName(type: NoteType, fields: Record<string, string>): Record<st
   return out;
 }
 
+/**
+ * A written image occlusion note must name its picture and hold valid shapes.
+ * Imports skip this: Anki's own notes are taken as Anki wrote them.
+ */
+function checkOcclusionNote(type: NoteType, fields: Record<string, string>) {
+  if (type.builtinKey !== "occlusion") return;
+  const byName = fieldsByName(type, fields);
+  if (!/<img\s[^>]*src\s*=/i.test(byName.Image ?? "")) throw new ValidationError('Image must hold the picture: <img src="/images/<id>">');
+  validateOcclusionField(occlusionsIn(byName.Occlusion ?? ""));
+}
+
 export function deriveConcept(type: NoteType, fields: Record<string, string>): string {
   const sortKey = type.sortFieldKey ?? type.fields[0]?.key;
   const plain = (v: string) => stripHtml(plainClozeText(v)).trim();
@@ -135,7 +147,7 @@ export async function topicPath(db: Db, userId: string, topicId: string): Promis
 
 export interface CreateNoteInput {
   topic_id: string;
-  /** Note type id or built-in key: "open", "choice", "cloze". */
+  /** Note type id or built-in key: "open", "choice", "cloze", "occlusion". */
   note_type: string;
   fields: Record<string, string>;
   tags?: string[];
@@ -160,6 +172,7 @@ export async function createNote(db: Db, userId: string, input: CreateNoteInput)
   }
   const type = await resolveNoteType(db, userId, input.note_type);
   const fields = normalizeFields(type, input.fields);
+  checkOcclusionNote(type, fields);
   const tags = input.tags ?? [];
   const deck = await topicPath(db, userId, input.topic_id);
   const cardsToMake = plannedCards(type, fields, deck, tags);
@@ -249,6 +262,7 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
   const current = await getNote(db, userId, noteId);
   const type = await getNoteType(db, userId, current.noteTypeId);
   const fields = input.fields ? { ...current.fields, ...normalizeFields(type, input.fields, true) } : current.fields;
+  if (input.fields) checkOcclusionNote(type, fields);
   const tags = input.tags ?? current.tags;
   const topicId = input.topic_id ?? current.topicId;
   const deck = await topicPath(db, userId, topicId);

@@ -294,6 +294,18 @@
     "deleteReviewMessage": "Diese Wiederholung wird unwiderruflich gel\u00f6scht. Der Planungsstatus der Karte wird aus den verbleibenden Wiederholungen neu berechnet.",
     "deleteReviewConfirm": "L\u00f6schen"
   },
+  "occlusionEditor": {
+    "cards_one": "{{count}} Karte",
+    "cards_other": "{{count}} Karten",
+    "hideAll": "Alle verdecken, eine erraten",
+    "showText": "Als Text bearbeiten",
+    "showEditor": "Zurück zu den Masken",
+    "noImage": "Im Feld Image ist noch kein Bild. Die Formen lassen sich trotzdem als Text bearbeiten.",
+    "help": "Auf dem Bild ziehen, um eine Beschriftung zu verdecken. Eine Maske ziehen, um sie zu verschieben. Masken mit derselben Nummer werden gemeinsam auf einer Karte gefragt.",
+    "card": "Karte",
+    "sameNumber": "Gleiche Nummer = gleiche Karte",
+    "delete": "Maske löschen"
+  },
   "cardEditor": {
     "typedHint": "Diese Karte wird aus einer {{type}}-Notiz gerendert. Bearbeite die Felder, das HTML folgt.",
     "siblings": "{{count}} Karten teilen diese Notiz",
@@ -688,7 +700,7 @@
     "cloze": "Lückentext",
     "known": "schon importiert",
     "unsupported": "noch nicht anzeigbar",
-    "unsupportedHint": "Bildverdeckungs-Notizen werden importiert und aufbewahrt, aber nicht abgefragt, bis LearnForge sie darstellen kann.",
+    "unsupportedHint": "Notizen dieses Typs werden importiert und aufbewahrt, aber nicht abgefragt, bis LearnForge sie darstellen kann.",
     "duplicates": "{{total}} Notizen sind schon in LearnForge. {{newer}} davon wurden seither in Anki geändert und werden aktualisiert; Lernplan und Stufe bleiben.",
     "schedule": "Lernplan",
     "scheduleOption": {
@@ -708,7 +720,7 @@
       "cards": "Karten: {{created}} neu, {{suspended}} pausiert wie in Anki",
       "topics": "Themen: {{created}} neu, {{reused}} wiederverwendet",
       "media": "Mediendateien: {{stored}} gespeichert, {{reused}} schon vorhanden",
-      "unsupported": "{{count}} Bildverdeckungs-Karten sind aufbewahrt, werden aber noch nicht abgefragt.",
+      "unsupported": "{{count}} Karten, die LearnForge noch nicht darstellen kann, sind aufbewahrt, werden aber nicht abgefragt.",
       "overQuota": "{{count}} Mediendateien wurden übersprungen: dein Speicher ist voll.",
       "failed_one": "{{count}} Notiz konnte nicht importiert werden",
       "failed_other": "{{count}} Notizen konnten nicht importiert werden",
