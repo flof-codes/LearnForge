@@ -3,11 +3,13 @@ import { db } from "../db/connection.js";
 import {
   createNote, getNote, updateNote, deleteNote, listNotes,
   listNoteTypes, getNoteType, saveNoteType, deleteNoteType,
-  type CreateNoteInput, type UpdateNoteInput, type SaveNoteTypeInput,
+  appMayEditNote, type CreateNoteInput, type UpdateNoteInput, type SaveNoteTypeInput,
 } from "@learnforge/core";
-import { getUserId } from "../lib/auth-helpers.js";
+import { getUserId, getAppTokenId } from "../lib/auth-helpers.js";
+import { ForbiddenError } from "../lib/errors.js";
 
-const fieldsSchema = { type: "object", additionalProperties: { type: "string", maxLength: 20000 } };
+// Room for a figure (an inline SVG of a few tens of KB); each rendered side is still capped at 100KB.
+const fieldsSchema = { type: "object", additionalProperties: { type: "string", maxLength: 60000 } };
 
 export default async function noteRoutes(app: FastifyInstance) {
   // ── Notes ────────────────────────────────────────────────────────────
@@ -60,6 +62,11 @@ export default async function noteRoutes(app: FastifyInstance) {
     },
   }, async (req) => {
     const userId = getUserId(req);
+    // A connected app rewrites the fields of notes it created, nothing else.
+    if (getAppTokenId(req)) {
+      if (Object.keys(req.body ?? {}).some(k => k !== "fields")) throw new ForbiddenError("A connected app may only change a note's fields", "APP_TOKEN_SCOPE");
+      if (!(await appMayEditNote(db, userId, req.params.id))) throw new ForbiddenError("A connected app may only change notes it created", "APP_TOKEN_SCOPE");
+    }
     return updateNote(db, userId, req.params.id, req.body);
   });
 

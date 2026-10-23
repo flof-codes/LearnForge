@@ -270,6 +270,13 @@ GET /health
 - FSRS intervals are adjusted by study modality: chat (1.2x), web (0.95x), mcq (1.05x).
 - Topic sharing is **copy-only**: `acceptShareLink` deep-copies topic tree + cards into recipient's account with fresh bloom/fsrs state. Image files are copied on disk (new UUID filenames, independent DB rows). Revoking a link blocks new imports; already-imported copies remain untouched. Link tokens are 24-byte url-safe random.
 
+## Figures
+
+- The built-in types (version 2) have optional fields `Figure` (back, below the answer) and `Front figure` (front, parts hidden). Contract for apps: `docs/figures-contract.md`. Names and helpers: core `lib/figures.ts`; loader per card: `services/card-figures.ts`.
+- `ensureBuiltinTypes` (and `getNoteType` for an outdated copy) upgrades older copies: missing fields are added by name; an untouched copy takes the new templates and CSS, a customized one gets the figure blocks appended. Existing cards are not re-rendered (empty figure fields render nothing).
+- The tutor writes questions from the text without the figures and serves `figure`/`frontFigure` with each question; a picture-only front (or the `occlusion` type) is served as the plain card without calling the writer.
+- `CardHtmlRender` scales `.lf-figure` pictures and any `svg[viewBox]`, and posts `lf-zoom` on a tap; `FigureZoom` shows the picture in a script-less frame. Images in controls, under `[data-no-zoom]`, or under positioned overlays (occlusion masks) do not zoom.
+
 ## Media URLs
 
 - The database stores media as `/images/<id>`. Card HTML renders in a sandboxed iframe that cannot send the login token, so an `onSend` hook in `api/src/app.ts` rewrites those references in every JSON response to `/media/<id>/<sig>` (HMAC of id + owner from core `lib/media-url.ts`, secret derived from `JWT_SECRET`), prefixed with `API_PUBLIC_URL` only when that is set. Only ids the requesting user owns are signed. The links are relative on purpose: `CardHtmlRender.resolveMediaLinks` puts the web app's full API address (`VITE_API_URL`, which may include a path such as `/api`) in front of them before the card frame is built, so neither the proxy's Host handling nor a path prefix can misdirect them. A `preValidation` hook turns signed URLs in request bodies back, so they never reach the database. `/export` keeps the stored form.

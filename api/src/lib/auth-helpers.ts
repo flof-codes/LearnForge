@@ -8,6 +8,11 @@ export function getUserId(request: FastifyRequest): string {
   return (request.user as { sub: string }).sub;
 }
 
+/** The id of the connected app's token when the request carries one, else null (a signed-in user). */
+export function getAppTokenId(request: FastifyRequest): string | null {
+  return (request.user as { app?: string }).app ?? null;
+}
+
 export async function requireAdmin(request: FastifyRequest): Promise<string> {
   const userId = getUserId(request);
   const [user] = await db

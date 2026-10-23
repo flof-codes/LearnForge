@@ -7,6 +7,7 @@ import { tutorService } from '../../api/tutor';
 import TermText from './TermText';
 import MicButton from './MicButton';
 import CardMenu from './CardMenu';
+import FigureView from './FigureView';
 import { BottomBar, barButton, primaryButton, type QuestionAnswer } from './QuestionCard';
 import { dictationSupported } from '../../hooks/useDictation';
 import { suggestedRating, tutorErrorKey, isStaleTicket, FOLLOW_UP_LIMIT } from '../../utils/tutor';
@@ -131,6 +132,8 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
           <TermText text={payload.stem} terms={payload.terms} onLookup={() => setLookedUp(true)} />
         </div>
 
+        {item.frontFigure && !(done && item.figure) && <FigureView html={item.frontFigure} />}
+
         {!done && busy !== 'grade' && (
           <p className="text-sm text-text-muted">{t(dictate && !mic ? 'tutor.openHintKeyboardMic' : mic ? 'tutor.openHintMic' : 'tutor.openHint')}</p>
         )}
@@ -174,6 +177,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
             {(dontKnow || showModel) && (
               <p className="text-[15px]"><span className="text-text-muted">{t('tutor.modelAnswer')} </span>{payload.answer}</p>
             )}
+            {done && item.figure && <div className="pt-1"><FigureView html={item.figure} /></div>}
             {grade && !showModel && (
                 <button type="button" onClick={() => setShowModel(true)} className="text-sm px-3 py-1 rounded-full border border-border hover:bg-bg-hover transition-colors">{t('tutor.showModel')}</button>
             )}

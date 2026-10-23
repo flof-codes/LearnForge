@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import CardPreview from './CardPreview';
 import BloomBadge from '../../components/BloomBadge';
 import FocusBadge from '../../components/FocusBadge';
+import PictureMark from '../../components/PictureMark';
 import { useIsPhone } from '../../hooks/useIsPhone';
 import type { Topic } from '../../types';
 
@@ -10,6 +11,8 @@ interface CardData {
   id: string;
   concept: string;
   frontHtml?: string;
+  hasPicture?: boolean;
+  thumbnail?: string | null;
   topicId?: string;
   bloomState?: { currentLevel: number };
   tags: string[];
@@ -53,6 +56,7 @@ export default function CardGrid({ cards, topics }: Props) {
               state={{ cardIds }}
               className="flex items-start gap-3 px-4 py-3"
             >
+              <PictureMark thumbnail={card.thumbnail} hasPicture={card.hasPicture} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium line-clamp-2">{card.concept}</p>
                 {meta && <p className="text-xs text-text-muted truncate mt-0.5">{meta}</p>}
@@ -80,6 +84,7 @@ export default function CardGrid({ cards, topics }: Props) {
           key={card.id}
           id={card.id}
           frontHtml={card.frontHtml}
+          hasPicture={card.hasPicture}
           bloomLevel={card.bloomState?.currentLevel ?? 0}
           tags={card.tags ?? []}
           isDue={card.fsrsState ? new Date(card.fsrsState.due) <= new Date() : false}

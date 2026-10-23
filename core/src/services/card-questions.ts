@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import { NotFoundError, ValidationError, StaleTicketError } from "../lib/errors.js";
-import { stripHtml } from "../lib/strip-html.js";
+import { withoutFigures, questionText, figureLabels, hasPictures, isPictureOnly } from "../lib/figures.js";
+import { loadCardFigures, figuresFor, type CardFigureInfo } from "./card-figures.js";
 import { loadTopicRates } from "./change-rate.js";
 import { getStudyCards, getStudySummary } from "./study-service.js";
 import { getSession } from "./session-service.js";
@@ -25,7 +26,7 @@ export * from "./question-forms.js";
  */
 
 /** Bump when the rules in lib/question-prompt.ts change; older rows stop being served. */
-export const QUESTION_PROMPT_VERSION = 1;
+export const QUESTION_PROMPT_VERSION = 2;
 export const QUESTION_BATCH_SIZE = 5;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -45,7 +46,10 @@ export interface TutorQueueOptions {
 type StudyCard = Awaited<ReturnType<typeof getStudyCards>>[number];
 interface StoredQuestion { id: string; status: "ready" | "skipped"; payload: QuestionPayload | null }
 /** `asCard`: shown as the card itself, never written for (image occlusion: the picture is the question). */
-export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicName: string; stored: StoredQuestion | null; asCard: boolean }
+export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicName: string; stored: StoredQuestion | null; asCard: boolean; figures: CardFigureInfo }
+
+/** Stands in for a stored skip: a picture-only card is never sent to the writer and is shown as it is. */
+const PICTURE_ONLY: StoredQuestion = { id: "", status: "skipped", payload: null };
 
 /** Due cards in study order, each with its form and its fresh stored question, if one exists. */
 export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOptions): Promise<TutorQueueEntry[]> {
@@ -74,8 +78,10 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
   `);
 
   const topics = await loadTopicRates(db, userId);
+  const figures = await loadCardFigures(db, userId, cards.map(c => c.id));
   const band = difficultyBand(opts.difficulty);
   return cards.map(card => {
+    const figs = figuresFor(figures, card.id);
     const form = pickQuestionForm({
       difficulty: opts.difficulty,
       level: card.bloomState.currentLevel,
@@ -83,19 +89,24 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
       answerBy: opts.answerBy,
     });
     const row = rows.rows.find(r => r.card_id === card.id && r.bloom_level === card.bloomState.currentLevel && r.form === form && difficultyBand(r.difficulty) === band);
+    const stored: StoredQuestion | null = row ? { id: row.id, status: row.status === "skipped" ? "skipped" : "ready", payload: row.payload } : null;
     return {
       card,
       form,
       topicName: topics.get(card.topicId)?.name ?? "",
-      stored: row ? { id: row.id, status: row.status === "skipped" ? "skipped" : "ready", payload: row.payload } : null,
+      stored: stored ?? (isPictureOnly(card.frontHtml, figs, figs.builtinKey) ? PICTURE_ONLY : null),
       asCard: card.noteTypeKey === "occlusion",
+      figures: figs,
     };
   });
 }
 
 /** What the question writer needs to know about one card. */
 export function toQuestionRequest(entry: TutorQueueEntry, difficulty: number): QuestionRequest {
-  const { card } = entry;
+  const { card, figures } = entry;
+  // Figures are shown by the app around the question, so they stay out of the text and the picture check.
+  const front = withoutFigures(card.frontHtml, figures);
+  const back = withoutFigures(card.backHtml, figures);
   return {
     cardId: card.id,
     form: entry.form,
@@ -104,10 +115,13 @@ export function toQuestionRequest(entry: TutorQueueEntry, difficulty: number): Q
     changeRate: card.changeRate,
     topicName: entry.topicName,
     concept: card.concept,
-    frontText: stripHtml(card.frontHtml).slice(0, 1200),
-    backText: stripHtml(card.backHtml).slice(0, 2400),
+    frontText: questionText(front).slice(0, 1200),
+    backText: questionText(back).slice(0, 2400),
     isCloze: card.noteTypeKind === "cloze" || card.cardType === "cloze",
-    hasImages: /<img[\s>]/i.test(card.frontHtml + card.backHtml),
+    hasImages: hasPictures(front + back),
+    figure: figures.figure || figures.frontFigure
+      ? { withStem: !!figures.frontFigure, afterAnswer: !!figures.figure, labels: figureLabels(figures.figure ?? figures.frontFigure) }
+      : null,
     original: card.original
       ? {
           question: card.original.questionText,
@@ -204,6 +218,10 @@ export interface TutorQuestion {
   payload: QuestionPayload;
   frontHtml: string;
   backHtml: string;
+  /** The card's full figure, shown once the learner has answered; null when it has none. */
+  figure: string | null;
+  /** The figure with parts hidden, shown with the stem. */
+  frontFigure: string | null;
 }
 export interface TutorPlainCard { type: "card"; card: StudyCard }
 export type TutorItem = TutorQuestion | TutorPlainCard;
@@ -258,6 +276,8 @@ export async function serveTutorBatch(db: Db, userId: string, opts: ServeTutorOp
       payload: stored.payload,
       frontHtml: card.frontHtml,
       backHtml: card.backHtml,
+      figure: entry.figures.figure,
+      frontFigure: entry.figures.frontFigure,
     });
   }
   if (items.length > 0) await db.execute(sql`UPDATE study_sessions SET last_activity = NOW() WHERE id = ${session.id}`);
@@ -305,7 +325,7 @@ export async function getAnswerContext(db: Db, userId: string, questionId: strin
     bloomLevel: r.card_level,
     topicName: r.topic_name,
     concept: r.concept,
-    backText: stripHtml(r.back_html).slice(0, 2400),
+    backText: questionText(r.back_html).slice(0, 2400),
     stem: r.payload.stem,
     modelAnswer: open?.answer ?? "",
     keyPoints: open?.keyPoints ?? [],

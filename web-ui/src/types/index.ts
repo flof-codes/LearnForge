@@ -456,6 +456,10 @@ interface TutorQuestionBase {
   /** The card behind the question, for the card menu. */
   frontHtml: string;
   backHtml: string;
+  /** The card's full figure (HTML), shown once the learner has answered. */
+  figure: string | null;
+  /** The figure with the asked parts hidden, shown with the stem. */
+  frontFigure: string | null;
 }
 export type TutorQuestion =
   | (TutorQuestionBase & { form: 'choice'; payload: ChoicePayload })

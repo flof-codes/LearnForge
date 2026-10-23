@@ -23,9 +23,11 @@ const PUBLIC_PREFIXES = ["/shares/preview/", "/media/"];
 
 /**
  * Everything a connected app (Lecture Scribe) may call with its own bearer token:
- * read the topics, look for cards that exist already, create topics and cards.
- * No study, no edit, no delete, nothing under /auth or /billing. A token that
- * asks for anything else gets a 403, so a leaked one cannot touch existing cards.
+ * read the topics, look for cards that exist already, create topics and cards,
+ * upload pictures for them, and rewrite the fields of notes it created itself
+ * (`source_ref` starting "scribe:", checked in the notes route). No study, no
+ * delete, nothing under /auth or /billing. A token that asks for anything else
+ * gets a 403, so a leaked one cannot touch cards the user made.
  */
 const UUID = "[0-9a-fA-F-]{36}";
 const APP_TOKEN_ROUTES: Array<[method: string, path: RegExp]> = [
@@ -37,6 +39,8 @@ const APP_TOKEN_ROUTES: Array<[method: string, path: RegExp]> = [
   ["GET", /^\/cards\/search$/],
   ["GET", new RegExp(`^/context/topic/${UUID}$`)],
   ["POST", /^\/notes$/],
+  ["PUT", new RegExp(`^/notes/${UUID}$`)],
+  ["POST", /^\/images$/],
   ["POST", /^\/cards$/],
 ];
 

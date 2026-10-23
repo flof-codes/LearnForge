@@ -1,0 +1,201 @@
+<title>Figures on Cards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: one reading column; before/after pairs as two equal columns that stack on a phone. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --fg: #1b2230; --muted: #5b6475; --line: #dde1e8;
+  --accent: #2f5bd3; --ok: #1f7a45; --warn: #9a5b00; --bad: #b42318;
+  --ok-bg: #e5f4eb; --warn-bg: #fbefd9; --bad-bg: #fde8e6; --accent-bg: #e7eefc;
+  --display: "Fraunces", Georgia, serif;
+  --body: "Source Sans 3", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --surface: #1a2029; --fg: #e6e9ef; --muted: #9aa3b2; --line: #2b3340;
+  --accent: #7ea2ff; --ok: #6fd39a; --warn: #f0b85a; --bad: #ff8a80;
+  --ok-bg: #173325; --warn-bg: #3a2c12; --bad-bg: #3d1d1a; --accent-bg: #1d2a4a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --fg: #e6e9ef; --muted: #9aa3b2; --line: #2b3340;
+  --accent: #7ea2ff; --ok: #6fd39a; --warn: #f0b85a; --bad: #ff8a80;
+  --ok-bg: #173325; --warn-bg: #3a2c12; --bad-bg: #3d1d1a; --accent-bg: #1d2a4a; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; } h2 { font-size: 1.45rem; } h3 { font-size: 1.05rem; font-family: var(--body); font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 10px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.tile b { font-family: var(--display); font-size: 1.6rem; font-weight: 600; }
+.tile .k { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tile p { font-size: .92rem; }
+.tile.ok b { color: var(--ok); } .tile.warn b { color: var(--warn); } .tile.call b { color: var(--accent); }
+section { display: grid; gap: 16px; }
+.pair { display: grid; gap: 10px; }
+.pair .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.pair.phone .cols { grid-template-columns: repeat(2, minmax(0, 292px)); }
+figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
+figure a { display: block; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { font-size: .85rem; color: var(--muted); }
+.chip { display: inline-block; font-size: .75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; vertical-align: 1px; }
+.chip.before { background: var(--bad-bg); color: var(--bad); } .chip.after { background: var(--ok-bg); color: var(--ok); }
+.chip.ok { background: var(--ok-bg); color: var(--ok); } .chip.warn { background: var(--warn-bg); color: var(--warn); }
+.note { font-size: .95rem; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+code { font-family: var(--mono); font-size: .84em; background: var(--accent-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.decision { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; }
+.decision dl { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 14px; margin: 0; }
+.decision dt { color: var(--muted); font-size: .88rem; } .decision dd { margin: 0; }
+ol, ul { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; }
+.small { font-size: .85rem; color: var(--muted); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid3 { grid-template-columns: minmax(0, 1fr); }
+  .pair.phone .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .decision dl { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) { .pair:not(.phone) .cols { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">LearnForge · Figures on cards · 23 Oct 2026 · branch <code>claude/visual-figures-5825d9</code></div>
+  <h1>Cards can carry a picture that holds the answer</h1>
+  <p>Typed cards get a <b>Figure</b> (back, below the answer) and a <b>Front figure</b> (front, parts hidden). Lecture Scribe can upload pictures and fill these fields with its app token, the tutor shows the figures around its questions, and every card view scales, zooms and themes them.</p>
+</header>
+
+<div class="tiles">
+  <div class="tile ok"><span class="k">Done</span><b>4 / 4</b><p>Fields + upgrade, token upload and note edit, tutor, UI fixes.</p></div>
+  <div class="tile ok"><span class="k">Verified</span><b id="t-tests">617 / 618</b><p>Full suite, 7 tests new. The 1 failure needs embeddings, which this run had off. 94 screenshots.</p></div>
+  <div class="tile warn"><span class="k">Open</span><b>3</b><p>Real Claude writer not run, Scribe not checked against the contract, merge with the occlusion branch.</p></div>
+  <div class="tile call"><span class="k">Your call</span><b>3</b><p>Merge to main, question rewrite cost, app edits over your own edits.</p></div>
+</div>
+
+<section>
+  <h2>Before and after</h2>
+  <p class="note">Same test card in both: a wide SVG diagram (1200×300, drawn in <code>currentColor</code>), a tall photo (600×1400) and a small inline heart icon. Before, the pictures sat in the Answer field because figure fields did not exist. Click any image for full size.</p>
+
+  <div class="pair phone">
+    <h3>Flip review, back side, phone dark</h3>
+    <div class="cols">
+      <figure><a href="2026-10-23-figures/before-flip-back-phone-dark.jpg"><img src="2026-10-23-figures/before-flip-back-phone-dark.jpg" alt="Before: diagram cut off at the right, photo fills the screen"></a><figcaption><span class="chip before">before</span> The diagram keeps its 1200 px and is cut off after the first box.</figcaption></figure>
+      <figure><a href="2026-10-23-figures/after-flip-back-phone-dark.jpg"><img src="2026-10-23-figures/after-flip-back-phone-dark.jpg" alt="After: whole diagram fits the width, white lines on dark"></a><figcaption><span class="chip after">after</span> The whole diagram fits the width and follows the dark theme.</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="pair phone">
+    <h3>Tall photo, phone light</h3>
+    <div class="cols">
+      <figure><a href="2026-10-23-figures/before-flip-back-phone-light.jpg"><img src="2026-10-23-figures/before-flip-back-phone-light.jpg" alt="Before: photo several screens tall"></a><figcaption><span class="chip before">before</span> The photo runs about 2.5 screens tall; the explanation is far below.</figcaption></figure>
+      <figure><a href="2026-10-23-figures/after-photo-flip-back-phone-light.jpg"><img src="2026-10-23-figures/after-photo-flip-back-phone-light.jpg" alt="After: photo capped near two thirds of the screen, explanation visible"></a><figcaption><span class="chip after">after</span> A figure image stays within about two thirds of the screen; a tap opens it full size.</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="pair phone">
+    <h3>Tutor: question, then answer (phone, stub writer)</h3>
+    <div class="cols">
+      <figure><a href="2026-10-23-figures/after-tutor-question-phone-light.jpg"><img src="2026-10-23-figures/after-tutor-question-phone-light.jpg" alt="Question with the front figure showing question marks for hidden boxes"></a><figcaption><span class="chip after">after</span> The front figure, with the asked boxes as “?”, sits below the stem.</figcaption></figure>
+      <figure><a href="2026-10-23-figures/after-tutor-answered-phone-light.jpg"><img src="2026-10-23-figures/after-tutor-answered-phone-light.jpg" alt="After answering, the full figure appears above the explanation"></a><figcaption><span class="chip after">after</span> After the answer the full figure replaces it, above the explanation. Before: text only (<a href="2026-10-23-figures/before-tutor-answered-phone-light.jpg">screenshot</a>).</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="pair">
+    <h3>Card detail, desktop dark</h3>
+    <div class="cols">
+      <figure><a href="2026-10-23-figures/before-detail-desktop-dark.jpg"><img src="2026-10-23-figures/before-detail-desktop-dark.jpg" alt="Before: diagram cut off in the back column"></a><figcaption><span class="chip before">before</span> Cut off in the back column; the front has no picture at all.</figcaption></figure>
+      <figure><a href="2026-10-23-figures/after-detail-desktop-dark.jpg"><img src="2026-10-23-figures/after-detail-desktop-dark.jpg" alt="After: front shows the figure with question marks, back the full figure"></a><figcaption><span class="chip after">after</span> Front: figure with parts hidden. Back: the full figure; the front's version steps aside.</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="pair">
+    <h3>Card editor, desktop light</h3>
+    <div class="cols">
+      <figure><a href="2026-10-23-figures/before-editor-desktop-light.jpg"><img src="2026-10-23-figures/before-editor-desktop-light.jpg" alt="Before: SVG markup inside the Answer textarea"></a><figcaption><span class="chip before">before</span> Raw SVG and image markup in the Answer box; no way to upload.</figcaption></figure>
+      <figure><a href="2026-10-23-figures/after-editor-desktop-light.jpg"><img src="2026-10-23-figures/after-editor-desktop-light.jpg" alt="After: Figure and Front figure fields with preview and upload button"></a><figcaption><span class="chip after">after</span> Each figure field: preview, upload / replace, remove; markup folded away.</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="pair phone">
+    <h3>Card list, phone light</h3>
+    <div class="cols">
+      <figure><a href="2026-10-23-figures/before-browse-phone-light.jpg"><img src="2026-10-23-figures/before-browse-phone-light.jpg" alt="Before: no sign that a card has a picture"></a><figcaption><span class="chip before">before</span> Nothing tells a picture card apart.</figcaption></figure>
+      <figure><a href="2026-10-23-figures/after-browse-phone-light.jpg"><img src="2026-10-23-figures/after-browse-phone-light.jpg" alt="After: photo thumbnail and a picture icon on the rows"></a><figcaption><span class="chip after">after</span> Uploaded image: a thumbnail. Drawn figure: a picture icon. Rows stay full-bleed.</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <figure><a href="2026-10-23-figures/after-zoom-phone-dark.jpg"><img src="2026-10-23-figures/after-zoom-phone-dark.jpg" alt="Zoomed diagram on a phone, panning sideways"></a><figcaption><span class="chip after">new</span> Tap to zoom, phone: a wide drawing opens at twice the screen width and pans sideways.</figcaption></figure>
+    <figure><a href="2026-10-23-figures/after-zoom-desktop-light.jpg"><img src="2026-10-23-figures/after-zoom-desktop-light.jpg" alt="Zoomed photo on desktop"></a><figcaption><span class="chip after">new</span> Desktop: the picture as large as the window allows. Esc or × closes.</figcaption></figure>
+    <figure><a href="2026-10-23-figures/after-photo-tutor-answered-phone-dark.jpg"><img src="2026-10-23-figures/after-photo-tutor-answered-phone-dark.jpg" alt="Tutor answered with photo figure in dark mode"></a><figcaption><span class="chip after">after</span> Tutor with a photo figure, dark mode.</figcaption></figure>
+  </div>
+  <p class="small">Audited views: flip review (front, back), tutor (question, answered), card detail, card editor, card list, search results, topic card list, grid preview on desktop. Each at 1280 and 390 px, light and dark. The fixed bottom bars sit mid-page in some full-page shots; that is the capture stretching the page, not the app.</p>
+</section>
+
+<section>
+  <h2>The contract Scribe is built against</h2>
+  <p class="note">Full text in <code>docs/figures-contract.md</code>.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>What</th><th>How</th><th>Limits</th></tr></thead>
+    <tbody>
+      <tr><td>Figure fields</td><td><code>Figure</code> and <code>Front figure</code> on <code>open</code>, <code>choice</code>, <code>cloze</code>, sent by name in <code>POST /notes</code> / <code>PUT /notes/:id</code></td><td>Optional; empty renders nothing</td></tr>
+      <tr><td>Field value</td><td>Inline <code>&lt;svg viewBox=…&gt;</code> in <code>currentColor</code>, or <code>&lt;img src="/images/&lt;id&gt;"&gt;</code></td><td>Field ≤ 60 000 chars (was 20 000), each rendered side ≤ 100 KB</td></tr>
+      <tr><td>Upload</td><td><code>POST /images</code>, multipart field <code>file</code>, app token allowed → <code>201 {id, url: "/images/&lt;id&gt;"}</code></td><td>png, jpeg, webp, svg; 10 MB; account quota now enforced</td></tr>
+      <tr><td>Rewrite</td><td><code>PUT /notes/:id</code> with <code>{fields}</code> only, app token allowed</td><td>Only notes with <code>source_ref</code> starting <code>scribe:</code>; else 403 <code>APP_TOKEN_SCOPE</code></td></tr>
+      <tr><td>Old accounts</td><td>Built-in copies upgrade to version 2 on first use: fields added, untouched designs replaced, customized ones get the blocks appended</td><td>No re-render, no data change on existing notes</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Your call</h2>
+  <div class="decision">
+    <h3>1 · Merge and deploy</h3>
+    <dl><dt>Situation</dt><dd>Everything is committed on the branch; nothing merged or deployed. The occlusion branch also touches <code>note-types.ts</code> and will conflict on the <code>BUILTIN_TYPES_VERSION</code> line.</dd>
+    <dt>Recommendation</dt><dd>Merge this branch first, then rebase the occlusion branch on it and bump the version to 3 there if it changes built-ins.</dd>
+    <dt>Alternative</dt><dd>Merge occlusion first; this branch then takes version 3.</dd></dl>
+  </div>
+  <div class="decision">
+    <h3>2 · Tutor questions are written once more</h3>
+    <dl><dt>Situation</dt><dd>The writer's rules changed (figures), so <code>QUESTION_PROMPT_VERSION</code> went from 1 to 2, as the project rule asks. Every stored question is dropped and rewritten on the next study session, on each user's own API key.</dd>
+    <dt>Recommendation</dt><dd>Keep the bump: old questions were written with picture cards skipped.</dd>
+    <dt>Alternative</dt><dd>Leave the version at 1; old questions keep serving, new rules apply only to new and edited cards.</dd></dl>
+  </div>
+  <div class="decision">
+    <h3>3 · Scribe may overwrite your edits</h3>
+    <dl><dt>Situation</dt><dd>With the token, Scribe may rewrite the fields of notes it created. If you edited such a note in LearnForge, Scribe's next rewrite replaces your text.</dd>
+    <dt>Recommendation</dt><dd>Ship as is; later, refuse an app rewrite when the note was changed in LearnForge after the upload (409), so Scribe can ask.</dd>
+    <dt>Alternative</dt><dd>Add that 409 guard now (small change in <code>appMayEditNote</code>, plus Scribe has to handle it).</dd></dl>
+  </div>
+</section>
+
+<section>
+  <h2>Open questions</h2>
+  <ul>
+    <li>☐ Run one session with the real Claude writer on picture cards. <i>Default: you, on your key, before deploy.</i></li>
+    <li>☐ Check Scribe's upload code against <code>docs/figures-contract.md</code>. <i>Default: the Scribe session does it.</i></li>
+    <li>☐ Old cards keep their stored HTML until their next edit (new figure CSS is not in them, but they have no figures). <i>Default: fine as is.</i></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Next steps</h2>
+  <ol>
+    <li><b>Florian:</b> answer 1–3 above.</li>
+    <li><b>Claude (Scribe session):</b> run the checklist in the contract doc against Scribe's <code>learnforge.ts</code>.</li>
+    <li><b>Claude:</b> after your OK on 1, merge, then rebase the occlusion branch.</li>
+    <li><b>Florian:</b> one study session with the real key on a picture card.</li>
+  </ol>
+</section>
+
+<p class="small" id="method">Method: integration suites run against the test stack with the canned question writer (<code>TUTOR_MODEL=stub</code>) and embeddings off. Screenshots with Playwright 1.62 (Chromium, device scale 2) on a separate test stack; the “before” set was taken on the base commit with the same card content.</p>
+</div>

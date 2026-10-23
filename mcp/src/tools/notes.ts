@@ -14,12 +14,12 @@ function fail(err: unknown) {
   return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };
 }
 
-const fields = z.record(z.string(), z.string().max(20000)).describe("Field values as HTML, keyed by field name (or key f1, f2 …)");
+const fields = z.record(z.string(), z.string().max(60000)).describe("Field values as HTML, keyed by field name (or key f1, f2 …)");
 
 export function registerNoteTools(server: McpServer, db: Db, userId: string) {
   server.tool(
     "create_note",
-    "Create a typed note; the server renders one card per template (or per cloze gap) and schedules each. Built-in types: 'open' (Question, Answer, Explanation), 'choice' (Question, Option A–F, Correct, Explanation), 'cloze' (Text with {{c1::answer::hint}} gaps, Extra). Use create_card only for a Freeform card with its own HTML. Preview the fields to the learner first and wait for approval.",
+    "Create a typed note; the server renders one card per template (or per cloze gap) and schedules each. Built-in types: 'open' (Question, Answer, Explanation), 'choice' (Question, Option A–F, Correct, Explanation), 'cloze' (Text with {{c1::answer::hint}} gaps, Extra). Each also has the optional fields Figure (shown on the back below the answer) and Front figure (shown below the question, with the asked parts hidden); fill them only when the picture carries the answer, as an inline <svg viewBox=…> drawn in currentColor or <img src=\"/images/<id>\">. Use create_card only for a Freeform card with its own HTML. Preview the fields to the learner first and wait for approval.",
     {
       topic_id: z.string().uuid(),
       note_type: z.string().min(1).describe("'open', 'choice', 'cloze' or a note type id"),

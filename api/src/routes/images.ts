@@ -6,12 +6,12 @@ import { mkdir, unlink, stat } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { createWriteStream } from "node:fs";
 import path from "node:path";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/connection.js";
-import { images, extFromMime, verifyMediaSignature } from "@learnforge/core";
+import { images, extFromMime, verifyMediaSignature, verifyCardOwnership } from "@learnforge/core";
 import { config, mediaUrlSecret } from "../config.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
-import { getUserId } from "../lib/auth-helpers.js";
+import { getUserId, getAppTokenId } from "../lib/auth-helpers.js";
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/png",
@@ -23,6 +23,9 @@ const ALLOWED_MIME_TYPES = new Set([
   "audio/wav",
   "audio/ogg",
 ]);
+
+/** A connected app uploads figures for its cards: pictures only, no audio. */
+const APP_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -64,9 +67,10 @@ export default async function imageRoutes(app: FastifyInstance) {
       throw new ValidationError("No file uploaded");
     }
 
-    if (!ALLOWED_MIME_TYPES.has(data.mimetype)) {
+    const allowed = getAppTokenId(request) ? APP_MIME_TYPES : ALLOWED_MIME_TYPES;
+    if (!allowed.has(data.mimetype)) {
       throw new ValidationError(
-        `Unsupported mime type: ${data.mimetype}. Allowed: ${[...ALLOWED_MIME_TYPES].join(", ")}`,
+        `Unsupported mime type: ${data.mimetype}. Allowed: ${[...allowed].join(", ")}`,
       );
     }
 
@@ -82,6 +86,9 @@ export default async function imageRoutes(app: FastifyInstance) {
       cardIdField.value.length > 0
     ) {
       cardId = cardIdField.value;
+      // A file may only be attached to a card of the uploader.
+      if (!UUID_RE.test(cardId)) throw new ValidationError("card_id must be a UUID");
+      await verifyCardOwnership(db, cardId, userId);
     }
 
     await ensureImageDir();
@@ -100,6 +107,16 @@ export default async function imageRoutes(app: FastifyInstance) {
       throw new ValidationError(`File exceeds maximum size of ${MAX_FILE_SIZE} bytes`);
     }
 
+    const sizeBytes = (await stat(filePath)).size;
+    const [usage] = await db
+      .select({ used: sql<number>`COALESCE(SUM(${images.sizeBytes}), 0)::bigint` })
+      .from(images)
+      .where(eq(images.userId, userId));
+    if (Number(usage?.used ?? 0) + sizeBytes > config.mediaQuotaBytes) {
+      await unlink(filePath).catch(() => {});
+      throw new ValidationError("Media storage is full for this account");
+    }
+
     // Insert DB record (store original filename, not the on-disk UUID name)
     const [row] = await db
       .insert(images)
@@ -109,7 +126,7 @@ export default async function imageRoutes(app: FastifyInstance) {
         userId,
         filename: data.filename,
         mimeType: data.mimetype,
-        sizeBytes: (await stat(filePath)).size, // counts toward the per-user media quota
+        sizeBytes, // counts toward the per-user media quota
       })
       .returning();
 

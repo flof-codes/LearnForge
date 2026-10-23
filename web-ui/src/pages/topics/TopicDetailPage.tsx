@@ -11,6 +11,7 @@ import ShareTopicModal from './ShareTopicModal';
 import DeleteTopicModal from './DeleteTopicModal';
 import TopicBreadcrumb from '../../components/TopicBreadcrumb';
 import BloomBadge from '../../components/BloomBadge';
+import PictureMark from '../../components/PictureMark';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
 import DueForecastChart from '../../components/DueForecastChart';
@@ -25,6 +26,8 @@ interface ListCard {
   tags: string[];
   topicId: string;
   frontHtml: string;
+  hasPicture?: boolean;
+  thumbnail?: string | null;
   createdAt: string;
   updatedAt: string;
   bloomState: { currentLevel: number | null; highestReached: number | null };
@@ -232,14 +235,17 @@ export default function TopicDetailPage() {
                 <Link
                   key={card.id}
                   to={`/dashboard/cards/${card.id}`}
-                  className="block px-4 py-3 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-4 hover:bg-bg-surface transition-colors"
+                  className="flex items-start gap-3 px-4 py-3 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-4 hover:bg-bg-surface transition-colors"
                 >
-                  <p className="text-sm line-clamp-2 mb-2">{card.concept}</p>
-                  <div className="flex items-center gap-2">
-                    <BloomBadge level={card.bloomState?.currentLevel ?? 0} />
-                    {card.tags?.length > 0 && (
-                      <span className="text-xs text-text-muted">{card.tags.slice(0, 2).join(', ')}</span>
-                    )}
+                  <PictureMark thumbnail={card.thumbnail} hasPicture={card.hasPicture} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm line-clamp-2 mb-2">{card.concept}</p>
+                    <div className="flex items-center gap-2">
+                      <BloomBadge level={card.bloomState?.currentLevel ?? 0} />
+                      {card.tags?.length > 0 && (
+                        <span className="text-xs text-text-muted">{card.tags.slice(0, 2).join(', ')}</span>
+                      )}
+                    </div>
                   </div>
                 </Link>
               ))}

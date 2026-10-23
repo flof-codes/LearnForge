@@ -45,7 +45,7 @@ export {
   type NoteType, type SaveNoteTypeInput, type NoteTypeFieldDef, type CardTemplateDef,
 } from "./services/note-types.js";
 export {
-  createNote, getNote, updateNote, deleteNote, listNotes, normalizeFields, rerenderNotesOfType,
+  createNote, getNote, updateNote, deleteNote, listNotes, normalizeFields, rerenderNotesOfType, appMayEditNote,
   type Note, type NoteCardSummary, type CreateNoteInput, type UpdateNoteInput,
 } from "./services/note-service.js";
 export { convertLegacyClozeCards, type LegacyClozeReport } from "./services/legacy-cloze.js";
