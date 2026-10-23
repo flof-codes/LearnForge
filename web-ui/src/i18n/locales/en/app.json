@@ -556,6 +556,12 @@
     "show": "Show due history",
     "hide": "Hide due history"
   },
+  "reviewHistory": {
+    "title": "Review History",
+    "total": "Reviews",
+    "show": "Show review history",
+    "hide": "Hide review history"
+  },
   "dueForecast": {
     "title": "Due Forecast",
     "overdue": "{{count}} overdue",

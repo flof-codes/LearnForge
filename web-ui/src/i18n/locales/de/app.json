@@ -556,6 +556,12 @@
     "show": "Fälligkeitsverlauf anzeigen",
     "hide": "Fälligkeitsverlauf ausblenden"
   },
+  "reviewHistory": {
+    "title": "Wiederholungsverlauf",
+    "total": "Wiederholungen",
+    "show": "Wiederholungsverlauf anzeigen",
+    "hide": "Wiederholungsverlauf ausblenden"
+  },
   "dueForecast": {
     "title": "F\u00e4lligkeitsvorhersage",
     "overdue": "{{count}} \u00fcberf\u00e4llig",

@@ -6,5 +6,5 @@ export const studyService = {
   stats:    (topicId?: string)                                      => api.get<StudyStats>('/study/stats', { params: { topic_id: topicId } }),
   due:      (topicId?: string, limit = 20)                          => api.get<DueCard[]>('/study/due', { params: { topic_id: topicId, limit } }),
   forecast: (topicId?: string, range: 'month' | 'year' = 'month')  => api.get<DueForecast>('/study/due-forecast', { params: { topic_id: topicId, range } }),
-  history:  (kind: HistoryKind, range: CardHistoryRange)            => api.get<CardHistory>(kind === 'due' ? '/study/due-history' : '/study/card-history', { params: { range } }),
+  history:  (kind: HistoryKind, range: CardHistoryRange)            => api.get<CardHistory>(`/study/${kind === 'cards' ? 'card' : kind === 'due' ? 'due' : 'review'}-history`, { params: { range } }),
 };

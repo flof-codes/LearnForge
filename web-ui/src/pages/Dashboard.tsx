@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { Fragment, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Plus, Layers, Flame, Sparkles, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,8 @@ function useIsDesktop() {
   return useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP).matches, () => true);
 }
 
+const SECTIONS: Record<HistoryKind, string> = { cards: 'cardHistory', due: 'dueHistory', reviews: 'reviewHistory' };
+
 export default function Dashboard() {
   const { t, i18n } = useTranslation('app');
   const { data: summary, isLoading: summaryLoading, isError: summaryError, error: summaryErr, refetch: refetchSummary } = useStudySummary();
@@ -47,21 +49,24 @@ export default function Dashboard() {
     return <OnboardingWizard onSkip={() => { localStorage.setItem('learnforge-wizard-dismissed', '1'); setWizardDismissed(true); }} />;
   }
 
-  // Total cards and Due now each open their history; one at a time.
+  // Total cards, Due now and Reviews today each open their history; one at a time.
   const toggle = (kind: HistoryKind) => ({
     onClick: () => setHistory(h => (h === kind ? null : kind)),
     'aria-expanded': history === kind,
-    title: t(`${kind === 'due' ? 'dueHistory' : 'cardHistory'}.${history === kind ? 'hide' : 'show'}`),
+    title: t(`${SECTIONS[kind]}.${history === kind ? 'hide' : 'show'}`),
   });
   const tileClass = (kind: HistoryKind) =>
     `text-left rounded-xl border p-6 transition-colors hover:bg-bg-surface ${history === kind ? 'bg-bg-surface border-accent-blue/40' : 'bg-bg-secondary border-border'}`;
-  const chevron = (kind: HistoryKind) => <ChevronDown size={14} className={`transition-transform ${history === kind ? 'rotate-180' : ''}`} />;
+  const phoneChart = history && !isDesktop && (
+    <div className="border-t border-border"><HistoryChart key={history} kind={history} embedded /></div>
+  );
+  const chevron = (kind: HistoryKind) => <ChevronDown size={14} className={`shrink-0 transition-transform ${history === kind ? 'rotate-180' : ''}`} />;
 
   const accuracy = summary?.accuracy7d != null ? formatPercent(summary.accuracy7d, i18n.language) : '--';
-  const miniStats: { label: string; value: number; unit?: string }[] = stats ? [
+  const miniStats: { label: string; value: number; unit?: string; kind?: HistoryKind }[] = stats ? [
     { label: t('dashboard.reviewStreak'), value: stats.streak, unit: t('dashboard.days') },
     { label: t('dashboard.creationStreak'), value: stats.creationStreak, unit: t('dashboard.days') },
-    { label: t('dashboard.reviewsToday'), value: stats.reviewsToday },
+    { label: t('dashboard.reviewsToday'), value: stats.reviewsToday, kind: 'reviews' },
     { label: t('dashboard.createdToday'), value: stats.cardsCreatedToday },
     { label: t('dashboard.avgPerDay'), value: stats.averagePerDay },
     { label: t('dashboard.avgPerMonth'), value: stats.averagePerMonth },
@@ -88,20 +93,31 @@ export default function Dashboard() {
             <p className="text-2xl font-light tabular-nums mt-1">{accuracy}</p>
           </div>
         </div>
-        {history && !isDesktop && (
-          <div className="border-t border-border"><HistoryChart key={history} kind={history} embedded /></div>
-        )}
+        {history !== 'reviews' && phoneChart}
         {[0, 3].map(start => miniStats.length > 0 && (
-          <div key={start} className="grid grid-cols-3 divide-x divide-border border-t border-border">
-            {miniStats.slice(start, start + 3).map(({ label, value, unit }) => (
-              <div key={label} className="px-4 py-2.5 min-w-0">
-                <p className="text-text-muted text-xs leading-tight">{label}</p>
-                <p className="text-lg tabular-nums mt-0.5">
-                  {value}{unit && <span className="text-xs text-text-muted ml-1">{unit}</span>}
-                </p>
-              </div>
-            ))}
-          </div>
+          <Fragment key={start}>
+            <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
+              {miniStats.slice(start, start + 3).map(({ label, value, unit, kind }) => {
+                const body = (
+                  <>
+                    <p className="text-text-muted text-xs leading-tight flex items-center gap-1">{label}{kind && chevron(kind)}</p>
+                    <p className="text-lg tabular-nums mt-0.5">
+                      {value}{unit && <span className="text-xs text-text-muted ml-1">{unit}</span>}
+                    </p>
+                  </>
+                );
+                return kind ? (
+                  <button key={label} type="button" {...toggle(kind)} className={`px-4 py-2.5 min-w-0 text-left ${history === kind ? 'bg-bg-surface' : ''}`}>
+                    {body}
+                  </button>
+                ) : (
+                  <div key={label} className="px-4 py-2.5 min-w-0">{body}</div>
+                );
+              })}
+            </div>
+            {/* Reviews today sits in the first of these rows; its chart opens right under it */}
+            {start === 0 && history === 'reviews' && phoneChart}
+          </Fragment>
         ))}
         {(summary?.totalCards ?? 0) > 0 && (
           <div className="p-4 border-t border-border">
@@ -134,7 +150,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {history && isDesktop && <HistoryChart key={history} kind={history} />}
+      {history && history !== 'reviews' && isDesktop && <HistoryChart key={history} kind={history} />}
 
       {/* Streak & Activity */}
       {stats && (
@@ -157,10 +173,10 @@ export default function Dashboard() {
               {stats.creationStreak}<span className="text-sm text-text-muted ml-1">{t('dashboard.days')}</span>
             </p>
           </div>
-          <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">{t('dashboard.reviewsToday')}</p>
+          <button type="button" {...toggle('reviews')} className={tileClass('reviews')}>
+            <p className="text-text-muted text-sm flex items-center gap-1.5">{t('dashboard.reviewsToday')}{chevron('reviews')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.reviewsToday}</p>
-          </div>
+          </button>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
             <p className="text-text-muted text-sm">{t('dashboard.createdToday')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.cardsCreatedToday}</p>
@@ -175,6 +191,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {history === 'reviews' && isDesktop && <HistoryChart kind="reviews" />}
 
       {/* Due Forecast */}
       <DueForecastChart />

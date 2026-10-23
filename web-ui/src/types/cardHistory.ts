@@ -3,10 +3,12 @@ export type CardHistoryRange = '30d' | '1y' | 'all';
 export const HISTORY_STATES = ['new', 'learning', 'relearning', 'recall', 'shortTerm', 'midTerm', 'longTerm'] as const;
 export type HistoryState = (typeof HISTORY_STATES)[number];
 
-/** Cards counted (all of them) or only those due at each point. */
-export type HistoryKind = 'cards' | 'due';
+/** All cards or only the due ones at each point, or the reviews done per day. */
+export type HistoryKind = 'cards' | 'due' | 'reviews';
 /** The states that feed the due count. */
 export const DUE_STATES = ['learning', 'relearning', 'recall'] as const;
+/** A review's kind: the card's state before it, review cards by their stability then. */
+export const REVIEW_STATES = ['new', 'learning', 'relearning', 'shortTerm', 'midTerm', 'longTerm'] as const;
 export type HistoryPoint = { at: string; total: number } & Partial<Record<HistoryState, number>>;
 
 /** Shared by the Bloom × state bars and the card history areas. */

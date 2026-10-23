@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from '../hooks/useStudy';
 import {
-  CARD_STATE_COLORS, DUE_STATES, HISTORY_STATES, type CardHistoryRange, type HistoryKind, type HistoryPoint, type HistoryState,
+  CARD_STATE_COLORS, DUE_STATES, HISTORY_STATES, REVIEW_STATES, type CardHistoryRange, type HistoryKind, type HistoryPoint, type HistoryState,
 } from '../types';
 
-// Per kind: its bands and its i18n section (title, total label).
-const KINDS: Record<HistoryKind, { states: readonly HistoryState[]; i18n: string }> = {
+// Per kind: its bands, its i18n section (title, total label), and bars for
+// counts per day instead of areas for a state at each point.
+const KINDS: Record<HistoryKind, { states: readonly HistoryState[]; i18n: string; bars?: boolean }> = {
   cards: { states: HISTORY_STATES, i18n: 'cardHistory' },
   due: { states: DUE_STATES, i18n: 'dueHistory' },
+  reviews: { states: REVIEW_STATES, i18n: 'reviewHistory', bars: true },
 };
 const RANGES: { key: CardHistoryRange; label: string }[] = [
   { key: '30d', label: 'cardHistory.thirtyDays' },
@@ -34,6 +36,17 @@ function bandPath(points: HistoryPoint[], below: number[], above: number[], yMax
   return `${top}${bottom}Z`;
 }
 
+/** Path of one band as bars: a rectangle per point, with a gap while bars are wide enough. */
+function barPath(below: number[], above: number[], yMax: number): string {
+  const n = above.length;
+  const w = 100 / n;
+  const gap = n <= 60 ? w * 0.15 : 0;
+  const y = (v: number) => 100 - (v / yMax) * 100;
+  return above.map((v, i) => (v > below[i]
+    ? `M${i * w + gap},${y(v)}H${(i + 1) * w - gap}V${y(below[i])}H${i * w + gap}Z`
+    : '')).join('');
+}
+
 interface Props {
   kind: HistoryKind;
   /** Inside another block on a phone: no panel frame of its own. */
@@ -45,7 +58,7 @@ export default function HistoryChart({ kind, embedded }: Props) {
   const [range, setRange] = useState<CardHistoryRange>('all');
   const [picked, setPicked] = useState<number | null>(null);
   const { data, isLoading } = useHistory(kind, range);
-  const { states, i18n: section } = KINDS[kind];
+  const { states, i18n: section, bars } = KINDS[kind];
   // Most settled at the bottom, so the stack reads from consolidated up to new.
   const stack = [...states].reverse();
 
@@ -63,16 +76,21 @@ export default function HistoryChart({ kind, embedded }: Props) {
     bands.push({ state, below: running, above });
     running = above;
   }
-  const totalLine = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${n === 1 ? 0 : (i / (n - 1)) * 100},${100 - (p.total / yMax) * 100}`).join('');
+  // Where point i sits, in percent: on the edges for areas, mid-slot for bars.
+  const xAt = (i: number) => (bars ? ((i + 0.5) / n) * 100 : n === 1 ? 0 : (i / (n - 1)) * 100);
+  const totalLine = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xAt(i)},${100 - (p.total / yMax) * 100}`).join('');
 
-  const dateFormat = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: range === '30d' ? undefined : 'numeric' });
-  const fullFormat = new Intl.DateTimeFormat(i18n.language, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  // Bars are calendar days sent as UTC noon; read them in UTC so no time zone shifts the date.
+  const timeZone = bars ? 'UTC' : undefined;
+  const dateFormat = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: range === '30d' ? undefined : 'numeric', timeZone });
+  const fullFormat = new Intl.DateTimeFormat(i18n.language, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone });
   const xLabels = [...new Set(n > 1 ? [0, Math.floor((n - 1) / 2), n - 1] : [0])];
 
   const pick = (e: React.PointerEvent<HTMLDivElement>) => {
     if (n === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const i = Math.round(((e.clientX - rect.left) / rect.width) * (n - 1));
+    const frac = (e.clientX - rect.left) / rect.width;
+    const i = bars ? Math.floor(frac * n) : Math.round(frac * (n - 1));
     setPicked(Math.min(n - 1, Math.max(0, i)));
   };
 
@@ -102,7 +120,10 @@ export default function HistoryChart({ kind, embedded }: Props) {
       <p className="text-xs mb-2 h-4">
         {current && (
           <>
-            <span className="text-text-muted">{fullFormat.format(new Date(current.at))} · </span>
+            <span className="text-text-muted">
+              {fullFormat.format(new Date(current.at))}
+              {bars && data?.step === 'week' && ` – ${fullFormat.format(new Date(Date.parse(current.at) + 6 * 86_400_000))}`} ·{' '}
+            </span>
             <span className="tabular-nums">{t(`${section}.total`)} {current.total}</span>
           </>
         )}
@@ -128,15 +149,26 @@ export default function HistoryChart({ kind, embedded }: Props) {
           ) : (
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible">
               {bands.map(b => (
-                <path key={b.state} d={bandPath(points, b.below, b.above, yMax)} fill={CARD_STATE_COLORS[b.state]} fillOpacity={0.85} />
+                <path
+                  key={b.state}
+                  d={bars ? barPath(b.below, b.above, yMax) : bandPath(points, b.below, b.above, yMax)}
+                  fill={CARD_STATE_COLORS[b.state]}
+                  fillOpacity={0.85}
+                />
               ))}
-              <path d={totalLine} fill="none" stroke="var(--color-text-primary)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+              {!bars && <path d={totalLine} fill="none" stroke="var(--color-text-primary)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />}
             </svg>
           )}
-          {current && n > 1 && (
+          {current && bars && (
+            <div
+              className="absolute top-0 bottom-0 bg-text-primary/10 pointer-events-none"
+              style={{ left: `${(index / n) * 100}%`, width: `${100 / n}%` }}
+            />
+          )}
+          {current && !bars && n > 1 && (
             <div
               className="absolute top-0 bottom-0 w-px bg-text-primary/60 pointer-events-none"
-              style={{ left: `${(index / (n - 1)) * 100}%` }}
+              style={{ left: `${xAt(index)}%` }}
             />
           )}
         </div>
@@ -148,7 +180,7 @@ export default function HistoryChart({ kind, embedded }: Props) {
           <span
             key={i}
             className={`absolute text-[10px] text-text-muted whitespace-nowrap ${k === 0 ? '' : k === xLabels.length - 1 ? '-translate-x-full' : '-translate-x-1/2'}`}
-            style={{ left: n === 1 ? 0 : `${(i / (n - 1)) * 100}%` }}
+            style={{ left: `${xAt(i)}%` }}
           >
             {dateFormat.format(new Date(points[i].at))}
           </span>

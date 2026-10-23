@@ -136,3 +136,56 @@ describe("GET /study/due-history", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("GET /study/review-history", () => {
+  const KINDS = ["new", "learning", "relearning", "shortTerm", "midTerm", "longTerm"] as const;
+  type ReviewPoint = { at: string; total: number } & Record<(typeof KINDS)[number], number>;
+  const thirtyDays = async () =>
+    (await api.get("/study/review-history", { params: { range: "30d" } })).data.points as ReviewPoint[];
+
+  it("has one bar per day ending on the dashboard's reviews today, split into review kinds", async () => {
+    const [history, stats] = await Promise.all([
+      api.get("/study/review-history", { params: { range: "30d" } }),
+      api.get("/study/stats"),
+    ]);
+    expect(history.status).toBe(200);
+    expect(history.data.step).toBe("day");
+    const points = history.data.points as ReviewPoint[];
+    expect(points).toHaveLength(30);
+    expect(points.at(-1)!.total).toBe(stats.data.reviewsToday);
+    for (const p of points) {
+      expect(KINDS.reduce((sum, k) => sum + p[k], 0)).toBe(p.total);
+    }
+  });
+
+  it("counts a first review as new and the next as learning", async () => {
+    const before = (await thirtyDays()).at(-1)!;
+    const card = await createFreshCard(api, TOPICS.ALGEBRA);
+    created.push(card.id);
+    for (const rating of [1, 1]) {
+      await api.post("/reviews", { card_id: card.id, bloom_level: 0, rating, question_text: "Review history" });
+    }
+    const after = (await thirtyDays()).at(-1)!;
+    expect(after.total).toBe(before.total + 2);
+    expect(after.new).toBe(before.new + 1);
+    expect(after.learning).toBe(before.learning + 1);
+  });
+
+  it("puts a review into the bucket of its day", async () => {
+    const card = await createFreshCard(api, TOPICS.ALGEBRA);
+    created.push(card.id);
+    await api.post("/reviews", { card_id: card.id, bloom_level: 0, rating: 3, question_text: "Review history old" });
+    const before = await thirtyDays();
+    await withDb(c => c.query(
+      `UPDATE reviews SET reviewed_at = reviewed_at - interval '3 days' WHERE card_id = $1`, [card.id],
+    ));
+    const after = await thirtyDays();
+    expect(after.at(-1)!.total).toBe(before.at(-1)!.total - 1);
+    expect(after.at(-4)!.total).toBe(before.at(-4)!.total + 1);
+  });
+
+  it("requires authentication", async () => {
+    const res = await getUnauthApi().get("/study/review-history");
+    expect(res.status).toBe(401);
+  });
+});
