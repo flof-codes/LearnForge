@@ -294,6 +294,20 @@
     "deleteReviewMessage": "Diese Wiederholung wird unwiderruflich gel\u00f6scht. Der Planungsstatus der Karte wird aus den verbleibenden Wiederholungen neu berechnet.",
     "deleteReviewConfirm": "L\u00f6schen"
   },
+  "figure": {
+    "zoomTitle": "Bild, vergr\u00f6\u00dfert",
+    "close": "Schlie\u00dfen",
+    "upload": "Bild hochladen",
+    "replace": "Bild ersetzen",
+    "uploading": "Wird hochgeladen\u2026",
+    "uploadFailed": "Das Bild konnte nicht hochgeladen werden",
+    "remove": "{{name}} entfernen",
+    "frontHint": "Steht unter der Frage. Blende die Teile aus, nach denen gefragt wird.",
+    "backHint": "Steht auf der R\u00fcckseite unter der Antwort. Nur verwenden, wenn das Bild die Antwort tr\u00e4gt.",
+    "markup": "Als HTML oder SVG bearbeiten",
+    "markupPlaceholder": "<svg viewBox=\"0 0 400 200\">\u2026</svg> oder <img src=\"/images/\u2026\">",
+    "hasFigure": "Mit Bild"
+  },
   "cardEditor": {
     "typedHint": "Diese Karte wird aus einer {{type}}-Notiz gerendert. Bearbeite die Felder, das HTML folgt.",
     "siblings": "{{count}} Karten teilen diese Notiz",

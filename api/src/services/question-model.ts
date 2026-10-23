@@ -152,7 +152,7 @@ function stubModel(): QuestionModel {
       if (requests.some(r => r.concept.includes("[credits]"))) throw new QuestionModelError("credits", "The Anthropic credit balance is used up");
       if (requests.some(r => r.concept.includes("[fail]"))) throw new QuestionModelError("error", "Stub failure");
       return requests.map(r => {
-        const base = { card_id: r.cardId, status: "ready", skip_reason: "", options: [], answer: "", accept: [], key_points: [], terms: [], explanation: `About ${r.concept}.` };
+        const base = { card_id: r.cardId, status: "ready", skip_reason: "", options: [], answer: "", accept: [], key_points: [], terms: [], explanation: `About ${r.concept}.${r.figure ? " See the figure." : ""}` };
         if (r.form === "open") return { ...base, stem: `Explain ${r.concept}.`, answer: "It works because of A and B.", key_points: ["Names A", "Names B"] };
         if (r.concept.includes("[skip]")) return { ...base, status: "skipped", skip_reason: "Needs a formula", stem: "", explanation: "" };
         if (r.form === "gap") return { ...base, stem: `${r.concept} is {{gap}}.`, answer: "Right", accept: ["right", "correct"] };

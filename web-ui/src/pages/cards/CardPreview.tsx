@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Image } from 'lucide-react';
 import BloomBadge from '../../components/BloomBadge';
 import FocusBadge from '../../components/FocusBadge';
 import CardHtmlRender from '../../components/CardHtmlRender';
@@ -7,6 +8,8 @@ import CardHtmlRender from '../../components/CardHtmlRender';
 interface Props {
   id: string;
   frontHtml?: string;
+  /** The card shows a picture somewhere; the figure usually sits on the back, out of this preview. */
+  hasPicture?: boolean;
   bloomLevel: number;
   tags: string[];
   isDue?: boolean;
@@ -15,7 +18,7 @@ interface Props {
   cardIds?: string[];
 }
 
-export default function CardPreview({ id, frontHtml, bloomLevel, tags, isDue, topicPath, topicId, cardIds }: Props) {
+export default function CardPreview({ id, frontHtml, hasPicture, bloomLevel, tags, isDue, topicPath, topicId, cardIds }: Props) {
   const { t } = useTranslation('app');
   return (
     <Link
@@ -44,6 +47,9 @@ export default function CardPreview({ id, frontHtml, bloomLevel, tags, isDue, to
         )}
         <div className="flex items-center gap-2 flex-wrap">
           <BloomBadge level={bloomLevel} />
+          {hasPicture && (
+            <span title={t('figure.hasFigure')} className="text-text-muted"><Image size={14} aria-label={t('figure.hasFigure')} /></span>
+          )}
           {isDue && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-warning/20 text-warning">{t('cards.dueLabel')}</span>
           )}

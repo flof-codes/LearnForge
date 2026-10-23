@@ -23,6 +23,14 @@ export interface ListCardsResult {
     tags: string[] | null;
     topicId: string;
     frontHtml: string;
+    /** The card shows a picture (an <img> or inline <svg>) on either side. */
+    hasPicture: boolean;
+    /**
+     * The first stored image of the card as a CSS `url(/images/<id>)`. In that
+     * form the API's media signing rewrites it like an image in card HTML, so
+     * a list can show it as a thumbnail. Null when the card has no stored image.
+     */
+    thumbnail: string | null;
     createdAt: string;
     updatedAt: string;
     bloomState: { currentLevel: number | null; highestReached: number | null };
@@ -125,12 +133,15 @@ export async function listCards(
   const pageResult = await db.execute<{
     id: string; concept: string; tags: string[] | null; topic_id: string;
     front_html: string; created_at: string; updated_at: string;
+    has_picture: boolean; image_id: string | null;
     current_level: number | null; highest_reached: number | null;
     due: string | null; fsrs_state: number | null; last_review: string | null;
   }>(sql`
     ${topicCte}
     SELECT c.id, c.concept, c.tags, c.topic_id, c.front_html,
       c.created_at, c.updated_at,
+      (c.front_html || c.back_html) ~* '<(img|svg)[[:space:]>]' AS has_picture,
+      substring(c.back_html || c.front_html from '<img[^>]*src="/images/([0-9a-fA-F-]{36})"') AS image_id,
       bs.current_level, bs.highest_reached,
       fs.due, fs.state AS fsrs_state, fs.last_review
     FROM cards c
@@ -148,6 +159,8 @@ export async function listCards(
     tags: row.tags,
     topicId: row.topic_id,
     frontHtml: row.front_html,
+    hasPicture: row.has_picture,
+    thumbnail: row.image_id ? `url(/images/${row.image_id})` : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     bloomState: {

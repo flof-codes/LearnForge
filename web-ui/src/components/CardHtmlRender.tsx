@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import api from '../api/client';
 import { useTheme } from '../contexts/ThemeContext';
+import FigureZoom from './FigureZoom';
 
 interface CardHtmlRenderProps {
   html: string;
@@ -23,8 +24,18 @@ function resolveMediaLinks(html: string): string {
 
 // Wide content scrolls inside itself; the frame clips whatever sticks out.
 // :where() keeps these at zero specificity, so a card's own rules still win.
+// Figures (.lf-figure, see core lib/figures.ts) fit the width, a tall photo
+// stays within about two thirds of the screen, and a picture opens large on a tap.
+// --lf-vh is the app window's 1vh: inside the frame vh would follow the frame,
+// which grows with its content.
 const FIT_CSS = `
 :where(img) { max-width: 100%; height: auto; }
+:where(svg[viewBox]) { max-width: 100%; height: auto; }
+:where(.lf-figure img) { max-height: calc(var(--lf-vh, 8px) * 65); object-fit: contain; }
+.lf-zoomable { cursor: zoom-in; }
+[data-theme="dark"] .lf-figure img { background: #fff; border-radius: 6px; }
+[data-theme="dark"] .lf-figure svg :is([stroke="#000" i], [stroke="#000000" i], [stroke="black" i]) { stroke: currentColor; }
+[data-theme="dark"] .lf-figure svg :is([fill="#000" i], [fill="#000000" i], [fill="black" i]) { fill: currentColor; }
 :where(pre) { overflow-x: auto; }
 .katex-display { overflow-x: auto; overflow-y: hidden; max-width: 100%; padding-block: 2px; }
 .lf-xscroll { overflow-x: auto; max-width: 100%; }
@@ -52,7 +63,7 @@ body > main > article > header, body > main > article > footer {
 }
 `;
 
-function buildSrcdoc(html: string, theme: 'light' | 'dark', flat: boolean): string {
+function buildSrcdoc(html: string, theme: 'light' | 'dark', flat: boolean, vh: number): string {
   // data-theme makes Pico follow the app's theme switch instead of the system setting.
   // color-scheme has to match the app's (see index.css): a frame whose scheme
   // differs from its parent gets an opaque canvas instead of a transparent one,
@@ -61,7 +72,7 @@ function buildSrcdoc(html: string, theme: 'light' | 'dark', flat: boolean): stri
 <html data-theme="${theme}"><head>
 <meta charset="utf-8">
 <style>
-html { color-scheme: ${theme}; }
+html { color-scheme: ${theme}; --lf-vh: ${vh}px; }
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
 </style>
 </head><body>
@@ -82,8 +93,30 @@ ${html}
       w.appendChild(t);
     });
   }
+  // Pictures open large on a tap: every figure, and images that are not part of a control.
+  function zoomTarget(el) {
+    var pic = el && el.closest ? el.closest('.lf-figure img, .lf-figure svg, img') : null;
+    if (!pic || pic.closest('a, button, label, summary, [onclick], [data-no-zoom]')) return null;
+    // A picture under positioned overlays (image occlusion masks) would show its answer alone.
+    var box = pic.parentElement;
+    if (box && box.children.length > 1 && getComputedStyle(box).position !== 'static') return null;
+    if (pic.tagName.toLowerCase() === 'img' && !pic.closest('.lf-figure') && pic.naturalWidth > 0 && pic.naturalWidth < 48) return null;
+    return pic;
+  }
+  function markZoomable() {
+    document.querySelectorAll('.lf-figure img, .lf-figure svg, img').forEach(function(p) {
+      if (zoomTarget(p) === p) p.classList.add('lf-zoomable');
+    });
+  }
+  document.addEventListener('click', function(e) {
+    var pic = zoomTarget(e.target);
+    if (!pic) return;
+    var plate = pic.tagName.toLowerCase() === 'img' && !!pic.closest('.lf-figure');
+    parent.postMessage({ type: 'lf-zoom', html: pic.outerHTML, plate: plate }, '*');
+  });
   function postHeight() {
     fitTables();
+    markZoomable();
     parent.postMessage({ type: 'lf-resize', height: document.documentElement.scrollHeight }, '*');
   }
   new ResizeObserver(postHeight).observe(document.documentElement);
@@ -96,10 +129,11 @@ ${html}
 export default function CardHtmlRender({ html, flat = false }: CardHtmlRenderProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(60);
+  const [zoom, setZoom] = useState<{ html: string; plate: boolean } | null>(null);
   const { resolvedTheme } = useTheme();
 
   const srcdoc = useMemo(
-    () => buildSrcdoc(resolveMediaLinks(html), resolvedTheme, flat),
+    () => buildSrcdoc(resolveMediaLinks(html), resolvedTheme, flat, window.innerHeight / 100),
     [html, resolvedTheme, flat],
   );
 
@@ -109,6 +143,9 @@ export default function CardHtmlRender({ html, flat = false }: CardHtmlRenderPro
       if (event.data?.type === 'lf-resize' && typeof event.data.height === 'number') {
         setHeight(event.data.height);
       }
+      if (event.data?.type === 'lf-zoom' && typeof event.data.html === 'string' && event.data.html.length < 500_000) {
+        setZoom({ html: event.data.html, plate: !!event.data.plate });
+      }
     };
 
     window.addEventListener('message', handleMessage);
@@ -116,12 +153,15 @@ export default function CardHtmlRender({ html, flat = false }: CardHtmlRenderPro
   }, []);
 
   return (
-    <iframe
-      ref={iframeRef}
-      sandbox="allow-scripts"
-      srcDoc={srcdoc}
-      className={`card-html-render ${flat ? '' : 'rounded-xl'}`}
-      style={{ width: '100%', height: `${height}px`, border: 'none', display: 'block', minHeight: '60px' }}
-    />
+    <>
+      <iframe
+        ref={iframeRef}
+        sandbox="allow-scripts"
+        srcDoc={srcdoc}
+        className={`card-html-render ${flat ? '' : 'rounded-xl'}`}
+        style={{ width: '100%', height: `${height}px`, border: 'none', display: 'block', minHeight: '60px' }}
+      />
+      {zoom && <FigureZoom html={zoom.html} plate={zoom.plate} onClose={() => setZoom(null)} />}
+    </>
   );
 }

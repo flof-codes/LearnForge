@@ -3,6 +3,8 @@ import { textArray } from "../lib/sql-array.js";
 import type { Db } from "../db/types.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { stripHtml } from "../lib/strip-html.js";
+import { validateCardHtml } from "../lib/sanitize-card-html.js";
+import { questionText } from "../lib/figures.js";
 import { renderCardTemplate, clozeNumbersIn, plainClozeText, RENDERER_VERSION } from "../lib/note-renderer.js";
 import { computeEmbedding } from "./embeddings.js";
 import { createInitialFsrsState } from "./fsrs.js";
@@ -133,6 +135,14 @@ export async function topicPath(db: Db, userId: string, topicId: string): Promis
   return rows.rows.map(r => r.name).join("::");
 }
 
+/** The 100KB-per-side cap of hand-made cards, for notes written through the API (imports keep what Anki had). */
+function checkSideSizes(planned: PlannedCard[]): void {
+  for (const c of planned) {
+    validateCardHtml(c.frontHtml, "The rendered front");
+    validateCardHtml(c.backHtml, "The rendered back");
+  }
+}
+
 export interface CreateNoteInput {
   topic_id: string;
   /** Note type id or built-in key: "open", "choice", "cloze". */
@@ -163,6 +173,7 @@ export async function createNote(db: Db, userId: string, input: CreateNoteInput)
   const tags = input.tags ?? [];
   const deck = await topicPath(db, userId, input.topic_id);
   const cardsToMake = plannedCards(type, fields, deck, tags);
+  checkSideSizes(cardsToMake);
   const concept = (input.concept?.trim() || deriveConcept(type, fields)).slice(0, MAX_CONCEPT);
   const embedding = await computeEmbedding(embeddingTextFor(concept, tags, type, fields));
   const fsrs = createInitialFsrsState();
@@ -203,13 +214,26 @@ export async function refreshDerivedOriginals(db: Db, userId: string, noteId: st
   `);
   const current = await getCurrentOriginals(db, userId, cards.rows.map(c => c.id));
   for (const c of cards.rows) {
-    const question = stripHtml(c.front_html).replace(/\s+/g, " ").trim().slice(0, 2000);
-    const answer = stripHtml(c.back_html).replace(/\s+/g, " ").trim().slice(0, 2000);
+    // questionText leaves out inline SVG, whose labels are drawing, not question.
+    const question = questionText(c.front_html).slice(0, 2000);
+    const answer = questionText(c.back_html).slice(0, 2000);
     if (!question) continue;
     const existing = current.get(c.id);
     if (existing && (existing.status === "disputed" || (existing.questionText === question && existing.expectedAnswer === answer))) continue;
     await setOriginal(db, userId, { card_id: c.id, question_text: question, expected_answer: answer, created_by: "derived" });
   }
+}
+
+/** Prefix of the `source_ref` Lecture Scribe gives its notes; its token may rewrite only those. */
+export const SCRIBE_SOURCE_PREFIX = "scribe:";
+
+/** A connected app may rewrite a note only when the note came from that app. */
+export async function appMayEditNote(db: Db, userId: string, noteId: string): Promise<boolean> {
+  const r = await db.execute<{ source_ref: string | null }>(sql`
+    SELECT source_ref FROM notes WHERE id = ${noteId} AND user_id = ${userId}
+  `);
+  if (r.rows.length === 0) throw new NotFoundError("Note not found");
+  return !!r.rows[0].source_ref?.startsWith(SCRIBE_SOURCE_PREFIX);
 }
 
 export async function getNote(db: Db, userId: string, noteId: string): Promise<Note> {
@@ -253,6 +277,7 @@ export async function updateNote(db: Db, userId: string, noteId: string, input: 
   const topicId = input.topic_id ?? current.topicId;
   const deck = await topicPath(db, userId, topicId);
   const planned = plannedCards(type, fields, deck, tags);
+  if (input.fields) checkSideSizes(planned);
   const contentChanged = input.fields !== undefined || input.tags !== undefined || input.concept !== undefined;
   const concept = (input.concept?.trim() || (input.fields ? deriveConcept(type, fields) : current.cards[0]?.concept) || deriveConcept(type, fields)).slice(0, MAX_CONCEPT);
   const embedding = contentChanged ? await computeEmbedding(embeddingTextFor(concept, tags, type, fields)) : null;

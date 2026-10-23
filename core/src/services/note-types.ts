@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { FIGURE_FIELD, FRONT_FIGURE_FIELD } from "../lib/figures.js";
 
 /**
  * Note types: fields + card templates + CSS. The built-ins below are copied
@@ -8,7 +9,9 @@ import { NotFoundError, ValidationError } from "../lib/errors.js";
  * `customized`) but their fields are fixed. To change fields, duplicate the type.
  */
 
-export const BUILTIN_TYPES_VERSION = 1;
+/** 2: the optional fields "Figure" (back, below the answer) and "Front figure" (front, below the question). */
+export const BUILTIN_TYPES_VERSION = 2;
+export { FIGURE_FIELD, FRONT_FIGURE_FIELD };
 
 export interface NoteTypeFieldDef { key: string; name: string; ord: number }
 export interface CardTemplateDef { id?: string; ord: number; name: string; frontTemplate: string; backTemplate: string }
@@ -28,6 +31,14 @@ export interface NoteType {
   noteCount?: number;
 }
 
+// The back shows the full figure; the front's version with parts hidden steps aside when both exist.
+const FIGURE_CSS = `.lf-figure { margin-top: 14px; text-align: center; }
+.lf-figure img, .lf-figure svg { max-width: 100%; height: auto; }
+.card:has(.lf-figure-back) .lf-figure-front { display: none; }`;
+
+const FRONT_FIGURE_BLOCK = `{{#${FRONT_FIGURE_FIELD}}}<div class="lf-figure lf-figure-front">{{${FRONT_FIGURE_FIELD}}}</div>{{/${FRONT_FIGURE_FIELD}}}`;
+const FIGURE_BLOCK = `{{#${FIGURE_FIELD}}}<div class="lf-figure lf-figure-back">{{${FIGURE_FIELD}}}</div>{{/${FIGURE_FIELD}}}`;
+
 const BASE_CSS = `.card { font-family: "Segoe UI", system-ui, sans-serif; font-size: 17px; line-height: 1.55; padding: 4px; }
 .q { font-weight: 600; margin-bottom: 12px; }
 .opt { padding: 8px 12px; border: 1px solid rgba(128,128,128,.35); border-radius: 8px; margin-top: 6px; }
@@ -35,7 +46,8 @@ const BASE_CSS = `.card { font-family: "Segoe UI", system-ui, sans-serif; font-s
 hr { border: 0; border-top: 1px solid rgba(128,128,128,.3); margin: 14px 0; }
 .cloze { font-weight: 700; color: #2563eb; }
 .cloze-inactive { }
-.typeans { width: 100%; padding: 6px 8px; margin-top: 8px; }`;
+.typeans { width: 100%; padding: 6px 8px; margin-top: 8px; }
+${FIGURE_CSS}`;
 
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
@@ -49,11 +61,13 @@ export const BUILTIN_TYPES: Record<string, { name: string; kind: "standard" | "c
       { key: "f1", name: "Question", ord: 0 },
       { key: "f2", name: "Answer", ord: 1 },
       { key: "f3", name: "Explanation", ord: 2 },
+      { key: "f4", name: FIGURE_FIELD, ord: 3 },
+      { key: "f5", name: FRONT_FIGURE_FIELD, ord: 4 },
     ],
     templates: [{
       ord: 0, name: "Card 1",
-      frontTemplate: `<div class="q">{{Question}}</div>`,
-      backTemplate: `{{FrontSide}}<hr id="answer">{{Answer}}{{#Explanation}}<div class="why">{{Explanation}}</div>{{/Explanation}}`,
+      frontTemplate: `<div class="q">{{Question}}</div>${FRONT_FIGURE_BLOCK}`,
+      backTemplate: `{{FrontSide}}<hr id="answer">{{Answer}}${FIGURE_BLOCK}{{#Explanation}}<div class="why">{{Explanation}}</div>{{/Explanation}}`,
     }],
   },
   choice: {
@@ -66,12 +80,14 @@ export const BUILTIN_TYPES: Record<string, { name: string; kind: "standard" | "c
       ...CHOICE_LETTERS.map((l, i) => ({ key: `f${i + 2}`, name: `Option ${l}`, ord: i + 1 })),
       { key: "f8", name: "Correct", ord: 7 },
       { key: "f9", name: "Explanation", ord: 8 },
+      { key: "f10", name: FIGURE_FIELD, ord: 9 },
+      { key: "f11", name: FRONT_FIGURE_FIELD, ord: 10 },
     ],
     templates: [{
       ord: 0, name: "Card 1",
-      frontTemplate: `<div class="q">{{Question}}</div>\n` + CHOICE_LETTERS.map(l =>
+      frontTemplate: `<div class="q">{{Question}}</div>${FRONT_FIGURE_BLOCK}\n` + CHOICE_LETTERS.map(l =>
         `{{#Option ${l}}}<div class="opt">${l} · {{Option ${l}}}</div>{{/Option ${l}}}`).join("\n"),
-      backTemplate: `{{FrontSide}}<hr id="answer">Correct: <b>{{Correct}}</b>{{#Explanation}}<div class="why">{{Explanation}}</div>{{/Explanation}}`,
+      backTemplate: `{{FrontSide}}<hr id="answer">Correct: <b>{{Correct}}</b>${FIGURE_BLOCK}{{#Explanation}}<div class="why">{{Explanation}}</div>{{/Explanation}}`,
     }],
   },
   cloze: {
@@ -82,11 +98,14 @@ export const BUILTIN_TYPES: Record<string, { name: string; kind: "standard" | "c
     fields: [
       { key: "f1", name: "Text", ord: 0 },
       { key: "f2", name: "Extra", ord: 1 },
+      { key: "f3", name: FIGURE_FIELD, ord: 2 },
+      { key: "f4", name: FRONT_FIGURE_FIELD, ord: 3 },
     ],
     templates: [{
       ord: 0, name: "Cloze",
-      frontTemplate: `{{cloze:Text}}`,
-      backTemplate: `{{cloze:Text}}{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}`,
+      frontTemplate: `{{cloze:Text}}${FRONT_FIGURE_BLOCK}`,
+      // No {{FrontSide}} here, so a front figure stands in on the back when there is no full one.
+      backTemplate: `{{cloze:Text}}${FIGURE_BLOCK}{{^${FIGURE_FIELD}}}${FRONT_FIGURE_BLOCK}{{/${FIGURE_FIELD}}}{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}`,
     }],
   },
 };
@@ -119,11 +138,87 @@ async function loadTypes(db: Db, where: ReturnType<typeof sql>): Promise<NoteTyp
   }));
 }
 
-/** Creates the user's private copies of the built-in types when they are missing. Idempotent. */
+/**
+ * What a customized copy gets appended when a version adds a field: the user's
+ * own design stays, and the new field shows up only where it is filled.
+ */
+const UPGRADE_BLOCKS: Record<string, { side: "front" | "back"; block: string }> = {
+  [FIGURE_FIELD]: { side: "back", block: FIGURE_BLOCK },
+  [FRONT_FIGURE_FIELD]: { side: "front", block: FRONT_FIGURE_BLOCK },
+};
+
+/**
+ * Brings a user's built-in copies up to BUILTIN_TYPES_VERSION. Fields missing
+ * by name are added with the built-in's key (empty in every existing note, so
+ * nothing renders differently). An untouched copy takes the new templates and
+ * CSS; a customized one keeps its design and gets the new fields' blocks
+ * appended. Existing cards are not re-rendered: with the new fields empty
+ * they look the same, and the next edit renders them from the new templates.
+ */
+async function upgradeBuiltinTypes(db: Db, userId: string, rows: Array<{ id: string; builtin_key: string; builtin_version: number }>): Promise<void> {
+  for (const row of rows) {
+    const def = BUILTIN_TYPES[row.builtin_key];
+    if (!def || row.builtin_version >= BUILTIN_TYPES_VERSION) continue;
+    await db.transaction(async (tx) => {
+      // The row lock makes a concurrent request wait, then find the copy already upgraded.
+      const locked = await tx.execute<{ builtin_version: number; customized: boolean; css: string }>(sql`
+        SELECT builtin_version, customized, css FROM note_types WHERE id = ${row.id} AND user_id = ${userId} FOR UPDATE
+      `);
+      const current = locked.rows[0];
+      if (!current || current.builtin_version >= BUILTIN_TYPES_VERSION) return;
+      const fields = await tx.execute<{ key: string; name: string; ord: number }>(sql`
+        SELECT key, name, ord FROM note_type_fields WHERE note_type_id = ${row.id}
+      `);
+      const names = new Set(fields.rows.map(f => f.name));
+      const keys = new Set(fields.rows.map(f => f.key));
+      let nextOrd = fields.rows.reduce((m, f) => Math.max(m, f.ord), -1) + 1;
+      let nextKey = fields.rows.reduce((m, f) => Math.max(m, parseInt(f.key.slice(1), 10) || 0), 0) + 1;
+      const added: string[] = [];
+      for (const f of def.fields) {
+        if (names.has(f.name)) continue;
+        let key = f.key;
+        if (keys.has(key)) key = `f${nextKey++}`;
+        keys.add(key);
+        await tx.execute(sql`INSERT INTO note_type_fields (note_type_id, key, name, ord) VALUES (${row.id}, ${key}, ${f.name}, ${nextOrd++})`);
+        added.push(f.name);
+      }
+      const templates = await tx.execute<{ id: string; ord: number; front_template: string; back_template: string }>(sql`
+        SELECT id, ord, front_template, back_template FROM card_templates WHERE note_type_id = ${row.id} ORDER BY ord
+      `);
+      if (!current.customized) {
+        for (const t of templates.rows) {
+          const next = def.templates.find(d => d.ord === t.ord);
+          if (!next) continue;
+          await tx.execute(sql`UPDATE card_templates SET front_template = ${next.frontTemplate}, back_template = ${next.backTemplate} WHERE id = ${t.id}`);
+        }
+        await tx.execute(sql`UPDATE note_types SET css = ${def.css} WHERE id = ${row.id}`);
+      } else {
+        for (const t of templates.rows) {
+          let front = t.front_template, back = t.back_template;
+          for (const name of added) {
+            const up = UPGRADE_BLOCKS[name];
+            if (!up || front.includes(`{{${name}}}`) || back.includes(`{{${name}}}`)) continue;
+            if (up.side === "front") front += up.block; else back += up.block;
+          }
+          if (front !== t.front_template || back !== t.back_template) {
+            await tx.execute(sql`UPDATE card_templates SET front_template = ${front}, back_template = ${back} WHERE id = ${t.id}`);
+          }
+        }
+        if (added.some(n => n in UPGRADE_BLOCKS) && !current.css.includes(".lf-figure")) {
+          await tx.execute(sql`UPDATE note_types SET css = ${`${current.css}\n${FIGURE_CSS}`} WHERE id = ${row.id}`);
+        }
+      }
+      await tx.execute(sql`UPDATE note_types SET builtin_version = ${BUILTIN_TYPES_VERSION}, updated_at = NOW() WHERE id = ${row.id}`);
+    });
+  }
+}
+
+/** Creates the user's private copies of the built-in types when they are missing, and upgrades outdated ones. Idempotent. */
 export async function ensureBuiltinTypes(db: Db, userId: string): Promise<void> {
-  const existing = await db.execute<{ builtin_key: string }>(sql`
-    SELECT builtin_key FROM note_types WHERE user_id = ${userId} AND builtin_key IS NOT NULL
+  const existing = await db.execute<{ id: string; builtin_key: string; builtin_version: number }>(sql`
+    SELECT id, builtin_key, builtin_version FROM note_types WHERE user_id = ${userId} AND builtin_key IS NOT NULL
   `);
+  await upgradeBuiltinTypes(db, userId, existing.rows);
   const have = new Set(existing.rows.map(r => r.builtin_key));
   for (const [key, def] of Object.entries(BUILTIN_TYPES)) {
     if (have.has(key)) continue;
@@ -157,6 +252,12 @@ export async function getNoteType(db: Db, userId: string, noteTypeId: string): P
   if (!UUID_RE.test(noteTypeId)) throw new NotFoundError("Note type not found");
   const [t] = await loadTypes(db, sql`user_id = ${userId} AND id = ${noteTypeId}`);
   if (!t) throw new NotFoundError("Note type not found");
+  // A copy made before the last built-in change would refuse the new fields.
+  if (t.builtinKey && t.builtinVersion < BUILTIN_TYPES_VERSION) {
+    await upgradeBuiltinTypes(db, userId, [{ id: t.id, builtin_key: t.builtinKey, builtin_version: t.builtinVersion }]);
+    const [fresh] = await loadTypes(db, sql`user_id = ${userId} AND id = ${noteTypeId}`);
+    return fresh;
+  }
   return t;
 }
 

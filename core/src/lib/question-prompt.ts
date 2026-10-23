@@ -20,7 +20,10 @@ export interface QuestionRequest {
   backText: string;
   /** The card is a cloze note: it tests exactly one gap. */
   isCloze: boolean;
+  /** Pictures in the card text itself, outside its figure fields. */
   hasImages: boolean;
+  /** The card's figure, which the app shows: the full one after the answer, the one with parts hidden with the stem. */
+  figure: { withStem: boolean; afterAnswer: boolean; labels: string } | null;
   original: { question: string; expectedAnswer: string | null; options: string[] | null } | null;
   /** Question texts asked for this card lately, newest first. Do not repeat them. */
   recentQuestions: string[];
@@ -33,6 +36,7 @@ export const QUESTION_SYSTEM_PROMPT = `You write study questions for LearnForge,
 - original: the card's anchor question, when it has one. Every variant derives from it, never from an earlier variant.
 - recentQuestions: what was asked lately. Ask it differently, unless changeRate is 0.
 - bloomLevel, difficulty, changeRate, form: how to ask. They are binding.
+- figure: the card has a figure the app shows next to your question. afterAnswer: the full figure appears with the feedback, after the learner answered. withStem: a version with the asked parts hidden appears below your stem. labels: the figure's text labels, for context only.
 
 ## Bloom level sets what the question demands
 - 0 Remember: recall a fact, term or definition.
@@ -76,6 +80,12 @@ Interpolate between these anchors. Without an original, treat the card front as 
 - key_points: two to four short statements a full answer contains, each checkable on its own, most important first. They are the rubric the answer is graded against.
 - Leave options, accept empty.
 
+## Figures
+- Ask from the card text. The figure supports the answer; it is not the question.
+- With withStem true you may point to it in the stem ("in the figure"), but the stem must still make sense to read.
+- Never ask for something only the full figure shows: the learner sees it only after answering.
+- With afterAnswer true the explanation may refer to the figure the learner is about to see.
+
 ## Every question
 - explanation: one or two sentences that teach the point, shown after the answer.
 - terms: up to four technical terms that appear literally in the stem, an option, or the explanation and that a learner at this level might not know. Each has term (exactly as written in the text, same case) and definition (one sentence). A definition must never give away the answer to this question; leave out a term if it would.
@@ -84,8 +94,8 @@ Interpolate between these anchors. Without an original, treat the card front as 
 
 ## When to skip
 Return status "skipped" with a one-sentence skip_reason, and leave the other fields empty, when:
-- the question cannot be asked without typeset formulas or a diagram,
-- hasImages is true and the pictures carry the meaning,
+- the question cannot be asked without typeset formulas, or without a diagram the card has no figure for,
+- hasImages is true and the pictures carry the meaning (a figure does not count: the app shows it),
 - the card is empty, broken, or has no checkable content.
 Otherwise status is "ready" and skip_reason is empty.
 
@@ -157,6 +167,7 @@ export function buildQuestionBatchPrompt(requests: QuestionRequest[]): string {
     concept: r.concept,
     isCloze: r.isCloze,
     hasImages: r.hasImages,
+    figure: r.figure,
     frontText: r.frontText,
     backText: r.backText,
     original: r.original,

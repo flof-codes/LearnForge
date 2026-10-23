@@ -20,6 +20,8 @@ interface BrowseCard {
   id: string;
   concept: string;
   frontHtml?: string;
+  hasPicture?: boolean;
+  thumbnail?: string | null;
   topicId?: string;
   tags: string[];
   bloomState?: { currentLevel: number };

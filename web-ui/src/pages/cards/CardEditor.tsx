@@ -8,6 +8,7 @@ import TopicSelector from '../../components/TopicSelector';
 import TagInput from '../../components/TagInput';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import VariationSlider from '../../components/VariationSlider';
+import FigureFieldEditor from './FigureFieldEditor';
 import type { CardWithState, CreateCardInput, UpdateCardInput, UpdateNoteInput } from '../../types';
 
 interface Props {
@@ -51,6 +52,9 @@ function useCodeMirror(initialValue: string, onChange: (value: string) => void) 
   return containerRef;
 }
 
+/** The two figure fields of the built-in types (core lib/figures.ts) get an upload and a preview. */
+const FIGURE_FIELDS = new Set(['Figure', 'Front figure']);
+
 /** Field-by-field editor for a card that renders from a note; the HTML is derived and read-only. */
 function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: CardWithState; onSubmitNote?: (data: UpdateNoteInput, changeRate: number | null) => void; isPending?: boolean; onDirty?: () => void }) {
   const { t } = useTranslation('app');
@@ -72,7 +76,16 @@ function NoteFieldsEditor({ card, onSubmitNote, isPending, onDirty }: { card: Ca
           {t('cardEditor.typedHint', { type: note.noteTypeName })}
           {note.siblings.length > 1 && ` · ${t('cardEditor.siblings', { count: note.siblings.length })}`}
         </p>
-        {note.fieldDefs.map(f => (
+        {note.fieldDefs.map(f => FIGURE_FIELDS.has(f.name) ? (
+          <FigureFieldEditor
+            key={f.key}
+            id={`note-field-${f.key}`}
+            name={f.name}
+            value={fields[f.key] ?? ''}
+            onChange={v => { setFields(prev => ({ ...prev, [f.key]: v })); onDirty?.(); }}
+            cardId={card.id}
+          />
+        ) : (
           <div key={f.key}>
             <label htmlFor={`note-field-${f.key}`} className="block text-sm text-text-muted mb-1">{f.name}</label>
             <textarea

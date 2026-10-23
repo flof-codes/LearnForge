@@ -294,6 +294,20 @@
     "deleteReviewMessage": "This review will be permanently deleted. The card's scheduling state will be recalculated from remaining reviews.",
     "deleteReviewConfirm": "Delete"
   },
+  "figure": {
+    "zoomTitle": "Picture, enlarged",
+    "close": "Close",
+    "upload": "Upload picture",
+    "replace": "Replace picture",
+    "uploading": "Uploading\u2026",
+    "uploadFailed": "The picture could not be uploaded",
+    "remove": "Remove {{name}}",
+    "frontHint": "Shown below the question. Hide the parts the question asks for.",
+    "backHint": "Shown on the back, below the answer. Use it when the picture carries the answer.",
+    "markup": "Edit as HTML or SVG",
+    "markupPlaceholder": "<svg viewBox=\"0 0 400 200\">\u2026</svg> or <img src=\"/images/\u2026\">",
+    "hasFigure": "Has a picture"
+  },
   "cardEditor": {
     "typedHint": "This card renders from a {{type}} note. Edit the fields; the HTML follows.",
     "siblings": "{{count}} cards share this note",

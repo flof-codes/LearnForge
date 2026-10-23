@@ -7,6 +7,7 @@ import { useIsPhone } from '../../hooks/useIsPhone';
 import TermText from './TermText';
 import MicButton from './MicButton';
 import CardMenu from './CardMenu';
+import FigureView from './FigureView';
 import { OPTION_LETTERS, gradeChoice, gradeGap, suggestedRating } from '../../utils/tutor';
 import type { TutorQuestion } from '../../types';
 
@@ -150,6 +151,9 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
           )}
         </div>
 
+        {/* The front figure asks along; after the answer the full figure takes its place. */}
+        {item.frontFigure && !(done && item.figure) && <FigureView html={item.frontFigure} />}
+
         {item.form === 'choice' && multi && <p className="text-sm text-text-muted">{t('tutor.severalCorrect', { count: correctCount })}</p>}
 
         {item.form === 'choice' && (
@@ -189,6 +193,7 @@ export default function QuestionCard({ item, onAnswer, onViewDetail, saving, dic
         )}
 
         {item.form === 'choice' && done && verdict}
+        {done && item.figure && <FigureView html={item.figure} />}
         {done && <p><TermText text={payload.explanation} terms={payload.terms} onLookup={() => setLookedUp(true)} /></p>}
         {item.form === 'choice' && done && (
           <ul className="space-y-1.5 text-sm">

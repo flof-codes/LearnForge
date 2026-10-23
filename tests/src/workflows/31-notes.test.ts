@@ -60,7 +60,7 @@ describe("Note types", () => {
     expect(keys).toEqual(expect.arrayContaining(["choice", "cloze", "open"]));
     const cloze = res.data.find((t: any) => t.builtinKey === "cloze");
     expect(cloze.kind).toBe("cloze");
-    expect(cloze.fields.map((f: any) => f.name)).toEqual(["Text", "Extra"]);
+    expect(cloze.fields.map((f: any) => f.name)).toEqual(["Text", "Extra", "Figure", "Front figure"]);
     expect(cloze.templates).toHaveLength(1);
     expect(cloze.customized).toBe(false);
   });
@@ -137,7 +137,7 @@ describe("Note types", () => {
     const tooDeep = await api.post("/notes", { topic_id: topic, note_type: "cloze", fields: { Text: deep } });
     expect(tooDeep.status).toBe(400);
     expect(tooDeep.data.error).toMatch(/deep/i);
-    const tooLong = await api.post("/notes", { topic_id: topic, note_type: "cloze", fields: { Text: "{{c1::a}} " + "y".repeat(25_000) } });
+    const tooLong = await api.post("/notes", { topic_id: topic, note_type: "cloze", fields: { Text: "{{c1::a}} " + "y".repeat(61_000) } });
     expect(tooLong.status).toBe(400);
   });
 
