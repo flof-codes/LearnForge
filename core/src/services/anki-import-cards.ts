@@ -13,9 +13,10 @@ export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 /**
  * Writes a note's cards. New (template, gap) pairs are inserted with the
  * schedule `scheduleFor` gives (Anki's or fresh); existing ones get new HTML
- * and keep their schedule. Unsupported note types (image occlusion) are
- * suspended with reason `unsupported`. Embeddings are cleared for the
- * background backfill.
+ * and keep their schedule. Cards of unsupported note types are suspended
+ * with reason `unsupported`; once the type is supported (image occlusion), a
+ * re-import frees them, keeping Anki's own suspension. Embeddings are cleared
+ * for the background backfill.
  */
 export async function syncImportedCards(
   tx: Tx, noteId: string, topicId: string, planned: PlannedCard[], concept: string, tags: string[], supported: boolean,
@@ -33,11 +34,13 @@ export async function syncImportedCards(
     wanted.add(key);
     const row = byKey.get(key);
     if (row) {
+      const lift = supported && row.suspended_by === "unsupported";
+      const liftedTo = lift ? (scheduleFor?.(p).suspendedBy ?? null) : null;
       await tx.execute(sql`
         UPDATE cards SET front_html = ${p.frontHtml}, back_html = ${p.backHtml}, concept = ${concept}, tags = ${textArray(tags)},
           renderer_version = ${RENDERER_VERSION}, embedding = NULL, updated_at = NOW(),
-          suspended = CASE WHEN suspended_by = 'gap' THEN false ELSE suspended END,
-          suspended_by = CASE WHEN suspended_by = 'gap' THEN NULL ELSE suspended_by END
+          suspended = CASE WHEN suspended_by = 'gap' THEN false WHEN ${lift}::boolean THEN ${liftedTo !== null}::boolean ELSE suspended END,
+          suspended_by = CASE WHEN suspended_by = 'gap' THEN NULL WHEN ${lift}::boolean THEN ${liftedTo}::text ELSE suspended_by END
         WHERE id = ${row.id}
       `);
       continue;

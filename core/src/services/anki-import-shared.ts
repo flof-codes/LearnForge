@@ -41,9 +41,37 @@ export interface AnkiPreview {
 const STOCK_IMAGE_OCCLUSION = 6;
 export const MAX_ERRORS = 50;
 
+/** Anki's image occlusion type: the stock kind, or a copy of it (its template calls Anki's occlusion script). */
+export function isOcclusionType(nt: Pick<AnkiNoteType, "originalStockKind" | "templates">): boolean {
+  if (nt.originalStockKind === STOCK_IMAGE_OCCLUSION) return true;
+  return nt.templates.some(t => /anki\.imageOcclusion/.test(t.qfmt + t.afmt));
+}
+
+/** The built-in occlusion type's fields; Anki's stock type has them in this order. */
+export const OCCLUSION_FIELDS = ["Occlusion", "Image", "Header", "Back Extra", "Comments"];
+
+/**
+ * Maps an Anki occlusion type's field ords onto the built-in type's field names:
+ * by name, else by Anki's stock order. Null when the occlusion and image fields cannot be found.
+ */
+export function occlusionFieldMap(fields: Array<{ ord: number; name: string }>): Map<number, string> | null {
+  const byName = new Map(fields.map(f => [f.name.trim().toLowerCase(), f.ord]));
+  const map = new Map<number, string>();
+  if (OCCLUSION_FIELDS.slice(0, 2).every(n => byName.has(n.toLowerCase()))) {
+    for (const n of OCCLUSION_FIELDS) {
+      const ord = byName.get(n.toLowerCase());
+      if (ord !== undefined) map.set(ord, n);
+    }
+    return map;
+  }
+  if (fields.length !== OCCLUSION_FIELDS.length) return null;
+  for (const f of fields) map.set(f.ord, OCCLUSION_FIELDS[f.ord]);
+  return map;
+}
+
+/** Image occlusion maps onto the built-in type; every other Anki type is copied as it is. */
 export function isSupportedType(nt: AnkiNoteType): boolean {
-  if (nt.originalStockKind === STOCK_IMAGE_OCCLUSION) return false;
-  return !nt.templates.some(t => /anki\.imageOcclusion/.test(t.qfmt + t.afmt));
+  return !isOcclusionType(nt) || occlusionFieldMap(nt.fields) !== null;
 }
 
 export function schemaHash(nt: AnkiNoteType): string {

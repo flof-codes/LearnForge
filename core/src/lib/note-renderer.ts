@@ -1,4 +1,5 @@
 import { ValidationError } from "./errors.js";
+import { OCCLUSION_PREFIX, parseOcclusionShape, renderOcclusionSpan, type ParsedOcclusion } from "./image-occlusion.js";
 
 /**
  * Renders Anki-style card templates.
@@ -13,11 +14,12 @@ import { ValidationError } from "./errors.js";
  * Emptiness follows Anki: a field is empty only when it holds nothing but
  * whitespace, `<br>` and `<div>` tags, so an `<img>`-only or `&nbsp;` field
  * counts as filled. Cloze gaps may name several cards (`{{c1,2::…}}`); `c0`
- * belongs to card 1 without being hidden on it, as in Anki.
+ * belongs to card 1 without being hidden on it, as in Anki. A gap whose text
+ * starts with `image-occlusion:` is a shape on an image (lib/image-occlusion.ts).
  */
 
-/** 2: Anki's empty-field rule, multi-number gaps, `{{Deck}}` as the full path. */
-export const RENDERER_VERSION = 2;
+/** 2: Anki's empty-field rule, multi-number gaps, `{{Deck}}` as the full path. 3: image occlusion shapes. */
+export const RENDERER_VERSION = 3;
 
 /** Budgets: a field longer than this, deeper cloze nesting or more gaps is refused, not rendered. */
 export const MAX_FIELD_LENGTH = 200_000;
@@ -82,7 +84,8 @@ export function findClozeSpans(text: string, depth = 0): ClozeSpan[] {
     let hint: string | null = null;
     let answer = inner;
     let d = 0;
-    for (let k = inner.length - 2; k >= 0; k--) {
+    // An occlusion shape has no hint; its escaped values may contain "::".
+    for (let k = inner.startsWith(OCCLUSION_PREFIX) ? -1 : inner.length - 2; k >= 0; k--) {
       if (inner.startsWith("}}", k)) d++;
       else if (inner.startsWith("{{", k)) d--;
       else if (d === 0 && inner.startsWith("::", k)) { answer = inner.slice(0, k); hint = inner.slice(k + 2); break; }
@@ -101,18 +104,29 @@ export function plainClozeText(text: string, depth = 0): string {
   let out = "";
   let cursor = 0;
   for (const s of spans) {
-    out += text.slice(cursor, s.start) + plainClozeText(s.answer, depth + 1);
+    // Occlusion shapes are coordinates, not words.
+    out += text.slice(cursor, s.start) + (s.answer.startsWith(OCCLUSION_PREFIX) ? "" : plainClozeText(s.answer, depth + 1));
     cursor = s.end;
   }
   return out + text.slice(cursor);
 }
 
-/** Card numbers a field's gaps produce, ascending: `c0` counts as card 1, numbers past the cap make none. */
+/** The image occlusion shapes of a field, each with the card numbers it belongs to. */
+export function occlusionsIn(text: string): ParsedOcclusion[] {
+  return findClozeSpans(text).flatMap(s => {
+    const shape = s.answer.startsWith(OCCLUSION_PREFIX) ? parseOcclusionShape(s.answer.slice(OCCLUSION_PREFIX.length)) : null;
+    return shape ? [{ ordinals: s.numbers, shape }] : [];
+  });
+}
+
+/** Card numbers a field's gaps produce, ascending: `c0` counts as card 1 (not on an occlusion label), numbers past the cap make none. */
 export function clozeNumbersIn(text: string): number[] {
   const numbers = new Set<number>();
   const walk = (t: string, depth: number) => {
     for (const s of findClozeSpans(t, depth)) {
-      for (const n of s.numbers) numbers.add(Math.max(n, 1));
+      // An occlusion label (c0) is drawn on every card and asks nothing.
+      const io = s.answer.startsWith(OCCLUSION_PREFIX);
+      for (const n of s.numbers) if (!(io && n === 0)) numbers.add(Math.max(n, 1));
       walk(s.answer, depth + 1);
     }
   };
@@ -130,6 +144,13 @@ export function renderClozeField(text: string, active: number, back: boolean): {
     let cursor = 0;
     for (const s of spans) {
       out += t.slice(cursor, s.start);
+      if (s.answer.startsWith(OCCLUSION_PREFIX)) {
+        const isActive = s.numbers.includes(active);
+        if (isActive) hasActive = true;
+        out += renderOcclusionSpan(s.answer.slice(OCCLUSION_PREFIX.length), s.numbers, isActive, back);
+        cursor = s.end;
+        continue;
+      }
       const answer = render(s.answer, depth + 1);
       if (s.numbers.includes(active)) {
         hasActive = true;

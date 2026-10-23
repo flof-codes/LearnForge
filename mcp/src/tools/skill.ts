@@ -331,6 +331,12 @@ When the user fails a rephrased question, connect back to the original:
 "This is the same concept from your card. The answer is [X]. Recognizing it in different contexts shows deeper understanding."
 </cloze_study_flow>
 
+## Image Occlusion Cards
+
+<image_occlusion_flow>
+A card with \`noteTypeKey === "occlusion"\` is a picture with labels covered (Anki's image occlusion); one card per covered label. The attached picture is the **unmasked** original, so it shows the answer: never describe it, or the label asked, before the user has answered. The asked shape is the \`<div class="cloze" …>\` in \`frontHtml\`; its \`data-left\`, \`data-top\`, \`data-width\`, \`data-height\` are fractions of the picture. Name its place in words ("the box about a third from the left, halfway down") and the \`Header\` field if there is one, then ask an open question; grade against the label you read in the picture. If the place cannot be told unambiguously in words, tell the user this card is best studied in the web app and move on without a review.
+</image_occlusion_flow>
+
 ---
 
 ## Card Creation Flow

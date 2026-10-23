@@ -11,9 +11,9 @@ import { extFromMime } from "../lib/image-utils.js";
 import { textArray } from "../lib/sql-array.js";
 import { createInitialFsrsState } from "./fsrs.js";
 import { deriveConcept, plannedCards, refreshDerivedOriginals, type PlannedCard } from "./note-service.js";
-import { getNoteType, type NoteType } from "./note-types.js";
+import { getNoteType, resolveNoteType, type NoteType } from "./note-types.js";
 import {
-  cardsByNote, deckPaths, existingGuids, homeDeck, isSupportedType, schemaHash, MAX_ERRORS,
+  cardsByNote, deckPaths, existingGuids, homeDeck, isOcclusionType, isSupportedType, occlusionFieldMap, schemaHash, MAX_ERRORS,
   type AnkiImportOptions, type AnkiImportStats,
 } from "./anki-import-shared.js";
 import { syncImportedCards } from "./anki-import-cards.js";
@@ -26,7 +26,7 @@ export type { ScheduleMode, AnkiImportOptions, AnkiImportStats, AnkiPreview } fr
  * - decks → topics (full path; filtered decks never become topics, their cards
  *   go to the deck they came from);
  * - note types → the user's own types, reused on re-import when the Anki id
- *   and the field/template layout match;
+ *   and the field/template layout match; image occlusion → the built-in type;
  * - notes → notes keyed by guid; a re-import updates a note only when Anki's
  *   copy changed after LearnForge's (Anki's own rule);
  * - cards → rendered by the note renderer, schedule taken from Anki;
@@ -105,10 +105,22 @@ export async function importAnkiPackage(db: Db, userId: string, importId: string
 
   // ── Note types ────────────────────────────────────────────────────────
   const usedTypeIds = new Set(pkg.notes.map(n => n.mid));
-  const localTypes = new Map<number, { type: NoteType; supported: boolean; rerender: boolean }>();
+  /** `fieldKeys`: Anki field ord → local field key, for types mapped onto a built-in. */
+  const localTypes = new Map<number, { type: NoteType; supported: boolean; rerender: boolean; fieldKeys?: Map<number, string> }>();
   const records: RecordRow[] = [];
   for (const nt of pkg.noteTypes) {
     if (!usedTypeIds.has(nt.id)) continue;
+    const ioFields = isOcclusionType(nt) ? occlusionFieldMap(nt.fields) : null;
+    if (ioFields) {
+      // Anki's image occlusion lands on the built-in type: the same fields, drawn by LearnForge.
+      const type = await resolveNoteType(db, userId, "occlusion");
+      const keyByName = new Map(type.fields.map(f => [f.name, f.key]));
+      const fieldKeys = new Map([...ioFields].map(([ord, name]) => [ord, keyByName.get(name)!]));
+      localTypes.set(nt.id, { type, supported: true, rerender: false, fieldKeys });
+      records.push({ kind: "notetype", key: String(nt.id), localId: type.id, raw: nt });
+      stats.noteTypes.reused++;
+      continue;
+    }
     const hash = schemaHash(nt);
     const supported = isSupportedType(nt);
     if (!supported) stats.noteTypes.unsupported++;
@@ -228,7 +240,8 @@ export async function importAnkiPackage(db: Db, userId: string, importId: string
       if (ankiCards.length === 0) { fail(note.guid, "The note has no cards"); continue; }
       const { type, supported } = local;
       const fields: Record<string, string> = {};
-      for (const f of type.fields) fields[f.key] = rewrite(note.fields[f.ord] ?? "");
+      for (const f of type.fields) fields[f.key] = local.fieldKeys ? "" : rewrite(note.fields[f.ord] ?? "");
+      for (const [ord, key] of local.fieldKeys ?? []) fields[key] = rewrite(note.fields[ord] ?? "");
       const deckParts = paths.get(homeDeck(ankiCards[0])) ?? ["Default"];
       const topicId = topicByKey.get(deckParts.join("\x1f"))!;
 
@@ -311,10 +324,12 @@ export async function importAnkiPackage(db: Db, userId: string, importId: string
   for (const id of updatedNotes) await refreshDerivedOriginals(db, userId, id);
   // Types left behind by a layout change are empty now; drop them so the old layout does not linger.
   // A type that still holds a card (a template Anki dropped, suspended as a vanished gap) stays with its history.
+  // An occlusion type an older import copied is left behind whole once its notes moved to the built-in.
   for (const nt of pkg.noteTypes) {
     if (!usedTypeIds.has(nt.id)) continue;
+    const mapped = localTypes.get(nt.id)?.fieldKeys !== undefined;
     await db.execute(sql`
-      DELETE FROM note_types t WHERE t.user_id = ${userId} AND t.anki_key = ${String(nt.id)} AND t.anki_schema <> ${schemaHash(nt)}
+      DELETE FROM note_types t WHERE t.user_id = ${userId} AND t.anki_key = ${String(nt.id)} AND (${mapped} OR t.anki_schema <> ${schemaHash(nt)})
         AND NOT EXISTS (SELECT 1 FROM notes n WHERE n.note_type_id = t.id)
         AND NOT EXISTS (SELECT 1 FROM cards c JOIN card_templates ct ON ct.id = c.template_id WHERE ct.note_type_id = t.id)
     `);

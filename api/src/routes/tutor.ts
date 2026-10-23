@@ -84,10 +84,10 @@ export default async function tutorRoutes(app: FastifyInstance) {
     const topicId = req.body?.topic_id || undefined;
 
     const queue = await getTutorQueue(db, userId, { topicId, difficulty, answerBy });
-    requestQuestions(db, userId, model, queue.filter(e => !e.stored).map(e => toQuestionRequest(e, difficulty)), log);
+    requestQuestions(db, userId, model, queue.filter(e => !e.stored && !e.asCard).map(e => toQuestionRequest(e, difficulty)), log);
     const summary = await getStudySummary(db, userId, topicId);
     return {
-      ready: queue.filter(e => e.stored).length,
+      ready: queue.filter(e => e.stored || e.asCard).length,
       waiting: summary.dueCount + summary.newCount,
       ...writerStatus(userId),
     };

@@ -49,6 +49,7 @@ export {
   type Note, type NoteCardSummary, type CreateNoteInput, type UpdateNoteInput,
 } from "./services/note-service.js";
 export { convertLegacyClozeCards, type LegacyClozeReport } from "./services/legacy-cloze.js";
+export { convertImportedOcclusionTypes, type OcclusionMigrationReport } from "./services/occlusion-migration.js";
 export { readAnkiPackage, type AnkiPackage, type PackageVersion as AnkiPackageVersion } from "./lib/apkg/package.js";
 export { textArray } from "./lib/sql-array.js";
 export {
@@ -62,7 +63,11 @@ export {
   clearStagedPath, sweepAnkiImports, usersMissingEmbeddings,
   type AnkiImportJob, type AnkiImportStatus,
 } from "./services/anki-import-jobs.js";
-export { renderCardTemplate, renderClozeField, clozeNumbersIn, findClozeSpans, plainClozeText, RENDERER_VERSION, type RenderContext, type RenderResult } from "./lib/note-renderer.js";
+export { renderCardTemplate, renderClozeField, clozeNumbersIn, findClozeSpans, plainClozeText, occlusionsIn, RENDERER_VERSION, type RenderContext, type RenderResult } from "./lib/note-renderer.js";
+export {
+  parseOcclusionShape, occlusionToCloze, renderOcclusionSpan, validateOcclusionField, OCCLUSION_PREFIX,
+  type OcclusionShape, type ParsedOcclusion,
+} from "./lib/image-occlusion.js";
 export {
   setOriginal, getCardOriginal, getCurrentOriginals, disputeOriginal, resolveDispute, markOriginalStale,
   type CardOriginal, type OriginalOption, type SetOriginalInput,

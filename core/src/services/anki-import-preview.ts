@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/types.js";
 import type { AnkiPackage } from "../lib/apkg/package.js";
-import { deckPaths, existingGuids, homeDeck, isSupportedType, schemaHash, type AnkiPreview } from "./anki-import-shared.js";
+import { deckPaths, existingGuids, homeDeck, isOcclusionType, isSupportedType, schemaHash, type AnkiPreview } from "./anki-import-shared.js";
 
 /** What an Anki package holds and what importing it would change, read without writing anything. */
 export async function previewAnkiPackage(db: Db, userId: string, pkg: AnkiPackage): Promise<AnkiPreview> {
@@ -28,7 +28,8 @@ export async function previewAnkiPackage(db: Db, userId: string, pkg: AnkiPackag
     .filter(nt => notesPerType.has(nt.id))
     .map(nt => ({
       name: nt.name, kind: nt.kind === 1 ? "cloze" as const : "standard" as const, notes: notesPerType.get(nt.id) ?? 0,
-      supported: isSupportedType(nt), known: knownKeys.has(`${nt.id}:${schemaHash(nt)}`),
+      // Image occlusion lands on the built-in type, which every account has.
+      supported: isSupportedType(nt), known: (isOcclusionType(nt) && isSupportedType(nt)) || knownKeys.has(`${nt.id}:${schemaHash(nt)}`),
     }));
 
   const existing = await existingGuids(db, userId, pkg.notes.map(n => n.guid));
