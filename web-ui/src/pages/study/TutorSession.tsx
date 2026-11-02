@@ -5,17 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { tutorService } from '../../api/tutor';
 import { reviewService } from '../../api/reviews';
-import BloomBadge from '../../components/BloomBadge';
-import FocusBadge from '../../components/FocusBadge';
 import { useIsPhone } from '../../hooks/useIsPhone';
 import InteractiveCard from './InteractiveCard';
 import QuestionCard, { type QuestionAnswer } from './QuestionCard';
 import OpenCard from './OpenCard';
 import CardMenu from './CardMenu';
 import SessionSummary from './SessionSummary';
-import { presetOf, tutorErrorKey, isStaleTicket, saveTutorSettings, settingsToParams, type TutorSettings } from '../../utils/tutor';
+import StudyFolder from './StudyFolder';
+import { useFolderPath } from '../../hooks/useTopics';
+import { tutorErrorKey, isStaleTicket, saveTutorSettings, settingsToParams, type TutorSettings } from '../../utils/tutor';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
-import type { TutorItem, TutorPause } from '../../types';
+import type { FeedbackLabel, HelpUsed, TutorItem, TutorPause, TutorQuestion, TutorRewrite } from '../../types';
 
 interface Props {
   topicId?: string;
@@ -58,6 +58,9 @@ export default function TutorSession({ topicId, settings }: Props) {
   /** Why a card went away without being rated. */
   const [notice, setNotice] = useState<string | null>(null);
   const [round, setRound] = useState(0);
+  /** The current question was rewritten from feedback: what it replaced, so it can be undone. */
+  const [rewrite, setRewrite] = useState<{ feedbackId: string; questionId: string; previous: TutorQuestion; labels: FeedbackLabel[]; used: HelpUsed } | null>(null);
+  const [undoing, setUndoing] = useState(false);
 
   const sessionId = useRef<string | null>(null);
   const fetching = useRef(false);
@@ -100,6 +103,7 @@ export default function TutorSession({ topicId, settings }: Props) {
 
   // A card that can no longer be answered here (studied on another device, question replaced) leaves the queue quietly.
   const dropStale = useCallback(() => {
+    setRewrite(null);
     setNotice(t('tutor.questionGone'));
     setSaveError(null);
     setQueue(q => q.slice(1));
@@ -131,6 +135,7 @@ export default function TutorSession({ topicId, settings }: Props) {
 
   const advance = useCallback((rating: number) => {
     setNotice(null);
+    setRewrite(null);
     setRatings(r => [...r, rating]);
     setQueue(q => q.slice(1));
     setRemaining(n => Math.max(0, n - 1));
@@ -140,6 +145,8 @@ export default function TutorSession({ topicId, settings }: Props) {
   }, [queryClient]);
 
   const current = queue[0];
+  const cardTopicId = current ? (current.type === 'question' ? current.topicId : current.card.topicId) : undefined;
+  const folderPath = useFolderPath(cardTopicId);
 
   // A new difficulty holds from the next card: what is queued behind the current one was written for the old one.
   const changeDifficulty = useCallback(async (next: number) => {
@@ -189,6 +196,28 @@ export default function TutorSession({ topicId, settings }: Props) {
     }
   };
 
+  // The tutor rewrote the current question from feedback: the new one takes its place, with its own ticket.
+  const showRewrite = (r: TutorRewrite, labels: FeedbackLabel[], used: HelpUsed) => {
+    if (!current || current.type !== 'question') return;
+    const next = { ...current, questionId: r.questionId, form: r.form, payload: r.payload } as TutorQuestion;
+    setRewrite({ feedbackId: r.feedbackId, questionId: r.questionId, previous: current, labels, used });
+    setQueue(q => [next, ...q.slice(1)]);
+  };
+
+  const undoRewrite = async () => {
+    if (!rewrite || undoing) return;
+    setUndoing(true);
+    try {
+      await tutorService.undoFeedback(rewrite.feedbackId);
+      setQueue(q => (q[0]?.type === 'question' && q[0].questionId === rewrite.questionId ? [rewrite.previous, ...q.slice(1)] : q));
+      setRewrite(null);
+    } catch {
+      setNotice(t('tutor.help.undoFailed'));
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   const viewDetail = (cardId: string) => {
     navigate(`/dashboard/cards/${cardId}`, { state: { returnTo: `/dashboard/study/session${window.location.search}` } });
   };
@@ -205,36 +234,28 @@ export default function TutorSession({ topicId, settings }: Props) {
     return <SessionSummary cardsReviewed={ratings.length} ratings={ratings} />;
   }
 
-  const preset = presetOf(difficulty);
-  const headspace = preset ? t(`tutor.headspace.${preset}`) : t('tutor.headspace.custom', { value: difficulty.toFixed(2) });
-  const level = current ? (current.type === 'question' ? current.bloomLevel : current.card.bloomState.currentLevel) : null;
   const done = ratings.length;
   const dictate = settings.answerBy.includes('dictate');
 
   const progress = (done / Math.max(1, done + remaining)) * 100;
-  const counts = { headspace, current: done + 1, left: Math.max(0, remaining - 1) };
-  // A choice needs no label; a gap and an open question say what they are.
-  const formWord = current?.type === 'question' && current.form !== 'choice' ? t(current.form === 'gap' ? 'tutor.fillGap' : 'tutor.openQuestion') : null;
+  // Where the session stands sits in the card menu; the header keeps only the folder.
+  const menuInfo = { path: folderPath.join(' › '), progress: t('tutor.menu.progress', { current: done + 1, left: Math.max(0, remaining - 1) }) };
   const cardMenu = current?.type === 'card'
-    ? <CardMenu difficulty={difficulty} onChangeDifficulty={changeDifficulty} onViewDetail={() => viewDetail(current.card.id)} onOpenChange={setMenuOpen} />
+    ? <CardMenu difficulty={difficulty} onChangeDifficulty={changeDifficulty} onViewDetail={() => viewDetail(current.card.id)} onOpenChange={setMenuOpen} info={menuInfo} />
+    : null;
+  const help = current?.type === 'question'
+    ? {
+        menuInfo,
+        onRewritten: showRewrite,
+        rewrite: rewrite?.questionId === current.questionId ? { labels: rewrite.labels, used: rewrite.used, onUndo: () => void undoRewrite(), busy: undoing } : undefined,
+      }
     : null;
 
   return (
     <div className="max-w-2xl mx-auto space-y-2.5 -mt-6 md:mt-0 md:space-y-4">
-      {/* Phone: progress is a line on the top edge, and one row holds everything else. */}
-      <div className="lf-bleed h-[3px] bg-bg-surface md:hidden">
-        <div className="h-full bg-accent-blue transition-all duration-300" style={{ width: `${progress}%` }} />
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0 md:gap-3 md:flex-wrap">
-          {level !== null && <BloomBadge level={level} showLabel />}
-          {current && <FocusBadge topicId={current.type === 'question' ? current.topicId : current.card.topicId} size="md" />}
-          <span className="text-sm text-text-muted truncate">
-            {isPhone ? t('tutor.progressShort', counts) : t('tutor.progress', counts)}
-            {isPhone && formWord ? ` · ${formWord}` : ''}
-          </span>
-        </div>
+      {/* One row: the focus star and the card's folder, then the menu and End. The progress line runs below it. */}
+      <div className="flex items-center justify-between gap-2 min-h-12 md:min-h-9">
+        <StudyFolder topicId={cardTopicId} full={!isPhone} />
         <div className="flex items-center gap-0.5 shrink-0">
           <div ref={setMenuSlot} className="md:hidden" />
           {isPhone && cardMenu}
@@ -248,8 +269,8 @@ export default function TutorSession({ topicId, settings }: Props) {
         </div>
       </div>
 
-      <div className="hidden md:block h-1 bg-bg-surface rounded-full overflow-hidden">
-        <div className="h-full bg-accent-blue rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+      <div className="lf-bleed h-[3px] bg-bg-surface md:mx-0 md:h-1 md:rounded-full md:overflow-hidden">
+        <div className="h-full bg-accent-blue md:rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       {error && (
@@ -284,10 +305,10 @@ export default function TutorSession({ topicId, settings }: Props) {
       )}
 
       {current?.type === 'question' && current.form !== 'open' && (
-        <QuestionCard key={current.questionId} item={current} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} difficulty={difficulty} onChangeDifficulty={changeDifficulty} menuSlot={isPhone ? menuSlot : null} />
+        <QuestionCard key={current.questionId} item={current} {...help!} onAnswer={answerQuestion} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} difficulty={difficulty} onChangeDifficulty={changeDifficulty} menuSlot={isPhone ? menuSlot : null} />
       )}
       {current?.type === 'question' && current.form === 'open' && (
-        <OpenCard key={current.questionId} item={current} onAnswer={answerQuestion} onStale={dropStale} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} difficulty={difficulty} onChangeDifficulty={changeDifficulty} menuSlot={isPhone ? menuSlot : null} />
+        <OpenCard key={current.questionId} item={current} {...help!} onAnswer={answerQuestion} onStale={dropStale} onViewDetail={() => viewDetail(current.cardId)} saving={saving} dictate={dictate} difficulty={difficulty} onChangeDifficulty={changeDifficulty} menuSlot={isPhone ? menuSlot : null} />
       )}
       {current?.type === 'card' && (
         <InteractiveCard

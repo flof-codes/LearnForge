@@ -1,0 +1,699 @@
+<title>LearnForge Study Help</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: control strip, then phone + desktop frames side by side, spec and open questions below. App tokens from web-ui/src/index.css. */
+:root {
+  --bg: #ffffff; --bg2: #f5f7fa; --surface: #e8ecf1; --hover: #dde2e8;
+  --fg: #1a202c; --muted: #64748b; --green: #16a34a; --blue: #2563eb; --purple: #7c3aed;
+  --border: rgba(0,0,0,.10); --danger: #dc2626; --warning: #d97706;
+  --b1bg: #a5f3fc; --b1fg: #0e7490;
+  --page: #eef1f5; --bezel: #cfd6df;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161b22; --bg2: #1c2128; --surface: #262c36; --hover: #2d333b;
+  --fg: #c9d1d9; --muted: #8b949e; --green: #56d364; --blue: #58a6ff; --purple: #bc8cff;
+  --border: rgba(255,255,255,.08); --danger: #f85149; --warning: #d29922;
+  --b1bg: #042f2e; --b1fg: #2dd4bf; --page: #0d1117; --bezel: #2d333b; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #161b22; --bg2: #1c2128; --surface: #262c36; --hover: #2d333b;
+  --fg: #c9d1d9; --muted: #8b949e; --green: #56d364; --blue: #58a6ff; --purple: #bc8cff;
+  --border: rgba(255,255,255,.08); --danger: #f85149; --warning: #d29922;
+  --b1bg: #042f2e; --b1fg: #2dd4bf; --page: #0d1117; --bezel: #2d333b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--fg); font: 15px/1.55 var(--font); margin: 0; }
+button, input, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.page { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; display: flex; flex-direction: column; gap: 20px; max-width: 1500px; margin: 0 auto; }
+
+/* ---------- page chrome ---------- */
+.top h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.top p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.controls { display: flex; flex-direction: column; gap: 12px; }
+.crow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.clabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); width: 64px; flex: none; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg); }
+.seg button { padding: 6px 14px; font-size: 14px; color: var(--muted); border-left: 1px solid var(--border); }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 600; }
+.rec { font-size: 11px; color: var(--green); font-weight: 600; margin-left: 4px; }
+.vnote { font-size: 14px; color: var(--muted); min-width: 0; }
+.chip { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); font-size: 13px; color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, var(--bg)); }
+.zoom { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stage { display: flex; gap: 28px; align-items: flex-start; overflow-x: auto; padding-bottom: 12px; }
+.dev { flex: none; display: flex; flex-direction: column; gap: 8px; }
+.dev > .cap { font-size: 12px; color: var(--muted); }
+.device { zoom: var(--z, .75); }
+.device.phone { padding: 10px; background: var(--bezel); border-radius: 48px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; }
+.notes > section { min-width: 0; }
+.notes h2 { font-size: 15px; margin: 0 0 8px; }
+.notes ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.notes li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.notes em { color: var(--muted); font-style: normal; font-size: 13px; }
+.notes .recq { color: var(--green); font-weight: 600; }
+
+/* ---------- app screen ---------- */
+.screen { position: relative; overflow: hidden; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--font); letter-spacing: -.01em; }
+.phone .screen { width: 390px; height: 800px; border-radius: 38px; }
+.desktop .screen { width: 1024px; height: 720px; border-radius: 10px; border: 1px solid var(--border); }
+.status { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font-size: 14px; font-weight: 600; }
+.scroll { position: absolute; inset: 0; overflow-y: auto; }
+.phone .scroll { top: 44px; }
+.wrap { max-width: 672px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 0 16px 240px; }
+.desktop .wrap { gap: 14px; padding-top: 28px; }
+.pline { height: 3px; background: var(--surface); }
+.pline > div, .pbar > div { height: 100%; background: var(--blue); }
+.pbar { height: 4px; background: var(--surface); border-radius: 999px; overflow: hidden; }
+.crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; color: var(--muted); min-width: 0; padding-top: 8px; text-align: left; }
+.desktop .crumb { padding-top: 0; }
+.crumb .cur { color: var(--fg); font-weight: 500; }
+.crumb .sep { opacity: .6; }
+.hrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; }
+.phone .hrow { min-height: 48px; margin-inline: -16px; padding-inline: 16px 8px; }
+.phone .pline { margin: -10px -16px 6px; }
+.hleft { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hright { display: flex; align-items: center; gap: 2px; flex: none; }
+.bloom { background: var(--b1bg); color: var(--b1fg); font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; flex: none; }
+.focus { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 4px; color: var(--warning); background: color-mix(in srgb, var(--warning) 20%, transparent); flex: none; }
+.focus svg { fill: currentColor; }
+.prog { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iconbtn { display: grid; place-items: center; width: 36px; height: 32px; border-radius: 8px; color: var(--muted); }
+.iconbtn:hover, .iconbtn.on { background: var(--surface); color: var(--fg); }
+.iconbtn.end { display: flex; gap: 4px; width: auto; padding: 0 8px; font-size: 14px; }
+.qcard { display: flex; flex-direction: column; gap: 16px; }
+.desktop .qcard { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.lrow { display: flex; align-items: center; justify-content: space-between; }
+.lright { display: flex; align-items: center; gap: 2px; }
+.eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.stem { font-size: 18px; font-weight: 500; line-height: 1.4; }
+.selectable { -webkit-user-select: text; user-select: text; }
+.term { font: inherit; text-align: left; text-decoration: underline dotted 2px var(--purple); text-underline-offset: 4px; cursor: help; }
+.term.on { color: var(--purple); }
+.sel { background: color-mix(in srgb, var(--blue) 30%, transparent); border-radius: 3px; position: relative; }
+.selpop { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; background: var(--fg); border-radius: 9px; white-space: nowrap; z-index: 20; font-size: 14px; font-weight: 500; line-height: 1; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.selpop button { color: var(--bg); padding: 8px 11px; border-radius: 6px; display: inline-flex; gap: 6px; align-items: center; }
+.selpop button:hover { background: color-mix(in srgb, var(--bg) 18%, transparent); }
+.selbar { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 10px; background: var(--fg); color: var(--bg); font-size: 14px; }
+.selbar .selq { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+.selbar button { padding: 7px 10px; border-radius: 7px; font-weight: 600; background: color-mix(in srgb, var(--bg) 16%, transparent); display: inline-flex; gap: 6px; align-items: center; }
+.defbox { border-left: 2px solid var(--purple); padding-left: 12px; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; font-weight: 400; }
+.defbox p { margin: 0; }
+.defbox.err { border-color: var(--danger); }
+.dacts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 13px; }
+.dacts button { color: var(--blue); font-weight: 500; }
+.dacts button.quiet { color: var(--muted); }
+.tag { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--purple) 16%, transparent); color: var(--purple); display: inline-flex; gap: 4px; align-items: center; }
+.sk { height: 12px; border-radius: 4px; background: var(--surface); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+.helprow { display: flex; gap: 18px; font-size: 14px; }
+.helprow button, .tutlink { display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-weight: 500; font-size: 14px; }
+.rwpill { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--green); }
+.rwpill button { color: var(--blue); display: inline-flex; gap: 4px; align-items: center; margin-left: auto; }
+.rwpill .why { color: var(--muted); }
+.opts { display: flex; flex-direction: column; margin: 0 -16px; border-block: 1px solid var(--border); }
+.opt { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; text-align: left; width: 100%; border-top: 1px solid var(--border); font-size: 16px; }
+.opt:first-child { border-top: 0; }
+.desktop .opts { margin: 0; border: 0; gap: 8px; }
+.desktop .opt { border: 1px solid var(--border); border-radius: 8px; }
+.desktop button.opt:hover { background: var(--hover); }
+.opt.ok { background: color-mix(in srgb, var(--green) 10%, transparent); }
+.opt.bad { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.letter { width: 26px; height: 26px; flex: none; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--muted); }
+.ok .letter { border-color: var(--green); color: var(--green); }
+.bad .letter { border-color: var(--danger); color: var(--danger); }
+.otext { flex: 1; min-width: 0; }
+.mark { width: 18px; flex: none; padding-top: 3px; }
+.verdict { font-weight: 600; margin: 0; }
+.verdict.r { color: var(--green); } .verdict.w { color: var(--danger); }
+.expl { margin: 0; }
+.whys { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.whys li { display: flex; gap: 8px; } .whys b { width: 12px; flex: none; } .whys span { color: var(--muted); }
+.bbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(4px); border-top: 1px solid var(--border); padding: 12px 16px; }
+.phone .bbar { padding-bottom: 30px; }
+.bbar-in { max-width: 672px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+.brow { display: flex; gap: 8px; }
+.bbtn { flex: 1; padding: 12px 0; border-radius: 8px; font-size: 14px; font-weight: 500; border: 1px solid var(--border); background: var(--surface); display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
+.bbtn:hover { background: var(--hover); }
+.pbtn { flex: 1; padding: 12px 0; border-radius: 8px; font-size: 14px; font-weight: 500; background: var(--blue); color: #fff; display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
+.pbtn:disabled, .bbtn:disabled { opacity: .5; cursor: default; }
+.rates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rate { padding: 11px 0; border-radius: 8px; color: #fff; font-weight: 600; font-size: 14px; opacity: .75; }
+.rate.sug { opacity: 1; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+.menuwrap { position: relative; }
+.menu { position: absolute; right: 0; top: 36px; z-index: 30; min-width: 230px; padding: 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); box-shadow: 0 10px 30px rgba(0,0,0,.25); display: flex; flex-direction: column; }
+.menu button { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; font-size: 15px; padding: 8px 12px; border-radius: 6px; }
+.menu button:hover { background: var(--surface); }
+.menu button span { font-size: 13px; color: var(--muted); }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; width: 100%; }
+.menu .new { color: var(--blue); }
+.minfo { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px 4px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mpath { color: var(--fg); }
+.folder { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.folder.path { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; color: var(--muted); }
+.folder.path .cur { color: var(--fg); font-weight: 500; }
+.folder.path .sep { opacity: .6; flex: none; }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 150px; z-index: 60; background: var(--fg); color: var(--bg); font-size: 13px; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
+
+/* sheets: bottom sheet on the phone, centred dialog on desktop */
+.scrim { position: absolute; inset: 0; z-index: 50; background: rgba(0,0,0,.4); }
+.desktop .scrim { display: grid; place-items: center; }
+.sheet { background: var(--bg); overflow-y: auto; position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; border-radius: 16px 16px 0 0; }
+.desktop .sheet { position: relative; width: 640px; max-height: 86%; border-radius: 12px; border: 1px solid var(--border); }
+.desktop .sheet.narrow { width: 512px; }
+.shead { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 16px 16px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); }
+.desktop .shead { padding: 20px 24px 14px; }
+.shead h3 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; }
+.shead .eyebrow { display: block; margin-bottom: 2px; }
+.sbody { padding: 12px 16px 28px; display: flex; flex-direction: column; gap: 14px; }
+.desktop .sbody { padding: 16px 24px 24px; }
+.lead { margin: 0; font-size: 14px; color: var(--muted); }
+.cmap { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: var(--bg2); border: 1px solid var(--border); }
+.cmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+.cmrow .arr { color: var(--muted); }
+.cmrow .blk { color: var(--danger); font-weight: 700; }
+.node { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); font-size: 13px; }
+.node:hover { border-color: var(--blue); color: var(--blue); }
+.node.goal { border-color: var(--purple); color: var(--purple); font-weight: 600; }
+.step { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.step h4 { margin: 0; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.step h4 .n { width: 22px; height: 22px; border-radius: 999px; background: var(--surface); font-size: 12px; display: grid; place-items: center; flex: none; font-variant-numeric: tabular-nums; }
+.step p { margin: 0; font-size: 15px; }
+.step svg { width: 100%; max-width: 440px; height: auto; display: block; }
+.fill-blue { fill: var(--blue); } .fill-surface { fill: var(--surface); } .fill-purple { fill: var(--purple); }
+.st-fg { stroke: var(--fg); } .st-muted { stroke: var(--muted); } .st-blue { stroke: var(--blue); }
+.t-strong { fill: var(--fg); font-size: 13px; font-weight: 600; } .t-muted { fill: var(--muted); font-size: 12px; }
+.slider { display: flex; align-items: center; gap: 10px; font-size: 14px; flex-wrap: wrap; }
+.slider input { flex: 1; min-width: 140px; accent-color: var(--blue); }
+.slider output { font-variant-numeric: tabular-nums; color: var(--muted); }
+.slider output b { color: var(--fg); }
+.levers { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.lv { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lv .node { cursor: default; }
+.lv .note { color: var(--muted); font-size: 13px; }
+.up { color: var(--green); font-weight: 700; } .dn { color: var(--danger); font-weight: 700; }
+.foot { font-size: 13px; color: var(--muted); margin: 0; }
+.fbchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fbchip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 14px; }
+.fbchip[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); }
+.fbtext { width: 100%; resize: vertical; min-height: 76px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); font-size: 15px; }
+.fieldlabel { font-size: 13px; color: var(--muted); margin-bottom: -6px; }
+.seg.full { display: flex; } .seg.full button { flex: 1; padding: 8px 6px; font-size: 13px; }
+.errbox { font-size: 14px; color: var(--danger); margin: 0; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <h1>Study help</h1>
+    <p>Select any words in a question to define them or open a tutorial, open a tutorial for the whole question, or tell the tutor how to rewrite a question. The folder path now sits above every card. Try it out: select text in either frame.</p>
+  </header>
+
+  <div class="controls">
+    <div class="crow">
+      <span class="clabel">Variant</span>
+      <span class="vnote"><b style="color:var(--fg)">B, revised:</b> header on one line (★ focus + folder), feedback in the “…” menu, card count moved into the menu.</span>
+    </div>
+    <div class="crow">
+      <span class="clabel">State</span>
+      <div class="crow" id="states" role="group" aria-label="State"></div>
+    </div>
+    <div class="crow">
+      <span class="clabel">Zoom</span>
+      <label class="zoom"><input type="range" id="zoom" min="50" max="100" step="5" value="75"> <span id="zoomv">75%</span></label>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="dev"><span class="cap">Phone · 390 px</span><div class="device phone" data-vp="phone"><div class="screen"></div></div></div>
+    <div class="dev"><span class="cap">Desktop · 1024 px</span><div class="device desktop" data-vp="desktop"><div class="screen"></div></div></div>
+  </div>
+
+  <div class="notes">
+    <section>
+      <h2>Spec</h2>
+      <ol>
+        <li>The header is one line: the focus star (only when the folder has a focus), then the folder. Phone shows the last folder, desktop the full path. The Bloom badge and the card count leave the header; the progress bar stays on top, and the “…” menu shows the full path and “Card 4 · 14 left”.</li>
+        <li>Select words in the question to get <b>Define</b> or <b>Tutorial</b>. After answering, options and explanation are selectable too. Before that, options stay buttons so they give nothing away.</li>
+        <li>Define: the tutor writes one or two sentences using this card as context, shown inline like a stored term. <b>Save to card</b> stores it, and later questions underline the term. <em>(assumed)</em></li>
+        <li>Tutorial: a sheet with 2 to 4 short steps, each with a diagram. Where a value varies, the diagram has a slider.</li>
+        <li>Explain question: one tutorial for everything the question needs. A map of the parts comes first, then one step per part. It explains the concepts and does not pick an option.</li>
+        <li>Feedback (“…” menu → Feedback on question): preset labels (several allowed), optional text, scope, then <b>Rewrite question</b>. The new version replaces the question in place, and Undo brings back the old one.</li>
+        <li>Feedback stays on the card and guides every future question written for it. <em>(assumed)</em></li>
+        <li>Rating: a definition caps the suggested rating at Good, as term lookups do today. A tutorial opened before answering caps it at Hard. <em>(assumed)</em></li>
+        <li>States: writing (skeleton), saved, tutor paused (credits or API error: the feedback is kept and the rewrite runs later), no tutor key (plain card with folder path and no help tools).</li>
+        <li>Phone: bottom sheets, selection actions sit above the bottom bar. Desktop: a popover at the selection and centred dialogs.</li>
+        <li>Unchanged: question forms, rating buttons, existing menu items, tapping a stored term, keyboard shortcuts, tickets across two devices.</li>
+        <li>Generated definitions and tutorials are stored per card like <code>card_questions</code>, so opening one again is instant and costs nothing. <em>(assumed)</em></li>
+      </ol>
+    </section>
+    <section>
+      <h2>Decided</h2>
+      <ol>
+        <li>A tutorial opened before answering caps the suggested rating at Hard.</li>
+        <li>Feedback applies to every future question on the card by default, with a toggle for this question only.</li>
+        <li>Generated definitions are saved by tapping <b>Save to card</b>.</li>
+        <li>Tutorials are stored per card and rewritten when the card changes.</li>
+        <li>On iPhone our selection bar sits above the bottom bar; the system menu is suppressed only if it gets in the way.</li>
+        <li>The folder name only shows the folder; tapping it does nothing for now.</li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<script>
+const ICON = {
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  flag: '<path d="M4 22V4"/><path d="M4 4h13l-2.5 4L17 12H4"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2.3-2.4 3.8"/><path d="M12 17h.01"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  chev: '<path d="m9 18 6-6-6-6"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  book: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+  text: '<path d="M4 6h16M4 12h10M4 18h13"/>',
+};
+const ic = (n, s = 16, cls = '') => `<svg class="ic ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const norm = s => s.toLowerCase().replace(/[-‐‑–—]/g, '–').replace(/\s+/g, ' ').trim();
+
+const PATH = ['Medicine', 'Physiology', 'Cardiovascular', 'Heart mechanics'];
+const STORED = [{ term: 'stroke volume', definition: 'Blood one ventricle ejects per beat (EDV − ESV), about 70 ml at rest.' }];
+const Q1 = {
+  stem: 'Which change raises stroke volume through the Frank–Starling mechanism?',
+  options: [
+    { text: 'More venous return to the heart', correct: true, why: 'More filling stretches the fibres, which then contract harder.' },
+    { text: 'Higher afterload', why: 'Makes ejection harder, so stroke volume falls.' },
+    { text: 'Lower end-diastolic volume', why: 'Less stretch means less force: the opposite direction.' },
+    { text: 'Stronger vagal stimulation', why: 'Slows the heart rate; ventricular force barely changes.' },
+  ],
+  explanation: 'The Frank–Starling mechanism links filling to force: the more the ventricle fills in diastole, the harder it contracts. More venous return raises preload, so stroke volume rises.',
+};
+const Q2 = {
+  stem: 'A patient gets 1 L of saline IV, and stroke volume rises within minutes. What explains it?',
+  options: [
+    { text: 'The extra filling stretches the ventricle, so it contracts harder', correct: true, why: 'Saline raises venous return and filling; Frank–Starling turns that into force.' },
+    { text: 'Sympathetic nerves raise contractility', why: 'Possible later, but not the direct effect of more volume.' },
+    { text: 'Afterload falls', why: 'More volume does not lower aortic pressure.' },
+    { text: 'Heart rate rises', why: 'A faster rate shortens filling, so it would not raise stroke volume.' },
+  ],
+  explanation: 'Extra volume raises venous return and fills the ventricle further. The stretched fibres contract harder (Frank–Starling), so stroke volume rises.',
+};
+const DEFS = {
+  'frank–starling mechanism': "The heart's built-in link between filling and force: the more blood fills the ventricle in diastole, the harder it contracts in systole.",
+  'venous return': 'Blood flowing back to the right heart per minute. It sets how far the ventricles fill.',
+  'afterload': 'The pressure the ventricle must overcome to eject blood, mostly set by aortic pressure.',
+  'end–diastolic volume': 'Blood in the ventricle at the end of filling, about 120 ml at rest. Used as the measure of preload.',
+  'vagal stimulation': 'Parasympathetic signal through the vagus nerve. It slows the heart rate.',
+  'preload': 'How far the ventricle is stretched by filling before it contracts.',
+  'diastole': 'The relaxation phase in which the ventricles fill.',
+};
+const defText = (term, f) => {
+  const k = norm(term);
+  const stored = [...STORED, ...f.saved].find(t => norm(t.term) === k);
+  return stored ? stored.definition : DEFS[k] || `In the app the tutor writes a one-sentence definition of “${term}” here, using this card as context.`;
+};
+
+/* ---------- tutorial steps ---------- */
+const STEPS = {
+  sv: { title: 'Stroke volume', text: 'What one ventricle ejects per beat: the filling at the end of diastole minus what stays behind.', fig: () => `
+    <svg viewBox="0 0 320 128" role="img" aria-label="Stacked bar: 120 ml filling, of which 70 ml are ejected and 50 ml remain">
+      <rect x="110" y="20" width="70" height="52" class="fill-blue"/>
+      <rect x="110" y="72" width="70" height="38" class="fill-surface"/>
+      <path d="M100 20 H94 V110 H100" fill="none" class="st-muted"/>
+      <text x="86" y="60" text-anchor="end" class="t-strong">EDV</text>
+      <text x="86" y="76" text-anchor="end" class="t-muted">120 ml</text>
+      <text x="192" y="42" class="t-strong">SV 70 ml</text><text x="192" y="58" class="t-muted">ejected</text>
+      <text x="192" y="90" class="t-strong">ESV 50 ml</text><text x="192" y="106" class="t-muted">stays behind</text>
+    </svg>` },
+  preload: { title: 'Filling sets the preload', text: 'More venous return fills the ventricle further before it contracts. The end-diastolic volume measures this filling.', fig: p => {
+    const vent = (x, w, h) => `M${x} 20 V${20 + h - w / 2} A${w / 2} ${w / 2} 0 0 0 ${x + w} ${20 + h - w / 2} V20`;
+    return `<svg viewBox="0 0 320 172" role="img" aria-label="Two ventricles: at rest filled to 120 ml, with more venous return filled to 160 ml">
+      <defs><clipPath id="${p}-v1"><path d="${vent(40, 80, 100)}Z"/></clipPath><clipPath id="${p}-v2"><path d="${vent(190, 96, 114)}Z"/></clipPath></defs>
+      <rect x="40" y="62" width="80" height="80" class="fill-blue" opacity=".75" clip-path="url(#${p}-v1)"/>
+      <rect x="190" y="34" width="96" height="110" class="fill-blue" opacity=".75" clip-path="url(#${p}-v2)"/>
+      <path d="${vent(40, 80, 100)}" fill="none" stroke-width="2" class="st-fg"/>
+      <path d="${vent(190, 96, 114)}" fill="none" stroke-width="2" class="st-fg"/>
+      <text x="80" y="148" text-anchor="middle" class="t-strong">Rest</text><text x="80" y="164" text-anchor="middle" class="t-muted">120 ml</text>
+      <text x="238" y="152" text-anchor="middle" class="t-strong">More venous return</text><text x="238" y="168" text-anchor="middle" class="t-muted">160 ml</text>
+    </svg>`; } },
+  stretch: { title: 'Stretch makes the muscle pull harder', text: 'A fuller ventricle stretches its fibres. Actin and myosin then overlap closer to their best length and pull with more force.', fig: () => {
+    const row = (y, z1, z2, m1, m2, force, label) => `
+      <text x="16" y="${y - 22}" class="t-muted">${label}</text>
+      <line x1="${z1}" y1="${y - 17}" x2="${z1}" y2="${y + 17}" stroke-width="3" class="st-fg"/>
+      <line x1="${z2}" y1="${y - 17}" x2="${z2}" y2="${y + 17}" stroke-width="3" class="st-fg"/>
+      ${[-10, 0, 10].map(d => `<line x1="${z1}" y1="${y + d}" x2="${z1 + 70}" y2="${y + d}" stroke-width="1.5" class="st-muted"/><line x1="${z2}" y1="${y + d}" x2="${z2 - 70}" y2="${y + d}" stroke-width="1.5" class="st-muted"/>`).join('')}
+      <rect x="${m1}" y="${y - 5}" width="${m2 - m1}" height="10" rx="3" class="fill-purple"/>
+      <text x="240" y="${y - 12}" class="t-muted">force</text>
+      <rect x="240" y="${y - 5}" width="${force}" height="10" rx="2" class="fill-blue"/>`;
+    return `<svg viewBox="0 0 320 152" role="img" aria-label="Sarcomere: little filling leaves actin crowded and force small; more filling gives better overlap and more force">
+      ${row(48, 70, 190, 100, 160, 26, 'Little filling')}
+      ${row(122, 40, 220, 90, 170, 64, 'More filling')}
+    </svg>`; } },
+  curve: { title: 'The Frank–Starling curve', text: 'Drag the filling. Stroke volume follows: steeply at first, then flatter.', fig: (p, f) => {
+    const X = e => 40 + (e - 60) / 140 * 260, Y = s => 160 - s / 120 * 140;
+    let d = ''; for (let e = 60; e <= 200; e += 5) d += `${e === 60 ? 'M' : 'L'}${X(e).toFixed(1)} ${Y(svOf(e)).toFixed(1)}`;
+    return `<svg viewBox="0 0 320 196" role="img" aria-label="Curve of stroke volume against filling; stroke volume rises with filling and flattens">
+      <line x1="40" y1="160" x2="300" y2="160" class="st-muted"/><line x1="40" y1="20" x2="40" y2="160" class="st-muted"/>
+      ${[80, 120, 160, 200].map(e => `<text x="${X(e)}" y="176" text-anchor="middle" class="t-muted">${e}</text>`).join('')}
+      ${[40, 80, 120].map(s => `<text x="34" y="${Y(s) + 4}" text-anchor="end" class="t-muted">${s}</text>`).join('')}
+      <text x="300" y="192" text-anchor="end" class="t-muted">Filling, EDV (ml)</text>
+      <text x="46" y="14" class="t-muted">Stroke volume (ml)</text>
+      <line x1="${X(120)}" y1="22" x2="${X(120)}" y2="160" stroke-dasharray="2 4" class="st-muted"/>
+      <text x="${X(120) + 4}" y="32" class="t-muted">rest</text>
+      <path d="${d}" fill="none" stroke-width="2.5" class="st-blue"/>
+      <line id="${p}-gx" stroke-dasharray="3 3" class="st-fg"/><line id="${p}-gy" stroke-dasharray="3 3" class="st-fg"/>
+      <circle id="${p}-pt" r="6" class="fill-blue"/>
+    </svg>
+    <label class="slider"><span>Filling</span><input type="range" id="${p}-edv" data-in="edv" min="60" max="200" step="5" value="${f.edv}" aria-label="Filling in ml"><output id="${p}-out"></output></label>`; } },
+  levers: { title: 'Other levers on stroke volume', text: 'Not every change works through filling.', fig: () => `
+    <div class="levers">
+      <div class="lv"><span class="node">Filling <b class="up">↑</b></span>→<span class="node">Stroke volume <b class="up">↑</b></span><span class="note">Frank–Starling</span></div>
+      <div class="lv"><span class="node">Afterload <b class="up">↑</b></span>→<span class="node">Stroke volume <b class="dn">↓</b></span><span class="note">harder to eject</span></div>
+      <div class="lv"><span class="node">Vagus <b class="up">↑</b></span>→<span class="node">Heart rate <b class="dn">↓</b></span><span class="note">acts on the pacemaker, not on filling</span></div>
+    </div>` },
+};
+const svOf = e => 130 * (1 - Math.exp(-(e - 40) / 90));
+const TUT = { 'frank–starling mechanism': ['preload', 'stretch', 'curve'], 'venous return': ['preload', 'curve'], 'end–diastolic volume': ['preload', 'curve'], 'preload': ['preload', 'curve'], 'afterload': ['sv', 'levers'], 'stroke volume': ['sv', 'curve'], 'vagal stimulation': ['levers'] };
+const QTUT = ['sv', 'preload', 'stretch', 'curve', 'levers'];
+const FB = ['Unclear wording', 'Not how I learn this', 'Too trivial', 'Too much detail', 'Answer looks wrong', 'Options give it away'];
+
+const VARIANTS = {
+  A: 'Two text buttons under the question. Easy to find; one more line on every card.',
+  B: '“Explain question” next to “Don’t know”, a flag in the header. Help is where the thumb already is.',
+  C: 'Both in the “…” menu. The cleanest card, but stuck learners have to find the help.',
+};
+const STATES = [
+  ['question', 'Question'], ['selected', 'Words selected'], ['definition', 'Definition'], ['termTut', 'Term tutorial'],
+  ['qTut', 'Explain question'], ['feedback', 'Feedback'], ['rewritten', 'Rewritten'], ['answered', 'Answered'], ['credits', 'Tutor paused'],
+];
+
+/* ---------- state ---------- */
+const fresh = vp => ({ vp, rw: false, done: false, dk: false, picked: [], sel: null, selRegion: null, def: null, saved: [], sheet: null, sheetTerm: null, loading: false, helped: null, fb: { chips: [], text: '', scope: 'card' }, fbStatus: null, credits: false, menu: false, edv: 120, crumbOpen: false, toast: null });
+const frames = { phone: fresh('phone'), desktop: fresh('desktop') };
+const G = { variant: 'B', state: 'question' };
+
+function applyState(f, s) {
+  Object.assign(f, fresh(f.vp));
+  const fs = 'Frank–Starling mechanism';
+  if (s === 'selected') { f.sel = fs; f.selRegion = 'stem'; }
+  if (s === 'definition') f.def = { term: fs, status: 'done', region: 'stem' };
+  if (s === 'termTut') { f.sheet = 'termTut'; f.sheetTerm = fs; }
+  if (s === 'qTut') f.sheet = 'qTut';
+  if (s === 'feedback') { f.sheet = 'feedback'; f.fb = { chips: ['Not how I learn this'], text: 'Ask it as a clinical case, not as a list of levers.', scope: 'card' }; }
+  if (s === 'rewritten') { f.rw = true; f.fb.chips = ['Not how I learn this']; }
+  if (s === 'answered') { f.done = true; f.picked = [0]; }
+  if (s === 'credits') { f.credits = true; f.def = { term: fs, status: 'error', region: 'stem' }; }
+}
+
+/* ---------- rendering ---------- */
+function marked(text, f, region) {
+  const terms = [...STORED, ...f.saved];
+  const low = text.toLowerCase(), ranges = [];
+  const add = (needle, kind) => {
+    const i = low.indexOf(needle.toLowerCase()); if (i < 0) return;
+    const e = i + needle.length; if (ranges.some(r => i < r.e && e > r.s)) return;
+    ranges.push({ s: i, e, kind, term: needle });
+  };
+  if (f.sel && f.selRegion === region) add(f.sel, 'sel');
+  for (const t of [...terms].sort((a, b) => b.term.length - a.term.length)) add(t.term, 'term');
+  ranges.sort((a, b) => a.s - b.s);
+  let out = '', p = 0;
+  for (const r of ranges) {
+    out += esc(text.slice(p, r.s));
+    const seg = esc(text.slice(r.s, r.e));
+    if (r.kind === 'sel') out += `<span class="sel">${seg}${f.vp === 'desktop' ? selPop() : ''}</span>`;
+    else out += `<button type="button" class="term ${f.def && norm(f.def.term) === norm(r.term) ? 'on' : ''}" data-act="term" data-term="${esc(r.term)}">${seg}</button>`;
+    p = r.e;
+  }
+  return out + esc(text.slice(p));
+}
+const selPop = () => `<span class="selpop" role="toolbar" aria-label="Selection"><button data-act="define">${ic('text', 14)}Define</button><button data-act="tut">${ic('book', 14)}Tutorial</button></span>`;
+const regionText = (f, q) => f.selRegion === 'stem' ? q.stem : f.selRegion === 'expl' ? q.explanation : f.selRegion?.startsWith('opt') ? q.options[+f.selRegion.slice(3)].text : '';
+const group = r => r?.startsWith('opt') ? 'opts' : r;
+
+function defBox(f, g) {
+  const d = f.def; if (!d || group(d.region) !== g) return '';
+  const term = esc(d.term);
+  if (d.status === 'loading') return `<div class="defbox"><b>${term}</b><div class="sk" style="width:92%"></div><div class="sk" style="width:58%"></div><span class="foot">Writing a definition…</span></div>`;
+  if (d.status === 'error') return `<div class="defbox err"><b>${term}</b><p>The tutor is paused: your Anthropic credits are used up.</p><div class="dacts"><button data-act="define">Try again</button><button class="quiet" data-act="defclose">Close</button></div></div>`;
+  const body = `<p><b>${term}.</b> ${esc(defText(d.term, f))}</p>`;
+  const tutBtn = `<button data-act="tut" data-term="${term}">Tutorial</button>`;
+  if (d.status === 'stored') return `<div class="defbox">${body}<div class="dacts">${tutBtn}</div></div>`;
+  const saved = d.status === 'saved';
+  return `<div class="defbox">${body}<div class="dacts">${saved ? `<span class="tag">${ic('check', 12)}Saved to card</span>` : `<span class="tag">New</span><button data-act="save">Save to card</button>`}${tutBtn}<button class="quiet" data-act="defclose">Close</button></div></div>`;
+}
+
+function menuHtml(f) {
+  const v = G.variant;
+  return `<div class="menuwrap"><button class="iconbtn ${f.menu ? 'on' : ''}" data-act="menu" aria-haspopup="menu" aria-expanded="${f.menu}" aria-label="More">${ic('more', 20)}</button>
+  ${f.menu ? `<div class="menu" role="menu" data-act="noop">
+    <div class="minfo"><span class="mpath">${PATH.join(' › ')}</span><span>Card 4 · 14 left</span></div><hr>
+    <button role="menuitem" data-act="toast" data-msg="Difficulty sheet: unchanged">Difficulty <span>Desk</span></button>
+    <button role="menuitem" data-act="toast" data-msg="Original card: unchanged">Original card</button>
+    <button role="menuitem" data-act="toast" data-msg="Card details: unchanged">Card details</button>
+    <hr><button role="menuitem" class="new" data-act="feedback">Feedback on question</button>
+  </div>` : ''}</div>`;
+}
+
+function crumb(f, ph) {
+  const short = ph && !f.crumbOpen;
+  const segs = short ? PATH.slice(-2) : PATH;
+  const parts = (short ? ['…'] : []).concat(segs).map((s, i, a) => `<span class="${i === a.length - 1 ? 'cur' : ''}">${s}</span>`);
+  return `<${ph ? 'button' : 'nav'} class="crumb" ${ph ? `data-act="crumb" aria-label="Folder: ${PATH.join(' / ')}" aria-expanded="${f.crumbOpen}"` : 'aria-label="Folder"'}>${ic('folder', 14)}${parts.join(ic('chev', 12, 'sep'))}</${ph ? 'button' : 'nav'}>`;
+}
+
+function stepsHtml(f, keys) {
+  return keys.map((k, i) => {
+    const s = STEPS[k];
+    return `<section class="step" id="${f.vp}-st-${k}"><h4><span class="n">${i + 1}</span>${s.title}</h4><p>${s.text}</p>${s.fig(`${f.vp}-${k}`, f)}</section>`;
+  }).join('');
+}
+
+function sheetHtml(f) {
+  if (!f.sheet) return '';
+  const close = `<button class="iconbtn" data-act="close" aria-label="Close">${ic('x', 20)}</button>`;
+  const back = `<button class="bbtn" data-act="close">Back to the question</button>`;
+  const loading = `<div class="sk" style="width:80%"></div><div class="sk" style="width:64%"></div><div class="sk" style="height:120px;border-radius:10px"></div><div class="sk" style="width:70%"></div><p class="foot">Writing the tutorial…</p>`;
+  const paused = `<p class="errbox">The tutor is paused: your Anthropic credits are used up. Top them up, then try again.</p>${back}`;
+  let head = '', body = '', cls = '';
+  if (f.sheet === 'termTut') {
+    const keys = TUT[norm(f.sheetTerm)] || ['preload', 'curve'];
+    head = `<div><span class="eyebrow">Tutorial</span><h3>${esc(f.sheetTerm)}</h3></div>`;
+    body = f.credits ? paused : f.loading ? loading : `${stepsHtml(f, keys)}${back}`;
+  } else if (f.sheet === 'qTut') {
+    const node = (label, step, goal) => `<button class="node ${goal ? 'goal' : ''}" data-act="jump" data-step="${step}">${label}</button>`;
+    const arr = '<span class="arr">→</span>';
+    head = `<div><span class="eyebrow">Explain the question</span><h3>What you need to answer it</h3></div>`;
+    body = f.credits ? paused : f.loading ? loading : `
+      <p class="lead">The parts of the question and how they connect. Tap a part to jump to it. It does not pick an option.</p>
+      <div class="cmap">
+        <div class="cmrow">${node('Venous return', 'preload')}${arr}${node('Filling (EDV)', 'preload')}${arr}${node('Fibre stretch', 'stretch')}${arr}${node('Force', 'curve')}${arr}${node('Stroke volume', 'sv', true)}</div>
+        <div class="cmrow">${node('Afterload', 'levers')}<span class="blk">⊣</span>${node('Stroke volume', 'sv', true)}</div>
+        <div class="cmrow">${node('Vagus', 'levers')}${arr}${node('Heart rate', 'levers')}</div>
+      </div>
+      ${stepsHtml(f, QTUT)}
+      ${f.done ? '' : '<p class="foot">Opened before answering: the suggested rating stops at Hard.</p>'}
+      ${back}`;
+  } else {
+    cls = 'narrow';
+    const any = f.fb.chips.length > 0 || f.fb.text.trim() !== '';
+    head = `<h3>Feedback on this question</h3>`;
+    body = `
+      <div class="fbchips">${FB.map(c => `<button class="fbchip" data-act="chip" data-chip="${c}" aria-pressed="${f.fb.chips.includes(c)}">${c}</button>`).join('')}</div>
+      <textarea class="fbtext" id="${f.vp}-fbtext" data-in="fbtext" placeholder="What would help? (optional)" aria-label="What would help?">${esc(f.fb.text)}</textarea>
+      <span class="fieldlabel">Applies to</span>
+      <div class="seg full" role="group" aria-label="Applies to">
+        <button data-act="scope" data-scope="once" aria-pressed="${f.fb.scope === 'once'}">This question</button>
+        <button data-act="scope" data-scope="card" aria-pressed="${f.fb.scope === 'card'}">All questions on this card</button>
+      </div>
+      ${f.fbStatus === 'error' ? '<p class="errbox">The tutor is paused: your credits are used up. Your feedback is saved, and the question is rewritten once the tutor runs again.</p>' : ''}
+      <div class="brow"><button class="bbtn" data-act="close">Cancel</button><button class="pbtn" data-act="rewrite" ${!any || f.fbStatus === 'rewriting' ? 'disabled' : ''}>${f.fbStatus === 'rewriting' ? 'Rewriting…' : 'Rewrite question'}</button></div>`;
+  }
+  return `<div class="scrim" data-act="close"><div class="sheet ${cls}" role="dialog" aria-modal="true" data-act="noop"><div class="shead">${head}${close}</div><div class="sbody">${body}</div></div></div>`;
+}
+
+function render(vp) {
+  const f = frames[vp], ph = vp === 'phone', v = G.variant;
+  const screen = document.querySelector(`[data-vp="${vp}"] .screen`);
+  const oldScroll = screen.querySelector('.scroll')?.scrollTop || 0;
+  const oldSheet = screen.querySelector('.sheet')?.scrollTop || 0;
+  const q = f.rw ? Q2 : Q1;
+  const flag = '';
+  const menu = menuHtml(f);
+  const inlineSel = f.sel && !ph && regionText(f, q).toLowerCase().includes(f.sel.toLowerCase());
+  const right = f.done && !f.dk && q.options[f.picked[0]]?.correct;
+
+  const options = `<div class="opts">${q.options.map((o, i) => {
+    const picked = f.picked.includes(i);
+    const st = !f.done ? '' : o.correct ? 'ok' : picked ? 'bad' : '';
+    const inner = `<span class="letter">${'ABCD'[i]}</span><span class="otext ${f.done ? 'selectable' : ''}" ${f.done ? `data-region="opt${i}"` : ''}>${f.done ? marked(o.text, f, 'opt' + i) : esc(o.text)}</span><span class="mark">${st === 'ok' ? ic('check', 18) : st === 'bad' ? ic('x', 18) : ''}</span>`;
+    return f.done ? `<div class="opt ${st}" style="color:inherit">${inner}</div>` : `<button class="opt" data-act="pick" data-i="${i}">${inner}</button>`;
+  }).join('')}</div>`;
+
+  const helprow = v === 'A' ? `<div class="helprow"><button data-act="explain">${ic('help', 16)}Explain question</button><button data-act="feedback">${ic('flag', 16)}Feedback</button></div>` : '';
+  const answered = f.done ? `
+    <p class="verdict ${right ? 'r' : 'w'}">${f.dk ? 'Not answered' : right ? 'Right' : 'Wrong'}</p>
+    <p class="expl selectable" data-region="expl">${marked(q.explanation, f, 'expl')}</p>${defBox(f, 'expl')}
+    <ul class="whys">${q.options.map((o, i) => `<li><b style="color:var(${o.correct ? '--green' : f.picked.includes(i) ? '--danger' : '--muted'})">${'ABCD'[i]}</b><span>${esc(o.why)}</span></li>`).join('')}</ul>
+    ${v !== 'A' ? `<button class="tutlink" data-act="explain">${ic('book', 16)}Tutorial on this question</button>` : ''}` : '';
+
+  const suggested = !f.done ? 0 : !right ? 1 : f.helped === 'tut' ? 2 : 3;
+  const selbar = f.sel && !inlineSel ? `<div class="selbar"><span class="selq">“${esc(f.sel)}”</span><button data-act="define">Define</button><button data-act="tut">Tutorial</button></div>` : '';
+  const bottom = f.done
+    ? `<div class="rates">${[['Again', '#da3633'], ['Hard', '#d29922'], ['Good', '#2ea043'], ['Easy', '#58a6ff']].map(([l, c], i) => `<button class="rate ${suggested === i + 1 ? 'sug' : ''}" style="background:${c}" data-act="rate" data-r="${l}">${l}</button>`).join('')}</div>`
+    : `<div class="brow"><button class="bbtn" data-act="dk">Don't know</button>${v === 'B' ? `<button class="bbtn" data-act="explain">${ic('help', 16)}Explain question</button>` : ''}</div>`;
+
+  screen.innerHTML = `
+    ${ph ? '<div class="status"><span>9:41</span><span>●●● 5G</span></div>' : ''}
+    <div class="scroll">
+      <div class="wrap">
+        <div class="hrow">
+          <div class="hleft"><span class="focus" title="Focus priority 2">${ic('star', 12)}2</span>${ph ? `<span class="folder">${PATH[PATH.length - 1]}</span>` : `<span class="folder path">${PATH.map((s, i) => `<span class="${i === PATH.length - 1 ? 'cur' : ''}">${s}</span>`).join(ic('chev', 12, 'sep'))}</span>`}</div>
+          <div class="hright">${ph ? flag + menu : ''}<button class="iconbtn end" data-act="toast" data-msg="Ends the session: unchanged" aria-label="End">${ic('x', ph ? 20 : 16)}${ph ? '' : '<span>End</span>'}</button></div>
+        </div>
+        <div class="${ph ? 'pline' : 'pbar'}"><div style="width:22%"></div></div>
+        <div class="qcard">
+          ${ph ? '' : `<div class="lrow"><span class="eyebrow">Question</span><div class="lright">${flag}${menu}</div></div>`}
+          ${f.rw ? `<div class="rwpill">${ic('check', 14)}<span>Rewritten from your feedback <span class="why">· ${esc(f.fb.chips.join(', ') || 'your note')}</span></span><button data-act="undo">${ic('undo', 14)}Undo</button></div>` : ''}
+          <div class="stem selectable" data-region="stem">${marked(q.stem, f, 'stem')}</div>
+          ${defBox(f, 'stem')}
+          ${helprow}
+          ${options}
+          ${defBox(f, 'opts')}
+          ${answered}
+        </div>
+      </div>
+    </div>
+    <div class="bbar"><div class="bbar-in">${selbar}${bottom}</div></div>
+    ${f.toast ? `<div class="toast" role="status">${esc(f.toast)}</div>` : ''}
+    ${sheetHtml(f)}`;
+  screen.querySelector('.scroll').scrollTop = oldScroll;
+  const sh = screen.querySelector('.sheet'); if (sh) sh.scrollTop = oldSheet;
+  if (f.sheet && !f.loading && !f.credits && (f.sheet === 'qTut' || (TUT[norm(f.sheetTerm || '')] || ['preload', 'curve']).includes('curve'))) updateCurve(vp);
+}
+
+function updateCurve(vp) {
+  const f = frames[vp], p = `${vp}-curve`;
+  const pt = document.getElementById(`${p}-pt`); if (!pt) return;
+  const X = e => 40 + (e - 60) / 140 * 260, Y = s => 160 - s / 120 * 140;
+  const sv = svOf(f.edv), x = X(f.edv), y = Y(sv);
+  pt.setAttribute('cx', x); pt.setAttribute('cy', y);
+  const gx = document.getElementById(`${p}-gx`), gy = document.getElementById(`${p}-gy`);
+  gx.setAttribute('x1', x); gx.setAttribute('x2', x); gx.setAttribute('y1', y); gx.setAttribute('y2', 160);
+  gy.setAttribute('x1', 40); gy.setAttribute('x2', x); gy.setAttribute('y1', y); gy.setAttribute('y2', y);
+  document.getElementById(`${p}-out`).innerHTML = `${f.edv} ml → <b>SV ${Math.round(sv)} ml</b>`;
+}
+
+/* ---------- actions ---------- */
+const timers = {};
+function later(vp, ms, fn) { clearTimeout(timers[vp]); timers[vp] = setTimeout(() => { fn(); render(vp); }, ms); }
+function toast(vp, msg) { const f = frames[vp]; f.toast = msg; render(vp); setTimeout(() => { if (f.toast === msg) { f.toast = null; render(vp); } }, 1600); }
+function help(f, kind) { if (!f.done && f.helped !== 'tut') f.helped = kind; }
+
+function act(vp, a, d, b) {
+  const f = frames[vp];
+  if (a === 'noop') return;
+  if (a !== 'menu') f.menu = false;
+  switch (a) {
+    case 'menu': f.menu = !f.menu; break;
+    case 'crumb': f.crumbOpen = !f.crumbOpen; break;
+    case 'toast': return toast(vp, d.msg);
+    case 'pick': f.picked = [+d.i]; f.done = true; f.sel = null; f.def = null; break;
+    case 'dk': f.done = true; f.dk = true; f.picked = []; f.sel = null; break;
+    case 'rate': { const keep = f.vp; Object.assign(f, fresh(keep)); return toast(vp, `Saved · ${d.r} · next card`); }
+    case 'term': {
+      const same = f.def && norm(f.def.term) === norm(d.term);
+      const region = b?.closest('[data-region]')?.dataset.region || 'stem';
+      f.def = same ? null : { term: d.term, status: 'stored', region }; f.sel = null; if (!same) help(f, 'term'); break;
+    }
+    case 'define': {
+      const term = f.sel || f.def?.term, region = f.sel ? f.selRegion : f.def?.region;
+      f.sel = null; help(f, 'term');
+      f.def = { term, region, status: f.credits ? 'error' : 'loading' };
+      if (!f.credits) later(vp, 900, () => { if (f.def?.status === 'loading') f.def.status = 'done'; });
+      break;
+    }
+    case 'save': f.saved.push({ term: f.def.term, definition: defText(f.def.term, f) }); f.def.status = 'saved'; break;
+    case 'defclose': f.def = null; break;
+    case 'tut': f.sheetTerm = d.term || f.sel || f.def?.term; f.sel = null; f.sheet = 'termTut'; f.loading = true; help(f, 'tut'); later(vp, 900, () => { f.loading = false; }); break;
+    case 'explain': f.sheet = 'qTut'; f.loading = true; help(f, 'tut'); later(vp, 900, () => { f.loading = false; }); break;
+    case 'feedback': f.sheet = 'feedback'; f.fbStatus = null; break;
+    case 'close': f.sheet = null; f.loading = false; f.fbStatus = null; break;
+    case 'chip': { const c = d.chip, i = f.fb.chips.indexOf(c); i < 0 ? f.fb.chips.push(c) : f.fb.chips.splice(i, 1); break; }
+    case 'scope': f.fb.scope = d.scope; break;
+    case 'rewrite':
+      if (f.credits) { f.fbStatus = 'error'; break; }
+      f.fbStatus = 'rewriting';
+      later(vp, 1200, () => { f.rw = true; f.done = false; f.dk = false; f.picked = []; f.def = null; f.sheet = null; f.fbStatus = null; });
+      break;
+    case 'undo': f.rw = false; f.done = false; f.picked = []; f.def = null; break;
+    case 'jump': {
+      const sheet = document.querySelector(`[data-vp="${vp}"] .sheet`), st = document.getElementById(`${vp}-st-${d.step}`);
+      if (sheet && st) sheet.scrollTo({ top: st.offsetTop - 70, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      return;
+    }
+  }
+  render(vp);
+}
+
+function handleSelection(vp, e) {
+  if (e.target.closest('.selpop, .selbar, .sheet, .menu')) return;
+  const s = window.getSelection(); if (!s || s.isCollapsed) return;
+  const t = s.toString().replace(/\s+/g, ' ').trim();
+  if (t.length < 2 || t.length > 80) return;
+  const node = s.anchorNode; const el = node.nodeType === 3 ? node.parentElement : node;
+  const reg = el.closest('[data-region]');
+  if (!reg || !document.querySelector(`[data-vp="${vp}"]`).contains(reg)) return;
+  const f = frames[vp];
+  f.sel = t; f.selRegion = reg.dataset.region; f.def = null; f.justSel = true; f.menu = false;
+  s.removeAllRanges(); render(vp);
+}
+
+for (const vp of ['phone', 'desktop']) {
+  const screen = document.querySelector(`[data-vp="${vp}"] .screen`);
+  screen.addEventListener('mouseup', e => handleSelection(vp, e));
+  screen.addEventListener('touchend', e => setTimeout(() => handleSelection(vp, e), 30));
+  screen.addEventListener('click', e => {
+    const f = frames[vp], b = e.target.closest('[data-act]');
+    if (f.justSel) { f.justSel = false; if (!b || !b.closest('.selpop, .selbar')) return; }
+    if (!b) { if (f.sel || f.menu) { f.sel = null; f.menu = false; render(vp); } return; }
+    if (b.disabled) return;
+    act(vp, b.dataset.act, b.dataset, b);
+  });
+  screen.addEventListener('input', e => {
+    const f = frames[vp], k = e.target.dataset.in;
+    if (k === 'edv') { f.edv = +e.target.value; updateCurve(vp); }
+    if (k === 'fbtext') {
+      f.fb.text = e.target.value;
+      const btn = screen.querySelector('[data-act="rewrite"]');
+      if (btn) btn.disabled = !(f.fb.chips.length || f.fb.text.trim());
+    }
+  });
+}
+
+/* ---------- page controls ---------- */
+const vBtns = document.querySelectorAll('#variants button');
+const statesEl = document.getElementById('states');
+statesEl.innerHTML = STATES.map(([k, l]) => `<button class="chip" data-s="${k}">${l}</button>`).join('');
+function syncControls() {
+  vBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.v === G.variant));
+  statesEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === G.state));
+}
+vBtns.forEach(b => b.addEventListener('click', () => { G.variant = b.dataset.v; syncControls(); render('phone'); render('desktop'); }));
+statesEl.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  G.state = b.dataset.s; syncControls();
+  for (const vp of ['phone', 'desktop']) { clearTimeout(timers[vp]); applyState(frames[vp], G.state); render(vp); }
+});
+const zoom = document.getElementById('zoom');
+const setZoom = () => { document.getElementById('stage').style.setProperty('--z', zoom.value / 100); document.getElementById('zoomv').textContent = zoom.value + '%'; };
+zoom.addEventListener('input', setZoom);
+setZoom(); syncControls(); render('phone'); render('desktop');
+</script>

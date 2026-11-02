@@ -195,6 +195,17 @@ export {
   type AuthTokenType,
 } from "./services/auth-token-service.js";
 
+// Services - Help while studying
+export {
+  getHelpSubject, findHelp, storeHelp, saveCardTerm, cleanHelpTerm, recordFeedback, storeRewrite, undoFeedback,
+  type HelpSubject, type HelpKind, type FeedbackInput,
+} from "./services/study-help.js";
+export { FEEDBACK_LABELS, type FeedbackLabel } from "./services/card-feedback.js";
+export {
+  HELP_PROMPT_VERSION, DEFINE_SYSTEM_PROMPT, TUTORIAL_SYSTEM_PROMPT, buildDefinePrompt, buildTutorialPrompt, validateTutorial, validateDefinition,
+  type HelpContext, type Tutorial, type TutorialVisual,
+} from "./lib/help-prompt.js";
+
 // Image utils
 export { extFromMime } from "./lib/image-utils.js";
 export { loadCardMedia, mediaIdsIn, type CardMedia, type CardMediaEntry, type AttachedImage } from "./lib/card-media.js";

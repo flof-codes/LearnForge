@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance } from "fastify";
 import { db } from "../db/connection.js";
 import {
   getTutorSettings, saveTutorSettings, removeTutorKey, TUTOR_MODELS, TUTOR_EFFORTS,
@@ -6,10 +6,10 @@ import {
   getTutorQueue, toQuestionRequest, getStudySummary, getAnswerContext, ValidationError, FOLLOW_UP_LIMIT,
 } from "@learnforge/core";
 import { getUserId } from "../lib/auth-helpers.js";
-import { ForbiddenError, ServiceUnavailableError } from "../lib/errors.js";
+import { requireTutor, modelUnavailable } from "../lib/tutor-helpers.js";
 import { writerStatus, requestQuestions, clearWriterPause } from "../services/question-generator.js";
 import { QuestionModelError, checkApiKey, type AnswerGrade, type ThreadMessage, type QuestionModel } from "../services/question-model.js";
-import { resolveTutorSetup, resolveTutorModel, usesServerKey } from "../services/tutor-access.js";
+import { resolveTutorSetup, usesServerKey } from "../services/tutor-access.js";
 import { settingsSecret } from "../config.js";
 
 /**
@@ -21,13 +21,6 @@ import { settingsSecret } from "../config.js";
  */
 
 interface TutorScope { topic_id?: string; difficulty?: number; answer_by?: unknown }
-
-async function requireTutor(request: FastifyRequest): Promise<{ userId: string; model: QuestionModel }> {
-  const userId = getUserId(request);
-  const model = await resolveTutorModel(userId);
-  if (!model) throw new ForbiddenError("Save an Anthropic API key in the settings to use the tutor", "TUTOR_UNAVAILABLE");
-  return { userId, model };
-}
 
 /**
  * Grades of open answers, kept until the learner rates. The review takes its
@@ -43,12 +36,6 @@ function rememberGrade(questionId: string, text: string, grade: AnswerGrade): vo
     for (const [id, g] of grades) if (now - g.at > GRADE_TTL_MS) grades.delete(id);
   }
   grades.set(questionId, { text, grade, at: now });
-}
-
-/** A model failure the learner can do nothing about: answered as 503 with the reason, so the view can say why. */
-function modelUnavailable(err: unknown): never {
-  if (err instanceof QuestionModelError) throw new ServiceUnavailableError(err.message, `TUTOR_${err.reason.toUpperCase()}`);
-  throw err;
 }
 
 function cleanAnswerText(raw: unknown): string {

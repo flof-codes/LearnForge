@@ -794,7 +794,6 @@
     "check": "Check",
     "checkCount": "Check ({{count}})",
     "dontKnow": "Don't know",
-    "progress": "{{headspace}} · card {{current}} · {{left}} left",
     "writing": "Writing questions for the next cards…",
     "retry": "Try again",
     "pausedCredits": "The API credits are used up, so you see the cards themselves.",
@@ -879,8 +878,48 @@
       "runsAt": "This session runs at {{name}}.",
       "cancel": "Cancel",
       "use": "Use {{name}}",
-      "backLocked": "The back opens after you answer."
+      "backLocked": "The back opens after you answer.",
+      "feedback": "Feedback on question",
+      "progress": "Card {{current}} · {{left}} left"
     },
-    "progressShort": "{{headspace}} · {{current}} · {{left}} left"
+    "help": {
+      "folder": "Folder",
+      "define": "Define",
+      "tutorial": "Tutorial",
+      "selection": "Selected words",
+      "explainQuestion": "Explain question",
+      "writingDefinition": "Writing a definition…",
+      "new": "New",
+      "saveToCard": "Save to card",
+      "savedToCard": "Saved to card",
+      "close": "Close",
+      "tutorialFor": "Tutorial",
+      "explainEyebrow": "Explain the question",
+      "explainTitle": "What you need to answer it",
+      "explainLead": "The parts of the question and how they connect. Tap a part to jump to it. It does not pick an option.",
+      "writingTutorial": "Writing the tutorial…",
+      "cappedHard": "Opened before answering: the suggested rating stops at Hard.",
+      "backToQuestion": "Back to the question",
+      "feedbackTitle": "Feedback on this question",
+      "labels": {
+        "unclear": "Unclear wording",
+        "not_my_way": "Not how I learn this",
+        "too_easy": "Too trivial",
+        "too_detailed": "Too much detail",
+        "wrong_answer": "Answer looks wrong",
+        "gives_away": "Options give it away"
+      },
+      "note": "What would help? (optional)",
+      "appliesTo": "Applies to",
+      "scopeQuestion": "This question",
+      "scopeCard": "All questions on this card",
+      "rewrite": "Rewrite question",
+      "rewriting": "Rewriting…",
+      "feedbackKept": "The tutor could not rewrite it right now. Your feedback is saved and shapes the next question for this card.",
+      "rewritten": "Rewritten from your feedback",
+      "undo": "Undo",
+      "undoFailed": "Could not undo: the rewritten question was already answered.",
+      "slider": "Move along the curve"
+    }
   }
 }

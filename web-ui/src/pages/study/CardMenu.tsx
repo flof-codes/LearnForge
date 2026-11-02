@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { MoreHorizontal, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CardHtmlRender from '../../components/CardHtmlRender';
 import { useIsPhone } from '../../hooks/useIsPhone';
 import DifficultyPicker from './DifficultyPicker';
+import SheetFrame from './SheetFrame';
 import { presetOf } from '../../utils/tutor';
 
 interface Props {
@@ -17,41 +18,20 @@ interface Props {
   onViewDetail?: () => void;
   /** Lets the card stop its own keyboard shortcuts while something is open. */
   onOpenChange?: (open: boolean) => void;
+  /** Where the session stands, shown at the top of the menu: the card's full folder path and the count. */
+  info?: { path: string; progress: string };
+  /** Opens the feedback sheet of a written question. */
+  onFeedback?: () => void;
 }
 
 type Sheet = 'difficulty' | 'card' | null;
 
-/** A sheet from the bottom on a phone, a dialog in the middle from md up. */
-function SheetFrame({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center bg-black/40" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={e => e.stopPropagation()}
-        className="w-full max-h-[86dvh] overflow-y-auto bg-bg-primary rounded-t-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4 md:w-[32rem] md:rounded-xl md:border md:border-border md:p-6"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">{title}</h3>
-          <button type="button" onClick={onClose} aria-label={title} className="p-1 text-text-muted hover:text-text-primary"><X size={20} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 /**
- * The "…" at the top right of a study card: change the session's difficulty,
- * look at the original card, open the card's details.
+ * The "…" at the top right of a study card: where the session stands, change
+ * its difficulty, look at the original card, open the card's details, give
+ * feedback on the question.
  */
-export default function CardMenu({ difficulty, onChangeDifficulty, card, answered, onViewDetail, onOpenChange }: Props) {
+export default function CardMenu({ difficulty, onChangeDifficulty, card, answered, onViewDetail, onOpenChange, info, onFeedback }: Props) {
   const { t } = useTranslation('app');
   const isPhone = useIsPhone();
   const [menu, setMenu] = useState(false);
@@ -111,12 +91,23 @@ export default function CardMenu({ difficulty, onChangeDifficulty, card, answere
       </button>
 
       {menu && (
-        <div role="menu" className="absolute right-0 top-9 z-30 min-w-56 p-1 rounded-lg border border-border bg-bg-primary shadow-lg normal-case tracking-normal text-text-primary">
+        <div role="menu" className="absolute right-0 top-9 z-30 min-w-56 max-w-[min(20rem,calc(100vw-2rem))] p-1 rounded-lg border border-border bg-bg-primary shadow-lg normal-case tracking-normal text-text-primary">
+          {info && (
+            <div className="px-3 pt-1.5 pb-2 mb-1 border-b border-border text-[13px] leading-snug">
+              <div className="text-text-primary">{info.path}</div>
+              <div className="text-text-muted tabular-nums">{info.progress}</div>
+            </div>
+          )}
           <button type="button" role="menuitem" className={item} onClick={() => open('difficulty')}>
             {t('tutor.menu.difficulty')} <span className="text-sm text-text-muted">{name(difficulty)}</span>
           </button>
           {card && <button type="button" role="menuitem" className={item} onClick={() => open('card')}>{t('tutor.menu.card')}</button>}
           {onViewDetail && <button type="button" role="menuitem" className={item} onClick={() => { setMenu(false); onViewDetail(); }}>{t('tutor.menu.details')}</button>}
+          {onFeedback && (
+            <button type="button" role="menuitem" className={`${item} mt-1 border-t border-border rounded-t-none`} onClick={() => { setMenu(false); onFeedback(); }}>
+              {t('tutor.menu.feedback')}
+            </button>
+          )}
         </div>
       )}
 
