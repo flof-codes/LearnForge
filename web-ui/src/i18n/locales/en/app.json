@@ -588,6 +588,12 @@
     "show": "Show review history",
     "hide": "Hide review history"
   },
+  "createdHistory": {
+    "title": "Created Cards",
+    "total": "Created",
+    "show": "Show created cards",
+    "hide": "Hide created cards"
+  },
   "dueForecast": {
     "title": "Due Forecast",
     "overdue": "{{count}} overdue",

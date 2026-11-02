@@ -15,6 +15,7 @@ import {
 // The due history uses the same timelines and counts what was due at each point;
 // suspension and disputes have no history, so today's flags apply throughout.
 // The review history counts reviews per calendar day, each by the state the card was in.
+// The created history counts cards per day of creation, each by its state today.
 
 export type CardHistoryRange = "30d" | "1y" | "all";
 
@@ -205,6 +206,19 @@ export function getDueHistory(db: Db, userId: string, rawRange?: string) {
 const dayNumber = (day: string) => Math.round(Date.parse(`${day}T00:00:00Z`) / DAY_MS);
 const dayString = (n: number) => new Date(n * DAY_MS).toISOString().slice(0, 10);
 
+/** Empty day (or week) buckets from `first` to `last`, the last one ending on `last`. */
+function dayBuckets(range: CardHistoryRange, first: number, last: number) {
+  const span = range === "30d" ? 30 : range === "1y" ? 365 : last - first + 1;
+  const step = span > 400 ? 7 : 1;
+  const count = Math.ceil(span / step);
+  const start = last - count * step + 1;
+  const points = Array.from({ length: count }, (_, i) => ({
+    at: `${dayString(start + i * step)}T12:00:00.000Z`, total: 0,
+    ...Object.fromEntries(REVIEW_STATES.map(s => [s, 0])),
+  }) as { at: string; total: number } & Record<ReviewState, number>);
+  return { start, step, points };
+}
+
 /**
  * Reviews per calendar day (per week beyond 400 days), the last bucket ending today,
  * so a daily range ends on the dashboard's "reviews today". Points sit at noon UTC
@@ -217,24 +231,52 @@ export async function getReviewHistory(db: Db, userId: string, rawRange?: string
 
   let first = last;
   for (const c of cards) for (const r of c.reviews) first = Math.min(first, dayNumber(r.day));
-  const span = range === "30d" ? 30 : range === "1y" ? 365 : last - first + 1;
-  const step = span > 400 ? 7 : 1;
-  const count = Math.ceil(span / step);
-  const start = last - count * step + 1;
-
-  const points = Array.from({ length: count }, (_, i) => ({
-    at: `${dayString(start + i * step)}T12:00:00.000Z`, total: 0,
-    ...Object.fromEntries(REVIEW_STATES.map(s => [s, 0])),
-  }) as { at: string; total: number } & Record<ReviewState, number>);
+  const { start, step, points } = dayBuckets(range, first, last);
 
   for (const { timeline, reviews } of cards) {
     reviews.forEach((r, i) => {
       const bucket = Math.floor((dayNumber(r.day) - start) / step);
-      if (bucket < 0 || bucket >= count) return;
+      if (bucket < 0 || bucket >= points.length) return;
       const p = points[bucket];
       p.total++;
       p[reviewState(timeline[i].state)]++;
     });
+  }
+
+  return { range, step: step === 7 ? "week" as const : "day" as const, points };
+}
+
+interface CreatedRow extends Record<string, unknown> {
+  state: number; stability: number;
+  /** Calendar day in the database's time zone, as the dashboard's "created today" counts it. */
+  day: string;
+}
+
+/**
+ * Cards created per calendar day (per week beyond 400 days), each by the state it is in now,
+ * so a bar shows how far that day's cards have come. Buckets and points as in the review history.
+ */
+export async function getCreatedHistory(db: Db, userId: string, rawRange?: string) {
+  const range = parseRange(rawRange);
+  const rows = await db.execute<CreatedRow>(sql`
+    SELECT fs.state, fs.stability, to_char(c.created_at::date, 'YYYY-MM-DD') AS day
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id AND t.user_id = ${userId}
+    JOIN fsrs_state fs ON fs.card_id = c.id
+  `);
+  const todayRow = await db.execute<{ today: string }>(sql`SELECT to_char(CURRENT_DATE, 'YYYY-MM-DD') AS today`);
+  const last = dayNumber(todayRow.rows[0]?.today ?? new Date().toISOString().slice(0, 10));
+
+  let first = last;
+  for (const r of rows.rows) first = Math.min(first, dayNumber(r.day));
+  const { start, step, points } = dayBuckets(range, first, last);
+
+  for (const r of rows.rows) {
+    const bucket = Math.floor((dayNumber(r.day) - start) / step);
+    if (bucket < 0 || bucket >= points.length) continue;
+    const p = points[bucket];
+    p.total++;
+    p[reviewState(r)]++;
   }
 
   return { range, step: step === 7 ? "week" as const : "day" as const, points };

@@ -588,6 +588,12 @@
     "show": "Wiederholungsverlauf anzeigen",
     "hide": "Wiederholungsverlauf ausblenden"
   },
+  "createdHistory": {
+    "title": "Erstellte Karten",
+    "total": "Erstellt",
+    "show": "Erstellte Karten anzeigen",
+    "hide": "Erstellte Karten ausblenden"
+  },
   "dueForecast": {
     "title": "F\u00e4lligkeitsvorhersage",
     "overdue": "{{count}} \u00fcberf\u00e4llig",
