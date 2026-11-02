@@ -46,7 +46,7 @@ async function newTopic(api: AxiosInstance, name: string): Promise<string> {
   return res.data.id;
 }
 
-async function cardOf(api: AxiosInstance, noteId: string): Promise<{ id: string; frontHtml: string; backHtml: string }> {
+async function cardOf(api: AxiosInstance, noteId: string): Promise<{ id: string; topicId: string; frontHtml: string; backHtml: string }> {
   const note = await api.get(`/notes/${noteId}`);
   const card = await api.get(`/cards/${note.data.cards[0].id}`);
   return card.data;
@@ -170,7 +170,7 @@ describe("Upgrading copies made before the figure fields", () => {
 describe("A connected app with figures", () => {
   const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
-  it("uploads pictures, sends them in figure fields, and rewrites only its own notes' fields", async () => {
+  it("uploads pictures, sends them in figure fields, and rewrites or moves only its own notes", async () => {
     const { api } = await registerUser("app");
     const secret = `lfa_${randomBytes(32).toString("hex")}`;
     const start = await getUnauthApi().post("/apps/pair/start", { token_hash: sha256(secret), app: "Lecture Scribe" });
@@ -206,7 +206,17 @@ describe("A connected app with figures", () => {
     expect(tags.status).toBe(403);
     expect(tags.data.code).toBe("APP_TOKEN_SCOPE");
 
+    // A move to another topic keeps the card and its id.
+    const terminology = await newTopic(api, "Terminology");
+    const moved = await app.put(`/notes/${created.data.id}`, { topic_id: terminology });
+    expect(moved.status).toBe(200);
+    expect(moved.data.topicId).toBe(terminology);
+    const after = await cardOf(api, created.data.id);
+    expect(after.id).toBe(card.id);
+    expect(after.topicId).toBe(terminology);
+
     const own = await api.post("/notes", { topic_id: topicId, note_type: "open", fields: { Question: "Mine", Answer: "Mine" } });
+    expect((await app.put(`/notes/${own.data.id}`, { topic_id: terminology })).status).toBe(403);
     const foreign = await app.put(`/notes/${own.data.id}`, { fields: { Answer: "Changed by the app" } });
     expect(foreign.status).toBe(403);
     expect(foreign.data.code).toBe("APP_TOKEN_SCOPE");
