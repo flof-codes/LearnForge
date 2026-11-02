@@ -189,3 +189,54 @@ describe("GET /study/review-history", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("GET /study/created-history", () => {
+  const KINDS = ["new", "learning", "relearning", "shortTerm", "midTerm", "longTerm"] as const;
+  type CreatedPoint = { at: string; total: number } & Record<(typeof KINDS)[number], number>;
+  const thirtyDays = async () =>
+    (await api.get("/study/created-history", { params: { range: "30d" } })).data.points as CreatedPoint[];
+
+  it("has one bar per day ending on the dashboard's created today, split by state", async () => {
+    const [history, stats] = await Promise.all([
+      api.get("/study/created-history", { params: { range: "30d" } }),
+      api.get("/study/stats"),
+    ]);
+    expect(history.status).toBe(200);
+    expect(history.data.step).toBe("day");
+    const points = history.data.points as CreatedPoint[];
+    expect(points).toHaveLength(30);
+    expect(points.at(-1)!.total).toBe(stats.data.cardsCreatedToday);
+    for (const p of points) {
+      expect(KINDS.reduce((sum, k) => sum + p[k], 0)).toBe(p.total);
+    }
+  });
+
+  it("counts a new card today and moves it by its current state", async () => {
+    const before = (await thirtyDays()).at(-1)!;
+    const card = await createFreshCard(api, TOPICS.ALGEBRA);
+    created.push(card.id);
+    const mid = (await thirtyDays()).at(-1)!;
+    expect(mid.total).toBe(before.total + 1);
+    expect(mid.new).toBe(before.new + 1);
+    await api.post("/reviews", { card_id: card.id, bloom_level: 0, rating: 1, question_text: "Created history" });
+    const after = (await thirtyDays()).at(-1)!;
+    expect(after.total).toBe(mid.total);
+    expect(after.new).toBe(mid.new - 1);
+    expect(after.learning).toBe(mid.learning + 1);
+  });
+
+  it("puts a card into the bucket of its creation day", async () => {
+    const card = await createFreshCard(api, TOPICS.ALGEBRA);
+    created.push(card.id);
+    const before = await thirtyDays();
+    await withDb(c => c.query(`UPDATE cards SET created_at = created_at - interval '3 days' WHERE id = $1`, [card.id]));
+    const after = await thirtyDays();
+    expect(after.at(-1)!.total).toBe(before.at(-1)!.total - 1);
+    expect(after.at(-4)!.total).toBe(before.at(-4)!.total + 1);
+  });
+
+  it("requires authentication", async () => {
+    const res = await getUnauthApi().get("/study/created-history");
+    expect(res.status).toBe(401);
+  });
+});

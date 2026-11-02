@@ -3,8 +3,8 @@ export type CardHistoryRange = '30d' | '1y' | 'all';
 export const HISTORY_STATES = ['new', 'learning', 'relearning', 'recall', 'shortTerm', 'midTerm', 'longTerm'] as const;
 export type HistoryState = (typeof HISTORY_STATES)[number];
 
-/** All cards or only the due ones at each point, or the reviews done per day. */
-export type HistoryKind = 'cards' | 'due' | 'reviews';
+/** All cards or only the due ones at each point, or the reviews done or cards created per day. */
+export type HistoryKind = 'cards' | 'due' | 'reviews' | 'created';
 /** The states that feed the due count. */
 export const DUE_STATES = ['learning', 'relearning', 'recall'] as const;
 /** A review's kind: the card's state before it, review cards by their stability then. */

@@ -26,7 +26,7 @@ function useIsDesktop() {
   return useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP).matches, () => true);
 }
 
-const SECTIONS: Record<HistoryKind, string> = { cards: 'cardHistory', due: 'dueHistory', reviews: 'reviewHistory' };
+const SECTIONS: Record<HistoryKind, string> = { cards: 'cardHistory', due: 'dueHistory', reviews: 'reviewHistory', created: 'createdHistory' };
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation('app');
@@ -49,7 +49,7 @@ export default function Dashboard() {
     return <OnboardingWizard onSkip={() => { localStorage.setItem('learnforge-wizard-dismissed', '1'); setWizardDismissed(true); }} />;
   }
 
-  // Total cards, Due now and Reviews today each open their history; one at a time.
+  // Total cards, Due now, Reviews today and Created today each open their history; one at a time.
   const toggle = (kind: HistoryKind) => ({
     onClick: () => setHistory(h => (h === kind ? null : kind)),
     'aria-expanded': history === kind,
@@ -67,7 +67,7 @@ export default function Dashboard() {
     { label: t('dashboard.reviewStreak'), value: stats.streak, unit: t('dashboard.days') },
     { label: t('dashboard.creationStreak'), value: stats.creationStreak, unit: t('dashboard.days') },
     { label: t('dashboard.reviewsToday'), value: stats.reviewsToday, kind: 'reviews' },
-    { label: t('dashboard.createdToday'), value: stats.cardsCreatedToday },
+    { label: t('dashboard.createdToday'), value: stats.cardsCreatedToday, kind: 'created' },
     { label: t('dashboard.avgPerDay'), value: stats.averagePerDay },
     { label: t('dashboard.avgPerMonth'), value: stats.averagePerMonth },
   ] : [];
@@ -93,7 +93,7 @@ export default function Dashboard() {
             <p className="text-2xl font-light tabular-nums mt-1">{accuracy}</p>
           </div>
         </div>
-        {history !== 'reviews' && phoneChart}
+        {(history === 'cards' || history === 'due') && phoneChart}
         {[0, 3].map(start => miniStats.length > 0 && (
           <Fragment key={start}>
             <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
@@ -115,8 +115,8 @@ export default function Dashboard() {
                 );
               })}
             </div>
-            {/* Reviews today sits in the first of these rows; its chart opens right under it */}
-            {start === 0 && history === 'reviews' && phoneChart}
+            {/* Reviews today sits in the first of these rows, Created today in the second; each chart opens right under its row */}
+            {(start === 0 ? history === 'reviews' : history === 'created') && phoneChart}
           </Fragment>
         ))}
         {(summary?.totalCards ?? 0) > 0 && (
@@ -150,7 +150,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {history && history !== 'reviews' && isDesktop && <HistoryChart key={history} kind={history} />}
+      {(history === 'cards' || history === 'due') && isDesktop && <HistoryChart key={history} kind={history} />}
 
       {/* Streak & Activity */}
       {stats && (
@@ -177,10 +177,10 @@ export default function Dashboard() {
             <p className="text-text-muted text-sm flex items-center gap-1.5">{t('dashboard.reviewsToday')}{chevron('reviews')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.reviewsToday}</p>
           </button>
-          <div className="bg-bg-secondary rounded-xl border border-border p-6">
-            <p className="text-text-muted text-sm">{t('dashboard.createdToday')}</p>
+          <button type="button" {...toggle('created')} className={tileClass('created')}>
+            <p className="text-text-muted text-sm flex items-center gap-1.5">{t('dashboard.createdToday')}{chevron('created')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.cardsCreatedToday}</p>
-          </div>
+          </button>
           <div className="bg-bg-secondary rounded-xl border border-border p-6">
             <p className="text-text-muted text-sm">{t('dashboard.avgPerDay')}</p>
             <p className="text-3xl font-light tabular-nums mt-1">{stats.averagePerDay}</p>
@@ -192,7 +192,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {history === 'reviews' && isDesktop && <HistoryChart kind="reviews" />}
+      {(history === 'reviews' || history === 'created') && isDesktop && <HistoryChart key={history} kind={history} />}
 
       {/* Due Forecast */}
       <DueForecastChart />

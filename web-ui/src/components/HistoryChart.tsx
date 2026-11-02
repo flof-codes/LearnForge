@@ -11,6 +11,7 @@ const KINDS: Record<HistoryKind, { states: readonly HistoryState[]; i18n: string
   cards: { states: HISTORY_STATES, i18n: 'cardHistory' },
   due: { states: DUE_STATES, i18n: 'dueHistory' },
   reviews: { states: REVIEW_STATES, i18n: 'reviewHistory', bars: true },
+  created: { states: REVIEW_STATES, i18n: 'createdHistory', bars: true },
 };
 const RANGES: { key: CardHistoryRange; label: string }[] = [
   { key: '30d', label: 'cardHistory.thirtyDays' },
