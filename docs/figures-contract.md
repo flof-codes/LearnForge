@@ -36,10 +36,11 @@ The built-in note types `open`, `choice` and `cloze` each have two optional fiel
 
 ## 3. Rewriting a note with the app token
 
-`PUT /notes/:id` with body `{ "fields": { … } }`.
+`PUT /notes/:id` with body `{ "fields": { … } }`, or `{ "topic_id": "…" }` to move the note to another of the user's topics.
 
 - Allowed only for notes whose `source_ref` starts with `scribe:` (notes the app created with `POST /notes`). Any other note answers `403 APP_TOKEN_SCOPE`.
-- Only `fields` may be sent. `tags`, `topic_id` or `concept` in the body answer `403 APP_TOKEN_SCOPE`.
+- Only `fields` and `topic_id` may be sent. `tags` or `concept` in the body answer `403 APP_TOKEN_SCOPE`.
+- A move keeps the note's cards, their review history and their ids; only the topic changes.
 - `fields` is merged: fields not sent keep their value. Every card of the note renders again.
 - The edit throws away tutor questions written for the old content (also when only a figure changed), so the next study session asks a fresh one.
 - Caution for the app: the learner may have edited the note in LearnForge since the upload. A rewrite overwrites those fields.
@@ -56,5 +57,5 @@ The built-in note types `open`, `choice` and `cloze` each have two optional fiel
 2. Inline SVG has a `viewBox`, uses `currentColor`, has no script.
 3. Front figure only together with hidden parts, never the full answer.
 4. Slide pictures: upload first, then `<img src="/images/<id>">` with the returned id.
-5. `PUT /notes/:id` sends `{ fields }` only, and only for notes it created with a `scribe:` source_ref.
+5. `PUT /notes/:id` sends `{ fields }` and/or `{ topic_id }` only, and only for notes it created with a `scribe:` source_ref.
 6. Each side stays under 100 KB; one field under 60 000 characters.

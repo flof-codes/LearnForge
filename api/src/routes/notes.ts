@@ -62,9 +62,9 @@ export default async function noteRoutes(app: FastifyInstance) {
     },
   }, async (req) => {
     const userId = getUserId(req);
-    // A connected app rewrites the fields of notes it created, nothing else.
+    // A connected app rewrites the fields of notes it created, or moves them to another topic; nothing else.
     if (getAppTokenId(req)) {
-      if (Object.keys(req.body ?? {}).some(k => k !== "fields")) throw new ForbiddenError("A connected app may only change a note's fields", "APP_TOKEN_SCOPE");
+      if (Object.keys(req.body ?? {}).some(k => k !== "fields" && k !== "topic_id")) throw new ForbiddenError("A connected app may only change a note's fields or topic", "APP_TOKEN_SCOPE");
       if (!(await appMayEditNote(db, userId, req.params.id))) throw new ForbiddenError("A connected app may only change notes it created", "APP_TOKEN_SCOPE");
     }
     return updateNote(db, userId, req.params.id, req.body);
