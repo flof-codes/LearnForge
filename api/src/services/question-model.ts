@@ -4,14 +4,16 @@ import { z } from "zod/v4";
 import {
   QUESTION_SYSTEM_PROMPT, buildQuestionBatchPrompt, GRADING_SYSTEM_PROMPT, buildGradingPrompt,
   FOLLOW_UP_SYSTEM_PROMPT, buildFollowUpContext,
+  DEFINE_SYSTEM_PROMPT, buildDefinePrompt, TUTORIAL_SYSTEM_PROMPT, buildTutorialPrompt, validateTutorial, validateDefinition,
   TUTOR_MODELS,
-  type QuestionRequest, type WrittenQuestion, type AnswerContext, type TutorModelId, type TutorEffort,
+  type QuestionRequest, type WrittenQuestion, type AnswerContext, type HelpContext, type Tutorial, type TutorModelId, type TutorEffort,
 } from "@learnforge/core";
 import { config } from "../config.js";
 
 /**
  * The one place that calls a model: to write questions ahead, to grade an open
- * answer, and to answer a follow-up. Everything else works
+ * answer, to answer a follow-up, and to define or teach what the learner marked.
+ * Everything else works
  * with what comes back, so the tests swap this for a stub (TUTOR_MODEL=stub)
  * and never reach Anthropic. Every call runs on the key of the user it is for.
  */
@@ -29,6 +31,30 @@ const WrittenBatch = z.object({
     key_points: z.array(z.string()),
     explanation: z.string(),
     terms: z.array(z.object({ term: z.string(), definition: z.string() })),
+  })),
+});
+
+/** One flat shape for every diagram kind; the kinds a step does not use come back empty. */
+const WrittenTutorial = z.object({
+  title: z.string(),
+  concepts: z.array(z.object({ id: z.string(), label: z.string() })),
+  links: z.array(z.object({ from: z.string(), to: z.string(), effect: z.enum(["leads", "raises", "lowers"]) })),
+  steps: z.array(z.object({
+    concept: z.string(),
+    title: z.string(),
+    text: z.string(),
+    visual: z.object({
+      kind: z.enum(["none", "flow", "bars", "curve"]),
+      caption: z.string(),
+      flow: z.array(z.object({ label: z.string(), change: z.enum(["up", "down", "none"]) })),
+      bars: z.array(z.object({ label: z.string(), value: z.number(), unit: z.string() })),
+      curve: z.object({
+        x_label: z.string(),
+        y_label: z.string(),
+        points: z.array(z.object({ x: z.number(), y: z.number() })),
+        marker_x: z.number(),
+      }),
+    }),
   })),
 });
 
@@ -54,6 +80,10 @@ export interface QuestionModel {
   grade(ctx: AnswerContext, answer: string): Promise<AnswerGrade>;
   /** Answers the last message of a thread that starts with the learner's answer and the feedback on it. */
   reply(ctx: AnswerContext, thread: ThreadMessage[]): Promise<string>;
+  /** A short definition of words the learner marked in a question. */
+  define(ctx: HelpContext, term: string): Promise<string>;
+  /** A tutorial of a marked term, or of everything the question needs when `term` is null. */
+  tutorial(ctx: HelpContext, term: string | null): Promise<Tutorial>;
 }
 
 /** The model's numbers are advisory until they are in range and as long as the rubric. */
@@ -141,6 +171,37 @@ function anthropicModel(setup: ModelSetup): QuestionModel {
         throw classify(err);
       }
     },
+    async define(ctx, term) {
+      try {
+        const response = await client.messages.create({
+          model,
+          max_tokens: 1000,
+          system: [{ type: "text", text: DEFINE_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+          messages: [{ role: "user", content: buildDefinePrompt(ctx, term) }],
+          output_config: effort,
+        });
+        if (response.stop_reason === "refusal") throw new QuestionModelError("refused", "The model declined to define this");
+        return validateDefinition(response.content.filter(b => b.type === "text").map(b => b.text).join(""));
+      } catch (err) {
+        throw classify(err);
+      }
+    },
+    async tutorial(ctx, term) {
+      try {
+        const response = await client.messages.parse({
+          model,
+          max_tokens: 8000,
+          system: [{ type: "text", text: TUTORIAL_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+          messages: [{ role: "user", content: buildTutorialPrompt(ctx, term) }],
+          output_config: { ...effort, format: zodOutputFormat(WrittenTutorial) },
+        });
+        if (response.stop_reason === "refusal") throw new QuestionModelError("refused", "The model declined to write this tutorial");
+        if (!response.parsed_output) throw new QuestionModelError("error", `The model returned no usable tutorial (${response.stop_reason})`);
+        return validateTutorial(response.parsed_output);
+      } catch (err) {
+        throw classify(err);
+      }
+    },
   };
 }
 
@@ -158,7 +219,7 @@ function stubModel(): QuestionModel {
         if (r.form === "gap") return { ...base, stem: `${r.concept} is {{gap}}.`, answer: "Right", accept: ["right", "correct"] };
         return {
           ...base,
-          stem: `Which statement about ${r.concept} is right?`,
+          stem: r.rewriteOf ? `Rewritten (${r.feedback.flatMap(f => f.labels).length} labels): which statement about ${r.concept} is right?` : `Which statement about ${r.concept} is right?`,
           options: [
             { text: "The right one", correct: true, why: "It matches the card." },
             { text: "A wrong one", correct: false, why: "The card says otherwise." },
@@ -177,6 +238,24 @@ function stubModel(): QuestionModel {
     },
     async reply(_ctx, thread) {
       return `Stub reply to: ${thread[thread.length - 1].text}`;
+    },
+    // A term containing "[credits]" stands for a used-up balance.
+    async define(_ctx, term) {
+      if (term.includes("[credits]")) throw new QuestionModelError("credits", "The Anthropic credit balance is used up");
+      return `Stub definition of ${term}.`;
+    },
+    async tutorial(ctx, term) {
+      if (term?.includes("[credits]")) throw new QuestionModelError("credits", "The Anthropic credit balance is used up");
+      const subject = term ?? ctx.concept;
+      return validateTutorial({
+        title: `About ${subject}`,
+        concepts: [{ id: "a", label: "Cause" }, { id: "b", label: subject.slice(0, 40) }],
+        links: [{ from: "a", to: "b", effect: "raises" }],
+        steps: [
+          { concept: "a", title: "The cause", text: "More of the cause.", visual: { kind: "flow", caption: "", flow: [{ label: "Cause", change: "up" }, { label: "Effect", change: "up" }] } },
+          { concept: "b", title: subject, text: `What ${subject} means.`, visual: { kind: "curve", caption: "", curve: { x_label: "x", y_label: "y", points: [{ x: 0, y: 0 }, { x: 1, y: 2 }, { x: 2, y: 3 }], marker_x: 1 } } },
+        ],
+      });
     },
   };
 }

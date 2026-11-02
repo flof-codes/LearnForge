@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, X } from 'lucide-react';
+import { Check, Lightbulb, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RatingButtons from '../../components/RatingButtons';
 import { tutorService } from '../../api/tutor';
@@ -8,12 +8,20 @@ import TermText from './TermText';
 import MicButton from './MicButton';
 import CardMenu from './CardMenu';
 import FigureView from './FigureView';
-import { BottomBar, barButton, primaryButton, type QuestionAnswer } from './QuestionCard';
+import BottomBar from './BottomBar';
+import { barButton, primaryButton } from './buttons';
+import type { QuestionAnswer } from './QuestionCard';
+import { useStudyHelp, type HelpProps } from './useStudyHelp';
+import { SelectionBar, SelectionPopover, DefinitionBox, RewriteNote } from './StudyHelp';
+import TutorialSheet from './TutorialSheet';
+import FeedbackSheet from './FeedbackSheet';
+import { useIsPhone } from '../../hooks/useIsPhone';
+import { useTextSelection } from '../../hooks/useTextSelection';
 import { dictationSupported } from '../../hooks/useDictation';
 import { suggestedRating, tutorErrorKey, isStaleTicket, FOLLOW_UP_LIMIT } from '../../utils/tutor';
 import type { OpenGrade, TutorQuestion } from '../../types';
 
-interface Props {
+interface Props extends HelpProps {
   item: Extract<TutorQuestion, { form: 'open' }>;
   onAnswer: (answer: QuestionAnswer) => void;
   onViewDetail?: () => void;
@@ -38,7 +46,7 @@ const field = 'flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-bg-secondary border bord
  * graded against the question's key points, and they may ask about it before
  * rating. Only the rating writes the review.
  */
-export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty, menuSlot, onStale }: Props) {
+export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate, difficulty, onChangeDifficulty, menuSlot, onStale, menuInfo, rewrite, onRewritten }: Props) {
   const { t } = useTranslation('app');
   const { payload } = item;
   const [text, setText] = useState('');
@@ -48,12 +56,16 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
   const [error, setError] = useState<string | null>(null);
   const [thread, setThread] = useState<Message[]>([]);
   const [followUp, setFollowUp] = useState('');
-  const [lookedUp, setLookedUp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showModel, setShowModel] = useState(false);
   const end = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const isPhone = useIsPhone();
 
   const done = grade !== null || dontKnow;
+  const help = useStudyHelp(item.questionId, done, rewrite?.used);
+  const { selection, clear } = useTextSelection(root, !menuOpen && help.sheet === null);
+  const terms = [...payload.terms, ...help.savedTerms];
   const correctness = grade?.correctness ?? 0;
   const asked = thread.filter(m => m.role === 'user').length;
   const mic = !!dictate && dictationSupported();
@@ -101,7 +113,7 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
   };
 
   const submit = (rating: 1 | 2 | 3 | 4) => onAnswer(dontKnow ? { dontKnow: true, rating } : { text: text.trim(), rating });
-  const suggestion = suggestedRating(correctness, lookedUp);
+  const suggestion = suggestedRating(correctness, help.used);
   const verdictKey = dontKnow ? 'notAnswered' : correctness >= 0.95 ? 'right' : correctness >= 0.8 ? 'mostly' : correctness >= 0.5 ? 'partly' : 'wrong';
   const verdictTone = correctness >= 0.8 ? 'text-accent-green' : correctness >= 0.5 ? 'text-warning' : 'text-danger';
   const block = 'lf-bleed px-4 py-3 border-t border-border space-y-1.5 md:mx-0 md:px-0';
@@ -115,12 +127,19 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
       answered={done}
       onViewDetail={onViewDetail}
       onOpenChange={setMenuOpen}
+      info={menuInfo}
+      onFeedback={help.openFeedback}
     />
   );
+  const selectionActions = selection && {
+    selection,
+    onDefine: () => { void help.define(selection.text, selection.region); clear(); },
+    onTutorial: () => { help.openTutorial(selection.text); clear(); },
+  };
 
   return (
     <>
-      <div className="space-y-4 pb-48 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-6 md:pb-6 md:mb-48">
+      <div ref={root} className="space-y-4 pb-48 md:bg-bg-secondary md:rounded-xl md:border md:border-border md:p-6 md:pb-6 md:mb-48">
         {menuSlot ? createPortal(menu, menuSlot) : (
           <div className="flex items-center justify-between">
             <div className="text-[10px] uppercase tracking-wider text-text-muted">{t('tutor.openQuestion')}</div>
@@ -128,9 +147,20 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
           </div>
         )}
 
-        <div className="text-lg font-medium leading-snug">
-          <TermText text={payload.stem} terms={payload.terms} onLookup={() => setLookedUp(true)} />
+        {rewrite && <RewriteNote labels={rewrite.labels} onUndo={rewrite.onUndo} busy={rewrite.busy} />}
+
+        <div className="text-lg font-medium leading-snug" data-select-region="stem">
+          <TermText text={payload.stem} terms={terms} onLookup={help.noteLookup} />
         </div>
+        {help.lookup && (
+          <DefinitionBox
+            lookup={help.lookup}
+            onSave={() => void help.save()}
+            onTutorial={() => help.openTutorial(help.lookup!.term)}
+            onRetry={() => void help.define(help.lookup!.term, 'stem')}
+            onClose={help.closeLookup}
+          />
+        )}
 
         {item.frontFigure && !(done && item.figure) && <FigureView html={item.frontFigure} />}
 
@@ -197,10 +227,18 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
           </div>
         )}
         {error && <p className="text-sm text-danger">{error}</p>}
+        {done && (
+          <button type="button" onClick={() => help.openTutorial(null)} className="inline-flex items-center gap-1.5 text-sm font-medium text-accent-blue">
+            <Lightbulb size={16} /> {t('tutor.help.explainQuestion')}
+          </button>
+        )}
         <div ref={end} />
       </div>
 
+      {selectionActions && !isPhone && <SelectionPopover {...selectionActions} />}
+
       <BottomBar>
+        {selectionActions && isPhone && <SelectionBar {...selectionActions} />}
         {!done ? (
           <>
             <div className="flex gap-2 items-stretch">
@@ -217,6 +255,9 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setDontKnow(true)} disabled={busy !== null} className={barButton}>{t('tutor.dontKnow')}</button>
+              <button type="button" onClick={() => help.openTutorial(null)} disabled={busy !== null} className={barButton}>
+                <Lightbulb size={16} /> {t('tutor.help.explainQuestion')}
+              </button>
               <button type="button" onClick={send} disabled={busy !== null || text.trim() === ''} className={primaryButton}>
                 {busy === 'grade' ? t('tutor.checking') : t('tutor.send')}
               </button>
@@ -239,10 +280,17 @@ export default function OpenCard({ item, onAnswer, onViewDetail, saving, dictate
                 <button type="button" onClick={ask} disabled={busy !== null || followUp.trim() === ''} className={`${barButton} flex-none px-4`}>{t('tutor.ask')}</button>
               </div>
             )}
-            <RatingButtons onRate={submit} disabled={saving || busy !== null || menuOpen} suggested={suggestion} />
+            <RatingButtons onRate={submit} disabled={saving || busy !== null || menuOpen || help.sheet !== null} suggested={suggestion} />
           </>
         )}
       </BottomBar>
+
+      {help.sheet?.kind === 'tutorial' && (
+        <TutorialSheet questionId={item.questionId} term={help.sheet.term} answered={done} onClose={help.closeSheet} />
+      )}
+      {help.sheet?.kind === 'feedback' && (
+        <FeedbackSheet questionId={item.questionId} onClose={help.closeSheet} onRewritten={(r, labels) => onRewritten(r, labels, help.used)} />
+      )}
     </>
   );
 }

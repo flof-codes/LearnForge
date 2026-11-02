@@ -8,8 +8,8 @@ import { useTutorStatus } from '../../hooks/useTutor';
 import { settingsFromParams } from '../../utils/tutor';
 import TutorSession from './TutorSession';
 import { useSubmitReview } from '../../hooks/useReviews';
-import BloomBadge from '../../components/BloomBadge';
-import FocusBadge from '../../components/FocusBadge';
+import { useIsPhone } from '../../hooks/useIsPhone';
+import StudyFolder from './StudyFolder';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import InteractiveCard from './InteractiveCard';
 import SessionSummary from './SessionSummary';
@@ -29,6 +29,7 @@ function PlainSession() {
   const { t } = useTranslation('app');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isPhone = useIsPhone();
   const topicId = searchParams.get('topicId') || undefined;
 
   const { data: dueCards, isLoading, error } = useDueCards(topicId, 50);
@@ -117,10 +118,9 @@ function PlainSession() {
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BloomBadge level={currentCard.bloomState.currentLevel} />
-          <FocusBadge topicId={currentCard.topicId} size="md" />
-          <span className="text-sm text-text-muted">{t('study.cardOf', { current: currentIndex + 1, total: cards.length })}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <StudyFolder topicId={currentCard.topicId} full={!isPhone} />
+          <span className="text-sm text-text-muted tabular-nums shrink-0">{t('study.cardOf', { current: currentIndex + 1, total: cards.length })}</span>
         </div>
         <button
           onClick={() => setDone(true)}

@@ -1,4 +1,4 @@
-import type { AnswerMode, ChoicePayload, GapPayload } from '../types';
+import type { AnswerMode, ChoicePayload, GapPayload, HelpUsed } from '../types';
 
 /** Headspace presets: anchor points on the session difficulty, as in the chat tutor. */
 export const HEADSPACE = [
@@ -77,10 +77,14 @@ export function gradeGap(payload: GapPayload, text: string): number {
   return given !== '' && payload.accept.includes(given) ? 1 : 0;
 }
 
-/** Same thresholds as the server. A term looked up before answering caps a full score at Good. */
-export function suggestedRating(correctness: number, lookedUp: boolean): 1 | 2 | 3 | 4 {
+/**
+ * Same thresholds as the server. Help opened before answering caps the
+ * suggestion: a definition at Good, a tutorial at Hard.
+ */
+export function suggestedRating(correctness: number, help: HelpUsed): 1 | 2 | 3 | 4 {
   const rating = correctness >= 0.95 ? 4 : correctness >= 0.8 ? 3 : correctness >= 0.5 ? 2 : 1;
-  return lookedUp && rating === 4 ? 3 : rating;
+  const cap = help === 'tutorial' ? 2 : help === 'term' ? 3 : 4;
+  return Math.min(rating, cap) as 1 | 2 | 3 | 4;
 }
 
 /** What to tell the learner when a tutor request failed: the server names model faults by code. */

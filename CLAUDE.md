@@ -205,6 +205,9 @@ npm run test:integration:down  # tear down
 - **app_pair_codes**, **app_tokens** — pairing codes and bearer tokens of connected apps (Lecture Scribe); hash only
 - **card_questions** — one stored question per card, Bloom level and form (`choice` | `gap` | `open`), payload as JSON; `used_at` is set by the review
 - **tutor_settings** — 1:1 with users: Anthropic API key (sealed), model, effort
+- **card_feedback** — the learner's feedback on a question (labels, note, scope `question` | `card`), the question it was given on and its rewrite
+- **card_terms** — definitions the learner saved to a card, unique per (card, lower(term))
+- **card_help** — generated definitions and tutorials, per card and term (or per question for a question tutorial), fresh while `card_updated_at` and `prompt_version` match
 - **anki_imports** — one uploaded package and its job state (analyzing → staged → queued → running → done | failed)
 - **anki_records** — everything from Anki that LearnForge does not model (raw note/card columns, review log per card, deck options, note type configs), unique per (user, kind, anki_key)
 
@@ -236,6 +239,8 @@ GET /tutor/status               POST /tutor/prepare         POST /tutor/sessions
 POST /tutor/next                POST /tutor/answer          (403 TUTOR_UNAVAILABLE without a key)
 GET/PUT /tutor/settings         DELETE /tutor/settings/key  POST /tutor/settings/check
 POST /tutor/check               (which held tickets and cards can still be answered)
+POST /tutor/define              POST /tutor/tutorial        POST /tutor/terms
+POST /tutor/feedback            POST /tutor/feedback/:id/undo
 POST /tutor/grade               POST /tutor/followup        (open questions; 503 TUTOR_CREDITS etc. when the model fails)
 GET /health
 ```
@@ -297,6 +302,9 @@ GET /health
 - Dictation is the browser's speech recognition (`web-ui/src/hooks/useDictation.ts`). Where it is missing the microphone button is not rendered and the keyboard's own microphone does the job.
 - Two devices may study the same account. Each has its own session and tickets; the stored questions are shared. A ticket whose card was answered elsewhere, or whose question was replaced, is refused with 400 and `code: QUESTION_STALE` (`StaleTicketError` in core); the web client drops that card quietly and asks `POST /tutor/check` whenever its tab becomes visible again. A question written for another difficulty band stays beside the new one, so a ticket held elsewhere keeps working. The start screen's difficulty and answer modes are stored on the account (`tutor_settings.study_*`), so the second device starts the same way.
 - The card menu (`web-ui/src/pages/study/CardMenu.tsx`) changes a running session's difficulty through `PUT /tutor/sessions/:id` and shows the original card; the back opens only after the answer. A term opened at any point before the rating caps the suggested rating at Good.
+- Help while answering (`api/src/routes/tutor-help.ts`, core `services/study-help.ts`, prompts in core `lib/help-prompt.ts`): selected words in the stem (options and explanation only after the answer) get a definition (`/tutor/define`) or a tutorial (`/tutor/tutorial` with `term`); "Explain question" is a tutorial of the whole question (no `term`). Both are stored in `card_help` and served from there until the card changes; bump `HELP_PROMPT_VERSION` when the rules change. A tutorial is steps with an optional diagram (`flow`, `bars`, `curve` with a slider) and a concept map. A definition before the answer caps the suggested rating at Good, a tutorial at Hard.
+- Feedback (card menu → Feedback on question) stores labels and a note, marks the question `replaced_at` (no longer served, its ticket still answers), and rewrites it at once with the same model call as the writer (`rewriteOf` plus `feedback` in `QuestionRequest`). Scope `card` feedback goes into every later question of the card and retires its other unused questions. A model failure answers 503 but keeps the feedback. Undo drops the rewrite and serves the old question again, unless the rewrite was answered.
+- The study header is one row: focus star and the card's folder (full path on desktop, last folder on a phone); the card count and the full path sit at the top of the card menu.
 - The writer (`api/src/services/question-generator.ts`) keeps its state in memory: one batch per user at a time, a pause after a failure. A restart forgets both.
 
 ## Anki Import

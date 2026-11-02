@@ -484,6 +484,29 @@ export interface TutorAnswerResult extends ReviewResponse {
   correctness: number;
   suggestedRating: number;
 }
+
+// --- Help while answering: definitions, tutorials, feedback that rewrites a question ---
+export type FeedbackLabel = 'unclear' | 'not_my_way' | 'too_easy' | 'too_detailed' | 'wrong_answer' | 'gives_away';
+/** What the learner opened before answering; it caps the suggested rating. */
+export type HelpUsed = 'none' | 'term' | 'tutorial';
+
+export type TutorialVisual =
+  | { kind: 'flow'; caption: string; items: { label: string; change: 'up' | 'down' | 'none' }[] }
+  | { kind: 'bars'; caption: string; unit: string; bars: { label: string; value: number }[] }
+  | { kind: 'curve'; caption: string; xLabel: string; yLabel: string; points: { x: number; y: number }[]; markerX: number };
+export interface Tutorial {
+  title: string;
+  concepts: { id: string; label: string }[];
+  links: { from: string; to: string; effect: 'leads' | 'raises' | 'lowers' }[];
+  steps: { concept: string; title: string; text: string; visual: TutorialVisual | null }[];
+}
+/** A rewritten question: the new ticket and question for the same card. */
+export interface TutorRewrite {
+  feedbackId: string;
+  questionId: string;
+  form: TutorQuestion['form'];
+  payload: TutorQuestion['payload'];
+}
 /** The account's own tutor setup. The key itself never comes back, only its last four characters. */
 export interface TutorSettings {
   hasKey: boolean;

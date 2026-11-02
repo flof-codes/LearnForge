@@ -11,6 +11,8 @@ import { cardOriginals } from "./cardOriginals.js";
  * services/card-questions.ts). A row is fresh while `card_updated_at` and
  * `original_id` still match the card and it has not been answered: `used_at`
  * is set by the review, so the next visit gets a new variant.
+ * `replaced_at` is set when the learner's feedback asked for a new version: the
+ * row is no longer served, but a ticket already holding it can still be answered.
  * `status = 'skipped'` records that the card cannot be asked this way
  * (formulas, pictures that carry the meaning) and is shown as it is.
  */
@@ -29,6 +31,7 @@ export const cardQuestions = pgTable("card_questions", {
   originalId: uuid("original_id").references(() => cardOriginals.id, { onDelete: "set null" }),
   cardUpdatedAt: timestamp("card_updated_at", { withTimezone: true }).notNull(),
   usedAt: timestamp("used_at", { withTimezone: true }),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   index("card_questions_card_idx").on(t.cardId),

@@ -4,6 +4,7 @@ import { NotFoundError, ValidationError, StaleTicketError } from "../lib/errors.
 import { withoutFigures, questionText, figureLabels, hasPictures, isPictureOnly } from "../lib/figures.js";
 import { loadCardFigures, figuresFor, type CardFigureInfo } from "./card-figures.js";
 import { loadTopicRates } from "./change-rate.js";
+import { loadCardFeedback, loadCardTerms, withCardTerms, type WriterFeedback } from "./card-feedback.js";
 import { getStudyCards, getStudySummary } from "./study-service.js";
 import { getSession } from "./session-service.js";
 import { submitReview, gradeChoice } from "./review-service.js";
@@ -26,7 +27,7 @@ export * from "./question-forms.js";
  */
 
 /** Bump when the rules in lib/question-prompt.ts change; older rows stop being served. */
-export const QUESTION_PROMPT_VERSION = 2;
+export const QUESTION_PROMPT_VERSION = 3;
 export const QUESTION_BATCH_SIZE = 5;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,7 +47,7 @@ export interface TutorQueueOptions {
 type StudyCard = Awaited<ReturnType<typeof getStudyCards>>[number];
 interface StoredQuestion { id: string; status: "ready" | "skipped"; payload: QuestionPayload | null }
 /** `asCard`: shown as the card itself, never written for (image occlusion: the picture is the question). */
-export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicName: string; stored: StoredQuestion | null; asCard: boolean; figures: CardFigureInfo }
+export interface TutorQueueEntry { card: StudyCard; form: QuestionForm; topicName: string; stored: StoredQuestion | null; asCard: boolean; figures: CardFigureInfo; feedback: WriterFeedback[] }
 
 /** Stands in for a stored skip: a picture-only card is never sent to the writer and is shown as it is. */
 const PICTURE_ONLY: StoredQuestion = { id: "", status: "skipped", payload: null };
@@ -71,6 +72,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
     WHERE cq.card_id IN (${idList})
       AND cq.prompt_version = ${QUESTION_PROMPT_VERSION}
       AND cq.used_at IS NULL
+      AND cq.replaced_at IS NULL
       AND (cq.status = 'ready' OR cq.created_at > NOW() - INTERVAL '7 days')
       AND cq.card_updated_at = c.updated_at
       AND cq.original_id IS NOT DISTINCT FROM c.current_original_id
@@ -79,6 +81,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
 
   const topics = await loadTopicRates(db, userId);
   const figures = await loadCardFigures(db, userId, cards.map(c => c.id));
+  const feedback = await loadCardFeedback(db, cards.map(c => c.id));
   const band = difficultyBand(opts.difficulty);
   return cards.map(card => {
     const figs = figuresFor(figures, card.id);
@@ -97,6 +100,7 @@ export async function getTutorQueue(db: Db, userId: string, opts: TutorQueueOpti
       stored: stored ?? (isPictureOnly(card.frontHtml, figs, figs.builtinKey) ? PICTURE_ONLY : null),
       asCard: card.noteTypeKey === "occlusion",
       figures: figs,
+      feedback: feedback.get(card.id) ?? [],
     };
   });
 }
@@ -130,6 +134,8 @@ export function toQuestionRequest(entry: TutorQueueEntry, difficulty: number): Q
         }
       : null,
     recentQuestions: card.reviews.slice(0, 3).map(r => r.questionText.slice(0, 300)),
+    feedback: entry.feedback,
+    rewriteOf: null,
   };
 }
 
@@ -153,6 +159,14 @@ export interface WrittenQuestion {
   [field: string]: unknown;
 }
 
+/** Checks one written question and puts its options in random order (at change rate 0 the original's order stays). */
+export function prepareWrittenQuestion(request: QuestionRequest, item: WrittenQuestion): QuestionPayload {
+  const payload = validateQuestionPayload(request.form, item);
+  // Models tend to write the right option first.
+  const keepOrder = request.changeRate === 0 && !!request.original?.options;
+  return "options" in payload && !keepOrder ? { ...payload, options: shuffled(payload.options) } : payload;
+}
+
 /**
  * Stores one batch. An entry that fails validation is stored as skipped, so the
  * card is shown as it is instead of being sent to the model again and again.
@@ -169,10 +183,7 @@ export async function storeQuestions(db: Db, userId: string, requests: QuestionR
       skipReason = (typeof item.skip_reason === "string" && item.skip_reason.trim()) || "Skipped by the model";
     } else {
       try {
-        payload = validateQuestionPayload(request.form, item);
-        // Models tend to write the right option first. At change rate 0 the original's order is kept.
-        const keepOrder = request.changeRate === 0 && !!request.original?.options;
-        if ("options" in payload && !keepOrder) payload = { ...payload, options: shuffled(payload.options) };
+        payload = prepareWrittenQuestion(request, item);
       } catch (err) {
         skipReason = `Invalid question: ${(err as Error).message}`;
       }
@@ -243,6 +254,7 @@ export async function serveTutorBatch(db: Db, userId: string, opts: ServeTutorOp
 
   const items: TutorItem[] = [];
   const unwritten: TutorQueueEntry[] = [];
+  const savedTerms = await loadCardTerms(db, queue.map(e => e.card.id));
   for (const entry of queue) {
     const { card, stored } = entry;
     if (entry.asCard) {
@@ -273,7 +285,7 @@ export async function serveTutorBatch(db: Db, userId: string, opts: ServeTutorOp
       concept: card.concept,
       bloomLevel: card.bloomState.currentLevel,
       form: entry.form,
-      payload: stored.payload,
+      payload: withCardTerms(stored.payload, savedTerms.get(card.id) ?? []),
       frontHtml: card.frontHtml,
       backHtml: card.backHtml,
       figure: entry.figures.figure,

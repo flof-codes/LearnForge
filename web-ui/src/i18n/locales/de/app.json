@@ -794,7 +794,6 @@
     "check": "Prüfen",
     "checkCount": "Prüfen ({{count}})",
     "dontKnow": "Weiß ich nicht",
-    "progress": "{{headspace}} · Karte {{current}} · noch {{left}}",
     "writing": "Fragen für die nächsten Karten werden geschrieben…",
     "retry": "Erneut versuchen",
     "pausedCredits": "Das API-Guthaben ist aufgebraucht, deshalb siehst du die Karten selbst.",
@@ -879,8 +878,48 @@
       "runsAt": "Diese Sitzung läuft auf {{name}}.",
       "cancel": "Abbrechen",
       "use": "{{name}} verwenden",
-      "backLocked": "Die Rückseite öffnet sich, nachdem du geantwortet hast."
+      "backLocked": "Die Rückseite öffnet sich, nachdem du geantwortet hast.",
+      "feedback": "Feedback zur Frage",
+      "progress": "Karte {{current}} · noch {{left}}"
     },
-    "progressShort": "{{headspace}} · {{current}} · noch {{left}}"
+    "help": {
+      "folder": "Ordner",
+      "define": "Definieren",
+      "tutorial": "Tutorial",
+      "selection": "Markierte Wörter",
+      "explainQuestion": "Frage erklären",
+      "writingDefinition": "Definition wird geschrieben…",
+      "new": "Neu",
+      "saveToCard": "Zur Karte speichern",
+      "savedToCard": "Zur Karte gespeichert",
+      "close": "Schließen",
+      "tutorialFor": "Tutorial",
+      "explainEyebrow": "Frage erklären",
+      "explainTitle": "Was du zum Beantworten brauchst",
+      "explainLead": "Die Teile der Frage und wie sie zusammenhängen. Tippe auf einen Teil, um hinzuspringen. Eine Antwort wählt das Tutorial nicht aus.",
+      "writingTutorial": "Tutorial wird geschrieben…",
+      "cappedHard": "Vor dem Antworten geöffnet: Die vorgeschlagene Bewertung geht höchstens bis Schwer.",
+      "backToQuestion": "Zurück zur Frage",
+      "feedbackTitle": "Feedback zu dieser Frage",
+      "labels": {
+        "unclear": "Unklar formuliert",
+        "not_my_way": "So lerne ich das nicht",
+        "too_easy": "Zu trivial",
+        "too_detailed": "Zu detailliert",
+        "wrong_answer": "Antwort scheint falsch",
+        "gives_away": "Optionen verraten es"
+      },
+      "note": "Was würde helfen? (optional)",
+      "appliesTo": "Gilt für",
+      "scopeQuestion": "Diese Frage",
+      "scopeCard": "Alle Fragen zu dieser Karte",
+      "rewrite": "Frage neu schreiben",
+      "rewriting": "Wird neu geschrieben…",
+      "feedbackKept": "Der Tutor konnte die Frage gerade nicht neu schreiben. Dein Feedback ist gespeichert und prägt die nächste Frage zu dieser Karte.",
+      "rewritten": "Nach deinem Feedback neu geschrieben",
+      "undo": "Rückgängig",
+      "undoFailed": "Rückgängig nicht möglich: Die neue Frage wurde schon beantwortet.",
+      "slider": "Entlang der Kurve bewegen"
+    }
   }
 }

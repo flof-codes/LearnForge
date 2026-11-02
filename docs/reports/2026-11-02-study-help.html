@@ -1,0 +1,177 @@
+<title>Study Help Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one reading column, status tiles, then before/after, then flows as a screenshot strip, review table, open items. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #18202b; --muted: #5f6b7a; --line: rgba(20,30,45,.12);
+  --accent: #2563eb; --good: #15803d; --warn: #b45309; --bad: #b91c1c; --chip: #eef1f5;
+  --app: #161b22; --app-fg: #c9d1d9; --app-muted: #8b949e; --app-surface: #262c36;
+  --font: 'IBM Plex Sans', system-ui, -apple-system, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1116; --panel: #161b22; --fg: #dbe2ea; --muted: #8b97a6; --line: rgba(255,255,255,.1);
+  --accent: #6ea8fe; --good: #4ade80; --warn: #fbbf24; --bad: #f87171; --chip: #222a35; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0e1116; --panel: #161b22; --fg: #dbe2ea; --muted: #8b97a6; --line: rgba(255,255,255,.1);
+  --accent: #6ea8fe; --good: #4ade80; --warn: #fbbf24; --bad: #f87171; --chip: #222a35; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font); }
+.page { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; display: flex; flex-direction: column; gap: 36px; }
+h1 { font-size: 26px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+.meta { font: 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 68ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.tile .k { font: 12px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.tile .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile p { margin: 0; font-size: 14px; color: var(--muted); }
+.ba { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.ba figure { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ba figcaption, .strip figcaption { font-size: 13px; color: var(--muted); }
+.lbl { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+.lbl.b { color: var(--warn); } .lbl.a { color: var(--good); }
+.mock { background: var(--app); color: var(--app-fg); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; font: 14px/1.4 'Segoe UI', system-ui, sans-serif; border: 2px dashed var(--warn); }
+.mock .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.mock .l { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.mock .bloom { background: #042f2e; color: #2dd4bf; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+.mock .star { color: #d29922; background: rgba(210,153,34,.2); font-size: 12px; padding: 2px 7px; border-radius: 4px; }
+.mock .muted { color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mock .bar { height: 3px; background: var(--app-surface); } .mock .bar i { display: block; width: 22%; height: 100%; background: #58a6ff; }
+.shot { display: block; border-radius: 8px; overflow: hidden; border: 2px solid var(--good); cursor: zoom-in; padding: 0; background: none; }
+.shot img { display: block; width: 100%; height: auto; }
+.strip { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+.strip figure { margin: 0; flex: none; width: 240px; display: flex; flex-direction: column; gap: 6px; scroll-snap-align: start; }
+.strip.wide figure { width: 460px; max-width: 86vw; }
+.strip .shot { border: 1px solid var(--line); }
+.strip b { color: var(--fg); font-weight: 600; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+th { font: 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+.chip { display: inline-block; font: 12px var(--mono); padding: 2px 8px; border-radius: 999px; background: var(--chip); white-space: nowrap; }
+.chip.fixed { color: var(--good); } .chip.kept { color: var(--warn); } .chip.open { color: var(--bad); }
+ol.list { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; max-width: 75ch; }
+ol.list li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.rec { color: var(--good); font-weight: 600; }
+.who { font: 12px var(--mono); color: var(--accent); }
+code { font: 13px var(--mono); background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+.small { font-size: 13px; color: var(--muted); max-width: 75ch; }
+#zoom { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.82); display: grid; place-items: center; padding: 24px; cursor: zoom-out; }
+#zoom img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap">
+
+<div class="page">
+  <header>
+    <div class="meta">LearnForge · Study help · 2 Nov 2026</div>
+    <h1>Help while answering a tutor question</h1>
+    <p class="lede">Learners can now get a definition or a diagram tutorial for any words they select, open a tutorial covering the whole question, and send feedback that rewrites it. The study header is one line with the folder. This is variant B from the prototype, with your changes.</p>
+  </header>
+
+  <section class="tiles" aria-label="Status">
+    <div class="tile"><span class="k">Done</span><span class="v">5 features</span><p>Folder header, select to define or open a tutorial, Explain question, feedback with rewrite and undo, rating cap.</p></div>
+    <div class="tile"><span class="k">Verified</span><span class="v">21 / 21</span><p>Tutor and help tests pass. Full suite: 640 passed, 1 failed (needs embeddings, which were off). Lint is clean. Screenshots below.</p></div>
+    <div class="tile"><span class="k">Open</span><span class="v">3</span><p>Not yet tried with the real Claude API. Not tested on an iPhone. Undo only partly reverses card-wide feedback.</p></div>
+    <div class="tile"><span class="k">Your call</span><span class="v">Commit?</span><p>Nothing is committed. The work is on branch <code>claude/learning-interface-prototype-a9c45e</code>.</p></div>
+  </section>
+
+  <section>
+    <h2>Header: before and after</h2>
+    <div class="ba">
+      <figure>
+        <span class="lbl b">Before · phone (redrawn from the old markup)</span>
+        <div class="mock" role="img" aria-label="Old header: progress line, then Bloom badge, star, and card count in one row">
+          <div class="bar"><i></i></div>
+          <div class="row"><span class="l"><span class="bloom">Understand</span><span class="star">★ 2</span><span class="muted">Desk · 4 · 14 left</span></span><span class="muted">··· ✕</span></div>
+        </div>
+        <figcaption>Bloom level and card count in the header. No folder shown.</figcaption>
+      </figure>
+      <figure>
+        <span class="lbl a">After · phone</span>
+        <button class="shot" type="button" data-full="2026-11-02-study-help/after-header-phone.png"><img src="2026-11-02-study-help/after-header-phone.png" alt="New phone header: Heart mechanics, menu and close, progress line below"></button>
+        <figcaption>Star (only when the folder has a focus), then the folder name. The progress line sits under it, and the count moved to the menu.</figcaption>
+      </figure>
+    </div>
+    <div class="ba" style="margin-top:16px">
+      <figure style="grid-column:1/-1">
+        <span class="lbl a">After · desktop</span>
+        <button class="shot" type="button" data-full="2026-11-02-study-help/after-header-desktop.png"><img src="2026-11-02-study-help/after-header-desktop.png" alt="New desktop header: Medicine › Physiology › Cardiovascular › Heart mechanics, End on the right, progress bar below"></button>
+        <figcaption>Desktop shows the full path.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>The flows on a phone</h2>
+    <div class="strip">
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/02-phone-menu.jpg"><img src="2026-11-02-study-help/02-phone-menu.jpg" alt="Card menu with path, count and Feedback on question" loading="lazy"></button><figcaption><b>Menu.</b> Path, count, then Feedback on question.</figcaption></figure>
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/03-phone-selection.jpg"><img src="2026-11-02-study-help/03-phone-selection.jpg" alt="Selected word with Define and Tutorial bar above the bottom bar" loading="lazy"></button><figcaption><b>Select words.</b> The Define and Tutorial bar sits above the bottom bar.</figcaption></figure>
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/04-phone-definition.jpg"><img src="2026-11-02-study-help/04-phone-definition.jpg" alt="Inline definition with Save to card, Tutorial, Close" loading="lazy"></button><figcaption><b>Define.</b> Shown inline. Save to card underlines the term from then on.</figcaption></figure>
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/05-phone-explain.jpg"><img src="2026-11-02-study-help/05-phone-explain.jpg" alt="Explain question sheet with concept map, flow and curve with slider" loading="lazy"></button><figcaption><b>Explain question.</b> Concept map, then steps with a flow and a curve with a slider.</figcaption></figure>
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/06-phone-feedback.jpg"><img src="2026-11-02-study-help/06-phone-feedback.jpg" alt="Feedback sheet with labels, note and scope" loading="lazy"></button><figcaption><b>Feedback.</b> Six labels, a note, and a scope that defaults to the whole card.</figcaption></figure>
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/07-phone-rewritten.jpg"><img src="2026-11-02-study-help/07-phone-rewritten.jpg" alt="Rewritten question with note and Undo" loading="lazy"></button><figcaption><b>Rewritten.</b> The new question replaces the old one in place. Undo brings the old one back.</figcaption></figure>
+    </div>
+    <p class="small">Texts come from the test stub, which writes placeholder questions and diagrams. A real model writes subject content in the same layout.</p>
+  </section>
+
+  <section>
+    <h2>On desktop</h2>
+    <div class="strip wide">
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/09-desktop-popover.jpg"><img src="2026-11-02-study-help/09-desktop-popover.jpg" alt="Popover with Define and Tutorial above the selected word" loading="lazy"></button><figcaption><b>Popover</b> right above the selection.</figcaption></figure>
+      <figure><button class="shot" type="button" data-full="2026-11-02-study-help/10-desktop-tutorial.jpg"><img src="2026-11-02-study-help/10-desktop-tutorial.jpg" alt="Term tutorial as a centred dialog" loading="lazy"></button><figcaption><b>Term tutorial</b> as a centred dialog, with the note that the rating stops at Hard.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code review: what came up</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Finding</th><th>What was done</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td>Undo and storing a rewrite were not atomic</td><td>Both run in one transaction. Undo deletes only an unanswered rewrite, in one statement.</td><td><span class="chip fixed">fixed</span></td></tr>
+          <tr><td>Labels such as <code>constructor</code> passed validation</td><td>Only the six own keys are accepted (<code>Object.hasOwn</code>).</td><td><span class="chip fixed">fixed</span></td></tr>
+          <tr><td>Feedback on an answered or already rewritten question still created a rewrite</td><td>Refused with <code>QUESTION_STALE</code>.</td><td><span class="chip fixed">fixed</span></td></tr>
+          <tr><td>The rating cap was lost after a rewrite</td><td>Help opened on the old question now carries over to the new one.</td><td><span class="chip fixed">fixed</span></td></tr>
+          <tr><td>"Feedback kept" also showed when the tutor was unavailable</td><td>Shown only on a 503, after the feedback is stored.</td><td><span class="chip fixed">fixed</span></td></tr>
+          <tr><td>The cache test could not tell a hit from a rewrite</td><td>It now checks that the stored row is the same row.</td><td><span class="chip fixed">fixed</span></td></tr>
+          <tr><td>Undoing card-wide feedback does not bring back the card's other questions retired with it</td><td>Unchanged: those questions are written again when next due. This costs a little API credit.</td><td><span class="chip kept">kept</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <ol class="list">
+      <li>Run one study session with your own API key before merging, to see real definitions and tutorials (the curve and bar values). <span class="rec">Rec: yes, on the Mac first.</span></li>
+      <li>The study session without a tutor key has no card menu, so its header still shows the card count after the folder. <span class="rec">Rec: keep.</span></li>
+      <li>On iPhone, check whether the system's copy menu covers our bar. <span class="rec">Rec: test before adding any workaround.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Next steps</h2>
+    <ol class="list">
+      <li><span class="who">Florian</span> Look through the screenshots and give the OK to commit.</li>
+      <li><span class="who">Claude</span> After your OK: one short commit on the branch. No push.</li>
+      <li><span class="who">Florian</span> Real-key session on Mac and iPhone (open questions 1 and 3).</li>
+    </ol>
+  </section>
+
+  <p class="small">Method: tests ran against the integration stack with <code>TUTOR_MODEL=stub</code> and embeddings off. Screenshots come from Playwright Chromium (390×844 phone, 1280×860 desktop, dark theme) on the same stack with Vite. The new tables are <code>card_feedback</code>, <code>card_terms</code> and <code>card_help</code>, added by migration <code>0027_study_help</code>.</p>
+</div>
+
+<div id="zoom" hidden><img alt=""></div>
+<script>
+const zoom = document.getElementById('zoom');
+document.addEventListener('click', e => {
+  const b = e.target.closest('.shot');
+  if (b) { zoom.querySelector('img').src = b.dataset.full; zoom.querySelector('img').alt = b.querySelector('img').alt; zoom.hidden = false; return; }
+  if (e.target.closest('#zoom')) zoom.hidden = true;
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') zoom.hidden = true; });
+</script>

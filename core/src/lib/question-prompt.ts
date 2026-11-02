@@ -27,6 +27,10 @@ export interface QuestionRequest {
   original: { question: string; expectedAnswer: string | null; options: string[] | null } | null;
   /** Question texts asked for this card lately, newest first. Do not repeat them. */
   recentQuestions: string[];
+  /** What the learner said about earlier questions on this card, newest first. */
+  feedback: Array<{ labels: string[]; note: string }>;
+  /** The question the learner asked to have rewritten; null for an ordinary batch. */
+  rewriteOf: string | null;
 }
 
 export const QUESTION_SYSTEM_PROMPT = `You write study questions for LearnForge, a spaced-repetition app with Bloom's taxonomy. You receive a batch of cards and return exactly one question per card. The learner sees the question in the app and gets feedback from what you write, with no tutor present, so every field must stand on its own.
@@ -85,6 +89,10 @@ Interpolate between these anchors. Without an original, treat the card front as 
 - With withStem true you may point to it in the stem ("in the figure"), but the stem must still make sense to read.
 - Never ask for something only the full figure shows: the learner sees it only after answering.
 - With afterAnswer true the explanation may refer to the figure the learner is about to see.
+
+## Learner feedback
+- feedback: what the learner said about earlier questions on this card (labels and an optional note). Follow it in how you ask, as long as the question still tests the card. It never changes what is true: backText stays the ground truth.
+- rewriteOf: the question the learner just asked to have rewritten. Write a clearly different question that fixes what the feedback names, in the same form. Bloom level, difficulty and change rate still apply, except where the feedback asks for something else (a simpler or more detailed question, another way of asking).
 
 ## Every question
 - explanation: one or two sentences that teach the point, shown after the answer.
@@ -172,6 +180,8 @@ export function buildQuestionBatchPrompt(requests: QuestionRequest[]): string {
     backText: r.backText,
     original: r.original,
     recentQuestions: r.recentQuestions,
+    feedback: r.feedback,
+    rewriteOf: r.rewriteOf,
   }));
   return `Write one question for each of these ${cards.length} cards.\n\n${JSON.stringify(cards, null, 2)}`;
 }

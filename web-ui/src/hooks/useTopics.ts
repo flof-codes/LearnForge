@@ -14,6 +14,12 @@ export const useTopicTree = (id: string) =>
 export const useTopicBreadcrumb = (id: string | undefined) =>
   useQuery({ queryKey: ['topics', id, 'breadcrumb'], queryFn: () => topicService.getBreadcrumb(id!).then(r => r.data), enabled: !!id });
 
+/** A topic's folder names, root first; empty while loading. */
+export function useFolderPath(id: string | undefined): string[] {
+  const { data } = useTopicBreadcrumb(id);
+  return (data ?? []).map(b => b.name);
+}
+
 export const useCreateTopic = () => {
   const qc = useQueryClient();
   return useMutation({
